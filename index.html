@@ -11681,5 +11681,1431 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
   toast(`✓ ${ASSETS.length} ${t("w_ast_exported")}`);
 });
 </script>
+
+<!-- MODULO PRO -->
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   MÓDULO PRO — Tributação, Mercado, Liquidez e Projeções
+   Anexo ao "Gestão Financeira Pessoal". Estende o núcleo sem substituí-lo.
+   Cole este bloco imediatamente antes de </body>.
+   ══════════════════════════════════════════════════════════════════════ */
+(function(){
+"use strict";
+
+/* ═══ 0. HELPERS ═══ */
+const $=id=>document.getElementById(id);
+const R2=v=>Math.round((v||0)*100)/100;
+const aaToMm=aa=>(Math.pow(1+(aa||0)/100,1/12)-1)*100;      // % a.a. → % a.m.
+const mmToAa=mm=>(Math.pow(1+(mm||0)/100,12)-1)*100;        // % a.m. → % a.a.
+const ymAdd=(s,k)=>{let[y,m]=s.split("-").map(Number);m+=k;y+=Math.floor((m-1)/12);m=((m-1)%12+12)%12+1;return y+"-"+String(m).padStart(2,"0");};
+const ymMonth=s=>parseInt(s.split("-")[1],10);
+const dias=(a,b)=>{if(!a)return 0;const d1=new Date(a+"T12:00:00"),d2=b?new Date(b+"T12:00:00"):new Date();return Math.max(0,Math.round((d2-d1)/864e5));};
+const addDays=(d,n)=>{const x=new Date((d||new Date().toISOString().split("T")[0])+"T12:00:00");x.setDate(x.getDate()+n);return x.toISOString().split("T")[0];};
+const brDate=s=>{if(!s)return"—";const p=String(s).split("-");return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:s;};
+const pct=v=>(v>=0?"":"−")+Math.abs(v||0).toFixed(2).replace(".",",")+"%";
+
+/* ═══ 0.1 TRADUÇÃO DOS TEXTOS DESTE MÓDULO (pt → [en, de]) ═══ */
+const TXD={
+"A data acima é o início desta renda. Sem data de fim, a vigência é indefinida.":["The date above is when this income starts. Leave the end blank for open-ended.","Das Datum oben ist der Beginn dieser Einnahme. Ohne Enddatum gilt sie unbefristet."],
+"Regra automática: Selic ":["Automatic rule: Selic ","Automatische Regel: Selic "],
+" a.a. rende ":[" p.a. yields "," p.a. ergibt "],
+" ao mês.":[" per month."," pro Monat."],
+" em 12 meses.":[" over 12 months."," in 12 Monaten."],
+"Vencimento (opcional)":["Maturity (optional)","Fälligkeit (optional)"],
+"Carência até":["Lock-up until","Sperrfrist bis"],
+"Prazos e aportes":["Terms and contributions","Fristen und Einzahlungen"],
+"Aporte mensal (R$)":["Monthly contribution (R$)","Monatliche Einzahlung (R$)"],
+"Administração (% a.a.)":["Management (% p.a.)","Verwaltung (% p.a.)"],
+"Administração (R$)":["Management (R$)","Verwaltung (R$)"],
+"Performance (%)":["Performance (%)","Performance (%)"],
+"Taxa prefixada (% a.a.)":["Fixed rate (% p.a.)","Festzins (% p.a.)"],
+"Rentabilidade (% a.m.)":["Return (% p.m.)","Rendite (% p.M.)"],
+"CDI + (% a.a.)":["CDI + (% p.a.)","CDI + (% p.a.)"],
+"IPCA + (% a.a.)":["Inflation + (% p.a.)","Inflation + (% p.a.)"],
+"Descontos mensais":["Monthly deductions","Monatliche Abzüge"],
+"Despesas dedutíveis":["Deductible costs","Absetzbare Kosten"],
+"Carga tributária":["Tax burden","Steuerlast"],
+"Retenção na fonte":["Withholding at source","Quellenabzug"],
+"Vigência e reajuste":["Validity and raise","Gültigkeit und Erhöhung"],
+"Previdência (R$)":["Private pension (R$)","Private Vorsorge (R$)"],
+"Outros descontos (R$)":["Other deductions (R$)","Sonstige Abzüge (R$)"],
+"Pensão (R$)":["Alimony (R$)","Unterhalt (R$)"],
+"IPTU (R$)":["Property tax (R$)","Grundsteuer (R$)"],
+"Condomínio (R$)":["HOA fee (R$)","Hausgeld (R$)"],
+"Alíquota (DAS) %":["Rate (DAS) %","Satz (DAS) %"],
+"Alíquota %":["Rate %","Satz %"],
+"Reajuste %":["Raise %","Erhöhung %"],
+"Fim (opcional)":["End (optional)","Ende (optional)"],
+"Data de início":["Start date","Startdatum"],
+"Produto":["Product","Produkt"],
+"Liquidez":["Liquidity","Liquidität"],
+"alterar":["change","ändern"],
+"ajustar":["adjust","anpassen"],
+"pronto":["done","fertig"],
+"Mês":["Month","Monat"],
+"A data acima é o <strong>início</strong> desta renda.":["The date above is the <strong>start</strong> of this income.","Das Datum oben ist der <strong>Beginn</strong> dieser Einnahme."],
+"As tabelas mudam a cada ano. Ajuste aqui quando a Receita publicar novos valores — todo o app recalcula na hora.":["Tax tables change every year. Update them here and the whole app recalculates instantly.","Steuertabellen ändern sich jährlich. Hier anpassen — die App rechnet sofort neu."],
+"A projeção considera IR e IOF regressivos, come-cotas em maio e novembro, taxas de administração e performance, dissídio e amortização das dívidas.":["The projection applies regressive income tax and IOF, the semi-annual fund tax in May and November, management and performance fees, salary raises and debt amortization.","Die Projektion berücksichtigt degressive Steuern und IOF, die Halbjahressteuer im Mai und November, Verwaltungs- und Performancegebühren, Gehaltserhöhungen und Schuldentilgung."],
+"Carnê-leão + INSS contribuinte individual":["Self-employed: monthly income tax + social security","Selbstständig: monatliche Steuer + Sozialabgaben"],
+"Carnê-leão sobre o líquido de despesas":["Monthly income tax on rent net of costs","Monatliche Steuer auf Miete abzüglich Kosten"],
+"Rendimento isento; 20% sobre ganho na venda":["Income exempt; 20% on capital gain","Erträge steuerfrei; 20% auf Veräußerungsgewinn"],
+"IR regressivo 22,5%→15% + IOF até 30 dias":["Regressive tax 22.5%→15% + IOF under 30 days","Degressive Steuer 22,5%→15% + IOF unter 30 Tagen"],
+"Come-cotas 15% em mai/nov + IR regressivo":["Semi-annual 15% tax in May/Nov + regressive tax","Halbjahressteuer 15% Mai/Nov + degressive Steuer"],
+"Come-cotas 20% em mai/nov + IR 22,5%/20%":["Semi-annual 20% tax in May/Nov + 22.5%/20% tax","Halbjahressteuer 20% Mai/Nov + 22,5%/20% Steuer"],
+"15% sobre o ganho; vendas até R$20 mil/mês isentas":["15% on gains; sales up to R$20k/month exempt","15% auf Gewinne; Verkäufe bis R$20 Tsd./Monat steuerfrei"],
+"15% sobre o ganho; vendas até R$35 mil/mês isentas":["15% on gains; sales up to R$35k/month exempt","15% auf Gewinne; Verkäufe bis R$35 Tsd./Monat steuerfrei"],
+"LCI, LCA, CRI, CRA, poupança, debênture incentivada":["Tax-free bonds, savings and incentivized debentures","Steuerfreie Anleihen, Sparbuch und geförderte Anleihen"],
+"IR retido na fonte (alíquota fixa)":["Flat withholding tax at source","Feste Quellensteuer"],
+"Dividendos, poupança, LCI/LCA…":["Dividends, savings, tax-free bonds…","Dividenden, Sparbuch, steuerfreie Anleihen…"],
+"INSS + IRRF progressivo na fonte":["Payroll: social security + progressive withholding","Lohn: Sozialabgaben + progressive Quellensteuer"],
+"Alíquota efetiva informada (DAS)":["Flat effective rate you inform","Angegebener effektiver Satz"],
+"Tabelas de INSS e IRRF, CDI, Selic e IPCA":["Tax tables, CDI, Selic and inflation","Steuertabellen, CDI, Selic und Inflation"],
+"Parâmetros fiscais e de mercado":["Tax and market settings","Steuer- und Markteinstellungen"],
+"Nenhuma renda vigente neste mês.":["No active income this month.","Keine aktive Einnahme in diesem Monat."],
+"Despesas dedutíveis do aluguel":["Deductible rental costs","Absetzbare Mietkosten"],
+"Descontos e deduções mensais":["Monthly deductions","Monatliche Abzüge"],
+"Reajuste anual (dissídio)":["Annual raise","Jährliche Erhöhung"],
+"Buscar no Banco Central":["Fetch from the central bank","Von der Zentralbank abrufen"],
+"Restaurar valores padrão":["Restore default values","Standardwerte wiederherstellen"],
+"IRRF — faixa, alíquota e parcela a deduzir":["Income tax — bracket, rate and deduction","Einkommensteuer — Stufe, Satz und Abzug"],
+"INSS — teto da faixa e alíquota":["Social security — bracket ceiling and rate","Sozialabgaben — Stufengrenze und Satz"],
+"Alíquotas de investimentos":["Investment tax rates","Steuersätze für Anlagen"],
+"Faixa de isenção ampliada":["Extended exemption band","Erweiterte Freibetragsstufe"],
+"Desconto simplificado":["Standard deduction","Pauschalabzug"],
+"Por dependente":["Per dependent","Pro Angehörigem"],
+"Salvar parâmetros":["Save settings","Einstellungen speichern"],
+"Quanto deseja resgatar":["How much to redeem","Wie viel abheben"],
+"Rendimento no período":["Return in the period","Ertrag im Zeitraum"],
+"Valor resgatado":["Amount redeemed","Abgehobener Betrag"],
+"Você recebe":["You receive","Du erhältst"],
+"Come-cotas em mai/nov":["Semi-annual tax in May/Nov","Halbjahressteuer Mai/Nov"],
+"Aplicado há ":["Invested for ","Angelegt seit "],
+"💰 Simular resgate":["💰 Simulate redemption","💰 Auszahlung simulieren"],
+"Líquido após impostos":["Net after taxes","Netto nach Steuern"],
+"Liquidez da carteira hoje":["Portfolio liquidity today","Liquidität des Portfolios heute"],
+"Patrimônio líquido em ":["Net worth in ","Nettovermögen in "],
+"Composição por renda":["Breakdown by income","Aufschlüsselung nach Einnahme"],
+"Corrigir pela inflação":["Adjust for inflation","Inflation berücksichtigen"],
+"Média de variáveis":["Average variable spend","Ø variable Ausgaben"],
+"Investir a sobra":["Invest the surplus","Überschuss anlegen"],
+"Evolução projetada":["Projected path","Projizierter Verlauf"],
+"Horizonte: 12 meses":["Horizon: 12 months","Horizont: 12 Monate"],
+"Horizonte: 24 meses":["Horizon: 24 months","Horizont: 24 Monate"],
+"Horizonte: 5 anos":["Horizon: 5 years","Horizont: 5 Jahre"],
+"Horizonte: 10 anos":["Horizon: 10 years","Horizont: 10 Jahre"],
+"⬇️ Exportar projeção (CSV)":["⬇️ Export projection (CSV)","⬇️ Projektion exportieren (CSV)"],
+"✓ Projeção exportada":["✓ Projection exported","✓ Projektion exportiert"],
+"✓ Parâmetros salvos":["✓ Settings saved","✓ Einstellungen gespeichert"],
+"✓ Tabelas restauradas":["✓ Tables restored","✓ Tabellen zurückgesetzt"],
+"Informe a data de início desta renda":["Enter the start date of this income","Startdatum dieser Einnahme angeben"],
+"⏳ Buscando CDI, Selic e IPCA…":["⏳ Fetching CDI, Selic and inflation…","⏳ CDI, Selic und Inflation werden geladen…"],
+"⚠ Sem conexão — usando as últimas taxas salvas":["⚠ Offline — using the last saved rates","⚠ Offline — letzte gespeicherte Sätze"],
+"Regra automática: Selic ":["Automatic rule: Selic ","Automatische Regel: Selic "],
+"Rentabilidade estimada":["Estimated return","Geschätzte Rendite"],
+"Valor aplicado (custo)":["Amount invested (cost)","Angelegter Betrag (Kosten)"],
+"Vencimento / carência":["Maturity / lock-up","Fälligkeit / Sperrfrist"],
+"Performance sobre o CDI":["Performance fee over CDI","Performancegebühr über CDI"],
+"Performance sobre o IPCA":["Performance fee over inflation","Performancegebühr über Inflation"],
+"🍽 Come-cotas (mai/nov)":["🍽 Semi-annual tax (May/Nov)","🍽 Halbjahressteuer (Mai/Nov)"],
+"Liquidez e prazos":["Liquidity and terms","Liquidität und Fristen"],
+"Data da aplicação":["Investment date","Anlagedatum"],
+"Taxa de administração":["Management fee","Verwaltungsgebühr"],
+"Carga tributária efetiva":["Effective tax burden","Effektive Steuerlast"],
+"Alíquota (DAS)":["Rate (DAS)","Satz (DAS)"],
+"IR retido na fonte":["Withholding tax","Quellensteuer"],
+"Regime de tributação":["Tax regime","Steuerregime"],
+"Mês do reajuste":["Raise month","Monat der Erhöhung"],
+"Benefícios anuais":["Annual benefits","Jährliche Leistungen"],
+"🎯 13º salário":["🎯 13th salary","🎯 13. Gehalt"],
+"🏖 Férias +1/3":["🏖 Holiday bonus","🏖 Urlaubsgeld"],
+"Férias em ":["Holiday in ","Urlaub im "],
+"Líquido estimado":["Estimated net","Geschätztes Netto"],
+"Prev. privada":["Private pension","Private Vorsorge"],
+"Outros desc.":["Other deductions","Sonstige Abzüge"],
+"Dependentes":["Dependents","Angehörige"],
+"Condomínio":["HOA fee","Hausgeld"],
+"Percentual":["Percentage","Prozentsatz"],
+"Fim (opcional)":["End (optional)","Ende (optional)"],
+"Aporte mensal":["Monthly contribution","Monatliche Einzahlung"],
+"Taxa contratada":["Contracted rate","Vereinbarter Satz"],
+"Taxas do fundo":["Fund fees","Fondsgebühren"],
+"Administração":["Management","Verwaltung"],
+"Tributação":["Taxation","Besteuerung"],
+"Indexador":["Benchmark","Index"],
+"Vigência":["Validity","Gültigkeit"],
+"Após taxas":["After fees","Nach Gebühren"],
+"Equivalente":["Equivalent","Entspricht"],
+"Resgate líquido ":["Net redemption ","Netto-Auszahlung "],
+"Imposto no ano":["Tax this year","Steuer im Jahr"],
+"Líquido no ano":["Net this year","Netto im Jahr"],
+"INSS do mês":["Social security","Sozialabgaben"],
+"IR do mês":["Income tax","Einkommensteuer"],
+"Líquido em ":["Net in ","Netto im "],
+"Líquido de IR":["Net of tax","Nach Steuern"],
+"Em até 30d":["Within 30d","Binnen 30 T"],
+"Sobra mensal":["Monthly surplus","Monatl. Überschuss"],
+"Patrimônio líquido":["Net worth","Nettovermögen"],
+"Patr. líq.":["Net worth","Nettoverm."],
+"Mês a mês":["Month by month","Monat für Monat"],
+"Rendimentos ":["Returns ","Erträge "],
+"Taxas de ":["Rates from ","Sätze von "],
+" · atualizadas em ":[" · updated on "," · aktualisiert am "],
+"Fonte atual: ":["Current source: ","Aktuelle Quelle: "],
+"No vencimento":["At maturity","Bei Fälligkeit"],
+"Após carência":["After lock-up","Nach Sperrfrist"],
+"Carência até ":["Lock-up until ","Sperrfrist bis "],
+"Com carência":["With lock-up","Mit Sperrfrist"],
+"Renda fixa":["Fixed income","Festverzinslich"],
+"Fundo longo":["Long-term fund","Langfristfonds"],
+"Fundo curto":["Short-term fund","Kurzfristfonds"],
+"Prefixado":["Fixed rate","Festzins"],
+"Poupança":["Savings","Sparbuch"],
+"Variável":["Variable","Variabel"],
+"% do CDI":["% of CDI","% des CDI"],
+"Autônomo":["Self-employed","Selbstständig"],
+"Exclusiva":["Withholding","Quellensteuer"],
+"Impostos":["Taxes","Steuern"],
+"Projeção":["Projection","Projektion"],
+"Despesas":["Expenses","Ausgaben"],
+"Dívidas":["Debts","Schulden"],
+"Aluguel":["Rent","Miete"],
+"Isento":["Exempt","Steuerfrei"],
+"Ações":["Stocks","Aktien"],
+"Cripto":["Crypto","Krypto"],
+"Pensão":["Alimony","Unterhalt"],
+"Posição":["Position","Position"],
+"Alíquota":["Rate","Satz"],
+"Unidade: ":["Unit: ","Einheit: "],
+"Ano de ":["Year ","Jahr "],
+"Bruta":["Gross","Brutto"],
+"Bruto ":["Gross ","Brutto "],
+"Sobra":["Surplus","Überschuss"],
+"Rende ":["Earns ","Erträgt "],
+"Cai em ":["Available ","Verfügbar "],
+"Vence ":["Matures ","Fällig "],
+"Adm ":["Mgmt ","Verw. "],
+"Aporte ":["Contribution ","Einzahlung "],
+"Líq. ":["Net ","Netto "],
+"Carga ":["Burden ","Last "],
+"carga ":["burden ","Last "],
+"Dissídio ":["Raise ","Erhöhung "],
+"IR hoje ":["Tax today ","Steuer heute "],
+"Rend.":["Ret.","Ertr."],
+"Mercado":["Market","Markt"],
+"Mês":["Month","Monat"],
+"Tudo":["All","Alles"],
+" meses":[" months"," Monate"],
+" dias":[" days"," Tage"],
+" a.m.":[" p.m."," p.M."],
+" a.a.":[" p.a."," p.a."],
+"% exc.":["% exc.","% Überh."],
+"Ativa":["On","An"],
+"Desligada":["Off","Aus"],
+"manual":["manual","manuell"],
+"padrão":["default","Standard"],
+"offline":["offline","offline"],
+"Banco Central":["Central Bank","Zentralbank"]
+};
+const TXK=Object.keys(TXD).sort((a,b)=>b.length-a.length);
+function TR(s){
+  if(typeof s!=="string"||typeof LANG==="undefined"||LANG==="pt") return s;
+  const j=LANG==="de"?1:0;
+  for(const k of TXK){ if(s.indexOf(k)>=0) s=s.split(k).join(TXD[k][j]); }
+  return s;
+}
+function H(str){ let s="",v=arguments; str.forEach((p,i)=>{s+=p+(i+1<v.length?v[i+1]:"");}); return TR(s); }
+
+
+/* ═══ 1. PARÂMETROS FISCAIS (editáveis pelo usuário) ═══ */
+const FISCAL_KEY="gastos_v2_fiscal";
+const FISCAL_DEF={
+  /* INSS — faixas progressivas (topo da faixa, alíquota) */
+  inss:[{ate:1518.00,aliq:7.5},{ate:2793.88,aliq:9},{ate:4190.83,aliq:12},{ate:8157.41,aliq:14}],
+  /* IRRF mensal — tabela progressiva com parcela a deduzir */
+  irrf:[{ate:2259.20,aliq:0,ded:0},{ate:2826.65,aliq:7.5,ded:169.44},
+        {ate:3751.05,aliq:15,ded:381.44},{ate:4664.68,aliq:22.5,ded:662.77},
+        {ate:1e12,aliq:27.5,ded:896.00}],
+  depDed:189.59,          // dedução por dependente
+  simplificado:564.80,    // desconto simplificado mensal
+  isencaoNova:{on:true,limite:5000,fim:7350,a:1095.11,b:0.149}, // redutor faixa 5k–7,35k
+  irFundoLP:15, irFundoCP:20, irAcoes:15, irFII:20, irCripto:15, irJCP:15,
+  comeCotasMeses:[5,11],
+  fgtsPct:8
+};
+let FISCAL=(()=>{try{return Object.assign({},FISCAL_DEF,JSON.parse(localStorage.getItem(FISCAL_KEY)||"{}"));}catch(e){return Object.assign({},FISCAL_DEF);}})();
+const saveFiscal=()=>localStorage.setItem(FISCAL_KEY,JSON.stringify(FISCAL));
+
+/* IR regressivo — renda fixa e fundos de longo prazo */
+function irRendaFixa(d){return d<=180?22.5:d<=360?20:d<=720?17.5:15;}
+/* IR regressivo — fundos de curto prazo */
+function irFundoCurto(d){return d<=180?22.5:20;}
+/* IOF regressivo sobre o rendimento — resgates com menos de 30 dias */
+const IOF_TAB=[96,93,90,86,83,80,76,73,70,66,63,60,56,53,50,46,43,40,36,33,30,26,23,20,16,13,10,6,3,0];
+function iofPct(d){return d<1?96:d>=30?0:IOF_TAB[d-1];}
+
+/* ═══ 2. MOTOR DE IMPOSTOS SOBRE RENDA ═══ */
+function inssMensal(base){
+  let prev=0,tot=0;
+  for(const f of FISCAL.inss){
+    if(base>prev) tot+=(Math.min(base,f.ate)-prev)*f.aliq/100;
+    prev=f.ate;
+  }
+  return R2(tot);
+}
+function tabelaIR(b){
+  const f=FISCAL.irrf.find(x=>b<=x.ate)||FISCAL.irrf[FISCAL.irrf.length-1];
+  return Math.max(0,b*f.aliq/100-f.ded);
+}
+function irrfMensal(base,dep,dedutiveis){
+  dep=dep||0; dedutiveis=dedutiveis||0;
+  const completa=tabelaIR(Math.max(0,base-dep*FISCAL.depDed-dedutiveis));
+  const simples =tabelaIR(Math.max(0,base-FISCAL.simplificado));
+  let ir=Math.min(completa,simples);
+  const R=FISCAL.isencaoNova;
+  if(R&&R.on){
+    if(base<=R.limite) ir=0;
+    else if(base<=R.fim) ir=Math.max(0,ir-Math.max(0,R.a-R.b*base));
+  }
+  return R2(ir);
+}
+
+/* ═══ 3. RENDAS — regimes, dissídio, 13º, férias ═══ */
+const REGIMES=[
+  {id:"clt",     lbl:"CLT",           emoji:"💼", desc:"INSS + IRRF progressivo na fonte"},
+  {id:"pj",      lbl:"PJ / Simples",  emoji:"🧾", desc:"Alíquota efetiva informada (DAS)"},
+  {id:"autonomo",lbl:"Autônomo",      emoji:"🛠", desc:"Carnê-leão + INSS contribuinte individual"},
+  {id:"aluguel", lbl:"Aluguel",       emoji:"🏘", desc:"Carnê-leão sobre o líquido de despesas"},
+  {id:"exclusivo",lbl:"Exclusiva",    emoji:"🏦", desc:"IR retido na fonte (alíquota fixa)"},
+  {id:"isento",  lbl:"Isento",        emoji:"✅", desc:"Dividendos, poupança, LCI/LCA…"}
+];
+const regimeDefault=t=>({salary:"clt",bonus:"clt",freelance:"pj",rent:"aluguel",dividend:"isento",
+  interest:"exclusivo",refund:"isento",other_in:"isento"})[t]||"isento";
+function incPro(inc){
+  return Object.assign({
+    regime:regimeDefault(inc.type), dep:0, prevPriv:0, pensao:0, outrosDesc:0,
+    pjAliq:6, exclAliq:15,
+    alugIptu:0, alugCond:0, alugAdm:0,
+    dissPct:0, dissMes:1, decimo:false, ferias:false, feriasMes:1,
+    fimMes:inc.recurUntil||""
+  },inc.pro||{});
+}
+/* Fator acumulado de dissídio até o mês de referência */
+function dissidioFator(inc,ymStr){
+  const p=incPro(inc); if(!p.dissPct) return 1;
+  const [sy,sm]=inc.date.slice(0,7).split("-").map(Number);
+  const [cy,cm]=ymStr.split("-").map(Number);
+  let n=0;
+  for(let y=sy;y<=cy;y++){
+    const rm=p.dissMes||1;
+    const depoisInicio=(y>sy)||(y===sy&&rm>sm);
+    const ateAgora=(y<cy)||(y===cy&&rm<=cm);
+    if(depoisInicio&&ateAgora) n++;
+  }
+  return Math.pow(1+p.dissPct/100,n);
+}
+function incAtivaEm(inc,ymStr){
+  const ini=inc.date.slice(0,7);
+  if(ymStr<ini) return false;
+  const p=incPro(inc);
+  const fim=p.fimMes||inc.recurUntil;
+  if(fim&&ymStr>fim) return false;
+  if(!inc.recurrence||inc.recurrence==="none") return ymStr===ini;
+  return true;
+}
+/* Tributação de um valor bruto conforme o regime */
+function tributar(bruto,p,opts){
+  opts=opts||{};
+  const o={bruto:R2(bruto),inss:0,ir:0,deducoes:0,liquido:0,regime:p.regime};
+  switch(p.regime){
+    case "clt":{
+      o.inss=opts.semINSS?0:inssMensal(bruto);
+      const ded=(+p.prevPriv||0)+(+p.pensao||0);
+      o.deducoes=ded+(+p.outrosDesc||0);
+      o.ir=opts.decimo
+        ? irrfMensal(Math.max(0,bruto-o.inss),p.dep,ded)          // 13º: exclusivo, tabela cheia
+        : irrfMensal(Math.max(0,bruto-o.inss),p.dep,ded);
+      break;}
+    case "autonomo":{
+      o.inss=opts.semINSS?0:inssMensal(bruto);
+      o.ir=irrfMensal(Math.max(0,bruto-o.inss),p.dep,0);
+      break;}
+    case "pj":
+      o.ir=R2(bruto*(+p.pjAliq||0)/100); break;
+    case "aluguel":{
+      o.deducoes=(+p.alugIptu||0)+(+p.alugCond||0)+(+p.alugAdm||0);
+      o.ir=irrfMensal(Math.max(0,bruto-o.deducoes),p.dep,0); break;}
+    case "exclusivo":
+      o.ir=R2(bruto*(+p.exclAliq||0)/100); break;
+    default: break;
+  }
+  o.liquido=R2(o.bruto-o.inss-o.ir-(p.regime==="clt"?(+p.outrosDesc||0)+(+p.prevPriv||0)+(+p.pensao||0):0)
+    -(p.regime==="aluguel"?o.deducoes:0));
+  return o;
+}
+/* Todos os eventos de renda de um mês (inclui 13º e férias) */
+function incomeEventsForYM(ymStr){
+  const out=[];
+  INCOME.forEach(inc=>{
+    if(!incAtivaEm(inc,ymStr)) return;
+    const p=incPro(inc);
+    const bruto=(+inc.amount||0)*dissidioFator(inc,ymStr);
+    const t=tributar(bruto,p);
+    out.push({inc,p,tipo:"normal",label:inc.desc||catLabel(gIncomeType(inc.type)),...t});
+    if(p.regime==="clt"&&p.decimo&&ymMonth(ymStr)===12){
+      const t13=tributar(bruto,p,{decimo:true});
+      out.push({inc,p,tipo:"13",label:(inc.desc||"Salário")+" · 13º",...t13});
+    }
+    if(p.regime==="clt"&&p.ferias&&ymMonth(ymStr)===(+p.feriasMes||1)){
+      const tf=tributar(bruto/3,p,{semINSS:false});
+      out.push({inc,p,tipo:"ferias",label:(inc.desc||"Salário")+" · 1/3 férias",...tf});
+    }
+  });
+  return out;
+}
+function incomeTotalsForYM(ymStr){
+  const ev=incomeEventsForYM(ymStr);
+  const s={bruto:0,inss:0,ir:0,liquido:0,eventos:ev};
+  ev.forEach(e=>{s.bruto+=e.bruto;s.inss+=e.inss;s.ir+=e.ir;s.liquido+=e.liquido;});
+  s.imposto=R2(s.inss+s.ir);
+  s.aliq=s.bruto>0?(s.imposto/s.bruto)*100:0;
+  ["bruto","inss","ir","liquido"].forEach(k=>s[k]=R2(s[k]));
+  return s;
+}
+
+/* ═══ 4. MERCADO — CDI / Selic / IPCA ao vivo (BCB) ═══ */
+const MKT_KEY="gastos_v2_market";
+let MARKET=(()=>{try{return Object.assign({cdi:14.65,selic:14.75,ipca:4.50,ts:0,src:"padrão"},
+  JSON.parse(localStorage.getItem(MKT_KEY)||"{}"));}catch(e){return{cdi:14.65,selic:14.75,ipca:4.50,ts:0,src:"padrão"};}})();
+const saveMarket=()=>localStorage.setItem(MKT_KEY,JSON.stringify(MARKET));
+function sgs(code,n){
+  return fetch(`https://api.bcb.gov.br/dados/serie/bcdata.sgs.${code}/dados/ultimos/${n}?formato=json`)
+    .then(r=>{if(!r.ok)throw new Error(r.status);return r.json();});
+}
+async function fetchMarket(silent){
+  if(!silent) toast(TR("⏳ Buscando CDI, Selic e IPCA…"));
+  let ok=0;
+  try{const d=await sgs(4389,1); const v=parseFloat(d[0].valor); if(v>0){MARKET.cdi=v;ok++;}}catch(e){}
+  try{const d=await sgs(432,1);  const v=parseFloat(d[0].valor); if(v>0){MARKET.selic=v;ok++;}}catch(e){}
+  try{const d=await sgs(433,12); const acc=d.reduce((a,x)=>a*(1+parseFloat(x.valor)/100),1);
+      MARKET.ipca=R2((acc-1)*100);ok++;}catch(e){}
+  MARKET.ts=Date.now(); MARKET.src=ok?"Banco Central":"offline";
+  saveMarket();
+  if(!silent) toast(ok?`✓ CDI ${MARKET.cdi.toFixed(2)}% a.a. · IPCA ${MARKET.ipca.toFixed(2)}%`:TR("⚠ Sem conexão — usando as últimas taxas salvas"));
+  refreshPro();
+  return MARKET;
+}
+const poupancaAM=()=>MARKET.selic>8.5?0.5:(0.7*MARKET.selic)/12;
+
+/* ═══ 5. APLICAÇÕES — indexadores, taxas, liquidez, IR ═══ */
+const INDEXADORES=[
+  {id:"cdi_pct",   lbl:"% do CDI",  unit:"% CDI",  def:100},
+  {id:"cdi_spread",lbl:"CDI +",     unit:"% a.a.", def:2},
+  {id:"ipca_spread",lbl:"IPCA +",   unit:"% a.a.", def:6},
+  {id:"pre",       lbl:"Prefixado", unit:"% a.a.", def:12},
+  {id:"poupanca",  lbl:"Poupança",  unit:"—",      def:0},
+  {id:"variavel",  lbl:"Variável",  unit:"% a.m.", def:0.8}
+];
+const TRIBS=[
+  {id:"rf",     lbl:"Renda fixa",   hint:"IR regressivo 22,5%→15% + IOF até 30 dias"},
+  {id:"fundoLP",lbl:"Fundo longo",  hint:"Come-cotas 15% em mai/nov + IR regressivo"},
+  {id:"fundoCP",lbl:"Fundo curto",  hint:"Come-cotas 20% em mai/nov + IR 22,5%/20%"},
+  {id:"acoes",  lbl:"Ações",        hint:"15% sobre o ganho; vendas até R$20 mil/mês isentas"},
+  {id:"fii",    lbl:"FII",          hint:"Rendimento isento; 20% sobre ganho na venda"},
+  {id:"cripto", lbl:"Cripto",       hint:"15% sobre o ganho; vendas até R$35 mil/mês isentas"},
+  {id:"isento", lbl:"Isento",       hint:"LCI, LCA, CRI, CRA, poupança, debênture incentivada"}
+];
+const LIQUIDEZ=[
+  {id:"d0",   lbl:"D+0",        d:0},
+  {id:"d1",   lbl:"D+1",        d:1},
+  {id:"d30",  lbl:"D+30",       d:30},
+  {id:"venc", lbl:"No vencimento",d:null},
+  {id:"car",  lbl:"Após carência",d:null}
+];
+function astDefaults(cls){
+  return ({
+    fixed_income:{idx:"cdi_pct",idxVal:100,trib:"rf",liq:"d1"},
+    treasury:    {idx:"cdi_pct",idxVal:100,trib:"rf",liq:"d1"},
+    savings:     {idx:"poupanca",idxVal:0,trib:"isento",liq:"d0"},
+    funds:       {idx:"cdi_pct",idxVal:105,trib:"fundoLP",liq:"d30"},
+    fii:         {idx:"variavel",idxVal:0.75,trib:"fii",liq:"d2"},
+    stocks:      {idx:"variavel",idxVal:0.9,trib:"acoes",liq:"d2"},
+    crypto:      {idx:"variavel",idxVal:1.2,trib:"cripto",liq:"d0"},
+    other_asset: {idx:"variavel",idxVal:0.8,trib:"rf",liq:"d1"}
+  })[cls]||{idx:"variavel",idxVal:0.8,trib:"rf",liq:"d1"};
+}
+function astPro(a){
+  const d=astDefaults(a.class);
+  return Object.assign({
+    idx:d.idx, idxVal:d.idxVal, trib:d.trib, liq:d.liq, liqDias:1,
+    taxaAdm:0, taxaPerf:0, benchPerf:"cdi", comeCotas:(d.trib||"").indexOf("fundo")===0,
+    aplic:a.lastUpdate||today(), venc:"", carencia:"", aporte:0,
+    custo:parseFloat(a.balance)||0, dy:0
+  },a.pro||{});
+}
+/* Rentabilidade bruta ao mês (%) */
+function astBrutoAM(a){
+  const p=astPro(a), v=+p.idxVal||0;
+  switch(p.idx){
+    case "cdi_pct":    return aaToMm(MARKET.cdi*v/100);
+    case "cdi_spread": return aaToMm(((1+MARKET.cdi/100)*(1+v/100)-1)*100);
+    case "ipca_spread":return aaToMm(((1+MARKET.ipca/100)*(1+v/100)-1)*100);
+    case "pre":        return aaToMm(v);
+    case "poupanca":   return poupancaAM();
+    default:           return v||parseFloat(a.yieldPct)||0;
+  }
+}
+/* Rentabilidade líquida de taxas ao mês (%) — antes de IR */
+function astLiquidoAM(a){
+  const p=astPro(a);
+  let r=astBrutoAM(a)-aaToMm(+p.taxaAdm||0);
+  if(+p.taxaPerf>0){
+    const bench=p.benchPerf==="ipca"?aaToMm(MARKET.ipca):aaToMm(MARKET.cdi);
+    const exc=Math.max(0,r-bench);
+    r-=exc*(+p.taxaPerf||0)/100;
+  }
+  return r;
+}
+function astAliqIR(a,d){
+  const p=astPro(a);
+  switch(p.trib){
+    case "isento": return 0;
+    case "fii":    return 0;                    // rendimento isento
+    case "acoes":  return FISCAL.irAcoes;
+    case "cripto": return FISCAL.irCripto;
+    case "fundoCP":return irFundoCurto(d);
+    case "fundoLP":return irRendaFixa(d);
+    default:       return irRendaFixa(d);
+  }
+}
+/* Resgate: quanto sai líquido hoje (ou de um valor parcial) */
+function astResgate(a,valor){
+  const p=astPro(a), saldo=parseFloat(a.balance)||0;
+  valor=Math.min(valor||saldo,saldo);
+  const custo=Math.min(+p.custo||0,saldo);
+  const ganhoTotal=Math.max(0,saldo-custo);
+  const prop=saldo>0?valor/saldo:0;
+  const ganho=R2(ganhoTotal*prop);
+  const d=dias(p.aplic);
+  const aliq=astAliqIR(a,d);
+  const iof=(p.trib==="rf"||p.trib.indexOf("fundo")===0)?iofPct(d):0;
+  const vIof=R2(ganho*iof/100);
+  const vIr=R2(Math.max(0,ganho-vIof)*aliq/100);
+  return {valor:R2(valor),ganho,dias:d,aliq,iofPct:iof,iof:vIof,ir:vIr,
+    liquido:R2(valor-vIof-vIr),disponivel:astLiquidezData(a)};
+}
+function astLiquidezData(a){
+  const p=astPro(a);
+  if(p.liq==="venc") return p.venc||null;
+  if(p.liq==="car")  return p.carencia||null;
+  const L=LIQUIDEZ.find(x=>x.id===p.liq);
+  return addDays(today(),L?L.d:1);
+}
+function astLiquidezLabel(a){
+  const p=astPro(a);
+  if(p.liq==="venc") return p.venc?"Vence "+brDate(p.venc):"No vencimento";
+  if(p.liq==="car")  return p.carencia?"Carência até "+brDate(p.carencia):"Com carência";
+  return (LIQUIDEZ.find(x=>x.id===p.liq)||{}).lbl||"D+1";
+}
+function astLiquidoHojeTotal(){
+  return ASSETS.reduce((s,a)=>s+astResgate(a).liquido,0);
+}
+function astDisponivelEm(a,d){ // liquidez em até d dias?
+  const dt=astLiquidezData(a);
+  if(!dt) return false;
+  return dias(today(),dt)<=d;
+}
+
+/* ═══ 6. PROJEÇÃO ═══ */
+const PROJ_KEY="gastos_v2_proj_cfg";
+let PROJ=(()=>{try{return Object.assign({meses:24,investir:true,mediaVar:true,corrigirDesp:true},
+  JSON.parse(localStorage.getItem(PROJ_KEY)||"{}"));}catch(e){return{meses:24,investir:true,mediaVar:true,corrigirDesp:true};}})();
+const saveProj=()=>localStorage.setItem(PROJ_KEY,JSON.stringify(PROJ));
+
+function mediaVariaveis(){
+  let tot=0,n=0;
+  for(let i=1;i<=3;i++){
+    const k=ymAdd(activeYM(),-i);
+    const v=getExpensesForYM(k).filter(e=>!isNeutral(e)&&(!e.recurrence||e.recurrence==="none"))
+      .reduce((s,e)=>s+myAmount(e),0);
+    if(v>0){tot+=v;n++;}
+  }
+  return n?tot/n:0;
+}
+function projetar(n){
+  n=n||PROJ.meses;
+  const base=activeYM();
+  const mediaVar=PROJ.mediaVar?mediaVariaveis():0;
+  const infl=aaToMm(MARKET.ipca)/100;
+  const st=ASSETS.map(a=>{
+    const p=astPro(a);
+    return {a,p,saldo:parseFloat(a.balance)||0,custo:+p.custo||0,
+      rate:astLiquidoAM(a)/100,aporte:+p.aporte||0};
+  });
+  const dv=DEBTS.map(d=>({d,saldo:debtBalance(d),r:debtRateMonthly(d),pmt:parseFloat(d.monthlyPayment)||0}));
+  const rows=[];
+  for(let i=0;i<n;i++){
+    const ym=i===0?base:ymAdd(base,i);
+    const inc=incomeTotalsForYM(ym);
+    /* despesas: recorrentes reais + média de variáveis corrigida pela inflação */
+    const fixas=getExpensesForYM(ym).filter(e=>!isNeutral(e)&&e.recurrence&&e.recurrence!=="none")
+      .reduce((s,e)=>s+myAmount(e),0);
+    const pontuais=i===0?getExpensesForYM(ym).filter(e=>!isNeutral(e)&&(!e.recurrence||e.recurrence==="none"))
+      .reduce((s,e)=>s+myAmount(e),0):mediaVar*(PROJ.corrigirDesp?Math.pow(1+infl,i):1);
+    const desp=fixas+pontuais;
+    /* dívidas */
+    let parcela=0,juros=0;
+    dv.forEach(x=>{
+      if(x.saldo<=0||x.pmt<=0) return;
+      const j=x.saldo*x.r, amort=Math.min(Math.max(0,x.pmt-j),x.saldo);
+      x.saldo=Math.max(0,x.saldo-amort);
+      parcela+=Math.min(x.pmt,amort+j); juros+=j;
+    });
+    /* aplicações */
+    let rend=0,aportes=0,comeCotas=0;
+    const mes=ymMonth(ym);
+    st.forEach(x=>{
+      const r=x.saldo*x.rate;
+      x.saldo+=r; rend+=r;
+      if(x.aporte>0){x.saldo+=x.aporte;x.custo+=x.aporte;aportes+=x.aporte;}
+      if(x.p.comeCotas&&FISCAL.comeCotasMeses.indexOf(mes)>=0){
+        const ganho=Math.max(0,x.saldo-x.custo);
+        const aliq=x.p.trib==="fundoCP"?FISCAL.irFundoCP:FISCAL.irFundoLP;
+        const imp=ganho*aliq/100;
+        x.saldo-=imp; x.custo=x.saldo; comeCotas+=imp;
+      }
+    });
+    const sobra=inc.liquido-desp-parcela-aportes;
+    if(PROJ.investir&&sobra>0&&st.length){
+      const alvo=st.reduce((best,x)=>(x.rate>best.rate?x:best),st[0]);
+      alvo.saldo+=sobra; alvo.custo+=sobra;
+    }
+    const patr=st.reduce((s,x)=>s+x.saldo,0);
+    const div=dv.reduce((s,x)=>s+x.saldo,0);
+    rows.push({ym,bruto:inc.bruto,imposto:inc.imposto,liquido:inc.liquido,desp:R2(desp),
+      parcela:R2(parcela),jurosDiv:R2(juros),aportes:R2(aportes),rend:R2(rend),
+      comeCotas:R2(comeCotas),sobra:R2(sobra),patr:R2(patr),div:R2(div),pl:R2(patr-div)});
+  }
+  return rows;
+}
+
+/* ═══ 7. UI — FORMULÁRIO DE RENDA (auto-configurado pelo tipo) ═══ */
+const chip=(on,txt,onclick,color)=>`<button type="button" onclick="${onclick}" style="padding:6px 11px;border-radius:20px;border:1.5px solid ${on?(color||"#1A3A5C"):"var(--line)"};background:${on?(color||"#1A3A5C")+"14":"none"};color:${on?(color||"#1A3A5C"):"#6B6760"};font-size:11.5px;font-weight:${on?"600":"500"};cursor:pointer;white-space:nowrap">${txt}</button>`;
+const fieldNum=(id,lbl,val,step,suf)=>`<div class="pro-f"><label>${lbl}${suf?" ("+suf+")":""}</label><input id="${id}" type="number" step="${step||"0.01"}" value="${val??""}"/></div>`;
+const F =(id,lbl,step)=>`<div class="pro-f"><label>${lbl}</label><input id="${id}" type="number" step="${step||"0.01"}"/></div>`;
+const FT=(id,lbl,type)=>`<div class="pro-f"><label>${lbl}</label><input id="${id}" type="${type}"/></div>`;
+const FM=(id,lbl,cb)=>`<div class="pro-f"><label>${lbl}</label><input id="${id}" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this);${cb}"/></div>`;
+const SELSTY='background:var(--surface);border:1.5px solid var(--line);border-radius:20px;padding:6px 10px;font-size:11.5px;color:var(--body);cursor:pointer';
+
+function ensureStyles(){
+  if($("pro-style")) return;
+  const s=document.createElement("style"); s.id="pro-style";
+  s.textContent=`
+  .pro-h{display:flex;align-items:center;gap:9px;margin:18px 0 10px}
+  .pro-h b{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#8A857D;font-weight:700;white-space:nowrap}
+  .pro-h i{flex:1;height:1px;background:var(--line)}
+  .pro-h u{font-size:10.5px;color:var(--green);text-decoration:none;cursor:pointer;font-weight:600;white-space:nowrap}
+  .pro-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .pro-grid3{display:grid;grid-template-columns:1.1fr .9fr 1fr;gap:9px}
+  .pro-f{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .pro-f>label{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#8A857D;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pro-f input,.pro-f select{width:100%;background:var(--surface);border:1.5px solid transparent;border-radius:11px;padding:9px 11px;font-size:13px;color:var(--body);box-sizing:border-box;transition:border-color .15s,background .15s}
+  .pro-f input:focus,.pro-f select:focus{border-color:var(--green);background:#fff;outline:none}
+  .pro-pick{display:flex;align-items:center;gap:11px;background:var(--surface);border-radius:13px;padding:11px 13px}
+  .pro-pick .ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+  .pro-pick .tt{font-size:13px;font-weight:600;color:var(--body)}
+  .pro-pick .ss{font-size:10.5px;color:#8A857D;margin-top:2px;line-height:1.4}
+  .pro-chips{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .pro-note{font-size:10.5px;color:#8A857D;line-height:1.5;margin-top:8px}
+  .pro-prev{border-radius:14px;padding:13px 15px;margin-top:16px}`;
+  document.head.appendChild(s);
+}
+
+let INC_REGIME="clt", INC_13=false, INC_FER=false, INC_REG_OPEN=false;
+
+function incomeProHTML(){
+  return H`<div id="inc-pro">
+    <div class="pro-h"><b>Tributação</b><i></i><u id="inc-reg-toggle" onclick="PRO.toggleRegPick()">alterar</u></div>
+    <div class="pro-pick" id="inc-reg-card"></div>
+    <div id="inc-reg-chips" class="pro-chips" style="display:none"></div>
+
+    <div id="inc-f-clt" style="display:none">
+      <div class="pro-h"><b>Descontos mensais</b><i></i></div>
+      <div class="pro-grid">
+        ${F("inc-dep","Dependentes","1")}
+        ${F("inc-prev","Previdência (R$)")}
+        ${F("inc-pensao","Pensão (R$)")}
+        ${F("inc-outros","Outros descontos (R$)")}
+      </div>
+      <div class="pro-chips" id="inc-benef">
+        <span id="inc-chip-13"></span><span id="inc-chip-fer"></span>
+        <select id="inc-fer-mes" style="${SELSTY}"></select>
+      </div>
+    </div>
+
+    <div id="inc-f-pj" style="display:none">
+      <div class="pro-h"><b>Carga tributária</b><i></i></div>
+      <div class="pro-grid">${F("inc-pjaliq","Alíquota (DAS) %","0.1")}<div></div></div>
+    </div>
+
+    <div id="inc-f-excl" style="display:none">
+      <div class="pro-h"><b>Retenção na fonte</b><i></i></div>
+      <div class="pro-grid">${F("inc-excl","Alíquota %","0.5")}<div></div></div>
+    </div>
+
+    <div id="inc-f-alug" style="display:none">
+      <div class="pro-h"><b>Despesas dedutíveis</b><i></i></div>
+      <div class="pro-grid">
+        ${F("inc-iptu","IPTU (R$)")}
+        ${F("inc-cond","Condomínio (R$)")}
+        ${F("inc-adm","Administração (R$)")}
+        ${F("inc-dep2","Dependentes","1")}
+      </div>
+    </div>
+
+    <div class="pro-h"><b>Vigência e reajuste</b><i></i></div>
+    <div class="pro-grid3">
+      ${FT("inc-fim","Fim (opcional)","month")}
+      ${F("inc-diss","Reajuste %","0.1")}
+      <div class="pro-f"><label>Mês</label><select id="inc-diss-mes"></select></div>
+    </div>
+    <div class="pro-note">A data acima é o início desta renda. Sem data de fim, a vigência é indefinida.</div>
+
+    <div id="inc-preview" class="pro-prev" style="background:rgba(26,58,92,.06);border:1px solid rgba(26,58,92,.15)"></div>
+  </div>`;
+}
+function ensureIncomePro(){
+  if($("inc-pro")) return;
+  ensureStyles();
+  const acts=document.querySelector("#modal-income .f-actions");
+  if(!acts) return;
+  acts.insertAdjacentHTML("beforebegin",incomeProHTML());
+  const mm=$("inc-diss-mes"), fm=$("inc-fer-mes");
+  for(let i=0;i<12;i++){
+    mm.insertAdjacentHTML("beforeend",`<option value="${i+1}">${MS[i]}</option>`);
+    fm.insertAdjacentHTML("beforeend",TR(`<option value="${i+1}">Férias em ${MS[i]}</option>`));
+  }
+  ["inc-dep","inc-prev","inc-pensao","inc-outros","inc-pjaliq","inc-excl","inc-iptu","inc-cond","inc-adm","inc-dep2","inc-diss"]
+    .forEach(id=>$(id)&&$(id).addEventListener("input",incPreview));
+  $("inc-amount")&&$("inc-amount").addEventListener("input",incPreview);
+  const lbl=document.querySelector('#modal-income label[data-i18n="date"]');
+  if(lbl){lbl.textContent=TR("Data de início");lbl.removeAttribute("data-i18n");}
+}
+function toggleRegPick(){INC_REG_OPEN=!INC_REG_OPEN;renderIncRegime();}
+function setIncRegime(r){INC_REGIME=r;INC_REG_OPEN=false;renderIncRegime();}
+function toggle13(){INC_13=!INC_13;renderIncRegime();}
+function toggleFer(){INC_FER=!INC_FER;renderIncRegime();}
+/* o tipo de renda escolhido define o regime e os campos visíveis */
+function applyIncTypeDefaults(typeId){
+  if(!$("inc-pro")) return;
+  INC_REGIME=regimeDefault(typeId);
+  INC_13=(typeId==="salary");
+  INC_FER=(typeId==="salary");
+  INC_REG_OPEN=false;
+  renderIncRegime();
+}
+function renderIncRegime(){
+  const card=$("inc-reg-card"); if(!card) return;
+  const r=REGIMES.find(x=>x.id===INC_REGIME)||REGIMES[0];
+  card.innerHTML=TR(`<div class="ic" style="background:rgba(26,58,92,.1)">${r.emoji}</div>
+    <div style="flex:1;min-width:0"><div class="tt">${r.lbl}</div><div class="ss">${r.desc}</div></div>`);
+  $("inc-reg-toggle").textContent=TR(INC_REG_OPEN?"pronto":"alterar");
+  const chips=$("inc-reg-chips");
+  chips.style.display=INC_REG_OPEN?"flex":"none";
+  chips.innerHTML=TR(REGIMES.map(x=>chip(INC_REGIME===x.id,`${x.emoji} ${x.lbl}`,`PRO.setIncRegime('${x.id}')`)).join(""));
+  $("inc-f-clt").style.display=(INC_REGIME==="clt"||INC_REGIME==="autonomo")?"block":"none";
+  $("inc-benef").style.display=INC_REGIME==="clt"?"flex":"none";
+  $("inc-f-pj").style.display=INC_REGIME==="pj"?"block":"none";
+  $("inc-f-excl").style.display=INC_REGIME==="exclusivo"?"block":"none";
+  $("inc-f-alug").style.display=INC_REGIME==="aluguel"?"block":"none";
+  $("inc-chip-13").innerHTML=TR(chip(INC_13,"🎯 13º salário","PRO.toggle13()"));
+  $("inc-chip-fer").innerHTML=TR(chip(INC_FER,"🏖 Férias +1/3","PRO.toggleFer()"));
+  $("inc-fer-mes").style.display=INC_FER?"":"none";
+  incPreview();
+}
+function collectIncPro(){
+  return {regime:INC_REGIME,
+    dep:+($("inc-dep")?.value||0)||+($("inc-dep2")?.value||0)||0,
+    prevPriv:+($("inc-prev")?.value||0), pensao:+($("inc-pensao")?.value||0),
+    outrosDesc:+($("inc-outros")?.value||0), pjAliq:+($("inc-pjaliq")?.value||0),
+    exclAliq:+($("inc-excl")?.value||0), alugIptu:+($("inc-iptu")?.value||0),
+    alugCond:+($("inc-cond")?.value||0), alugAdm:+($("inc-adm")?.value||0),
+    dissPct:+($("inc-diss")?.value||0), dissMes:+($("inc-diss-mes")?.value||1),
+    decimo:INC_13, ferias:INC_FER, feriasMes:+($("inc-fer-mes")?.value||1),
+    fimMes:$("inc-fim")?.value||""};
+}
+function fillIncPro(inc){
+  const p=inc?incPro(inc):{regime:regimeDefault(INC_TYPE_CUR()),dep:0,prevPriv:0,pensao:0,outrosDesc:0,
+    pjAliq:6,exclAliq:15,alugIptu:0,alugCond:0,alugAdm:0,dissPct:0,dissMes:1,
+    decimo:INC_TYPE_CUR()==="salary",ferias:INC_TYPE_CUR()==="salary",feriasMes:1,fimMes:""};
+  INC_REGIME=p.regime; INC_13=!!p.decimo; INC_FER=!!p.ferias; INC_REG_OPEN=false;
+  const set=(id,v)=>{if($(id))$(id).value=(v===0||v)?v:"";};
+  set("inc-dep",p.dep);set("inc-dep2",p.dep);set("inc-prev",p.prevPriv);set("inc-pensao",p.pensao);
+  set("inc-outros",p.outrosDesc);set("inc-pjaliq",p.pjAliq);set("inc-excl",p.exclAliq);
+  set("inc-iptu",p.alugIptu);set("inc-cond",p.alugCond);set("inc-adm",p.alugAdm);
+  set("inc-diss",p.dissPct);set("inc-diss-mes",p.dissMes);set("inc-fer-mes",p.feriasMes);
+  set("inc-fim",p.fimMes||"");
+  renderIncRegime();
+}
+function INC_TYPE_CUR(){try{return INC_TYPE;}catch(e){return "salary";}}
+function incPreview(){
+  const el=$("inc-preview"); if(!el) return;
+  const bruto=unmaskCurrency($("inc-amount"))||0;
+  const p=collectIncPro(), t=tributar(bruto,p);
+  const carga=bruto>0?((t.inss+t.ir)/bruto*100):0;
+  const tag=(txt,bg,fg)=>`<span style="background:${bg};border-radius:8px;padding:3px 8px;font-size:11px;color:${fg}">${txt}</span>`;
+  el.innerHTML=H`
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
+      <span style="font-size:9px;color:#1A3A5C;letter-spacing:2px;text-transform:uppercase;font-weight:700">Líquido estimado</span>
+      <span style="font-size:10px;color:#8A857D">carga ${carga.toFixed(1).replace(".",",")}%</span>
+    </div>
+    <div style="font-family:var(--serif);font-style:italic;font-size:25px;color:#1A3A5C;line-height:1;margin-bottom:10px">${fmt(t.liquido)}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${tag("Bruto "+fmt(bruto),"rgba(26,58,92,.1)","#1A3A5C")}
+      ${t.inss>0?tag("INSS −"+fmt(t.inss),"rgba(184,90,106,.12)","#B85A6A"):""}
+      ${t.ir>0?tag("IR −"+fmt(t.ir),"rgba(184,90,106,.12)","#B85A6A"):""}
+      ${(t.deducoes>0&&p.regime==="aluguel")?tag("Despesas −"+fmt(t.deducoes),"rgba(90,138,74,.12)","#5A8A4A"):""}
+      ${p.dissPct>0?tag("Dissídio "+p.dissPct+"% em "+MS[(p.dissMes||1)-1],"rgba(90,138,74,.12)","#5A8A4A"):""}
+    </div>`;
+}
+
+/* ═══ 8. UI — FORMULÁRIO DE APLICAÇÃO (auto-configurado pela classe) ═══ */
+let AST_IDX="cdi_pct", AST_TRIB="rf", AST_LIQ="d1", AST_CC=false, AST_OPT_OPEN=false;
+const idxLabel=id=>(INDEXADORES.find(x=>x.id===id)||{}).lbl||"";
+const tribLabel=id=>(TRIBS.find(x=>x.id===id)||{}).lbl||"";
+const idxFieldLabel=id=>({cdi_pct:"% do CDI",cdi_spread:"CDI + (% a.a.)",ipca_spread:"IPCA + (% a.a.)",
+  pre:"Taxa prefixada (% a.a.)",variavel:"Rentabilidade (% a.m.)"})[id]||"Taxa contratada";
+
+function assetProHTML(){
+  return H`<div id="ast-pro">
+    <div class="pro-h"><b>Produto</b><i></i><u id="ast-opt-toggle" onclick="PRO.toggleAstPick()">ajustar</u></div>
+    <div class="pro-pick" id="ast-sum-card"></div>
+    <div id="ast-opt" style="display:none">
+      <div class="pro-h"><b>Indexador</b><i></i></div>
+      <div id="ast-idx-row" class="pro-chips" style="margin-top:0"></div>
+      <div class="pro-h"><b>Tributação</b><i></i></div>
+      <div id="ast-trib-row" class="pro-chips" style="margin-top:0"></div>
+      <div class="pro-h"><b>Liquidez</b><i></i></div>
+      <div id="ast-liq-row" class="pro-chips" style="margin-top:0"></div>
+    </div>
+
+    <div class="pro-grid" style="margin-top:12px">
+      <div class="pro-f" id="ast-idxval-wrap"><label id="ast-idxval-lbl">Taxa contratada</label>
+        <input id="ast-idxval" type="number" step="0.01"/></div>
+      ${FM("ast-custo","Valor aplicado (custo)","PRO.astPreview()")}
+    </div>
+    <div class="pro-note" id="ast-idx-hint"></div>
+
+    <div class="pro-h"><b>Prazos e aportes</b><i></i></div>
+    <div class="pro-grid">
+      ${FT("ast-aplic","Data da aplicação","date")}
+      <div class="pro-f" id="ast-venc-wrap"><label id="ast-venc-lbl">Vencimento</label><input id="ast-venc" type="date"/></div>
+    </div>
+    <div class="pro-grid" style="margin-top:9px">
+      ${F("ast-aporte","Aporte mensal (R$)")}<div></div>
+    </div>
+
+    <div id="ast-f-fund" style="display:none">
+      <div class="pro-h"><b>Taxas do fundo</b><i></i></div>
+      <div class="pro-grid">
+        ${F("ast-adm","Administração (% a.a.)")}
+        ${F("ast-perf","Performance (%)","1")}
+      </div>
+      <div class="pro-chips">
+        <span id="ast-chip-cc"></span>
+        <select id="ast-bench" style="${SELSTY}">
+          <option value="cdi">Performance sobre o CDI</option>
+          <option value="ipca">Performance sobre o IPCA</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="ast-preview" class="pro-prev" style="background:rgba(15,36,64,.05);border:1px solid rgba(15,36,64,.15)"></div>
+  </div>`;
+}
+function ensureAssetPro(){
+  if($("ast-pro")) return;
+  ensureStyles();
+  const acts=document.querySelector("#modal-asset .f-actions");
+  if(!acts) return;
+  acts.insertAdjacentHTML("beforebegin",assetProHTML());
+  ["ast-idxval","ast-adm","ast-perf","ast-aporte"].forEach(id=>$(id)&&$(id).addEventListener("input",astPreview));
+  ["ast-aplic","ast-venc","ast-bench"].forEach(id=>$(id)&&$(id).addEventListener("change",astPreview));
+  $("ast-balance")&&$("ast-balance").addEventListener("input",astPreview);
+}
+function toggleAstPick(){AST_OPT_OPEN=!AST_OPT_OPEN;renderAstPro();}
+function setAstIdx(v){AST_IDX=v;const I=INDEXADORES.find(x=>x.id===v);if(I&&$("ast-idxval"))$("ast-idxval").value=I.def;renderAstPro();}
+function setAstTrib(v){AST_TRIB=v;AST_CC=v.indexOf("fundo")===0;renderAstPro();}
+function setAstLiq(v){AST_LIQ=v;renderAstPro();}
+function toggleCC(){AST_CC=!AST_CC;renderAstPro();}
+/* a classe do ativo define indexador, tributação, liquidez e taxas visíveis */
+function applyAstClassDefaults(cls){
+  if(!$("ast-pro")) return;
+  const d=astDefaults(cls);
+  AST_IDX=d.idx; AST_TRIB=d.trib; AST_LIQ=d.liq;
+  AST_CC=d.trib.indexOf("fundo")===0;
+  AST_OPT_OPEN=false;
+  if($("ast-idxval")) $("ast-idxval").value=d.idxVal;
+  if($("ast-adm")&&AST_CC&&!$("ast-adm").value) $("ast-adm").value=1;
+  renderAstPro();
+}
+function renderAstPro(){
+  if(!$("ast-sum-card")) return;
+  const isFundo=AST_TRIB.indexOf("fundo")===0;
+  const c=gAssetClass(AST_CLASS_CUR());
+  const liqTxt=(LIQUIDEZ.find(x=>x.id===AST_LIQ)||{}).lbl||"";
+  $("ast-sum-card").innerHTML=TR(`<div class="ic" style="background:${c.color}18">${c.emoji}</div>
+    <div style="flex:1;min-width:0"><div class="tt">${idxLabel(AST_IDX)} · ${tribLabel(AST_TRIB)}</div>
+    <div class="ss">${liqTxt} · ${(TRIBS.find(x=>x.id===AST_TRIB)||{}).hint||""}</div></div>`);
+  $("ast-opt-toggle").textContent=TR(AST_OPT_OPEN?"pronto":"ajustar");
+  $("ast-opt").style.display=AST_OPT_OPEN?"block":"none";
+  $("ast-idx-row").innerHTML=TR(INDEXADORES.map(i=>chip(AST_IDX===i.id,i.lbl,`PRO.setAstIdx('${i.id}')`,"#0F2440")).join(""));
+  $("ast-trib-row").innerHTML=TR(TRIBS.map(i=>chip(AST_TRIB===i.id,i.lbl,`PRO.setAstTrib('${i.id}')`,"#0F2440")).join(""));
+  $("ast-liq-row").innerHTML=TR(LIQUIDEZ.map(i=>chip(AST_LIQ===i.id,i.lbl,`PRO.setAstLiq('${i.id}')`,"#0F2440")).join(""));
+  $("ast-idxval-wrap").style.display=AST_IDX==="poupanca"?"none":"";
+  $("ast-idxval-lbl").textContent=TR(idxFieldLabel(AST_IDX));
+  $("ast-idx-hint").textContent=TR(AST_IDX==="poupanca"
+    ? `Regra automática: Selic ${MARKET.selic.toFixed(2)}% a.a. rende ${poupancaAM().toFixed(3).replace(".",",")}% ao mês.`
+    : `CDI ${MARKET.cdi.toFixed(2)}% a.a. · IPCA ${MARKET.ipca.toFixed(2)}% em 12 meses.`);
+  $("ast-venc-lbl").textContent=TR(AST_LIQ==="car"?"Carência até":AST_LIQ==="venc"?"Vencimento":"Vencimento (opcional)");
+  $("ast-f-fund").style.display=isFundo?"block":"none";
+  $("ast-chip-cc").innerHTML=TR(chip(AST_CC,"🍽 Come-cotas (mai/nov)","PRO.toggleCC()","#0F2440"));
+  astPreview();
+}
+function collectAstPro(){
+  const venc=$("ast-venc")?.value||"";
+  return {idx:AST_IDX,idxVal:+($("ast-idxval")?.value||0),trib:AST_TRIB,liq:AST_LIQ,
+    taxaAdm:+($("ast-adm")?.value||0),taxaPerf:+($("ast-perf")?.value||0),
+    benchPerf:$("ast-bench")?.value||"cdi",comeCotas:AST_CC,
+    aplic:$("ast-aplic")?.value||today(), venc:AST_LIQ==="car"?"":venc, carencia:AST_LIQ==="car"?venc:"",
+    aporte:+($("ast-aporte")?.value||0), custo:unmaskCurrency($("ast-custo"))||0};
+}
+function fillAstPro(a){
+  const p=a?astPro(a):astPro({class:AST_CLASS_CUR(),balance:0});
+  AST_IDX=p.idx;AST_TRIB=p.trib;AST_LIQ=p.liq;AST_CC=!!p.comeCotas;AST_OPT_OPEN=false;
+  const set=(id,v)=>{if($(id))$(id).value=(v===0||v)?v:"";};
+  set("ast-idxval",p.idxVal);set("ast-adm",p.taxaAdm||"");set("ast-perf",p.taxaPerf||"");
+  set("ast-aporte",p.aporte||"");set("ast-aplic",p.aplic||today());
+  set("ast-venc",p.venc||p.carencia||"");
+  if($("ast-bench"))$("ast-bench").value=p.benchPerf||"cdi";
+  setCurrencyInput($("ast-custo"),a?(p.custo||parseFloat(a.balance)||0):"");
+  renderAstPro();
+}
+function AST_CLASS_CUR(){try{return AST_CLASS;}catch(e){return "fixed_income";}}
+function astPreview(){
+  const el=$("ast-preview"); if(!el) return;
+  const saldo=unmaskCurrency($("ast-balance"))||0;
+  const fake={class:AST_CLASS_CUR(),balance:saldo,yieldPct:0,pro:collectAstPro()};
+  const bruto=astBrutoAM(fake), liq=astLiquidoAM(fake), res=astResgate(fake), dt=astLiquidezData(fake);
+  const num=(v,u)=>`<div style="font-family:var(--serif);font-style:italic;font-size:19px;line-height:1">${v}<span style="font-size:10px;font-style:normal"> ${u}</span></div>`;
+  const tag=(txt,bg,fg)=>`<span style="background:${bg};border-radius:8px;padding:3px 8px;font-size:11px;color:${fg}">${txt}</span>`;
+  el.innerHTML=H`
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px">
+      <span style="font-size:9px;color:#0F2440;letter-spacing:2px;text-transform:uppercase;font-weight:700">Rentabilidade estimada</span>
+      <span style="font-size:10px;color:#8A857D">${astLiquidezLabel(fake)}</span>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:11px">
+      <div><div style="font-size:9px;color:#8A857D;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Bruta</div>
+        <div style="color:#0F2440">${num(bruto.toFixed(3).replace(".",",")+"%","a.m.")}</div></div>
+      <div><div style="font-size:9px;color:#8A857D;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Após taxas</div>
+        <div style="color:#5A8A4A">${num(liq.toFixed(3).replace(".",",")+"%","a.m.")}</div></div>
+      <div><div style="font-size:9px;color:#8A857D;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Equivalente</div>
+        <div style="color:var(--body)">${num(mmToAa(liq).toFixed(2).replace(".",",")+"%","a.a.")}</div></div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${tag("Rende "+fmt(saldo*liq/100)+"/mês","rgba(15,36,64,.08)","#0F2440")}
+      ${tag("IR hoje "+res.aliq+"%"+(res.iofPct>0?" + IOF "+res.iofPct+"%":""),"rgba(184,90,106,.12)","#B85A6A")}
+      ${tag("Resgate líquido "+fmt(res.liquido),"rgba(90,138,74,.12)","#5A8A4A")}
+      ${dt?tag("Cai em "+brDate(dt),"rgba(0,0,0,.05)","#8A857D"):""}
+    </div>`;
+}
+
+/* o tipo/classe escolhido no grid já configura o formulário */
+const _selIncType=window.selIncType;
+if(_selIncType) window.selIncType=function(id){_selIncType(id);applyIncTypeDefaults(id);};
+const _selAstClass=window.selAstClass;
+if(_selAstClass) window.selAstClass=function(id){_selAstClass(id);applyAstClassDefaults(id);};
+
+/* ═══ 9. NOVAS ABAS ═══ */
+function injectTabs(){
+  const navInc=$("nav-entradas");
+  if(navInc&&!navInc.querySelector('[data-incview="tax"]')){
+    navInc.insertAdjacentHTML("beforeend",H`<button class="nav-btn" data-incview="tax" onclick="showInc('tax')" style="color:#6B6760">Impostos</button>`);
+    const c=$("inc-content");
+    c.insertAdjacentHTML("beforeend",H`<div id="inc-view-tax" style="display:none"></div>`);
+  }
+  const navAst=$("nav-patrimonio");
+  if(navAst&&!navAst.querySelector('[data-astview="proj"]')){
+    navAst.insertAdjacentHTML("beforeend",H`<button class="nav-btn" data-astview="proj" onclick="showAst('proj')" style="color:#6B6760">Projeção</button>`);
+    $("ast-content").insertAdjacentHTML("beforeend",H`<div id="ast-view-proj" style="display:none"></div>`);
+  }
+}
+
+/* ── Aba IMPOSTOS ── */
+function renderIncTax(){
+  const el=$("inc-view-tax"); if(!el) return;
+  const ym=activeYM(), s=incomeTotalsForYM(ym);
+  /* projeção anual de imposto */
+  let anoBruto=0,anoImp=0,anoLiq=0;
+  for(let i=0;i<12;i++){const k=activeYear+"-"+String(i+1).padStart(2,"0");const m=incomeTotalsForYM(k);
+    anoBruto+=m.bruto;anoImp+=m.imposto;anoLiq+=m.liquido;}
+  const linha=(e)=>`
+    <div style="padding:11px 0;border-bottom:1px solid var(--line)">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">
+        <span style="font-size:13px;font-weight:600;color:var(--body)">${e.label}</span>
+        <span style="font-family:var(--serif);font-style:italic;font-size:16px;color:#1A3A5C">${fmt(e.liquido)}</span>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <span style="font-size:10.5px;background:var(--surface);border-radius:7px;padding:2px 7px;color:#6B6760">Bruto ${fmt(e.bruto)}</span>
+        ${e.inss>0?`<span style="font-size:10.5px;background:rgba(184,90,106,.1);border-radius:7px;padding:2px 7px;color:#B85A6A">INSS ${fmt(e.inss)}</span>`:""}
+        ${e.ir>0?`<span style="font-size:10.5px;background:rgba(184,90,106,.1);border-radius:7px;padding:2px 7px;color:#B85A6A">IR ${fmt(e.ir)}</span>`:""}
+        <span style="font-size:10.5px;background:rgba(26,58,92,.08);border-radius:7px;padding:2px 7px;color:#1A3A5C">${(REGIMES.find(r=>r.id===e.p.regime)||{}).lbl||""}</span>
+        ${e.tipo!=="normal"?`<span style="font-size:10.5px;background:rgba(90,138,74,.12);border-radius:7px;padding:2px 7px;color:#5A8A4A">${e.tipo==="13"?"13º":"Férias"}</span>`:""}
+      </div>
+    </div>`;
+  el.innerHTML=H`
+    <div style="background:#1A3A5C;border-radius:18px;padding:18px 20px;color:#fff;margin-bottom:14px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
+      <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.55)">Líquido em ${MPT[activeMonth]}</div>
+      <div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,34px);line-height:1.05;margin:3px 0 10px">${fmt(s.liquido)}</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <span style="background:rgba(255,255,255,.12);border-radius:20px;padding:3px 10px;font-size:11px">Bruto ${fmt(s.bruto)}</span>
+        <span style="background:rgba(255,255,255,.12);border-radius:20px;padding:3px 10px;font-size:11px">Impostos ${fmt(s.imposto)}</span>
+        <span style="background:rgba(255,255,255,.12);border-radius:20px;padding:3px 10px;font-size:11px">Carga ${s.aliq.toFixed(1).replace(".",",")}%</span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:16px">
+      <div class="stat"><div class="stat-label">INSS do mês</div><div class="stat-val" style="color:#B85A6A">${fmt(s.inss)}</div></div>
+      <div class="stat"><div class="stat-label">IR do mês</div><div class="stat-val" style="color:#B85A6A">${fmt(s.ir)}</div></div>
+      <div class="stat"><div class="stat-label">Imposto no ano</div><div class="stat-val" style="color:#B85A6A">${fmt(anoImp)}</div></div>
+      <div class="stat"><div class="stat-label">Líquido no ano</div><div class="stat-val" style="color:#1A3A5C">${fmt(anoLiq)}</div></div>
+    </div>
+
+    <div class="sec-label">Composição por renda</div>
+    <div style="background:var(--surface);border-radius:16px;padding:4px 16px 8px;margin-bottom:16px">
+      ${s.eventos.length?s.eventos.map(linha).join(""):`<div style="color:#6B6760;font-size:12px;padding:14px 0;text-align:center">Nenhuma renda vigente neste mês.</div>`}
+    </div>
+
+    <div class="sec-label">Ano de ${activeYear}</div>
+    <div style="background:var(--surface);border-radius:16px;padding:14px 16px;margin-bottom:16px">
+      <div style="display:flex;height:22px;border-radius:7px;overflow:hidden;margin-bottom:9px">
+        <div style="background:#1A3A5C;width:${anoBruto>0?anoLiq/anoBruto*100:0}%"></div>
+        <div style="background:#B85A6A;width:${anoBruto>0?anoImp/anoBruto*100:0}%"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#6B6760">
+        <span>Líquido <strong style="color:var(--body)">${fmt(anoLiq)}</strong></span>
+        <span>Impostos <strong style="color:#B85A6A">${fmt(anoImp)}</strong></span>
+        <span>Bruto <strong style="color:var(--body)">${fmt(anoBruto)}</strong></span>
+      </div>
+    </div>
+
+    <button onclick="PRO.openFiscal()" style="width:100%;display:flex;align-items:center;gap:12px;background:var(--surface);border:none;border-radius:14px;padding:14px 16px;cursor:pointer;text-align:left;margin-bottom:10px">
+      <div style="width:38px;height:38px;border-radius:11px;background:rgba(26,58,92,.1);display:flex;align-items:center;justify-content:center;font-size:18px">⚙️</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--body)">Parâmetros fiscais e de mercado</div>
+      <div style="font-size:11px;color:#6B6760">Tabelas de INSS e IRRF, CDI, Selic e IPCA</div></div>
+      <span style="font-size:16px;color:#6B6760">→</span>
+    </button>`;
+}
+
+/* ── Aba PROJEÇÃO ── */
+function renderProj(){
+  const el=$("ast-view-proj"); if(!el) return;
+  const rows=projetar(PROJ.meses);
+  const last=rows[rows.length-1]||{};
+  const impTot=rows.reduce((s,r)=>s+r.imposto,0);
+  const rendTot=rows.reduce((s,r)=>s+r.rend,0);
+  const ccTot=rows.reduce((s,r)=>s+r.comeCotas,0);
+  const hoje=ASSETS.reduce((s,a)=>s+(parseFloat(a.balance)||0),0);
+  const liqHoje=astLiquidoHojeTotal();
+  const d30=ASSETS.filter(a=>astDisponivelEm(a,30)).reduce((s,a)=>s+astResgate(a).liquido,0);
+  const opt=(v,l)=>`<option value="${v}"${PROJ.meses===v?" selected":""}>${l}</option>`;
+  el.innerHTML=H`
+    <div style="display:flex;gap:6px;margin-bottom:12px;align-items:center">
+      <select id="proj-meses" onchange="PRO.setProj('meses',+this.value)" style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:7px 9px;font-size:11.5px;color:var(--body)">
+        ${opt(12,"Horizonte: 12 meses")}${opt(24,"Horizonte: 24 meses")}${opt(60,"Horizonte: 5 anos")}${opt(120,"Horizonte: 10 anos")}
+      </select>
+      <button onclick="PRO.refreshRates()" style="background:#0F2440;color:#fff;border:none;border-radius:10px;padding:8px 12px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap">🔄 Taxas</button>
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px">
+      ${chip(PROJ.investir,"Investir a sobra","PRO.setProj('investir',!PRO.cfg().investir)","#0F2440")}
+      ${chip(PROJ.mediaVar,"Média de variáveis","PRO.setProj('mediaVar',!PRO.cfg().mediaVar)","#0F2440")}
+      ${chip(PROJ.corrigirDesp,"Corrigir pela inflação","PRO.setProj('corrigirDesp',!PRO.cfg().corrigirDesp)","#0F2440")}
+    </div>
+
+    <div style="background:#0F2440;border-radius:18px;padding:18px 20px;color:#fff;margin-bottom:12px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-35px;right:-35px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
+      <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.55)">Patrimônio líquido em ${PROJ.meses} meses</div>
+      <div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,36px);line-height:1.05;margin:3px 0 10px">${fmt(last.pl||0)}</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <span style="background:rgba(255,255,255,.12);border-radius:20px;padding:3px 10px;font-size:11px">Rendimentos ${fmt(rendTot)}</span>
+        <span style="background:rgba(255,255,255,.12);border-radius:20px;padding:3px 10px;font-size:11px">Impostos ${fmt(impTot+ccTot)}</span>
+        <span style="background:rgba(255,255,255,.12);border-radius:20px;padding:3px 10px;font-size:11px">CDI ${MARKET.cdi.toFixed(2)}%</span>
+      </div>
+    </div>
+
+    <div class="sec-label">Liquidez da carteira hoje</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:16px">
+      <div class="stat"><div class="stat-label">Posição</div><div class="stat-val" style="color:#0F2440;font-size:15px">${fmt(hoje)}</div></div>
+      <div class="stat"><div class="stat-label">Líquido de IR</div><div class="stat-val" style="color:#5A8A4A;font-size:15px">${fmt(liqHoje)}</div></div>
+      <div class="stat"><div class="stat-label">Em até 30d</div><div class="stat-val" style="color:var(--body);font-size:15px">${fmt(d30)}</div></div>
+    </div>
+
+    <div class="sec-label">Evolução projetada</div>
+    <div style="background:var(--surface);border-radius:16px;padding:16px;margin-bottom:16px">
+      <canvas id="proj-chart" style="width:100%;display:block"></canvas>
+      <div style="display:flex;gap:14px;justify-content:center;margin-top:8px;font-size:10px;color:#6B6760">
+        <span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#0F2440;margin-right:4px"></span>Patrimônio líquido</span>
+        <span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#5A8A4A;margin-right:4px"></span>Sobra mensal</span>
+      </div>
+    </div>
+
+    <div class="sec-label">Mês a mês</div>
+    <div style="overflow:auto;max-height:46dvh;border:1px solid var(--line);border-radius:12px;margin-bottom:12px">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap">
+        <thead><tr>${["Mês","Líquido","Despesas","Dívidas","Rend.","Sobra","Patr. líq."].map((h,i)=>
+          `<th style="text-align:${i?"right":"left"};padding:7px 8px;font-size:9.5px;color:#6B6760;text-transform:uppercase;letter-spacing:.4px;font-weight:600;position:sticky;top:0;background:var(--bg)">${h}</th>`).join("")}</tr></thead>
+        <tbody>${rows.map(r=>`<tr style="border-bottom:1px solid var(--line)">
+          <td style="padding:6px 8px;font-weight:600;color:var(--body)">${MS[ymMonth(r.ym)-1]}/${r.ym.slice(2,4)}</td>
+          <td style="padding:6px 8px;text-align:right;color:#1A3A5C">${fmt(r.liquido)}</td>
+          <td style="padding:6px 8px;text-align:right;color:#B85A6A">${fmt(r.desp)}</td>
+          <td style="padding:6px 8px;text-align:right;color:#6E2B3A">${fmt(r.parcela)}</td>
+          <td style="padding:6px 8px;text-align:right;color:#5A8A4A">${fmt(r.rend)}</td>
+          <td style="padding:6px 8px;text-align:right;font-weight:600;color:${r.sobra>=0?"#5A8A4A":"#B85A6A"}">${r.sobra<0?"−":""}${fmt(Math.abs(r.sobra))}</td>
+          <td style="padding:6px 8px;text-align:right;color:#0F2440">${fmt(r.pl)}</td>
+        </tr>`).join("")}</tbody>
+      </table>
+    </div>
+    <button onclick="PRO.exportProj()" style="width:100%;background:#0F2440;color:#fff;border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px">⬇️ Exportar projeção (CSV)</button>
+    <div class="info-card" style="background:rgba(15,36,64,.06);color:#0F2440">Taxas de ${MARKET.src}${MARKET.ts?" · atualizadas em "+new Date(MARKET.ts).toLocaleDateString("pt-BR"):""}. A projeção considera IR e IOF regressivos, come-cotas em maio e novembro, taxas de administração e performance, dissídio e amortização das dívidas.</div>`;
+  drawProjChart(rows);
+}
+function drawProjChart(rows){
+  const c=$("proj-chart"); if(!c||!rows.length) return;
+  const W=c.parentElement.offsetWidth-32, H=170, dpr=window.devicePixelRatio||1;
+  c.width=W*dpr;c.height=H*dpr;c.style.width=W+"px";c.style.height=H+"px";
+  const ctx=c.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  const pad={l:6,r:6,t:12,b:20},cW=W-pad.l-pad.r,cH=H-pad.t-pad.b;
+  const pls=rows.map(r=>r.pl),mn=Math.min(0,...pls),mx=Math.max(1,...pls),rg=mx-mn||1;
+  const sb=rows.map(r=>r.sobra),sbMax=Math.max(1,...sb.map(Math.abs));
+  const step=cW/Math.max(1,rows.length-1);
+  const zero=pad.t+cH;
+  rows.forEach((r,i)=>{
+    const x=pad.l+i*step,h=Math.abs(r.sobra)/sbMax*(cH*0.35);
+    ctx.fillStyle=r.sobra>=0?"rgba(90,138,74,.35)":"rgba(184,90,106,.35)";
+    ctx.fillRect(x-Math.max(1,step*0.3)/2,zero-h,Math.max(1.5,step*0.3),h);
+  });
+  const grad=ctx.createLinearGradient(0,pad.t,0,zero);
+  grad.addColorStop(0,"rgba(15,36,64,.22)");grad.addColorStop(1,"rgba(15,36,64,.02)");
+  ctx.beginPath();
+  rows.forEach((r,i)=>{const x=pad.l+i*step,y=pad.t+cH-((r.pl-mn)/rg)*cH;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+  ctx.strokeStyle="#0F2440";ctx.lineWidth=2;ctx.stroke();
+  ctx.lineTo(pad.l+(rows.length-1)*step,zero);ctx.lineTo(pad.l,zero);ctx.closePath();
+  ctx.fillStyle=grad;ctx.fill();
+  ctx.fillStyle="#9A958C";ctx.font="9px -apple-system,sans-serif";ctx.textAlign="center";
+  const k=Math.ceil(rows.length/6);
+  rows.forEach((r,i)=>{if(i%k&&i!==rows.length-1)return;
+    ctx.fillText(MS[ymMonth(r.ym)-1]+"/"+r.ym.slice(2,4),pad.l+i*step,H-5);});
+}
+function exportProj(){
+  const rows=projetar(PROJ.meses),sep=";";
+  const head=["Mês","Renda bruta","Impostos","Renda líquida","Despesas","Parcelas dívida","Juros dívida","Aportes","Rendimento","Come-cotas","Sobra","Patrimônio","Dívida","Patrimônio líquido"].join(sep);
+  const n=v=>String(R2(v).toFixed(2)).replace(".",",");
+  const body=rows.map(r=>[r.ym,n(r.bruto),n(r.imposto),n(r.liquido),n(r.desp),n(r.parcela),n(r.jurosDiv),
+    n(r.aportes),n(r.rend),n(r.comeCotas),n(r.sobra),n(r.patr),n(r.div),n(r.pl)].join(sep)).join("\n");
+  const csv="\uFEFF"+head+"\n"+body;
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=`projecao_${today()}.csv`;document.body.appendChild(a);a.click();
+  document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),2000);
+  toast(TR("✓ Projeção exportada"));
+}
+
+/* ═══ 10. SHEET DE PARÂMETROS FISCAIS ═══ */
+function openFiscal(){
+  const inss=FISCAL.inss.map((f,i)=>`<div style="display:flex;gap:6px;margin-bottom:6px">
+      <input id="fi-i-a-${i}" type="number" step="0.01" value="${f.ate}" style="flex:2;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 9px;font-size:12px;color:var(--body);box-sizing:border-box"/>
+      <input id="fi-i-p-${i}" type="number" step="0.1" value="${f.aliq}" style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 9px;font-size:12px;color:var(--body);box-sizing:border-box"/>
+    </div>`).join("");
+  const irrf=FISCAL.irrf.map((f,i)=>`<div style="display:flex;gap:6px;margin-bottom:6px">
+      <input id="fi-r-a-${i}" type="number" step="0.01" value="${f.ate>1e11?"":f.ate}" placeholder="acima" style="flex:2;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 9px;font-size:12px;color:var(--body);box-sizing:border-box"/>
+      <input id="fi-r-p-${i}" type="number" step="0.1" value="${f.aliq}" style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 9px;font-size:12px;color:var(--body);box-sizing:border-box"/>
+      <input id="fi-r-d-${i}" type="number" step="0.01" value="${f.ded}" style="flex:1.4;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 9px;font-size:12px;color:var(--body);box-sizing:border-box"/>
+    </div>`).join("");
+  const ov=document.createElement("div");
+  ov.className="overlay open";ov.style.zIndex="220";ov.style.alignItems="flex-end";
+  ov.innerHTML=H`<div class="sheet" style="max-height:92dvh">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="this.closest('.overlay').remove()">✕</button>
+    <div style="font-family:var(--serif);font-size:20px;color:var(--body);margin-bottom:4px">Parâmetros fiscais</div>
+    <div style="font-size:11.5px;color:#6B6760;margin-bottom:16px;line-height:1.5">As tabelas mudam a cada ano. Ajuste aqui quando a Receita publicar novos valores — todo o app recalcula na hora.</div>
+
+    <div class="sec-label">Mercado</div>
+    <div style="background:var(--surface);border-radius:14px;padding:13px 15px;margin-bottom:14px">
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        ${fieldNum("fi-cdi","CDI",MARKET.cdi,"0.01","% a.a.")}
+        ${fieldNum("fi-selic","Selic",MARKET.selic,"0.01","% a.a.")}
+        ${fieldNum("fi-ipca","IPCA 12m",MARKET.ipca,"0.01","%")}
+      </div>
+      <button onclick="PRO.refreshRates()" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:10px;padding:9px;font-size:12px;font-weight:600;cursor:pointer">🔄 Buscar no Banco Central</button>
+      <div style="font-size:10px;color:#9A958C;margin-top:7px;text-align:center">Fonte atual: ${MARKET.src}${MARKET.ts?" · "+new Date(MARKET.ts).toLocaleString("pt-BR"):""}</div>
+    </div>
+
+    <div class="sec-label">INSS — teto da faixa e alíquota</div>
+    <div style="margin-bottom:14px">${inss}</div>
+
+    <div class="sec-label">IRRF — faixa, alíquota e parcela a deduzir</div>
+    <div style="margin-bottom:10px">${irrf}</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      ${fieldNum("fi-dep","Por dependente",FISCAL.depDed,"0.01","R$")}
+      ${fieldNum("fi-simp","Desconto simplificado",FISCAL.simplificado,"0.01","R$")}
+    </div>
+    <div style="background:var(--surface);border-radius:14px;padding:13px 15px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+        <span id="fi-chip-isen"></span>
+        <span style="font-size:11px;color:#6B6760">Faixa de isenção ampliada</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        ${fieldNum("fi-lim","Isento até",FISCAL.isencaoNova.limite,"1","R$")}
+        ${fieldNum("fi-fim","Redutor até",FISCAL.isencaoNova.fim,"1","R$")}
+      </div>
+    </div>
+
+    <div class="sec-label">Alíquotas de investimentos</div>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      ${fieldNum("fi-flp","Fundo longo",FISCAL.irFundoLP,"0.5","%")}
+      ${fieldNum("fi-fcp","Fundo curto",FISCAL.irFundoCP,"0.5","%")}
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      ${fieldNum("fi-ac","Ações",FISCAL.irAcoes,"0.5","%")}
+      ${fieldNum("fi-cr","Cripto",FISCAL.irCripto,"0.5","%")}
+    </div>
+
+    <button onclick="PRO.saveFiscalForm(this)" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:600;cursor:pointer">Salvar parâmetros</button>
+    <button onclick="PRO.resetFiscal(this)" style="width:100%;background:none;color:#6B6760;border:1.5px solid var(--line);border-radius:13px;padding:11px;font-size:12px;cursor:pointer;margin-top:8px">Restaurar valores padrão</button>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  const upd=()=>{ov.querySelector("#fi-chip-isen").innerHTML=TR(chip(FISCAL.isencaoNova.on,FISCAL.isencaoNova.on?"Ativa":"Desligada","PRO.toggleIsen(this)"));};
+  window.__proUpdIsen=upd; upd();
+}
+function toggleIsen(){FISCAL.isencaoNova.on=!FISCAL.isencaoNova.on;window.__proUpdIsen&&window.__proUpdIsen();}
+function saveFiscalForm(btn){
+  const g=id=>{const e=document.getElementById(id);return e?parseFloat(e.value):NaN;};
+  MARKET.cdi=g("fi-cdi")||MARKET.cdi;MARKET.selic=g("fi-selic")||MARKET.selic;MARKET.ipca=g("fi-ipca")||MARKET.ipca;
+  MARKET.src="manual";MARKET.ts=Date.now();saveMarket();
+  FISCAL.inss=FISCAL.inss.map((f,i)=>({ate:g(`fi-i-a-${i}`)||f.ate,aliq:g(`fi-i-p-${i}`)||f.aliq}));
+  FISCAL.irrf=FISCAL.irrf.map((f,i)=>({ate:isNaN(g(`fi-r-a-${i}`))?1e12:g(`fi-r-a-${i}`),
+    aliq:isNaN(g(`fi-r-p-${i}`))?f.aliq:g(`fi-r-p-${i}`),ded:isNaN(g(`fi-r-d-${i}`))?f.ded:g(`fi-r-d-${i}`)}));
+  FISCAL.depDed=g("fi-dep");FISCAL.simplificado=g("fi-simp");
+  FISCAL.isencaoNova.limite=g("fi-lim");FISCAL.isencaoNova.fim=g("fi-fim");
+  FISCAL.irFundoLP=g("fi-flp");FISCAL.irFundoCP=g("fi-fcp");FISCAL.irAcoes=g("fi-ac");FISCAL.irCripto=g("fi-cr");
+  saveFiscal();
+  btn.closest(".overlay").remove();
+  toast(TR("✓ Parâmetros salvos"));refreshPro();
+}
+function resetFiscal(btn){
+  FISCAL=JSON.parse(JSON.stringify(FISCAL_DEF));saveFiscal();
+  btn.closest(".overlay").remove();toast(TR("✓ Tabelas restauradas"));refreshPro();openFiscal();
+}
+
+/* ═══ 11. RESGATE — simulador por aplicação ═══ */
+function openResgate(id){
+  const a=ASSETS.find(x=>x.id===id); if(!a) return;
+  const c=gAssetClass(a.class),saldo=parseFloat(a.balance)||0;
+  const ov=document.createElement("div");
+  ov.className="overlay open";ov.style.zIndex="210";ov.style.alignItems="flex-end";
+  ov.innerHTML=H`<div class="sheet">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="this.closest('.overlay').remove()">✕</button>
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px">
+      <div style="width:42px;height:42px;border-radius:12px;background:${c.color}18;display:flex;align-items:center;justify-content:center;font-size:20px">${c.emoji}</div>
+      <div><div style="font-family:var(--serif);font-size:19px;color:var(--body)">${a.name}</div>
+      <div style="font-size:11px;color:#6B6760">${catLabel(c)} · ${astLiquidezLabel(a)}</div></div>
+    </div>
+    <label class="f-label">Quanto deseja resgatar</label>
+    <input id="res-val" class="f-amount" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this);PRO.calcResgate('${id}')"/>
+    <div style="display:flex;gap:5px;margin-bottom:14px">
+      ${[25,50,100].map(p=>`<button onclick="PRO.setResgatePct('${id}',${p})" style="flex:1;padding:7px;border-radius:10px;border:1.5px solid var(--line);background:none;color:#6B6760;font-size:11.5px;font-weight:600;cursor:pointer">${p===100?"Tudo":p+"%"}</button>`).join("")}
+    </div>
+    <div id="res-out"></div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  setCurrencyInput($("res-val"),saldo);calcResgate(id);
+}
+function setResgatePct(id,p){
+  const a=ASSETS.find(x=>x.id===id);if(!a)return;
+  setCurrencyInput($("res-val"),(parseFloat(a.balance)||0)*p/100);calcResgate(id);
+}
+function calcResgate(id){
+  const a=ASSETS.find(x=>x.id===id);if(!a||!$("res-out"))return;
+  const r=astResgate(a,unmaskCurrency($("res-val")));
+  const p=astPro(a);
+  $("res-out").innerHTML=H`
+    <div style="background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px"><span style="color:var(--body)">Valor resgatado</span><span>${fmt(r.valor)}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px"><span style="color:var(--body)">Rendimento no período</span><span style="color:#5A8A4A">${fmt(r.ganho)}</span></div>
+      ${r.iof>0?`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px"><span style="color:var(--body)">IOF (${r.iofPct}% · ${r.dias} dias)</span><span style="color:#B85A6A">−${fmt(r.iof)}</span></div>`:""}
+      <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px"><span style="color:var(--body)">IR (${r.aliq}%)</span><span style="color:#B85A6A">−${fmt(r.ir)}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;margin-top:6px;border-top:2px solid var(--line)">
+        <span style="font-size:13px;font-weight:700;color:var(--body)">Você recebe</span>
+        <span style="font-family:var(--serif);font-style:italic;font-size:22px;color:#0F2440">${fmt(r.liquido)}</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px">
+      <span style="background:rgba(0,0,0,.05);border-radius:8px;padding:4px 9px;color:#6B6760">Aplicado há ${r.dias} dias</span>
+      <span style="background:rgba(0,0,0,.05);border-radius:8px;padding:4px 9px;color:#6B6760">Cai em ${brDate(r.disponivel)}</span>
+      ${p.comeCotas?`<span style="background:rgba(0,0,0,.05);border-radius:8px;padding:4px 9px;color:#6B6760">Come-cotas em mai/nov</span>`:""}
+    </div>`;
+}
+
+/* ═══ 12. SOBRESCRITAS DO NÚCLEO ═══ */
+const _openIncome=window.openIncome, _openIncomeEdit=window.openIncomeEdit, _saveIncome=window.saveIncome;
+window.openIncome=function(){_openIncome();ensureIncomePro();fillIncPro(null);};
+window.openIncomeEdit=function(id){_openIncomeEdit(id);ensureIncomePro();fillIncPro(INCOME.find(i=>i.id===id));};
+window.saveIncome=function(){
+  const date=$("inc-date").value;
+  if(!date){toast(TR("Informe a data de início desta renda"));return;}
+  const pro=collectIncPro();
+  const before=INCOME.length, editing=INC_EID;
+  _saveIncome();
+  const target=editing?INCOME.find(i=>i.id===editing):INCOME[INCOME.length-1];
+  if(target&&(editing||INCOME.length>before)){target.pro=pro;if(pro.fimMes)target.recurUntil=pro.fimMes;persist();}
+  refreshPro();
+};
+const _openAsset=window.openAsset, _openAssetEdit=window.openAssetEdit, _saveAsset=window.saveAsset;
+window.openAsset=function(){_openAsset();ensureAssetPro();fillAstPro(null);};
+window.openAssetEdit=function(id){_openAssetEdit(id);ensureAssetPro();fillAstPro(ASSETS.find(a=>a.id===id));};
+window.saveAsset=function(){
+  const pro=collectAstPro();
+  const before=ASSETS.length, editing=AST_EID;
+  _saveAsset();
+  const target=editing?ASSETS.find(a=>a.id===editing):ASSETS[ASSETS.length-1];
+  if(target&&(editing||ASSETS.length>before)){
+    if(!pro.custo) pro.custo=parseFloat(target.balance)||0;
+    target.pro=pro;
+    target.yieldPct=R2(astLiquidoAM(target));   // mantém o núcleo coerente
+    persist();
+  }
+  refreshPro();
+};
+
+const _showInc=window.showInc;
+window.showInc=function(v){
+  if(v==="tax"){
+    ["dashboard","list","chart"].forEach(id=>{const e=$("inc-view-"+id);if(e)e.style.display="none";});
+    const e=$("inc-view-tax");if(e){e.style.display="block";e.classList.remove("tab-enter");void e.offsetWidth;e.classList.add("tab-enter");}
+    document.querySelectorAll("#nav-entradas .nav-btn").forEach(b=>{
+      const on=b.dataset.incview==="tax";b.classList.toggle("active",on);b.style.color=on?"#1A3A5C":"#6B6760";});
+    INC_V="tax";renderIncTax();return;
+  }
+  const e=$("inc-view-tax");if(e)e.style.display="none";
+  _showInc(v);
+};
+const _showAst=window.showAst;
+window.showAst=function(v){
+  if(v==="proj"){
+    ["dashboard","list","history","goals"].forEach(id=>{const e=$("ast-view-"+id);if(e)e.style.display="none";});
+    const e=$("ast-view-proj");if(e){e.style.display="block";e.classList.remove("tab-enter");void e.offsetWidth;e.classList.add("tab-enter");}
+    document.querySelectorAll("#nav-patrimonio .nav-btn").forEach(b=>{
+      const on=b.dataset.astview==="proj";b.classList.toggle("active",on);b.style.color=on?"#0F2440":"#6B6760";});
+    AST_V="proj";renderProj();return;
+  }
+  const e=$("ast-view-proj");if(e)e.style.display="none";
+  _showAst(v);
+};
+
+/* Lista de aplicações enriquecida: liquidez, IR e botão de resgate */
+const _renderAssetList=window.renderAssetList;
+window.renderAssetList=function(){
+  _renderAssetList();
+  const el=$("assets-list");if(!el)return;
+  const cards=el.children;
+  let items=[...ASSETS];
+  const q=($("ast-list-search")?.value||"").toLowerCase().trim();
+  const cf=$("ast-class-filter")?.value||"all";
+  const sv=$("ast-sort")?.value||"bal-desc";
+  if(q) items=items.filter(a=>(a.name||"").toLowerCase().includes(q));
+  if(cf!=="all") items=items.filter(a=>a.class===cf);
+  items.sort((a,b)=>{
+    if(sv==="bal-asc")return(parseFloat(a.balance)||0)-(parseFloat(b.balance)||0);
+    if(sv==="yield-desc")return(parseFloat(b.yieldPct)||0)-(parseFloat(a.yieldPct)||0);
+    if(sv==="az")return(a.name||"").localeCompare(b.name||"","pt-BR");
+    return(parseFloat(b.balance)||0)-(parseFloat(a.balance)||0);
+  });
+  items.forEach((a,i)=>{
+    const card=cards[i];if(!card)return;
+    const p=astPro(a),res=astResgate(a);
+    const badges=H`<div style="display:flex;gap:5px;flex-wrap:wrap;margin:2px 0 8px">
+      <span style="font-size:10px;background:rgba(15,36,64,.08);border-radius:7px;padding:2px 7px;color:#0F2440">${astLiquidezLabel(a)}</span>
+      <span style="font-size:10px;background:rgba(184,90,106,.1);border-radius:7px;padding:2px 7px;color:#B85A6A">IR ${res.aliq}%${res.iofPct>0?" +IOF":""}</span>
+      <span style="font-size:10px;background:rgba(90,138,74,.12);border-radius:7px;padding:2px 7px;color:#5A8A4A">Líq. ${fmt(res.liquido)}</span>
+      ${p.taxaAdm>0?`<span style="font-size:10px;background:rgba(0,0,0,.05);border-radius:7px;padding:2px 7px;color:#6B6760">Adm ${p.taxaAdm}% a.a.</span>`:""}
+      ${p.aporte>0?`<span style="font-size:10px;background:rgba(0,0,0,.05);border-radius:7px;padding:2px 7px;color:#6B6760">Aporte ${fmt(p.aporte)}</span>`:""}
+    </div>`;
+    const foot=card.lastElementChild;
+    if(foot) foot.insertAdjacentHTML("beforebegin",badges);
+    if(foot) foot.insertAdjacentHTML("afterbegin",H`<button onclick="PRO.openResgate(${a.id})" style="background:none;border:none;color:#0F2440;font-size:11.5px;font-weight:600;cursor:pointer;margin-right:auto">💰 Simular resgate</button>`);
+  });
+};
+
+/* Hero de Entradas com o líquido */
+const _renderIncome=window.renderIncome;
+window.renderIncome=function(){
+  _renderIncome();
+  const h=$("income-hero");if(!h)return;
+  const s=incomeTotalsForYM(activeYM());
+  if(s.bruto<=0)return;
+  h.insertAdjacentHTML("beforeend",H`<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.15);display:flex;justify-content:space-between;align-items:baseline">
+      <span style="font-size:11px;color:rgba(255,255,255,.6)">Líquido após impostos</span>
+      <span style="font-family:var(--serif);font-style:italic;font-size:20px">${fmt(s.liquido)}</span>
+    </div>`);
+};
+
+/* Vida financeira: fluxo de caixa usa a renda líquida */
+const _computeFinMetrics=window.computeFinMetrics;
+window.computeFinMetrics=function(){
+  const m=_computeFinMetrics();
+  const s=incomeTotalsForYM(activeYM());
+  if(s.bruto>0){
+    m.totalInc=s.liquido; m.impostoRenda=s.imposto; m.rendaBruta=s.bruto;
+    m.balance=R2(s.liquido-m.totalExp);
+    m.savingsRate=s.liquido>0?(m.balance/s.liquido)*100:0;
+    m.dti=s.liquido>0?(m.totMonthly/s.liquido)*100:m.dti;
+  }
+  return m;
+};
+
+function refreshPro(){
+  try{
+    if(typeof SCREEN!=="undefined"){
+      if(SCREEN==="entradas"){renderIncome();if($("inc-view-tax")&&$("inc-view-tax").style.display!=="none")renderIncTax();}
+      if(SCREEN==="patrimonio"){renderAssets();if($("ast-view-proj")&&$("ast-view-proj").style.display!=="none")renderProj();}
+      if(SCREEN==="home")renderHome();
+      if(SCREEN==="vidafinanceira")renderFinLife();
+    }
+  }catch(e){}
+}
+
+/* ═══ 13. INIT ═══ */
+function init(){
+  injectTabs();
+  if(!MARKET.ts||Date.now()-MARKET.ts>12*3600e3) fetchMarket(true);
+}
+document.addEventListener("DOMContentLoaded",()=>setTimeout(init,50));
+setTimeout(init,3200);   // após o splash do app
+
+/* API pública usada pelos onclick inline */
+window.PRO={
+  setIncRegime,toggle13,toggleFer,astPreview,setAstIdx,setAstTrib,setAstLiq,toggleCC,
+  toggleRegPick,toggleAstPick,applyIncTypeDefaults,applyAstClassDefaults,
+  openFiscal,saveFiscalForm,resetFiscal,toggleIsen,openResgate,calcResgate,setResgatePct,
+  exportProj,refreshRates:()=>fetchMarket(false),
+  cfg:()=>PROJ,setProj:(k,v)=>{PROJ[k]=v;saveProj();renderProj();},
+  market:()=>MARKET,fiscal:()=>FISCAL,projetar,incomeTotalsForYM,astResgate,astLiquidoAM
+};
+})();
+
+</script>
 </body>
 </html>
