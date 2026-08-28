@@ -1857,6 +1857,9 @@
   <div class="content" id="vidafin-content" style="padding:14px 16px 84px"></div>
 </div><!-- end screen-vidafinanceira -->
 
+<!-- retorno ao início ao alcance do polegar (telas internas) -->
+<button class="fab-home" id="fab-home" onclick="goHome()" aria-label="Início" title="Início">⌂</button>
+
 <!-- hidden restore file input -->
 <input type="file" id="backup-file-input" accept="application/json,.json" style="display:none" onchange="handleRestoreFile(this)"/>
 
@@ -2881,6 +2884,7 @@ const I18N={
     ast_updated:"Aplicação atualizada",
     ast_added:"Aplicação adicionada",
     inc_updated:"Entrada atualizada",
+    inc_deleted:"Entrada excluída",
     inc_added:"Entrada adicionada",
     no_tx_with:"Nenhum lançamento encontrado com",
     offline_rate:"Sem conexão — usando cotação aproximada",
@@ -3553,6 +3557,7 @@ const I18N={
     ast_updated:"Holding updated",
     ast_added:"Holding added",
     inc_updated:"Income updated",
+    inc_deleted:"Income deleted",
     inc_added:"Income added",
     no_tx_with:"No transactions found with",
     offline_rate:"Offline — using approximate rate",
@@ -4225,6 +4230,7 @@ const I18N={
     ast_updated:"Anlage aktualisiert",
     ast_added:"Anlage hinzugefügt",
     inc_updated:"Einnahme aktualisiert",
+    inc_deleted:"Einnahme gelöscht",
     inc_added:"Einnahme hinzugefügt",
     no_tx_with:"Keine Buchungen gefunden mit",
     offline_rate:"Offline — ungefährer Kurs",
@@ -6497,11 +6503,11 @@ function renderIncomeDash(){
   const top=[...items].sort((a,b)=>b.amount-a.amount).slice(0,10);
   const recEl=document.getElementById("inc-recent-list");
   if(recEl) recEl.innerHTML=top.length?top.map(i=>{
-    const t=gIncomeType(i.type);
+    const ty=gIncomeType(i.type);
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.1)">
       <div style="display:flex;gap:10px;align-items:center;min-width:0">
-        <div style="width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">${t.emoji}</div>
-        <div><div style="font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.desc||catLabel(t)}</div><div style="font-size:10px;color:rgba(255,255,255,.5)">${catLabel(t)} · ${i.date}</div></div>
+        <div style="width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">${ty.emoji}</div>
+        <div><div style="font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.desc||catLabel(ty)}</div><div style="font-size:10px;color:rgba(255,255,255,.5)">${catLabel(ty)} · ${i.date}</div></div>
       </div>
       <div style="font-family:var(--serif);font-style:italic;font-size:16px;color:#fff;flex-shrink:0;margin-left:8px">${fmt(i.amount)}</div>
     </div>`;}).join(""):`<div style="color:rgba(255,255,255,.4);font-size:12px;padding:12px 0;text-align:center">${t("no_inc_month")}</div>`;
@@ -6534,12 +6540,12 @@ function renderIncomeList(){
   const el=document.getElementById("income-list");
   if(!el) return;
   el.innerHTML=items.length?items.map(i=>{
-    const t=gIncomeType(i.type);
+    const ty=gIncomeType(i.type);
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)">
       <div style="display:flex;gap:10px;align-items:center;min-width:0">
-        <div style="width:38px;height:38px;border-radius:12px;background:#1A3A5C18;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${t.emoji}</div>
-        <div style="min-width:0"><div style="font-size:14px;font-weight:500;color:var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.desc||catLabel(t)}</div>
-          <div style="font-size:11px;color:#6B6760;margin-top:2px">${catLabel(t)} · ${i.date}${i._recurInstance||i.recurrence?"  🔁":""}</div></div>
+        <div style="width:38px;height:38px;border-radius:12px;background:#1A3A5C18;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${ty.emoji}</div>
+        <div style="min-width:0"><div style="font-size:14px;font-weight:500;color:var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.desc||catLabel(ty)}</div>
+          <div style="font-size:11px;color:#6B6760;margin-top:2px">${catLabel(ty)} · ${i.date}${i._recurInstance||i.recurrence?"  🔁":""}</div></div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;margin-left:8px">
         <div style="font-family:var(--serif);font-style:italic;font-size:17px;color:#1A3A5C">${fmt(i.amount)}</div>
@@ -6638,16 +6644,19 @@ function renderIncGoals(){
 function confirmDelIncome(id){
   const inc=INCOME.find(i=>i.id===id);
   if(!inc) return;
-  const t=gIncomeType(inc.type);
-  document.getElementById("clear-modal-icon").textContent=t.emoji;
+  const ty=gIncomeType(inc.type);
+  document.getElementById("clear-modal-icon").textContent=ty.emoji;
   document.getElementById("clear-modal-title").textContent=t("del_inc_q");
   document.getElementById("btn-confirm-clear").textContent=t("delete");
-  document.getElementById("clear-modal-desc").innerHTML=`<strong>${inc.desc||catLabel(t)}</strong><br><span style="font-size:12px;color:#6B6760">${catLabel(t)} · ${inc.date} · ${fmt(inc.amount)}</span>`;
+  document.getElementById("clear-modal-desc").innerHTML=`<strong>${inc.desc||catLabel(ty)}</strong><br><span style="font-size:12px;color:#6B6760">${catLabel(ty)} · ${inc.date} · ${fmt(inc.amount)}</span>`;
   document.getElementById("modal-confirm-clear").classList.add("open");
   document.getElementById("btn-confirm-clear").onclick=()=>{
     INCOME=INCOME.filter(i=>i.id!==id);persist();
     document.getElementById("modal-confirm-clear").classList.remove("open");
+    document.getElementById("modal-income").classList.remove("open");
     renderIncome();
+    if(typeof refreshPro==="function"){try{refreshPro();}catch(e){}}
+    toast("✓ "+t("inc_deleted"));
   };
 }
 
@@ -11620,9 +11629,9 @@ document.getElementById("btn-open-export-inc")?.addEventListener("click",()=>{
   const BOM="\uFEFF";
   const headers=["Data","Tipo","Descrição","Valor","Recorrência"].join(";");
   const rows=INCOME.map(i=>{
-    const t=gIncomeType(i.type);
+    const ty=gIncomeType(i.type);
     const rec=i.recurrence?i.recurrence.type||"mensal":"único";
-    return [`${i.date}`,t.label,`"${(i.desc||"").replace(/"/g,'""')}"`,i.amount.toFixed(2).replace(".",","),rec].join(";");
+    return [`${i.date}`,ty.label,`"${(i.desc||"").replace(/"/g,'""')}"`,i.amount.toFixed(2).replace(".",","),rec].join(";");
   });
   const blob=new Blob([BOM+headers+"\r\n"+rows.join("\r\n")],{type:"text/csv;charset=utf-8;"});
   const url=URL.createObjectURL(blob);
@@ -11675,6 +11684,12 @@ const pct=v=>(v>=0?"":"−")+Math.abs(v||0).toFixed(2).replace(".",",")+"%";
 
 /* ═══ 0.1 TRADUÇÃO DOS TEXTOS DESTE MÓDULO (pt → [en, de]) ═══ */
 const TXD={
+"Carnê-leão sobre o aluguel menos estas despesas. A dedução por dependente pertence a uma única fonte e fica no salário.":["Monthly PIT on rent less these costs. The dependent allowance belongs to a single source and stays with salary.","Monatliche ESt auf Miete abzüglich dieser Kosten. Der Kinderfreibetrag gehört zu einer Quelle und bleibt beim Gehalt."],
+"Prev., pensão e outros":["Pension, alimony and other","Vorsorge, Unterhalt u. a."],
+"(−) Deduções da base":["(−) Deductions from base","(−) Abzüge von der Basis"],
+"(−) Imposto de renda":["(−) Income tax","(−) Einkommensteuer"],
+"Despesas do imóvel":["Property costs","Immobilienkosten"],
+"Deduções da base":["Deductions from base","Abzüge von der Basis"],
 ", capitalizado sobre o bruto.":[", compounded on the gross amount.",", auf den Bruttobetrag aufgezinst."],
 "% ao ano em ":["% per year in ","% pro Jahr im "],
 "Reajuste de ":["Raise of ","Erhöhung von "],
@@ -12024,20 +12039,35 @@ const REGIMES=[
 ];
 const regimeDefault=t=>({salary:"clt",bonus:"clt",freelance:"pj",rent:"aluguel",dividend:"isento",
   interest:"exclusivo",refund:"isento",other_in:"isento"})[t]||"isento";
+/* O que cada tipo de entrada admite. fgts/13/ferias/split sao exclusivos do
+   salario CLT; dependentes so no salario, para nao deduzir o mesmo
+   dependente em duas fontes; reajuste anual so em rendas continuas. */
+const INC_CAPS={
+  salary:   {fgts:true, decimo:true, ferias:true, split:true, dep:true,  diss:true },
+  bonus:    {fgts:false,decimo:false,ferias:false,split:false,dep:false, diss:false},
+  rent:     {fgts:false,decimo:false,ferias:false,split:false,dep:false, diss:true },
+  freelance:{fgts:false,decimo:false,ferias:false,split:false,dep:false, diss:false},
+  dividend: {fgts:false,decimo:false,ferias:false,split:false,dep:false, diss:false},
+  interest: {fgts:false,decimo:false,ferias:false,split:false,dep:false, diss:false},
+  refund:   {fgts:false,decimo:false,ferias:false,split:false,dep:false, diss:false},
+  other_in: {fgts:false,decimo:false,ferias:false,split:false,dep:false, diss:true }
+};
+const incCaps=t=>INC_CAPS[t]||INC_CAPS.other_in;
 function incPro(inc){
   return Object.assign({
     regime:regimeDefault(inc.type), dep:0, prevPriv:0, pensao:0, outrosDesc:0,
     pjAliq:6, exclAliq:15,
     alugIptu:0, alugCond:0, alugAdm:0,
     dissPct:0, dissMes:1, decimo:false, ferias:false, feriasMes:1,
-    fgts:(regimeDefault(inc.type)==="clt"), fgtsPct:FISCAL.fgtsPct||8,
+    fgts:incCaps(inc.type).fgts, fgtsPct:FISCAL.fgtsPct||8,
     split:false, splitPct:40, splitDia1:20, splitDia2:5,
     fimMes:inc.recurUntil||""
   },inc.pro||{});
 }
 /* FGTS: depósito do empregador, 8% do bruto por lei. Não é tributado e não
    entra no caixa livre — vai para conta vinculada. */
-function fgtsDe(p,bruto){
+function fgtsDe(p,bruto,tipo){
+  if(tipo&&!incCaps(tipo).fgts) return 0;
   return (p.regime==="clt"&&p.fgts)?R2((+bruto||0)*(+p.fgtsPct||FISCAL.fgtsPct||8)/100):0;
 }
 /* Salário pago em duas datas: adiantamento (% do bruto, sem descontos) e
@@ -12052,7 +12082,7 @@ function parcelasDe(p,liq,bruto){
 }
 /* Fator acumulado de dissídio até o mês de referência */
 function dissidioFator(inc,ymStr){
-  const p=incPro(inc); if(!p.dissPct) return 1;
+  const p=incPro(inc); if(!p.dissPct||!incCaps(inc.type).diss) return 1;
   const [sy,sm]=inc.date.slice(0,7).split("-").map(Number);
   const [cy,cm]=ymStr.split("-").map(Number);
   let n=0;
@@ -12111,20 +12141,21 @@ function incomeEventsForYM(ymStr){
     const p=incPro(inc);
     const bruto=(+inc.amount||0)*dissidioFator(inc,ymStr);
     const t=tributar(bruto,p);
+    const cap=incCaps(inc.type);
     const ev={inc,p,tipo:"normal",label:inc.desc||catLabel(gIncomeType(inc.type)),...t};
-    ev.fgts=fgtsDe(p,bruto);
-    ev.parcelas=parcelasDe(p,ev.liquido,bruto);
+    ev.fgts=fgtsDe(p,bruto,inc.type);
+    ev.parcelas=cap.split?parcelasDe(p,ev.liquido,bruto):[];
     out.push(ev);
-    if(p.regime==="clt"&&p.decimo&&ymMonth(ymStr)===12){
+    if(cap.decimo&&p.regime==="clt"&&p.decimo&&ymMonth(ymStr)===12){
       const t13=tributar(bruto,p,{decimo:true});
       const e13={inc,p,tipo:"13",label:(inc.desc||"Salário")+" · 13º",...t13};
-      e13.fgts=fgtsDe(p,bruto); e13.parcelas=[];
+      e13.fgts=fgtsDe(p,bruto,inc.type); e13.parcelas=[];
       out.push(e13);
     }
-    if(p.regime==="clt"&&p.ferias&&ymMonth(ymStr)===(+p.feriasMes||1)){
+    if(cap.ferias&&p.regime==="clt"&&p.ferias&&ymMonth(ymStr)===(+p.feriasMes||1)){
       const tf=tributar(bruto/3,p,{semINSS:false});
       const efe={inc,p,tipo:"ferias",label:(inc.desc||"Salário")+" · 1/3 férias",...tf};
-      efe.fgts=fgtsDe(p,bruto/3); efe.parcelas=[];
+      efe.fgts=fgtsDe(p,bruto/3,inc.type); efe.parcelas=[];
       out.push(efe);
     }
   });
@@ -12196,13 +12227,16 @@ function cashflowForYM(ymStr){
   const dv=debtFlowForYM(), ap=assetFlowForYM(ymStr);
   const entLiq=R2(inc.liquido), saidas=R2(despesas+dv.parcela);
   const caixaOper=R2(entLiq-saidas);
+  /* INSS e contribuicoes sao DEDUCOES da base; imposto e apenas o IR. */
   return {ym:ymStr,tipos,eventos:inc.eventos||[],
     bruto:R2(inc.bruto),inss:R2(inc.inss),irrf:R2(inc.ir),
-    deducoes:R2(inc.deducoes||0),impostos:R2(inc.imposto),
+    outrasDed:R2(inc.deducoes||0),
+    deducoes:R2(inc.inss+(inc.deducoes||0)),impostos:R2(inc.ir),
     entLiquidas:entLiq,fgts:R2(inc.fgts||0),
     despesas,despItens:exps.length,divida:dv,aplic:ap,
     saidas,caixaOper,caixaTotal:R2(caixaOper+ap.liquido),
-    aliq:inc.bruto>0?R2(inc.imposto/inc.bruto*100):0};
+    aliq:inc.bruto>0?R2(inc.ir/inc.bruto*100):0,
+    cargaTotal:inc.bruto>0?R2(inc.imposto/inc.bruto*100):0};
 }
 /* Quanto guardar por mês: sobra livre de caixa, priorizando a reserva */
 function sugestaoPoupanca(cf){
@@ -12544,12 +12578,12 @@ function incomeProHTML(){
 
     <div id="inc-f-alug" style="display:none">
       <div class="pro-h"><b>Despesas dedutíveis</b><i></i></div>
-      <div class="pro-grid">
-        ${F("inc-iptu","IPTU (R$)")}
-        ${F("inc-cond","Condomínio (R$)")}
-        ${F("inc-adm","Administração (R$)")}
-        ${F("inc-dep2","Dependentes","1")}
+      <div class="pro-grid3">
+        ${F("inc-iptu","IPTU")}
+        ${F("inc-cond","Condomínio")}
+        ${F("inc-adm","Administração")}
       </div>
+      <div class="pro-note">Carnê-leão sobre o aluguel menos estas despesas. A dedução por dependente pertence a uma única fonte e fica no salário.</div>
     </div>
 
     <div class="pro-h"><b>Vigência e reajuste</b><i></i></div>
@@ -12614,10 +12648,11 @@ function setIncScale(v){INC_SCALE=v;incPreview();}
 /* o tipo de renda escolhido define o regime, a recorrência e os campos visíveis */
 function applyIncTypeDefaults(typeId){
   if(!$("inc-pro")) return;
+  const cap=incCaps(typeId);
   INC_REGIME=regimeDefault(typeId);
-  INC_13=(typeId==="salary");
-  INC_FER=(typeId==="salary");
-  INC_FGTS=(INC_REGIME==="clt");
+  INC_13=cap.decimo;
+  INC_FER=cap.ferias;
+  INC_FGTS=cap.fgts;
   INC_SPLIT=false;
   INC_REG_OPEN=false;
   /* salário e aluguel são mensais por natureza */
@@ -12643,27 +12678,40 @@ function renderIncRegime(){
   $("inc-chip-13").innerHTML=TR(chip(INC_13,"🎯 13º salário","PRO.toggle13()"));
   $("inc-chip-fer").innerHTML=TR(chip(INC_FER,"🏖 Férias +1/3","PRO.toggleFer()"));
   $("inc-fer-mes").style.display=INC_FER?"":"none";
+  const cap=incCaps(INC_TYPE_CUR());
+  /* dependentes e beneficios anuais so aparecem onde a lei os admite */
+  const dw=$("inc-dep")&&$("inc-dep").parentElement;
+  if(dw) dw.style.display=cap.dep?"":"none";
+  $("inc-chip-13").parentElement.style.display=(cap.decimo||cap.ferias)?"flex":"none";
+  $("inc-chip-13").style.display=cap.decimo?"":"none";
+  $("inc-chip-fer").style.display=cap.ferias?"":"none";
+  if(!cap.ferias) $("inc-fer-mes").style.display="none";
   const b2=$("inc-benef2");
   if(b2){
-    b2.style.display=INC_REGIME==="clt"?"flex":"none";
-    $("inc-chip-fgts").innerHTML=TR(chip(INC_FGTS,"🏦 FGTS 8%","PRO.toggleFgts()"));
-    $("inc-chip-split").innerHTML=TR(chip(INC_SPLIT,"💸 2 parcelas","PRO.toggleSplit()"));
+    b2.style.display=(INC_REGIME==="clt"&&(cap.fgts||cap.split))?"flex":"none";
+    $("inc-chip-fgts").innerHTML=cap.fgts?TR(chip(INC_FGTS,"🏦 FGTS 8%","PRO.toggleFgts()")):"";
+    $("inc-chip-split").innerHTML=cap.split?TR(chip(INC_SPLIT,"💸 2 parcelas","PRO.toggleSplit()")):"";
   }
-  if($("inc-f-fgts"))  $("inc-f-fgts").style.display =(INC_REGIME==="clt"&&INC_FGTS)?"block":"none";
-  if($("inc-f-split")) $("inc-f-split").style.display=(INC_REGIME==="clt"&&INC_SPLIT)?"block":"none";
+  if($("inc-f-fgts"))  $("inc-f-fgts").style.display =(cap.fgts&&INC_REGIME==="clt"&&INC_FGTS)?"block":"none";
+  if($("inc-f-split")) $("inc-f-split").style.display=(cap.split&&INC_REGIME==="clt"&&INC_SPLIT)?"block":"none";
+  const dv=$("inc-diss")&&$("inc-diss").parentElement;
+  const dm=$("inc-diss-mes")&&$("inc-diss-mes").parentElement;
+  if(dv) dv.style.display=cap.diss?"":"none";
+  if(dm) dm.style.display=cap.diss?"":"none";
   incPreview();
 }
 function collectIncPro(){
   return {regime:INC_REGIME,
-    dep:+($("inc-dep")?.value||0)||+($("inc-dep2")?.value||0)||0,
+    dep:+($("inc-dep")?.value||0)||0,
     prevPriv:+($("inc-prev")?.value||0), pensao:+($("inc-pensao")?.value||0),
     outrosDesc:+($("inc-outros")?.value||0), pjAliq:+($("inc-pjaliq")?.value||0),
     exclAliq:+($("inc-excl")?.value||0), alugIptu:+($("inc-iptu")?.value||0),
     alugCond:+($("inc-cond")?.value||0), alugAdm:+($("inc-adm")?.value||0),
     dissPct:+($("inc-diss")?.value||0), dissMes:+($("inc-diss-mes")?.value||1),
     decimo:INC_13, ferias:INC_FER, feriasMes:+($("inc-fer-mes")?.value||1),
-    fgts:INC_FGTS, fgtsPct:+($("inc-fgts-pct")?.value||FISCAL.fgtsPct||8),
-    split:INC_SPLIT, splitPct:+($("inc-split-pct")?.value||40),
+    fgts:INC_FGTS&&incCaps(INC_TYPE_CUR()).fgts,
+    fgtsPct:+($("inc-fgts-pct")?.value||FISCAL.fgtsPct||8),
+    split:INC_SPLIT&&incCaps(INC_TYPE_CUR()).split, splitPct:+($("inc-split-pct")?.value||40),
     splitDia1:+($("inc-split-d1")?.value||20), splitDia2:+($("inc-split-d2")?.value||5),
     fimMes:$("inc-fim")?.value||""};
 }
@@ -12677,7 +12725,7 @@ function fillIncPro(inc){
   INC_FGTS=(p.fgts===undefined)?(p.regime==="clt"):!!p.fgts;
   INC_SPLIT=!!p.split;
   const set=(id,v)=>{if($(id))$(id).value=(v===0||v)?v:"";};
-  set("inc-dep",p.dep);set("inc-dep2",p.dep);set("inc-prev",p.prevPriv);set("inc-pensao",p.pensao);
+  set("inc-dep",p.dep);set("inc-prev",p.prevPriv);set("inc-pensao",p.pensao);
   set("inc-outros",p.outrosDesc);set("inc-pjaliq",p.pjAliq);set("inc-excl",p.exclAliq);
   set("inc-iptu",p.alugIptu);set("inc-cond",p.alugCond);set("inc-adm",p.alugAdm);
   set("inc-diss",p.dissPct);set("inc-diss-mes",p.dissMes);set("inc-fer-mes",p.feriasMes);
@@ -12703,25 +12751,30 @@ function incPreview(){
     b.getAttribute("onclick").indexOf("'"+INC_SCALE+"'")>=0));
   const bruto=unmaskCurrency($("inc-amount"))||0;
   const p=collectIncPro(), t=tributar(bruto,p);
-  const fg=fgtsDe(p,bruto), parc=parcelasDe(p,t.liquido,bruto);
+  const cp=incCaps(INC_TYPE_CUR());
+  const fg=fgtsDe(p,bruto,INC_TYPE_CUR());
+  const parc=cp.split?parcelasDe(p,t.liquido,bruto):[];
   if($("inc-fgts-val")) $("inc-fgts-val").value=fmt(fg);
   const k=CF_K[INC_SCALE]||1, V=v=>fmt(v*k);
-  const carga=bruto>0?((t.inss+t.ir)/bruto*100):0;
+  const carga=bruto>0?(t.ir/bruto*100):0;
   const R=(lbl,val,cls,color)=>`<div class="pro-cf ${cls||""}"><span>${lbl}</span>`+
     `<span style="color:${color||"var(--body)"}">${val}</span></div>`;
-  const dedNome=p.regime==="aluguel"?"Despesas dedutíveis":"Descontos (prev., pensão, outros)";
+  const dedNome=p.regime==="aluguel"?"Despesas do imóvel":"Prev., pensão e outros";
+  const irNome=p.regime==="pj"?"DAS":p.regime==="exclusivo"?"IR na fonte":p.regime==="aluguel"?"Carnê-leão":"IRRF";
+  const totDed=R2(t.inss+t.deducoes);
   el.innerHTML=H`
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
       <span style="font-size:9px;color:#1A3A5C;letter-spacing:2px;text-transform:uppercase;font-weight:700">Líquido estimado</span>
-      <span style="font-size:10px;color:#8A857D">carga ${carga.toFixed(1).replace(".",",")}%</span>
+      <span style="font-size:10px;color:#8A857D">IR ${carga.toFixed(1).replace(".",",")}%</span>
     </div>
     <div style="font-family:var(--serif);font-style:italic;font-size:25px;color:#1A3A5C;line-height:1;margin-bottom:4px">
       ${V(t.liquido)}<span style="font-size:12px;font-style:normal;color:#8A857D"> ${CF_SUF[INC_SCALE]}</span></div>
     <div class="pro-cfh">Entrada bruta</div>
     ${R("Valor bruto","+"+V(t.bruto),"","#5A8A4A")}
-    ${t.inss>0?R("(−) INSS","−"+V(t.inss),"sub","#B85A6A"):""}
-    ${t.ir>0?R("(−) "+(p.regime==="pj"?"DAS":p.regime==="exclusivo"?"IR na fonte":"IRRF"),"−"+V(t.ir),"sub","#B85A6A"):""}
-    ${t.deducoes>0?R("(−) "+dedNome,"−"+V(t.deducoes),"sub","#8A857D"):""}
+    ${totDed>0?R("(−) Deduções da base","−"+V(totDed),"","#8A857D"):""}
+    ${t.inss>0?R("↳ INSS","−"+V(t.inss),"sub","#8A857D"):""}
+    ${t.deducoes>0?R("↳ "+dedNome,"−"+V(t.deducoes),"sub","#8A857D"):""}
+    ${t.ir>0?R("(−) "+irNome,"−"+V(t.ir),"","#B85A6A"):""}
     ${R("(=) Líquido no bolso",V(t.liquido),"tot","#1A3A5C")}
     ${fg>0?`<div class="pro-cfh">Memória — fora do caixa</div>`+
       R("FGTS depositado (não caixa)","+"+V(fg),"sub","#5A8A4A"):""}
@@ -13253,10 +13306,12 @@ function renderCashFlow(){
 
   const entradas=cf.tipos.map(o=>R(o.emoji+" "+raw(o.label),"+"+V(o.bruto),"",GRN)).join("")
     ||`<div class="pro-cf sub"><span>Nenhuma entrada neste mês</span><span>—</span></div>`;
-  const detEnt=FIN_OPEN?cf.tipos.filter(o=>o.inss>0||o.ir>0||o.ded>0).map(o=>
-      (o.inss>0?R("↳ INSS · "+raw(o.label),"−"+V(o.inss),"sub",RED):"")+
-      (o.ir>0?R("↳ "+(o.regime==="pj"?"DAS":o.regime==="aluguel"?"Carnê-leão":o.regime==="exclusivo"?"IR na fonte":"IRRF")+" · "+raw(o.label),"−"+V(o.ir),"sub",RED):"")+
-      (o.ded>0?R("↳ Deduções · "+raw(o.label),"−"+V(o.ded),"sub","#8A857D"):"")
+  const detDed=FIN_OPEN?cf.tipos.filter(o=>o.inss>0||o.ded>0).map(o=>
+      (o.inss>0?R("↳ INSS · "+raw(o.label),"−"+V(o.inss),"sub","#8A857D"):"")+
+      (o.ded>0?R("↳ "+(o.regime==="aluguel"?"Despesas do imóvel":"Prev., pensão e outros")+" · "+raw(o.label),"−"+V(o.ded),"sub","#8A857D"):"")
+    ).join(""):"";
+  const detImp=FIN_OPEN?cf.tipos.filter(o=>o.ir>0).map(o=>
+      R("↳ "+(o.regime==="pj"?"DAS":o.regime==="aluguel"?"Carnê-leão":o.regime==="exclusivo"?"IR na fonte":"IRRF")+" · "+raw(o.label),"−"+V(o.ir),"sub",RED)
     ).join(""):"";
   const detDiv=FIN_OPEN?cf.divida.itens.map(x=>
       R("↳ "+(x.emoji||"")+" "+raw(x.nome),"−"+V(x.parcela),"sub",RED)).join(""):"";
@@ -13278,9 +13333,10 @@ function renderCashFlow(){
       <div class="pro-cfh">Entradas</div>
       ${entradas}
       ${R("(=) Receita bruta",V(cf.bruto),"tot",BLU)}
-      ${detEnt}
-      ${cf.deducoes>0?R("(−) Deduções",  "−"+V(cf.deducoes),"","#8A857D"):""}
-      ${cf.impostos>0?R("(−) Impostos sobre a renda","−"+V(cf.impostos),"",RED):""}
+      ${cf.deducoes>0?R("(−) Deduções da base","−"+V(cf.deducoes),"","#8A857D"):""}
+      ${detDed}
+      ${cf.impostos>0?R("(−) Imposto de renda","−"+V(cf.impostos),"",RED):""}
+      ${detImp}
       ${R("(=) Entradas líquidas",V(cf.entLiquidas),"tot",GRN)}
 
       <div class="pro-cfh">Saídas</div>
@@ -13512,6 +13568,27 @@ if(_renderHealthCard) window.renderHealthCard=function(){
     </div>`);
 };
 
+/* Botao de retorno so aparece nas telas internas. */
+const FAB_ON=["entradas","patrimonio","dividas","vidafinanceira","despesas"];
+function syncFab(){
+  const f=document.getElementById("fab-home"); if(!f) return;
+  let cur=null;
+  ["home","despesas","entradas","patrimonio","dividas","vidafinanceira","auth"].forEach(k=>{
+    const e=document.getElementById("screen-"+k);
+    if(e&&e.classList.contains("active")) cur=k;
+  });
+  f.classList.toggle("on",FAB_ON.indexOf(cur)>=0);
+}
+["showScreen","enterSection","goHome"].forEach(fn=>{
+  const orig=window[fn];
+  if(typeof orig==="function") window[fn]=function(){
+    const r=orig.apply(this,arguments);
+    setTimeout(syncFab,330);
+    return r;
+  };
+});
+setTimeout(syncFab,3200);
+
 function refreshPro(){
   try{
     if(typeof SCREEN!=="undefined"){
@@ -13536,7 +13613,7 @@ setTimeout(init,3200);   // após o splash do app
 /* API pública usada pelos onclick inline */
 window.PRO={
   setIncRegime,toggle13,toggleFer,astPreview,setAstIdx,setAstTrib,setAstLiq,toggleCC,
-  toggleFgts,toggleSplit,setIncScale,setFinScale,toggleFinDetail,
+  toggleFgts,toggleSplit,setIncScale,setFinScale,toggleFinDetail,syncFab,
   cashflowForYM,sugestaoPoupanca,renderCashFlow,
   toggleRegPick,toggleAstPick,applyIncTypeDefaults,applyAstClassDefaults,
   openFiscal,saveFiscalForm,resetFiscal,toggleIsen,openResgate,calcResgate,setResgatePct,
@@ -13746,6 +13823,120 @@ window.PRO={
 }
 /* o segmentado de escala do fluxo de caixa não é um select */
 .pro-scale button{ min-height:26px!important; }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   ESCALA DE CAMPOS — os inputs acompanham a mesma proporção dos
+   dropdowns (32px). Escopo: telas e modais, exceto Despesas.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* campos numéricos do módulo fiscal: mesma pílula dos dropdowns */
+:is(#modal-income,#modal-asset) .pro-f>input:not([type=range]):not([type=checkbox]):not([type=color]):not([type=file]):not(.f-amount):not(.auth-input){
+  height:32px!important; min-height:32px!important;
+  font-size:12px!important; line-height:1!important;
+  border-radius:20px!important; padding:0 12px!important;
+}
+/* descrição, data e demais campos de texto dos formulários */
+:is(#modal-income,#modal-asset,#modal-debt,#modal-debt-payment)
+  input.f-input:not([type=range]):not([type=checkbox]):not([type=color]):not([type=file]):not(.f-amount):not(.auth-input){
+  height:38px!important; min-height:38px!important;
+  font-size:13.5px!important; line-height:1.2!important;
+  padding:0 13px!important; border-radius:12px!important;
+}
+/* rótulos acima dos campos ficam mais justos */
+:is(#modal-income,#modal-asset) .pro-f>label{ margin-bottom:4px!important; }
+:is(#modal-income,#modal-asset) .pro-grid,
+:is(#modal-income,#modal-asset) .pro-grid3{ gap:8px!important; }
+/* três colunas: rótulo mais justo para não truncar */
+:is(#modal-income,#modal-asset) .pro-grid3{ grid-template-columns:1fr 1fr 1fr!important; }
+:is(#modal-income,#modal-asset) .pro-grid3 .pro-f>label{
+  font-size:8.5px!important; letter-spacing:.5px!important;
+}
+:is(#modal-income,#modal-asset) .pro-h{ margin:14px 0 8px!important; }
+
+/* ══ CABEÇALHOS DE RESUMO E NAVEGAÇÃO DE MÊS MAIS BAIXOS ══════════════ */
+:is(#inc-hero-wrap,#ast-hero-wrap,#debt-hero-wrap){
+  padding:12px 16px 11px!important;
+  border-radius:15px!important;
+}
+:is(#income-hero,#assets-hero,#debt-hero) div[style*="--serif"]{
+  font-size:clamp(20px,6.2vw,26px)!important;
+  margin-bottom:6px!important;
+}
+/* a linha de líquido do módulo não precisa de tanto respiro */
+#income-hero>div:last-child[style*="border-top"]{
+  margin-top:7px!important; padding-top:7px!important;
+}
+#income-hero>div:last-child[style*="border-top"] span:last-child{
+  font-size:15px!important;
+}
+:is(#income-hero,#assets-hero,#debt-hero) div[style*="border-radius:20px"]{
+  padding:2px 9px!important; font-size:10.5px!important;
+}
+:is(#inc-hero-mini,#ast-hero-mini,#debt-hero-mini){ padding:7px 14px!important; }
+
+:is(#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-home) .month-nav{
+  padding:1px 6px!important; border-radius:9px!important; margin-top:6px!important;
+}
+:is(#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-home) .month-label{
+  font-size:11.5px!important;
+}
+:is(#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-home) .month-nav-btn{
+  width:28px!important; height:28px!important; font-size:15px!important;
+}
+:is(#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-home) .month-today-btn{
+  padding:5px 9px!important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   NAVEGAÇÃO NO IPHONE — área segura, alvos de toque e rolagem contida
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* nada de realce cinza nem atraso de 300ms ao tocar */
+button,.cat-btn,.stat,.nav-btn,.recur-btn,.pro-pill{
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+
+/* respeita o notch e o indicador de home */
+/* Despesas fica fora desta passada, conforme combinado */
+:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,
+    #screen-vidafinanceira) .header{
+  padding-top:calc(20px + env(safe-area-inset-top))!important;
+  padding-bottom:14px!important;
+}
+:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,
+    #screen-vidafinanceira) .content{
+  padding-bottom:calc(96px + env(safe-area-inset-bottom))!important;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.sheet{
+  padding-bottom:calc(24px + env(safe-area-inset-bottom))!important;
+  overscroll-behavior:contain;
+}
+
+/* alvos de toque confortáveis */
+:is(#nav-entradas,#nav-patrimonio,#nav-dividas) .nav-btn{
+  min-height:44px!important; padding:0 12px!important;
+  display:inline-flex!important; align-items:center!important; justify-content:center!important;
+}
+:is(#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-vidafinanceira)
+  .header button{ min-width:40px!important; min-height:40px!important; }
+
+/* botão flutuante de retorno: alcançável com o polegar */
+.fab-home{
+  position:fixed; left:16px; z-index:90;
+  bottom:calc(18px + env(safe-area-inset-bottom));
+  width:48px; height:48px; border-radius:50%;
+  border:none; cursor:pointer;
+  background:rgba(46,44,40,.88); color:#fff; font-size:19px;
+  display:none; align-items:center; justify-content:center;
+  box-shadow:0 4px 18px rgba(0,0,0,.28);
+  backdrop-filter:blur(6px);
+}
+.fab-home.on{ display:flex; }
+.fab-home:active{ transform:scale(.92); }
 
 /* rótulos das grades de categoria sem quebra feia */
 :is(#modal-income,#modal-asset,#modal-debt) .cat-btn .lbl{
