@@ -11727,6 +11727,16 @@ const pct=v=>(v>=0?"":"−")+Math.abs(v||0).toFixed(2).replace(".",",")+"%";
 
 /* ═══ 0.1 TRADUÇÃO DOS TEXTOS DESTE MÓDULO (pt → [en, de]) ═══ */
 const TXD={
+"% em ":["% in ","% in "],
+" dias</span>":[" days</span>"," Tagen</span>"],
+"Carnê-leão sobre o aluguel menos estas despesas. O aluguel soma-se à renda do ajuste anual, então o imposto é calculado na margem da faixa já ocupada pelo salário. A dedução por dependente pertence a uma única fonte e fica no salário.":["Monthly PIT on rent less these costs. Rent is added to the annual adjustment, so the tax is computed at the margin of the bracket already taken by salary. The dependent allowance belongs to a single source and stays with salary.","Monatliche ESt auf Miete abzüglich dieser Kosten. Miete zählt zur Jahresveranlagung, daher wird die Steuer am Rand der bereits vom Gehalt belegten Stufe berechnet. Der Kinderfreibetrag gehört zu einer Quelle und bleibt beim Gehalt."],
+"O valor de hoje vem do cálculo do app: ":["Today's value comes from the app's calculation: ","Der heutige Wert stammt aus der Berechnung der App: "],
+" aplicados há ":[" invested "," angelegt vor "],
+" dias a ":[" days ago at "," Tagen zu "],
+"% ao mês. Atualize o saldo na aplicação, com a data da nova posição, para acompanhar o realizado.":["% per month. Update the balance on the holding, with the date of the new position, to track the realized figure.","% pro Monat. Saldo mit dem Datum der neuen Position aktualisieren, um den Ist-Wert zu verfolgen."],
+"Valor de hoje pela taxa":["Today's value at the rate","Heutiger Wert zum Satz"],
+"Saldo informado":["Reported balance","Gemeldeter Saldo"],
+" na margem":[" at the margin"," am Rand"],
 "(+) Abatimento pelo FGTS":["(+) Covered by FGTS","(+) Durch FGTS gedeckt"],
 "O abatimento não reduz os juros do contrato: ele troca desembolso próprio por FGTS durante a janela. O ganho está no caixa do mês.":["Instalment cover does not reduce contract interest: it swaps your own cash for FGTS during the window. The gain is in monthly cash flow.","Die Ratendeckung senkt die Vertragszinsen nicht: Sie ersetzt eigenes Geld im Zeitfenster durch FGTS. Der Gewinn liegt im Monats-Cashflow."],
 "prestações cobertas":["instalments covered","gedeckte Raten"],
@@ -12276,6 +12286,32 @@ function tributar(bruto,p,opts){
     -(p.regime==="aluguel"?o.deducoes:0));
   return o;
 }
+/* Rendas que compõem o ajuste anual: salário retém primeiro, as demais
+   entram na margem. irrf(bCLT) + [irrf(bCLT+bAlug) − irrf(bCLT)] = irrf(total) */
+const REG_AJUSTE=["clt","autonomo","aluguel"];
+function ajustarIRNaMargem(evs){
+  const aj=evs.filter(e=>REG_AJUSTE.indexOf(e.p.regime)>=0&&e.tipo==="normal");
+  if(!aj.length) return;
+  /* dependentes e previdência pertencem ao contribuinte, não a cada fonte */
+  const dep=aj.reduce((m,e)=>Math.max(m,+e.p.dep||0),0);
+  const ded=aj.filter(e=>e.p.regime==="clt")
+              .reduce((s,e)=>s+(+e.p.prevPriv||0)+(+e.p.pensao||0),0);
+  const baseDe=e=>Math.max(0,e.p.regime==="aluguel"?e.bruto-(e.deducoes||0):e.bruto-e.inss);
+  const ord=aj.slice().sort((a,b)=>REG_AJUSTE.indexOf(a.p.regime)-REG_AJUSTE.indexOf(b.p.regime));
+  let acum=0, irAcum=0;
+  ord.forEach(e=>{
+    const b=baseDe(e);
+    const irAte=irrfMensal(acum+b,dep,ded);
+    const ir=R2(Math.max(0,irAte-irAcum));
+    e.irBase=R2(b);
+    e.irMargem=acum>0;
+    e.irAliq=b>0?R2(ir/b*100):0;
+    e.ir=ir;
+    e.liquido=R2(e.bruto-e.inss-e.ir-(e.deducoes||0));
+    acum=R2(acum+b); irAcum=irAte;
+  });
+}
+
 /* Todos os eventos de renda de um mês (inclui 13º e férias) */
 function incomeEventsForYM(ymStr){
   const out=[];
@@ -12302,6 +12338,7 @@ function incomeEventsForYM(ymStr){
       out.push(efe);
     }
   });
+  ajustarIRNaMargem(out);
   return out;
 }
 function incomeTotalsForYM(ymStr){
@@ -12362,13 +12399,15 @@ function cashflowForYM(ymStr){
   (inc.eventos||[]).forEach(e=>{
     const k=e.inc.type||"other_in", T=gIncomeType(k);
     const o=porTipo[k]||(porTipo[k]={id:k,emoji:T.emoji,label:catLabel(T),
-      bruto:0,inss:0,ir:0,ded:0,liq:0,fgts:0,regime:e.p.regime});
+      bruto:0,inss:0,ir:0,ded:0,liq:0,fgts:0,base:0,regime:e.p.regime,margem:!!e.irMargem});
+    o.base+=(e.irBase||0); if(e.irMargem) o.margem=true;
     o.bruto+=e.bruto;o.inss+=e.inss;o.ir+=e.ir;o.ded+=(e.deducoes||0);
     o.liq+=e.liquido;o.fgts+=(e.fgts||0);
   });
   const tipos=Object.keys(porTipo).map(k=>{const o=porTipo[k];
-    ["bruto","inss","ir","ded","liq","fgts"].forEach(x=>o[x]=R2(o[x]));return o;})
-    .sort((a,b)=>b.bruto-a.bruto);
+    ["bruto","inss","ir","ded","liq","fgts","base"].forEach(x=>o[x]=R2(o[x]));
+    o.aliq=o.base>0?R2(o.ir/o.base*100):0;
+    return o;}).sort((a,b)=>b.bruto-a.bruto);
   const exps=getExpensesForYM(ymStr).filter(e=>!isNeutral(e));
   const despesas=R2(exps.reduce((s,e)=>s+myAmount(e),0));
   const dv=debtFlowForYM(), ap=assetFlowForYM(ymStr);
@@ -12596,8 +12635,14 @@ function astEvolucao(a,mesesFuturos){
   const decorridos=Math.max(0,Math.floor(mesesHoje));
   const futuros=Math.max(0,mesesFuturos===undefined?12:mesesFuturos);
   const comeCotas=!!p.comeCotas&&p.trib.indexOf("fundo")===0;
-  /* taxa efetiva implícita no saldo que o usuário mantém */
-  const efet=(custo>0&&mesesHoje>=1&&real>0)?(Math.pow(real/custo,1/mesesHoje)-1):iAM;
+  /* O saldo só ancora a curva quando foi de fato atualizado depois da
+     aplicação. Enquanto o usuário não informar uma nova posição, o valor de
+     hoje é o montante aplicado rendendo pela taxa cadastrada — é isso que
+     faz uma aplicação de poucos dias já mostrar rendimento. */
+  const ancorado=!!(real>0&&a.lastUpdate&&a.lastUpdate>inicio&&Math.abs(real-custo)>0.005);
+  const valorHoje=ancorado?real:R2(custo*Math.pow(1+iAM,mesesHoje));
+  /* taxa efetiva implícita na posição de hoje */
+  const efet=(ancorado&&custo>0&&mesesHoje>0.03)?(Math.pow(valorHoje/custo,1/mesesHoje)-1):iAM;
 
   const pts=[];
   const push=(data,d,aportado,saldo,modelo,rendMes,cc,futuro)=>{
@@ -12631,11 +12676,11 @@ function astEvolucao(a,mesesFuturos){
   const ultH=pts[pts.length-1];
   if(!ultH||ultH.data!==hoje){
     const modelo=custo*Math.pow(1+iAM,mesesHoje);
-    push(hoje,diasHoje,custo,real,modelo,real-(ultH?ultH.saldo:custo),0,false);
+    push(hoje,diasHoje,custo,valorHoje,modelo,valorHoje-(ultH?ultH.saldo:custo),0,false);
   }
 
   /* ── projeção: taxa cadastrada e aportes programados ── */
-  let saldo=real, aportado=custo, modelo=pts[pts.length-1].modelo;
+  let saldo=valorHoje, aportado=custo, modelo=pts[pts.length-1].modelo;
   for(let m=1;m<=futuros;m++){
     const data=addMonths(hoje,m);
     const d=Math.max(0,dias(inicio,data));
@@ -12655,15 +12700,18 @@ function astEvolucao(a,mesesFuturos){
 
   const atual=pts.filter(x=>!x.futuro).pop()||pts[0];
   return {
-    asset:a, inicio, hoje, custo, aporte, real,
+    asset:a, inicio, hoje, custo, aporte,
+    real:R2(valorHoje), saldoInformado:R2(real), ancorado,
+    curto:mesesHoje<1,
+    retornoPeriodo:custo>0?R2((valorHoje/custo-1)*100):0,
     iAM:R2(iAM*100), iAA:R2((Math.pow(1+iAM,12)-1)*100),
     efetivaAM:R2(efet*100), efetivaAA:R2((Math.pow(1+efet,12)-1)*100),
     comeCotas, pontos:pts, atual,
     calculado:R2(atual.modelo),
-    desvio:R2(real-atual.modelo),
-    desvioPct:atual.modelo>0?R2((real/atual.modelo-1)*100):0,
-    ganho:R2(real-custo),
-    ganhoPct:custo>0?R2((real/custo-1)*100):0,
+    desvio:R2(valorHoje-atual.modelo),
+    desvioPct:atual.modelo>0?R2((valorHoje/atual.modelo-1)*100):0,
+    ganho:R2(valorHoje-custo),
+    ganhoPct:custo>0?R2((valorHoje/custo-1)*100):0,
     diasCorridos:diasHoje,
     proxFaixa:astProxFaixaIR(a,diasHoje)
   };
@@ -13084,7 +13132,7 @@ function incomeProHTML(){
         ${F("inc-cond","Condomínio")}
         ${F("inc-adm","Administração")}
       </div>
-      <div class="pro-note">Carnê-leão sobre o aluguel menos estas despesas. A dedução por dependente pertence a uma única fonte e fica no salário.</div>
+      <div class="pro-note">Carnê-leão sobre o aluguel menos estas despesas. O aluguel soma-se à renda do ajuste anual, então o imposto é calculado na margem da faixa já ocupada pelo salário. A dedução por dependente pertence a uma única fonte e fica no salário.</div>
     </div>
 
     <div class="pro-h"><b>Vigência e reajuste</b><i></i></div>
@@ -13252,6 +13300,21 @@ function incPreview(){
     b.getAttribute("onclick").indexOf("'"+INC_SCALE+"'")>=0));
   const bruto=unmaskCurrency($("inc-amount"))||0;
   const p=collectIncPro(), t=tributar(bruto,p);
+  /* a prévia mostra o IR na margem quando há outra renda tributável no mês */
+  if(REG_AJUSTE.indexOf(p.regime)>=0){
+    const outros=incomeEventsForYM(activeYM())
+      .filter(x=>x.tipo==="normal"&&REG_AJUSTE.indexOf(x.p.regime)>=0
+        &&!(INC_EID&&x.inc.id===INC_EID)&&x.p.regime!=="aluguel");
+    const baseOut=outros.reduce((s,x)=>s+Math.max(0,x.bruto-x.inss),0);
+    if(baseOut>0&&p.regime==="aluguel"){
+      const dep=Math.max(+p.dep||0,outros.reduce((m,x)=>Math.max(m,+x.p.dep||0),0));
+      const ded=outros.reduce((s,x)=>s+(+x.p.prevPriv||0)+(+x.p.pensao||0),0);
+      const b=Math.max(0,t.bruto-t.deducoes);
+      t.ir=R2(Math.max(0,irrfMensal(baseOut+b,dep,ded)-irrfMensal(baseOut,dep,ded)));
+      t.liquido=R2(t.bruto-t.inss-t.ir-t.deducoes);
+      t.margem=true;
+    }
+  }
   const cp=incCaps(INC_TYPE_CUR());
   const fg=fgtsDe(p,bruto,INC_TYPE_CUR());
   const parc=cp.split?parcelasDe(p,t.liquido,bruto):[];
@@ -13261,7 +13324,8 @@ function incPreview(){
   const R=(lbl,val,cls,color)=>`<div class="pro-cf ${cls||""}"><span>${lbl}</span>`+
     `<span style="color:${color||"var(--body)"}">${val}</span></div>`;
   const dedNome=p.regime==="aluguel"?"Despesas do imóvel":"Prev., pensão e outros";
-  const irNome=p.regime==="pj"?"DAS":p.regime==="exclusivo"?"IR na fonte":p.regime==="aluguel"?"Carnê-leão":"IRRF";
+  const irNome=(p.regime==="pj"?"DAS":p.regime==="exclusivo"?"IR na fonte":
+    p.regime==="aluguel"?"Carnê-leão":"IRRF")+(t.margem?" na margem":"");
   const totDed=R2(t.inss+t.deducoes);
   el.innerHTML=H`
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
@@ -13816,7 +13880,9 @@ function renderCashFlow(){
       (o.ded>0?R("↳ "+(o.regime==="aluguel"?"Despesas do imóvel":"Prev., pensão e outros")+" · "+raw(o.label),"−"+V(o.ded),"sub","#8A857D"):"")
     ).join(""):"";
   const detImp=FIN_OPEN?cf.tipos.filter(o=>o.ir>0).map(o=>
-      R("↳ "+(o.regime==="pj"?"DAS":o.regime==="aluguel"?"Carnê-leão":o.regime==="exclusivo"?"IR na fonte":"IRRF")+" · "+raw(o.label),"−"+V(o.ir),"sub",RED)
+      R("↳ "+(o.regime==="pj"?"DAS":o.regime==="aluguel"?"Carnê-leão":o.regime==="exclusivo"?"IR na fonte":"IRRF")
+        +(o.margem?" na margem":"")+" · "+raw(o.label)
+        +(o.aliq>0?" · "+String(o.aliq).replace(".",",")+"%":""),"−"+V(o.ir),"sub",RED)
     ).join(""):"";
   const detDiv=FIN_OPEN?cf.divida.itens.map(x=>
       R("↳ "+(x.emoji||"")+" "+raw(x.nome)+(x.fgts>0?" · FGTS":""),"−"+V(x.parcela),"sub",RED)).join(""):"";
@@ -14005,7 +14071,9 @@ function renderRendimento(){
       <div style="font-family:var(--serif);font-style:italic;font-size:28px;line-height:1.1;margin:3px 0 7px">
         ${e.real-e.custo>=0?"+":"−"}${fmt(Math.abs(e.real-e.custo))}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <span style="background:rgba(255,255,255,.12);border-radius:8px;padding:3px 9px;font-size:10.5px">Realizada ${String(e.efetivaAM).replace(".",",")}% a.m.</span>
+        <span style="background:rgba(255,255,255,.12);border-radius:8px;padding:3px 9px;font-size:10.5px">${e.curto
+          ?"Realizada "+String(e.retornoPeriodo).replace(".",",")+"% em "+e.diasCorridos+" dias"
+          :"Realizada "+String(e.efetivaAM).replace(".",",")+"% a.m."}</span>
         <span style="background:rgba(255,255,255,.12);border-radius:8px;padding:3px 9px;font-size:10.5px">Cadastrada ${String(e.iAM).replace(".",",")}% a.m.</span>
         <span style="background:rgba(255,255,255,.12);border-radius:8px;padding:3px 9px;font-size:10.5px">${astLiquidezLabel(a)}</span>
       </div>
@@ -14028,7 +14096,7 @@ function renderRendimento(){
     <div style="background:var(--surface);border-radius:14px;padding:12px 15px;margin-bottom:12px">
       ${R("Montante aplicado",fmt(e.custo),"","#6B6760")}
       ${e.aporte>0?R("Aporte mensal",fmt(e.aporte),"sub","#6B6760"):""}
-      ${R("Saldo atual",fmt(e.real),"",NAV)}
+      ${R(e.ancorado?"Saldo informado":"Valor de hoje pela taxa",fmt(e.real),"",NAV)}
       ${R("(=) Rendimento bruto",(e.real-e.custo>=0?"+":"−")+fmt(Math.abs(e.real-e.custo)),"tot",GRN)}
       ${provHoje.iof>0?R("(−) IOF "+String(provHoje.iofPct).replace(".",",")+"% · "+e.diasCorridos+" dias","−"+fmt(provHoje.iof),"sub",RED):""}
       ${R("(−) IR "+String(provHoje.aliq).replace(".",",")+"%","−"+fmt(provHoje.ir),"",RED)}
@@ -14036,11 +14104,13 @@ function renderRendimento(){
       ${R("(=) Líquido hoje",fmt(e.real-provHoje.total),"grand",GRN)}
     </div>
 
+    ${!e.ancorado?`<div class="info-card" style="background:rgba(15,36,64,.06);color:#0F2440;margin-bottom:12px">
+      O valor de hoje vem do cálculo do app: ${fmt(e.custo)} aplicados há ${e.diasCorridos} dias a ${String(e.iAM).replace(".",",")}% ao mês. Atualize o saldo na aplicação, com a data da nova posição, para acompanhar o realizado.</div>`:""}
     ${e.proxFaixa?`<div class="info-card" style="background:rgba(90,138,74,.1);color:#3F6B33;margin-bottom:12px">
       Em <strong>${e.proxFaixa.dias} dias</strong> (${brDate(e.proxFaixa.data)}) a alíquota de IR cai de ${String(e.proxFaixa.de).replace(".",",")}% para <strong>${String(e.proxFaixa.aliq).replace(".",",")}%</strong>.</div>`:""}
     ${e.comeCotas?`<div class="info-card" style="background:rgba(184,90,106,.08);color:#8A4353;margin-bottom:12px">
       Fundo com come-cotas: em maio e novembro o IR é antecipado sobre o ganho, reduzindo o saldo.</div>`:""}
-    ${Math.abs(e.desvio)>0.5?`<div class="info-card" style="background:rgba(212,160,90,.12);color:#7A5A22;margin-bottom:12px">
+    ${(e.ancorado&&Math.abs(e.desvio)>0.5)?`<div class="info-card" style="background:rgba(212,160,90,.12);color:#7A5A22;margin-bottom:12px">
       Pela taxa cadastrada o saldo seria ${fmt(e.calculado)}. O saldo informado está
       <strong>${e.desvio>=0?"acima":"abaixo"} em ${fmt(Math.abs(e.desvio))}</strong>
       (${e.desvioPct>=0?"+":""}${String(e.desvioPct).replace(".",",")}%): a rentabilidade realizada foi de
