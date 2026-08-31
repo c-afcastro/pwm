@@ -2888,6 +2888,12 @@ const I18N={
     ast_added:"Aplicação adicionada",
     inc_updated:"Entrada atualizada",
     inc_deleted:"Entrada excluída",
+    fgts_use:"Simular uso do FGTS",
+    fgts_m_abat:"FGTS abatendo prestações",
+    fgts_m_amort:"FGTS amortizando o saldo",
+    fgts_m_liq:"FGTS quitando a dívida",
+    fgts_balance:"Saldo FGTS",
+    fgts_you_pay:"Você paga neste mês",
     inc_added:"Entrada adicionada",
     no_tx_with:"Nenhum lançamento encontrado com",
     offline_rate:"Sem conexão — usando cotação aproximada",
@@ -3561,6 +3567,12 @@ const I18N={
     ast_added:"Holding added",
     inc_updated:"Income updated",
     inc_deleted:"Income deleted",
+    fgts_use:"Simulate FGTS use",
+    fgts_m_abat:"FGTS covering instalments",
+    fgts_m_amort:"FGTS amortising the balance",
+    fgts_m_liq:"FGTS paying off the debt",
+    fgts_balance:"FGTS balance",
+    fgts_you_pay:"You pay this month",
     inc_added:"Income added",
     no_tx_with:"No transactions found with",
     offline_rate:"Offline — using approximate rate",
@@ -4234,6 +4246,12 @@ const I18N={
     ast_added:"Anlage hinzugefügt",
     inc_updated:"Einnahme aktualisiert",
     inc_deleted:"Einnahme gelöscht",
+    fgts_use:"FGTS-Einsatz simulieren",
+    fgts_m_abat:"FGTS deckt Raten",
+    fgts_m_amort:"FGTS tilgt den Saldo",
+    fgts_m_liq:"FGTS löst die Schuld ab",
+    fgts_balance:"FGTS-Guthaben",
+    fgts_you_pay:"Sie zahlen diesen Monat",
     inc_added:"Einnahme hinzugefügt",
     no_tx_with:"Keine Buchungen gefunden mit",
     offline_rate:"Offline — ungefährer Kurs",
@@ -11217,9 +11235,20 @@ function openDebtDetail(id){
       ${d.dueDay?`<div class="stat"><div class="stat-label">${t("debt_due_day")}</div><div class="stat-val">${t("w_day")} ${d.dueDay}</div></div>`:""}
       <div class="stat"><div class="stat-label">${t("estimated_payoff")}</div><div class="stat-val" style="font-size:13px">${payoffTxt}</div></div>
     </div>
+    ${(d.fgts&&d.fgts.on)?(()=>{const ef=PRO.debtParcelaEfetiva(d);const p=PRO.fgtsPlano(d);
+      const m=({abatimento:t("fgts_m_abat"),amortizacao:t("fgts_m_amort"),liquidacao:t("fgts_m_liq")})[p.modo]||"";
+      return `<div style="background:rgba(90,138,74,.1);border-radius:14px;padding:12px 14px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span style="font-size:11px;color:#3F6B33;font-weight:600">🏦 ${m}</span>
+          <span style="font-size:11px;color:#6B6760">${t("fgts_balance")} ${fmt(p.saldo)}</span></div>
+        ${ef.fgts>0?`<div style="display:flex;justify-content:space-between;margin-top:6px">
+          <span style="font-size:12.5px;color:var(--body)">${t("fgts_you_pay")}</span>
+          <span style="font-size:14px;font-weight:700;color:#3F6B33">${fmt(ef.parcela)}</span></div>`:""}
+      </div>`;})():""}
 
     <button onclick="openDebtPayment('${d.id}')" style="width:100%;background:#6E2B3A;color:#fff;border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">💵 ${t("register_payment")}</button>
     ${(parseInt(d.term)||0)>0?`<button onclick="openAmortTable(${debtBalance(d)},${debtRateMonthly(d)},${parseInt(d.term)},'${d.amortSystem||"price"}')" style="width:100%;background:rgba(110,43,58,.08);color:#6E2B3A;border:none;border-radius:13px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px">📋 ${t("view_full_table")}</button>`:""}
+    ${(d.type==="mortgage"&&(parseInt(d.term)||0)>0)?`<button onclick="PRO.openFgts('${d.id}')" style="width:100%;background:rgba(110,43,58,.08);color:#6E2B3A;border:none;border-radius:13px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px">🏦 ${t("fgts_use")}</button>`:""}
     <button onclick="confirmDelDebt('${d.id}')" style="width:100%;background:none;color:#B85A6A;border:1px solid #B85A6A44;border-radius:13px;padding:11px;font-size:13px;cursor:pointer;margin-bottom:18px">${t("delete_debt")}</button>
 
     <div class="sec-label">${t("payment_history")}</div>
@@ -11698,6 +11727,106 @@ const pct=v=>(v>=0?"":"−")+Math.abs(v||0).toFixed(2).replace(".",",")+"%";
 
 /* ═══ 0.1 TRADUÇÃO DOS TEXTOS DESTE MÓDULO (pt → [en, de]) ═══ */
 const TXD={
+"(+) Abatimento pelo FGTS":["(+) Covered by FGTS","(+) Durch FGTS gedeckt"],
+"O abatimento não reduz os juros do contrato: ele troca desembolso próprio por FGTS durante a janela. O ganho está no caixa do mês.":["Instalment cover does not reduce contract interest: it swaps your own cash for FGTS during the window. The gain is in monthly cash flow.","Die Ratendeckung senkt die Vertragszinsen nicht: Sie ersetzt eigenes Geld im Zeitfenster durch FGTS. Der Gewinn liegt im Monats-Cashflow."],
+"prestações cobertas":["instalments covered","gedeckte Raten"],
+"Alívio mensal":["Monthly relief","Monatliche Entlastung"],
+"O ponto marca o mês em que o FGTS é utilizado. O depósito mensal continua entrando na conta vinculada e é considerado nas utilizações seguintes.":["The dot marks the month the FGTS is used. Monthly deposits keep accruing in the restricted account and count towards later uses.","Der Punkt markiert den Monat der FGTS-Nutzung. Monatliche Einzahlungen laufen auf dem gebundenen Konto weiter und zählen für spätere Nutzungen."],
+"O saldo de FGTS não cobre o saldo devedor de ":["The FGTS balance does not cover the outstanding balance of ","Das FGTS-Guthaben deckt den Restsaldo von "],
+". A simulação trata como amortização parcial.":[". The simulation treats it as a partial amortisation.",". nicht. Die Simulation behandelt dies als Teiltilgung."],
+"Paga até 80% de até 12 prestações seguidas":["Pays up to 80% of up to 12 consecutive instalments","Zahlt bis zu 80% von bis zu 12 aufeinanderfolgenden Raten"],
+"Abate o saldo devedor e reduz o prazo ou a prestação":["Reduces the outstanding balance and shortens the term or the instalment","Senkt den Restsaldo und verkürzt Laufzeit oder Rate"],
+". O intervalo mínimo entre utilizações é de 24 meses.":[". The minimum interval between uses is 24 months.",". Der Mindestabstand zwischen Nutzungen beträgt 24 Monate."],
+"Informe saldo devedor, taxa e prazo para simular.":["Enter outstanding balance, rate and term to simulate.","Restsaldo, Zinssatz und Laufzeit für die Simulation eingeben."],
+"As três modalidades com o mesmo saldo":["The three options with the same balance","Die drei Varianten mit demselben Guthaben"],
+"Menor prestação do período":["Lowest instalment in the period","Niedrigste Rate im Zeitraum"],
+"🔁 Repetir a cada 24 meses":["🔁 Repeat every 24 months","🔁 Alle 24 Monate wiederholen"],
+"Aplicar ao financiamento":["Apply to the financing","Auf die Finanzierung anwenden"],
+"Primeiras parcelas com FGTS":["First instalments with FGTS","Erste Raten mit FGTS"],
+"FGTS aplicado ao financiamento":["FGTS applied to the financing","FGTS auf die Finanzierung angewendet"],
+"% da prestação (máx. 80)":["% of the instalment (max 80)","% der Rate (max. 80)"],
+"Liquida o saldo devedor de uma vez":["Pays off the outstanding balance at once","Löst den Restsaldo auf einmal ab"],
+"Uso do FGTS removido":["FGTS use removed","FGTS-Nutzung entfernt"],
+"Depósito mensal (R$)":["Monthly deposit (R$)","Monatliche Einzahlung (R$)"],
+"Saldo de FGTS (R$)":["FGTS balance (R$)","FGTS-Guthaben (R$)"],
+"A amortização reduz":["The amortisation reduces","Die Tilgung senkt"],
+"Efeito nas prestações":["Effect on the instalments","Wirkung auf die Raten"],
+"parcelas a menos":["fewer instalments","Raten weniger"],
+"Prestação sem FGTS":["Instalment without FGTS","Rate ohne FGTS"],
+"Prestação com FGTS":["Instalment with FGTS","Rate mit FGTS"],
+"(=) Alívio mensal":["(=) Monthly relief","(=) Monatliche Entlastung"],
+"Abater prestações":["Cover instalments","Raten decken"],
+"Amortizar saldo":["Amortise balance","Saldo tilgen"],
+"Economia de juros":["Interest saved","Zinsersparnis"],
+"Juros sem FGTS":["Interest without FGTS","Zinsen ohne FGTS"],
+"Juros com FGTS":["Interest with FGTS","Zinsen mit FGTS"],
+"Começar no mês":["Start in month","Start im Monat"],
+"Quitar dívida":["Pay off debt","Schuld ablösen"],
+"Uso do FGTS":["FGTS use","FGTS-Nutzung"],
+"FGTS usado":["FGTS used","FGTS genutzt"],
+"Amortização parcial":["Partial amortisation","Teiltilgung"],
+"Você paga":["You pay","Sie zahlen"],
+"saldo devedor":["outstanding balance","Restsaldo"],
+"Modalidade":["Option","Variante"],
+"Abatimento":["Instalment cover","Ratendeckung"],
+"Amortização":["Amortisation","Tilgung"],
+"Liquidação":["Pay-off","Ablösung"],
+"⏱ O prazo":["⏱ The term","⏱ Laufzeit"],
+"💵 A prestação":["💵 The instalment","💵 Rate"],
+"Quita em ":["Paid off in ","Abgelöst in "],
+"Prestação":["Instalment","Rate"],
+"Economia":["Saving","Ersparnis"],
+"Prazo":["Term","Laufzeit"],
+"Quitação":["Pay-off","Ablösung"],
+"Remover":["Remove","Entfernen"],
+"Líquido = saldo menos a provisão de IR e IOF daquele prazo. Linhas claras são projeção.":["Net = balance less the income tax and IOF provision for that term. Faded rows are projection.","Netto = Saldo abzüglich Steuer- und IOF-Rückstellung für die Laufzeit. Helle Zeilen sind Projektion."],
+" O ponto vermelho marca o come-cotas.":[" The red dot marks the semi-annual fund tax."," Der rote Punkt markiert die Halbjahressteuer."],
+"(=) Líquido hoje":["(=) Net today","(=) Netto heute"],
+"Hoje":["Today","Heute"],
+"Pela taxa cadastrada o saldo seria ":["At the registered rate the balance would be ","Zum hinterlegten Satz wäre der Saldo "],
+"Aportes não registrados também aparecem aqui.":["Unrecorded contributions also show up here.","Nicht erfasste Einzahlungen erscheinen ebenfalls hier."],
+": a rentabilidade realizada foi de ":[": the realized return was ",": die erzielte Rendite betrug "],
+"% ao mês contra ":["% per month against ","% pro Monat gegenüber "],
+"% cadastrados.":["% registered.","% hinterlegt."],
+"Aplicado há ":["Invested ","Angelegt vor "],
+"taxa cadastrada":["registered rate","hinterlegter Satz"],
+"Realizada ":["Realized ","Erzielt "],
+"Cadastrada ":["Registered ","Hinterlegt "],
+"saldo real":["actual balance","echter Saldo"],
+"aplicados":["invested","angelegt"],
+"Aplicado ":["Invested ","Angelegt "],
+"Líquido":["Net","Netto"],
+"aplicado":["invested","angelegt"],
+"acima":["above","über"],
+"abaixo":["below","unter"],
+"Rend.":["Return","Ertrag"],
+"Saldo":["Balance","Saldo"],
+"aplicados · taxa":["invested · rate","angelegt · Satz"],
+"Aporte mensal programado":["Scheduled monthly contribution","Geplante Monatseinzahlung"],
+"Rendimento do mês":["Return this month","Ertrag im Monat"],
+"Simular resgate":["Simulate redemption","Auszahlung simulieren"],
+"O rendimento é calculado sobre a data de aplicação, o montante aplicado e a taxa de cada papel. A provisão usa a tabela regressiva de IR pelo prazo decorrido, IOF nos 30 primeiros dias e come-cotas em maio e novembro nos fundos. Toque em uma aplicação para ver a evolução mês a mês.":["Returns are computed from the start date, the amount invested and each holding's rate. The provision uses the regressive income-tax table by elapsed term, IOF in the first 30 days and semi-annual fund tax in May and November. Tap a holding to see its month-by-month path.","Erträge werden aus Anlagedatum, Anlagebetrag und Satz jedes Papiers berechnet. Die Rückstellung nutzt die degressive Steuertabelle nach Laufzeit, IOF in den ersten 30 Tagen und die halbjährliche Fondssteuer im Mai und November. Für den Monatsverlauf auf eine Anlage tippen."],
+"Fundo com come-cotas: em maio e novembro o IR é antecipado sobre o ganho, reduzindo o saldo.":["Fund with semi-annual tax: in May and November income tax is prepaid on the gain, reducing the balance.","Fonds mit Halbjahressteuer: Im Mai und November wird die Steuer auf den Gewinn vorab abgezogen."],
+"Cadastre uma aplicação para acompanhar o rendimento mês a mês.":["Add a holding to track its return month by month.","Anlage erfassen, um den Ertrag Monat für Monat zu verfolgen."],
+"Ganho líquido se resgatar hoje":["Net gain if redeemed today","Nettogewinn bei Auszahlung heute"],
+"(=) Líquido se resgatar hoje":["(=) Net if redeemed today","(=) Netto bei Auszahlung heute"],
+"Provisão de IR e IOF":["Income tax and IOF provision","Steuer- und IOF-Rückstellung"],
+"Rendimento acumulado":["Accumulated return","Kumulierter Ertrag"],
+"(=) Rendimento bruto":["(=) Gross return","(=) Bruttoertrag"],
+"Evolução mês a mês":["Month-by-month path","Monatsverlauf"],
+"Come-cotas já debitado":["Fund tax already charged","Fondssteuer bereits belastet"],
+"Montante aplicado":["Amount invested","Anlagebetrag"],
+"líquido após IR":["net after tax","netto nach Steuer"],
+"Rendimento exportado":["Return exported","Ertrag exportiert"],
+"Posição de hoje":["Position today","Position heute"],
+"Por aplicação":["By holding","Nach Anlage"],
+"Saldo atual":["Current balance","Aktueller Saldo"],
+"Só histórico":["History only","Nur Verlauf"],
+"Rendimentos":["Returns","Erträge"],
+"dias aplicados":["days invested","Tage angelegt"],
+"Este mês":["This month","Diesen Monat"],
+"aplicado em":["invested on","angelegt am"],
+" dias · ":[" days · "," Tage · "],
 "Carnê-leão sobre o aluguel menos estas despesas. A dedução por dependente pertence a uma única fonte e fica no salário.":["Monthly PIT on rent less these costs. The dependent allowance belongs to a single source and stays with salary.","Monatliche ESt auf Miete abzüglich dieser Kosten. Der Kinderfreibetrag gehört zu einer Quelle und bleibt beim Gehalt."],
 "Prev., pensão e outros":["Pension, alimony and other","Vorsorge, Unterhalt u. a."],
 "(−) Deduções da base":["(−) Deductions from base","(−) Abzüge von der Basis"],
@@ -12189,17 +12318,21 @@ function incomeTotalsForYM(ymStr){
 /* ═══ 3.5 FLUXO DE CAIXA COMPLETO — tudo que impacta o caixa do mês ═══ */
 /* Serviço da dívida do mês, separando juros de amortização */
 function debtFlowForYM(){
-  let juros=0,amort=0,parcela=0; const itens=[];
+  let juros=0,amort=0,parcela=0,fgtsAbat=0; const itens=[];
   (typeof DEBTS!=="undefined"?DEBTS:[]).forEach(d=>{
     const bal=debtBalance(d), r=debtRateMonthly(d), pmt=parseFloat(d.monthlyPayment)||0;
     if(bal<=0||pmt<=0) return;
-    const j=bal*r, a=Math.min(Math.max(0,pmt-j),bal), pg=Math.min(pmt,j+a);
-    juros+=j; amort+=a; parcela+=pg;
+    const j=bal*r, a=Math.min(Math.max(0,pmt-j),bal);
+    /* o abatimento pelo FGTS reduz o desembolso, nao os juros nem a amortizacao */
+    const ef=debtParcelaEfetiva(d);
+    const cob=Math.min(ef.fgts||0,j+a);
+    const pg=Math.min(pmt,j+a)-cob;
+    juros+=j; amort+=a; parcela+=pg; fgtsAbat+=cob;
     itens.push({nome:d.name||catLabel(gDebtType(d.type)),emoji:gDebtType(d.type).emoji,
-      juros:R2(j),amort:R2(a),parcela:R2(pg)});
+      juros:R2(j),amort:R2(a),parcela:R2(pg),fgts:R2(cob)});
   });
   itens.sort((a,b)=>b.parcela-a.parcela);
-  return {juros:R2(juros),amort:R2(amort),parcela:R2(parcela),itens};
+  return {juros:R2(juros),amort:R2(amort),parcela:R2(parcela),fgtsAbat:R2(fgtsAbat),itens};
 }
 /* Receita financeira do mês e a provisão de IRRF correspondente */
 function assetFlowForYM(ymStr){
@@ -12410,6 +12543,360 @@ function astDisponivelEm(a,d){ // liquidez em até d dias?
   const dt=astLiquidezData(a);
   if(!dt) return false;
   return dias(today(),dt)<=d;
+}
+
+
+/* ═══ 5.5 ACOMPANHAMENTO DE RENDIMENTO POR APLICAÇÃO ═══
+   Reconstrói mês a mês a vida da aplicação a partir da data de aplicação,
+   do montante aplicado e da taxa do app, provisionando IR e IOF pelas
+   regras vigentes em cada ponto do tempo. */
+
+/* soma n meses a uma data ISO, preservando o dia quando possível */
+function addMonths(iso,n){
+  const d=new Date((iso||today())+"T12:00:00");
+  const dia=d.getDate();
+  d.setDate(1); d.setMonth(d.getMonth()+n);
+  const ult=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+  d.setDate(Math.min(dia,ult));
+  return d.toISOString().split("T")[0];
+}
+const ymOf=iso=>String(iso||"").slice(0,7);
+const mesOf=iso=>parseInt(String(iso||"").slice(5,7),10)||1;
+
+/* Provisão de imposto sobre um ganho, na data indicada.
+   IOF incide antes do IR e só nos 30 primeiros dias. */
+function astProvisao(a,ganho,d){
+  const p=astPro(a);
+  if(!(ganho>0)) return {iofPct:0,iof:0,aliq:astAliqIR(a,d),ir:0,total:0};
+  const temIof=(p.trib==="rf"||p.trib.indexOf("fundo")===0);
+  const iPct=temIof?iofPct(d):0;
+  const iof=R2(ganho*iPct/100);
+  const aliq=astAliqIR(a,d);
+  const ir=R2(Math.max(0,ganho-iof)*aliq/100);
+  return {iofPct:iPct,iof,aliq,ir,total:R2(iof+ir)};
+}
+
+/* Série mensal da aplicação.
+   Histórico: duas curvas. A REALIZADA parte do montante aplicado e chega
+   exatamente ao saldo informado hoje, usando a taxa efetiva implícita — é o
+   que de fato aconteceu. A MODELO usa a taxa cadastrada no app — é o que
+   deveria ter acontecido. A diferença entre as duas é a variação a explicar.
+   Projeção: segue a taxa cadastrada e soma os aportes programados.
+   Em cada ponto a provisão de IR e IOF usa o prazo decorrido naquela data. */
+function astEvolucao(a,mesesFuturos){
+  const p=astPro(a);
+  const iAM=astLiquidoAM(a)/100;              // taxa cadastrada, líquida de taxas
+  const inicio=p.aplic||a.lastUpdate||today();
+  const hoje=today();
+  const custo=(+p.custo||0)>0?+p.custo:(parseFloat(a.balance)||0);
+  const real=parseFloat(a.balance)||0;
+  const aporte=+p.aporte||0;
+  const diasHoje=Math.max(0,dias(inicio,hoje));
+  const mesesHoje=diasHoje/30.4375;
+  const decorridos=Math.max(0,Math.floor(mesesHoje));
+  const futuros=Math.max(0,mesesFuturos===undefined?12:mesesFuturos);
+  const comeCotas=!!p.comeCotas&&p.trib.indexOf("fundo")===0;
+  /* taxa efetiva implícita no saldo que o usuário mantém */
+  const efet=(custo>0&&mesesHoje>=1&&real>0)?(Math.pow(real/custo,1/mesesHoje)-1):iAM;
+
+  const pts=[];
+  const push=(data,d,aportado,saldo,modelo,rendMes,cc,futuro)=>{
+    const ganho=R2(Math.max(0,saldo-aportado));
+    const prov=astProvisao(a,ganho,d);
+    pts.push({data,ym:ymOf(data),dias:d,futuro,m:pts.length,
+      aportado:R2(aportado),saldo:R2(saldo),modelo:R2(modelo),
+      rendMes:R2(rendMes),rendAcum:ganho,comeCotas:R2(cc),
+      iofPct:prov.iofPct,iof:prov.iof,aliq:prov.aliq,ir:prov.ir,
+      liquido:R2(saldo-prov.total),rendLiqAcum:R2(ganho-prov.total)});
+  };
+
+  /* ── histórico, na grade mensal a partir da data de aplicação ── */
+  let ccPago=0;
+  for(let m=0;m<=decorridos;m++){
+    const data=m===0?inicio:addMonths(inicio,m);
+    const d=Math.max(0,dias(inicio,data));
+    const t=d/30.4375;
+    let saldo=custo*Math.pow(1+efet,t);
+    const modelo=custo*Math.pow(1+iAM,t);
+    let cc=0;
+    if(comeCotas&&m>0&&FISCAL.comeCotasMeses.indexOf(mesOf(data))>=0){
+      const aliqCC=(p.trib==="fundoCP")?FISCAL.irFundoCP:FISCAL.irFundoLP;
+      cc=R2(Math.max(0,Math.max(0,saldo-custo)*aliqCC/100-ccPago));
+      ccPago=R2(ccPago+cc);
+    }
+    const ant=pts.length?pts[pts.length-1].saldo:custo;
+    push(data,d,custo,saldo,modelo,m?saldo-ant:0,cc,false);
+  }
+  /* ponto de hoje, para a curva fechar no saldo informado */
+  const ultH=pts[pts.length-1];
+  if(!ultH||ultH.data!==hoje){
+    const modelo=custo*Math.pow(1+iAM,mesesHoje);
+    push(hoje,diasHoje,custo,real,modelo,real-(ultH?ultH.saldo:custo),0,false);
+  }
+
+  /* ── projeção: taxa cadastrada e aportes programados ── */
+  let saldo=real, aportado=custo, modelo=pts[pts.length-1].modelo;
+  for(let m=1;m<=futuros;m++){
+    const data=addMonths(hoje,m);
+    const d=Math.max(0,dias(inicio,data));
+    const rend=saldo*iAM;
+    saldo=saldo+rend+aporte;
+    modelo=modelo*(1+iAM)+aporte;
+    aportado=aportado+aporte;
+    let cc=0;
+    if(comeCotas&&FISCAL.comeCotasMeses.indexOf(mesOf(data))>=0){
+      const aliqCC=(p.trib==="fundoCP")?FISCAL.irFundoCP:FISCAL.irFundoLP;
+      cc=R2(Math.max(0,Math.max(0,saldo-aportado)*aliqCC/100-ccPago));
+      saldo=saldo-cc; ccPago=R2(ccPago+cc);
+    }
+    push(data,d,aportado,saldo,modelo,rend,cc,true);
+  }
+  pts.forEach(x=>x.ccAcum=ccPago);
+
+  const atual=pts.filter(x=>!x.futuro).pop()||pts[0];
+  return {
+    asset:a, inicio, hoje, custo, aporte, real,
+    iAM:R2(iAM*100), iAA:R2((Math.pow(1+iAM,12)-1)*100),
+    efetivaAM:R2(efet*100), efetivaAA:R2((Math.pow(1+efet,12)-1)*100),
+    comeCotas, pontos:pts, atual,
+    calculado:R2(atual.modelo),
+    desvio:R2(real-atual.modelo),
+    desvioPct:atual.modelo>0?R2((real/atual.modelo-1)*100):0,
+    ganho:R2(real-custo),
+    ganhoPct:custo>0?R2((real/custo-1)*100):0,
+    diasCorridos:diasHoje,
+    proxFaixa:astProxFaixaIR(a,diasHoje)
+  };
+}
+
+/* Próxima faixa da tabela regressiva e quanto falta para alcançá-la */
+function astProxFaixaIR(a,d){
+  const p=astPro(a);
+  if(p.trib==="isento"||p.trib==="fii"||p.trib==="acoes"||p.trib==="cripto") return null;
+  const marcos=(p.trib==="fundoCP")?[181]:[181,361,721];
+  for(const mk of marcos){
+    if(d<mk){
+      const alvo=(p.trib==="fundoCP")?irFundoCurto(mk):irRendaFixa(mk);
+      return {dias:mk-d, data:addDays(today(),mk-d), aliq:alvo,
+              de:astAliqIR(a,d)};
+    }
+  }
+  return null;
+}
+
+/* Consolidado da carteira para a aba de rendimentos */
+function astRendimentoCarteira(){
+  const linhas=ASSETS.map(a=>{
+    const e=astEvolucao(a,1);
+    return {a, e,
+      nome:a.name||"—", cls:gAssetClass(a.class),
+      custo:e.custo, saldo:e.real, ganho:e.ganho, ganhoPct:e.ganhoPct,
+      prov:astProvisao(a,Math.max(0,e.ganho),e.diasCorridos),
+      /* rendimento do proximo mes pela taxa cadastrada */
+      mesAtual:R2(e.real*astLiquidoAM(a)/100), dias:e.diasCorridos};
+  }).sort((x,y)=>y.ganho-x.ganho);
+  const tot=linhas.reduce((s,l)=>({
+    custo:s.custo+l.custo, saldo:s.saldo+l.saldo, ganho:s.ganho+l.ganho,
+    ir:s.ir+l.prov.ir, iof:s.iof+l.prov.iof, mes:s.mes+l.mesAtual
+  }),{custo:0,saldo:0,ganho:0,ir:0,iof:0,mes:0});
+  Object.keys(tot).forEach(k=>tot[k]=R2(tot[k]));
+  tot.liquido=R2(tot.saldo-tot.ir-tot.iof);
+  tot.ganhoLiq=R2(tot.ganho-tot.ir-tot.iof);
+  tot.ganhoPct=tot.custo>0?R2((tot.saldo/tot.custo-1)*100):0;
+  return {linhas,tot};
+}
+
+
+/* ═══ 5.8 FGTS NO FINANCIAMENTO HABITACIONAL ═══
+   Três modalidades previstas para o SFH:
+   1. abatimento  — paga até 80% do valor de até 12 prestações consecutivas
+   2. amortizacao — amortização extraordinária do saldo devedor, reduzindo
+                    o prazo ou o valor da prestação
+   3. liquidacao  — quitação do saldo devedor remanescente
+   O intervalo mínimo entre utilizações é de 24 meses. O abatimento consome
+   uma janela de 12 meses; findo o período, nova utilização respeita o
+   mesmo intervalo. */
+
+const FGTS_MODOS=[
+  {id:"abatimento", lbl:"Abater prestações", emoji:"📉",
+   hint:"Paga até 80% de até 12 prestações seguidas"},
+  {id:"amortizacao",lbl:"Amortizar saldo",   emoji:"✂️",
+   hint:"Abate o saldo devedor e reduz o prazo ou a prestação"},
+  {id:"liquidacao", lbl:"Quitar dívida",     emoji:"🏁",
+   hint:"Liquida o saldo devedor de uma vez"}
+];
+const FGTS_LIM_ABAT=80;     // teto legal do abatimento, em % da prestação
+const FGTS_MESES_ABAT=12;   // janela do abatimento, em meses
+const FGTS_INTERVALO=24;    // intervalo mínimo entre utilizações, em meses
+
+function fgtsPlano(d){
+  return Object.assign({
+    on:false, modo:"abatimento",
+    saldo:0,                 // saldo de FGTS disponível hoje
+    aporte:0,                // depósito mensal que segue entrando
+    inicio:1,                // mês, a partir de agora, da primeira utilização
+    pct:FGTS_LIM_ABAT,       // % da prestação coberta no abatimento
+    reduz:"prazo",           // na amortização: "prazo" ou "parcela"
+    repetir:true             // repetir a cada 24 meses enquanto houver saldo
+  },d.fgts||{});
+}
+
+/* Depósito mensal de FGTS que o módulo de entradas já calcula */
+function fgtsAporteMensal(){
+  try{ return R2(incomeTotalsForYM(activeYM()).fgts||0); }catch(e){ return 0; }
+}
+
+/* Cronograma mês a mês do financiamento, com e sem FGTS.
+   Devolve as linhas, o total de juros, o prazo e o quanto de FGTS foi usado. */
+function debtScheduleFGTS(d,plano){
+  const r=debtRateMonthly(d);
+  const sys=d.amortSystem||"price";
+  const n0=parseInt(d.term)||0;
+  const bal0=debtBalance(d);
+  const P=plano||fgtsPlano(d);
+  const usaFgts=!!(P.on&&P.saldo>0&&(P.modo==="abatimento"||P.modo==="amortizacao"||P.modo==="liquidacao"));
+  if(bal0<=0||n0<=0) return null;
+
+  let bal=bal0, n=n0;
+  let pmt=(sys==="price")?amortPayment(bal0,r,n0):0;   // Price: prestação fixa
+  let amortSac=bal0/n0;                                // SAC: amortização constante
+  let saldoF=usaFgts?(+P.saldo||0):0;
+  const aporte=usaFgts?(+P.aporte||0):0;
+  const inicio=Math.max(1,parseInt(P.inicio)||1);
+  const pct=Math.min(FGTS_LIM_ABAT,Math.max(1,+P.pct||FGTS_LIM_ABAT));
+
+  const rows=[];
+  let juros=0, desembolso=0, fgtsUsado=0, i=0;
+  let proxUso=inicio;            // mês da próxima utilização permitida
+  let fimJanela=0;               // último mês da janela de abatimento vigente
+  let quitadoPorFgts=false;
+
+  while(bal>0.005&&i<1200){
+    i++;
+    /* FGTS entra na conta vinculada todo mês */
+    if(usaFgts&&i>1) saldoF=R2(saldoF+aporte);
+
+    let usoMes=0, evento="";
+
+    /* ── amortização extraordinária ou quitação ── */
+    if(usaFgts&&(P.modo==="amortizacao"||P.modo==="liquidacao")&&i===proxUso&&saldoF>0){
+      const jurosMes=bal*r;
+      const alvo=(P.modo==="liquidacao")?bal:Math.min(saldoF,bal);
+      const aplicado=Math.min(saldoF,alvo);
+      if(P.modo==="liquidacao"&&aplicado>=bal-0.005){
+        /* quita: paga o saldo e encerra */
+        usoMes=R2(bal); saldoF=R2(saldoF-usoMes); fgtsUsado=R2(fgtsUsado+usoMes);
+        juros=R2(juros+jurosMes);
+        rows.push({i,parcela:R2(bal+jurosMes),juros:R2(jurosMes),amort:R2(bal),
+          fgts:usoMes,desembolso:R2(jurosMes),saldo:0,saldoFgts:saldoF,evento:"Quitação"});
+        desembolso=R2(desembolso+jurosMes);
+        bal=0; quitadoPorFgts=true;
+        break;
+      }
+      if(aplicado>0){
+        bal=R2(bal-aplicado); saldoF=R2(saldoF-aplicado); fgtsUsado=R2(fgtsUsado+aplicado);
+        usoMes=aplicado;
+        evento=(P.modo==="liquidacao")?"Amortização parcial":"Amortização";
+        /* recompõe o contrato conforme a escolha do titular */
+        const rest=Math.max(1,n-i+1);
+        if(P.reduz==="parcela"){
+          if(sys==="price") pmt=amortPayment(bal,r,rest);
+          else amortSac=bal/rest;
+        }else{
+          /* mantém a prestação: o prazo é que encurta */
+          if(sys==="sac"&&amortSac>bal) amortSac=bal;
+        }
+      }
+      proxUso=P.repetir?i+FGTS_INTERVALO:1e9;
+    }
+
+    if(bal<=0.005){ bal=0; break; }
+
+    /* ── prestação do mês ── */
+    const jurosMes=bal*r;
+    let amortMes=(sys==="sac")?Math.min(amortSac,bal):Math.min(pmt-jurosMes,bal);
+    if(amortMes<0) amortMes=0;
+    let parcela=amortMes+jurosMes;
+
+    /* ── abatimento: FGTS cobre até 80% da prestação por 12 meses ── */
+    let cob=0;
+    if(usaFgts&&P.modo==="abatimento"){
+      if(i===proxUso){ fimJanela=i+FGTS_MESES_ABAT-1; proxUso=P.repetir?(fimJanela+FGTS_INTERVALO+1):1e9; }
+      if(i>=inicio&&i<=fimJanela&&saldoF>0){
+        cob=R2(Math.min(parcela*pct/100,saldoF));
+        saldoF=R2(saldoF-cob); fgtsUsado=R2(fgtsUsado+cob);
+        usoMes=cob; evento="Abatimento";
+      }
+    }
+
+    bal=R2(bal-amortMes);
+    juros=R2(juros+jurosMes);
+    const pago=R2(parcela-cob);
+    desembolso=R2(desembolso+pago);
+    rows.push({i,parcela:R2(parcela),juros:R2(jurosMes),amort:R2(amortMes),
+      fgts:R2(usoMes),desembolso:pago,saldo:Math.max(0,bal),saldoFgts:saldoF,evento});
+    if(sys==="price"&&bal>0&&bal<pmt-jurosMes) { /* último mês ajusta sozinho */ }
+  }
+
+  return {
+    rows, meses:rows.length, juros:R2(juros), desembolso:R2(desembolso),
+    fgtsUsado:R2(fgtsUsado), saldoFgtsFinal:R2(saldoF),
+    primeira:rows.length?rows[0].desembolso:0,
+    quitadoPorFgts,
+    /* menor desembolso entre os meses em que o FGTS foi utilizado */
+    menorParcela:(()=>{const c=rows.filter(x=>x.fgts>0);
+      return c.length?R2(Math.min(...c.map(x=>x.desembolso))):(rows.length?rows[0].desembolso:0);})()
+  };
+}
+
+/* Comparativo direto: sem FGTS × com FGTS, nas três modalidades */
+function fgtsComparativo(d,plano){
+  const base=debtScheduleFGTS(d,{on:false});
+  if(!base) return null;
+  const P=plano||fgtsPlano(d);
+  const sim=debtScheduleFGTS(d,Object.assign({},P,{on:true}));
+  if(!sim) return null;
+  return {
+    base, sim,
+    mesesEconomizados:base.meses-sim.meses,
+    jurosEconomizados:R2(base.juros-sim.juros),
+    desembolsoEconomizado:R2(base.desembolso-sim.desembolso),
+    quedaPrimeira:R2(base.primeira-sim.primeira),
+    quedaMenor:R2(base.primeira-sim.menorParcela)
+  };
+}
+
+/* Todas as modalidades avaliadas com o mesmo saldo, para escolha informada */
+function fgtsModosComparados(d,plano){
+  const P=plano||fgtsPlano(d);
+  const base=debtScheduleFGTS(d,{on:false});
+  if(!base) return null;
+  const out=FGTS_MODOS.map(m=>{
+    const p=Object.assign({},P,{on:true,modo:m.id});
+    const sim=debtScheduleFGTS(d,p);
+    return {modo:m.id, lbl:m.lbl, emoji:m.emoji, hint:m.hint, sim,
+      meses:sim?sim.meses:base.meses,
+      juros:sim?sim.juros:base.juros,
+      economiaJuros:sim?R2(base.juros-sim.juros):0,
+      mesesMenos:sim?base.meses-sim.meses:0,
+      primeira:sim?sim.primeira:base.primeira,
+      menor:sim?sim.menorParcela:base.primeira,
+      usado:sim?sim.fgtsUsado:0,
+      viavel:!(m.id==="liquidacao"&&(+P.saldo||0)<debtBalance(d))};
+  });
+  return {base,out};
+}
+
+/* Parcela efetiva deste mês, já descontado o abatimento do FGTS.
+   Usada pelo fluxo de caixa para não superestimar o desembolso. */
+function debtParcelaEfetiva(d){
+  const P=fgtsPlano(d);
+  const pmt=parseFloat(d.monthlyPayment)||0;
+  if(!P.on||!(P.saldo>0)) return {parcela:pmt,fgts:0};
+  const sch=debtScheduleFGTS(d,P);
+  if(!sch||!sch.rows.length) return {parcela:pmt,fgts:0};
+  const r0=sch.rows[0];
+  return {parcela:r0.desembolso,fgts:r0.fgts,juros:r0.juros,amort:r0.amort};
 }
 
 /* ═══ 6. PROJEÇÃO ═══ */
@@ -12977,6 +13464,10 @@ function injectTabs(){
     c.insertAdjacentHTML("beforeend",H`<div id="inc-view-tax" style="display:none"></div>`);
   }
   const navAst=$("nav-patrimonio");
+  if(navAst&&!navAst.querySelector('[data-astview="rend"]')){
+    navAst.insertAdjacentHTML("beforeend",H`<button class="nav-btn" data-astview="rend" onclick="showAst('rend')" style="color:#6B6760">Rendimento</button>`);
+    $("ast-content").insertAdjacentHTML("beforeend",H`<div id="ast-view-rend" style="display:none"></div>`);
+  }
   if(navAst&&!navAst.querySelector('[data-astview="proj"]')){
     navAst.insertAdjacentHTML("beforeend",H`<button class="nav-btn" data-astview="proj" onclick="showAst('proj')" style="color:#6B6760">Projeção</button>`);
     $("ast-content").insertAdjacentHTML("beforeend",H`<div id="ast-view-proj" style="display:none"></div>`);
@@ -13328,7 +13819,7 @@ function renderCashFlow(){
       R("↳ "+(o.regime==="pj"?"DAS":o.regime==="aluguel"?"Carnê-leão":o.regime==="exclusivo"?"IR na fonte":"IRRF")+" · "+raw(o.label),"−"+V(o.ir),"sub",RED)
     ).join(""):"";
   const detDiv=FIN_OPEN?cf.divida.itens.map(x=>
-      R("↳ "+(x.emoji||"")+" "+raw(x.nome),"−"+V(x.parcela),"sub",RED)).join(""):"";
+      R("↳ "+(x.emoji||"")+" "+raw(x.nome)+(x.fgts>0?" · FGTS":""),"−"+V(x.parcela),"sub",RED)).join(""):"";
   const detApl=FIN_OPEN?cf.aplic.itens.filter(x=>x.bruto>0).slice(0,6).map(x=>
       R("↳ "+raw(x.nome)+(x.aliq>0?" · IR "+String(x.aliq).replace(".",",")+"%":" · isento"),
         "+"+V(x.bruto),"sub",GRN)).join(""):"";
@@ -13357,6 +13848,7 @@ function renderCashFlow(){
       ${R("Despesas",cf.despesas>0?"−"+V(cf.despesas):V(0),"",RED)}
       ${R("Dívidas · juros",cf.divida.juros>0?"−"+V(cf.divida.juros):V(0),"",RED)}
       ${R("Dívidas · amortização",cf.divida.amort>0?"−"+V(cf.divida.amort):V(0),"",RED)}
+      ${cf.divida.fgtsAbat>0?R("(+) Abatimento pelo FGTS","+"+V(cf.divida.fgtsAbat),"",GRN):""}
       ${detDiv}
       ${R("(=) Total de saídas","−"+V(cf.saidas),"tot",RED)}
 
@@ -13397,6 +13889,462 @@ function renderCashFlow(){
       <div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:9px;line-height:1.5">
         Base: entradas líquidas − despesas − parcelas de dívida (juros + amortização). Reserva alvo de 6 meses de custo: ${fmt(sg.reservaAlvo)}.</div>
     </div>`;
+}
+
+
+/* ═══ 11.7 ACOMPANHAMENTO DE RENDIMENTOS — aba e ficha por aplicação ═══ */
+let REND_HORIZ=12, REND_ID=null;
+function setRendHoriz(n){REND_HORIZ=n;renderRendimentos();}
+
+/* ── Aba RENDIMENTOS: a carteira inteira ── */
+function renderRendimentos(){
+  const el=$("ast-view-rend"); if(!el) return;
+  ensureStyles();
+  const {linhas,tot}=astRendimentoCarteira();
+  const GRN="#5A8A4A", RED="#B85A6A", NAV="#0F2440";
+  if(!linhas.length){
+    el.innerHTML=H`<div class="info-card" style="background:rgba(15,36,64,.06);color:#0F2440">
+      Cadastre uma aplicação para acompanhar o rendimento mês a mês.</div>`;
+    return;
+  }
+  const card=l=>`
+    <div style="background:var(--surface);border-radius:14px;padding:12px 14px;margin-bottom:8px;cursor:pointer"
+         onclick="PRO.openRendimento(${l.a.id})">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div style="display:flex;gap:10px;align-items:center;min-width:0">
+          <div style="width:34px;height:34px;border-radius:10px;background:${l.cls.color}18;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${l.cls.emoji}</div>
+          <div style="min-width:0">
+            <div style="font-size:13.5px;font-weight:600;color:var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${raw(l.nome)}</div>
+            <div style="font-size:10.5px;color:#6B6760">${l.dias} dias · ${fmt(l.custo)} aplicados</div>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:var(--serif);font-style:italic;font-size:16px;color:${l.ganho>=0?GRN:RED}">${l.ganho>=0?"+":"−"}${fmt(Math.abs(l.ganho))}</div>
+          <div style="font-size:10px;color:#6B6760">${l.ganhoPct>=0?"+":""}${String(l.ganhoPct).replace(".",",")}%</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px">
+        <span style="font-size:10px;background:rgba(15,36,64,.07);border-radius:7px;padding:2px 7px;color:${NAV}">Saldo ${fmt(l.saldo)}</span>
+        <span style="font-size:10px;background:rgba(90,138,74,.12);border-radius:7px;padding:2px 7px;color:${GRN}">Mês ${fmt(l.mesAtual)}</span>
+        <span style="font-size:10px;background:rgba(184,90,106,.1);border-radius:7px;padding:2px 7px;color:${RED}">IR ${String(l.prov.aliq).replace(".",",")}% · ${fmt(l.prov.ir)}</span>
+        ${l.prov.iof>0?`<span style="font-size:10px;background:rgba(184,90,106,.1);border-radius:7px;padding:2px 7px;color:${RED}">IOF ${fmt(l.prov.iof)}</span>`:""}
+      </div>
+    </div>`;
+  el.innerHTML=H`
+    <div style="background:${NAV};border-radius:18px;padding:16px 18px;color:#fff;margin-bottom:14px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
+      <div style="position:relative">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.55)">Rendimento acumulado</div>
+        <div style="font-family:var(--serif);font-style:italic;font-size:30px;line-height:1.1;margin:3px 0 8px">
+          ${tot.ganho>=0?"+":"−"}${fmt(Math.abs(tot.ganho))}
+          <span style="font-size:12px;font-style:normal;color:rgba(255,255,255,.55)">${tot.ganhoPct>=0?"+":""}${String(tot.ganhoPct).replace(".",",")}%</span></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span style="background:rgba(255,255,255,.12);border-radius:8px;padding:3px 9px;font-size:10.5px">Aplicado ${fmt(tot.custo)}</span>
+          <span style="background:rgba(255,255,255,.12);border-radius:8px;padding:3px 9px;font-size:10.5px">Saldo ${fmt(tot.saldo)}</span>
+          <span style="background:rgba(255,255,255,.12);border-radius:8px;padding:3px 9px;font-size:10.5px">Este mês ${fmt(tot.mes)}</span>
+        </div>
+        <div style="margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.12);display:flex;justify-content:space-between;font-size:11.5px">
+          <span style="color:rgba(255,255,255,.65)">Provisão de IR e IOF</span>
+          <span style="font-weight:600;color:#FF9B8A">−${fmt(tot.ir+tot.iof)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-top:5px">
+          <span style="color:rgba(255,255,255,.85);font-weight:600">Ganho líquido se resgatar hoje</span>
+          <span style="font-weight:700;color:#9BE8C0">${fmt(tot.ganhoLiq)}</span>
+        </div>
+      </div>
+    </div>
+    <div class="sec-label">Por aplicação</div>
+    ${linhas.map(card).join("")}
+    <div class="info-card" style="background:rgba(15,36,64,.06);color:#0F2440">
+      O rendimento é calculado sobre a data de aplicação, o montante aplicado e a taxa de cada papel. A provisão usa a tabela regressiva de IR pelo prazo decorrido, IOF nos 30 primeiros dias e come-cotas em maio e novembro nos fundos. Toque em uma aplicação para ver a evolução mês a mês.</div>`;
+}
+
+/* ── Ficha individual: evolução mês a mês ── */
+function openRendimento(id){
+  const a=ASSETS.find(x=>x.id===id); if(!a) return;
+  REND_ID=id;
+  const ov=document.createElement("div");
+  ov.className="overlay open"; ov.style.zIndex="210"; ov.style.alignItems="flex-end";
+  ov.id="modal-rend";
+  ov.innerHTML=H`<div class="sheet">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="this.closest('.overlay').remove()">✕</button>
+    <div id="rend-body"></div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  renderRendimento();
+}
+function renderRendimento(){
+  const a=ASSETS.find(x=>x.id===REND_ID); if(!a||!$("rend-body")) return;
+  ensureStyles();
+  const c=gAssetClass(a.class), p=astPro(a);
+  const e=astEvolucao(a,REND_HORIZ);
+  const GRN="#5A8A4A", RED="#B85A6A", NAV="#0F2440";
+  const R=(lbl,val,cls,color)=>`<div class="pro-cf ${cls||""}"><span>${lbl}</span>`+
+    `<span style="color:${color||"var(--body)"}">${val}</span></div>`;
+  const hz=n=>`<button type="button" class="${REND_HORIZ===n?"on":""}" onclick="PRO.setRendHoriz(${n})">${n===0?"Só histórico":"+"+n+"m"}</button>`;
+  const provHoje=astProvisao(a,Math.max(0,e.real-e.custo),e.diasCorridos);
+
+  /* tabela: últimos meses e os projetados */
+  const pts=e.pontos.filter((x,i)=>{
+    if(i===0) return false;                       // a aplicacao em si nao e um mes
+    const prox=e.pontos[i+1];
+    return !(prox&&prox.data===e.hoje&&x.ym===prox.ym); // evita mes duplicado antes de "Hoje"
+  });
+  const linhas=pts.slice(Math.max(0,pts.length-24));
+  $("rend-body").innerHTML=H`
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px">
+      <div style="width:42px;height:42px;border-radius:12px;background:${c.color}18;display:flex;align-items:center;justify-content:center;font-size:20px">${c.emoji}</div>
+      <div style="min-width:0"><div style="font-family:var(--serif);font-size:19px;color:var(--body)">${raw(a.name)}</div>
+      <div style="font-size:11px;color:#6B6760">${catLabel(c)} · aplicado em ${brDate(e.inicio)} · ${e.diasCorridos} dias</div></div>
+    </div>
+
+    <div style="background:${NAV};border-radius:16px;padding:15px 17px;color:#fff;margin-bottom:12px">
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.55)">Rendimento acumulado</div>
+      <div style="font-family:var(--serif);font-style:italic;font-size:28px;line-height:1.1;margin:3px 0 7px">
+        ${e.real-e.custo>=0?"+":"−"}${fmt(Math.abs(e.real-e.custo))}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span style="background:rgba(255,255,255,.12);border-radius:8px;padding:3px 9px;font-size:10.5px">Realizada ${String(e.efetivaAM).replace(".",",")}% a.m.</span>
+        <span style="background:rgba(255,255,255,.12);border-radius:8px;padding:3px 9px;font-size:10.5px">Cadastrada ${String(e.iAM).replace(".",",")}% a.m.</span>
+        <span style="background:rgba(255,255,255,.12);border-radius:8px;padding:3px 9px;font-size:10.5px">${astLiquidezLabel(a)}</span>
+      </div>
+    </div>
+
+    <div class="pro-chips" style="margin:0 0 8px">
+      <div class="pro-scale" id="rend-hz">${hz(0)}${hz(12)}${hz(36)}</div>
+    </div>
+    <div style="background:var(--surface);border-radius:14px;padding:12px 14px 8px;margin-bottom:12px">
+      <canvas id="rend-chart" style="width:100%;display:block"></canvas>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:6px;font-size:9.5px;color:#6B6760;flex-wrap:wrap">
+        <span><b style="color:${NAV}">━</b> saldo real</span>
+        <span><b style="color:#7A93AE">┈</b> taxa cadastrada</span>
+        <span><b style="color:${GRN}">━</b> líquido após IR</span>
+        <span><b style="color:#9A958C">┈</b> aplicado</span>
+      </div>
+    </div>
+
+    <div class="sec-label">Posição de hoje</div>
+    <div style="background:var(--surface);border-radius:14px;padding:12px 15px;margin-bottom:12px">
+      ${R("Montante aplicado",fmt(e.custo),"","#6B6760")}
+      ${e.aporte>0?R("Aporte mensal",fmt(e.aporte),"sub","#6B6760"):""}
+      ${R("Saldo atual",fmt(e.real),"",NAV)}
+      ${R("(=) Rendimento bruto",(e.real-e.custo>=0?"+":"−")+fmt(Math.abs(e.real-e.custo)),"tot",GRN)}
+      ${provHoje.iof>0?R("(−) IOF "+String(provHoje.iofPct).replace(".",",")+"% · "+e.diasCorridos+" dias","−"+fmt(provHoje.iof),"sub",RED):""}
+      ${R("(−) IR "+String(provHoje.aliq).replace(".",",")+"%","−"+fmt(provHoje.ir),"",RED)}
+      ${e.atual.ccAcum>0?R("Come-cotas já debitado","−"+fmt(e.atual.ccAcum),"sub",RED):""}
+      ${R("(=) Líquido hoje",fmt(e.real-provHoje.total),"grand",GRN)}
+    </div>
+
+    ${e.proxFaixa?`<div class="info-card" style="background:rgba(90,138,74,.1);color:#3F6B33;margin-bottom:12px">
+      Em <strong>${e.proxFaixa.dias} dias</strong> (${brDate(e.proxFaixa.data)}) a alíquota de IR cai de ${String(e.proxFaixa.de).replace(".",",")}% para <strong>${String(e.proxFaixa.aliq).replace(".",",")}%</strong>.</div>`:""}
+    ${e.comeCotas?`<div class="info-card" style="background:rgba(184,90,106,.08);color:#8A4353;margin-bottom:12px">
+      Fundo com come-cotas: em maio e novembro o IR é antecipado sobre o ganho, reduzindo o saldo.</div>`:""}
+    ${Math.abs(e.desvio)>0.5?`<div class="info-card" style="background:rgba(212,160,90,.12);color:#7A5A22;margin-bottom:12px">
+      Pela taxa cadastrada o saldo seria ${fmt(e.calculado)}. O saldo informado está
+      <strong>${e.desvio>=0?"acima":"abaixo"} em ${fmt(Math.abs(e.desvio))}</strong>
+      (${e.desvioPct>=0?"+":""}${String(e.desvioPct).replace(".",",")}%): a rentabilidade realizada foi de
+      ${String(e.efetivaAM).replace(".",",")}% ao mês contra ${String(e.iAM).replace(".",",")}% cadastrados.
+      Aportes não registrados também aparecem aqui.</div>`:""}
+
+    <div class="sec-label">Evolução mês a mês</div>
+    <div style="background:var(--surface);border-radius:14px;padding:4px 12px 10px;margin-bottom:12px">
+      <table style="width:100%;border-collapse:collapse;font-size:10.5px;table-layout:fixed">
+        <thead><tr style="color:#8A857D;text-align:right">
+          <th style="padding:7px 3px;text-align:left;font-weight:600;width:22%">Mês</th>
+          <th style="padding:7px 3px;font-weight:600;width:28%">Saldo</th>
+          <th style="padding:7px 3px;font-weight:600;width:24%">Rend.</th>
+          <th style="padding:7px 3px;font-weight:600;width:26%">Líquido</th>
+        </tr></thead>
+        <tbody>${linhas.map(x=>`<tr style="border-top:1px solid var(--line);${x.futuro?"opacity:.5":""}${x.data===e.hoje?";background:rgba(15,36,64,.05)":""}">
+          <td style="padding:5px 3px;text-align:left;color:var(--body);white-space:nowrap">${x.data===e.hoje?"<b>Hoje</b>":MS[mesOf(x.data)-1]+"/"+x.ym.slice(2,4)}${x.comeCotas>0?" <span style='color:#B85A6A'>•</span>":""}</td>
+          <td style="padding:5px 3px;text-align:right;color:var(--body)">${fmt(x.saldo)}</td>
+          <td style="padding:5px 3px;text-align:right;color:${GRN}">${fmt(x.rendMes)}</td>
+          <td style="padding:5px 3px;text-align:right;color:${NAV};font-weight:600">${fmt(x.liquido)}</td>
+        </tr>`).join("")}</tbody>
+      </table>
+      <div style="font-size:9.5px;color:#8A857D;margin-top:6px;line-height:1.5">Líquido = saldo menos a provisão de IR e IOF daquele prazo. Linhas claras são projeção.${e.comeCotas?" O ponto vermelho marca o come-cotas.":""}</div>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="pro-btn-lg" onclick="PRO.exportRendimento(${a.id})" style="flex:1;background:none;border:1.5px solid var(--line);color:#6B6760;font-weight:600;cursor:pointer">⬇️ CSV</button>
+      <button class="pro-btn-lg" onclick="PRO.openResgate(${a.id})" style="flex:1;background:${NAV};color:#fff;border:none;font-weight:600;cursor:pointer">💰 Simular resgate</button>
+    </div>`;
+  drawRendChart(e);
+  const hzb=$("rend-hz");
+  if(hzb) [...hzb.children].forEach(b=>b.classList.toggle("on",
+    b.getAttribute("onclick").indexOf("("+REND_HORIZ+")")>=0));
+}
+
+function drawRendChart(e){
+  const c=$("rend-chart"); if(!c) return;
+  const pts=e.pontos; if(pts.length<2) return;
+  const W=Math.max(200,c.parentElement.offsetWidth-28), H=160, dpr=window.devicePixelRatio||1;
+  c.width=W*dpr;c.height=H*dpr;c.style.width=W+"px";c.style.height=H+"px";
+  const ctx=c.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  const pad={l:4,r:4,t:10,b:18}, cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
+  const vals=pts.flatMap(p=>[p.saldo,p.liquido,p.aportado,p.modelo]);
+  const mn=Math.min(...vals), mx=Math.max(...vals), rg=(mx-mn)||1;
+  const X=i=>pad.l+(i/(pts.length-1))*cW;
+  const Y=v=>pad.t+cH-((v-mn)/rg)*cH;
+  /* faixa do futuro sombreada */
+  const iFut=pts.findIndex(p=>p.futuro);
+  if(iFut>0){
+    ctx.fillStyle="rgba(0,0,0,.035)";
+    ctx.fillRect(X(iFut),pad.t,X(pts.length-1)-X(iFut),cH);
+  }
+  /* montante aplicado: linha de referência */
+  ctx.setLineDash([3,3]);ctx.strokeStyle="#9A958C";ctx.lineWidth=1;ctx.beginPath();
+  pts.forEach((p,i)=>{i?ctx.lineTo(X(i),Y(p.aportado)):ctx.moveTo(X(i),Y(p.aportado));});
+  ctx.stroke();ctx.setLineDash([]);
+  /* área do saldo */
+  const g=ctx.createLinearGradient(0,pad.t,0,pad.t+cH);
+  g.addColorStop(0,"rgba(15,36,64,.20)");g.addColorStop(1,"rgba(15,36,64,.02)");
+  ctx.beginPath();
+  pts.forEach((p,i)=>{i?ctx.lineTo(X(i),Y(p.saldo)):ctx.moveTo(X(i),Y(p.saldo));});
+  ctx.strokeStyle="#0F2440";ctx.lineWidth=2;ctx.stroke();
+  ctx.lineTo(X(pts.length-1),pad.t+cH);ctx.lineTo(X(0),pad.t+cH);ctx.closePath();
+  ctx.fillStyle=g;ctx.fill();
+  /* curva pela taxa cadastrada */
+  ctx.setLineDash([5,4]);ctx.strokeStyle="#7A93AE";ctx.lineWidth=1.4;ctx.beginPath();
+  pts.forEach((p,i)=>{i?ctx.lineTo(X(i),Y(p.modelo)):ctx.moveTo(X(i),Y(p.modelo));});
+  ctx.stroke();ctx.setLineDash([]);
+  /* líquido após imposto */
+  ctx.beginPath();
+  pts.forEach((p,i)=>{i?ctx.lineTo(X(i),Y(p.liquido)):ctx.moveTo(X(i),Y(p.liquido));});
+  ctx.strokeStyle="#5A8A4A";ctx.lineWidth=1.6;ctx.stroke();
+  /* marca de hoje */
+  if(iFut>0){
+    ctx.strokeStyle="rgba(15,36,64,.35)";ctx.lineWidth=1;ctx.setLineDash([2,3]);
+    ctx.beginPath();ctx.moveTo(X(iFut-1),pad.t);ctx.lineTo(X(iFut-1),pad.t+cH);ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  ctx.fillStyle="#9A958C";ctx.font="9px -apple-system,sans-serif";ctx.textAlign="center";
+  const k=Math.ceil(pts.length/5);
+  pts.forEach((p,i)=>{if(i%k&&i!==pts.length-1)return;
+    ctx.fillText(MS[mesOf(p.data)-1]+"/"+p.ym.slice(2,4),X(i),H-5);});
+}
+
+function exportRendimento(id){
+  const a=ASSETS.find(x=>x.id===id); if(!a) return;
+  const e=astEvolucao(a,REND_HORIZ), sep=";";
+  const n=v=>String(R2(v).toFixed(2)).replace(".",",");
+  const head=["Mês","Dias","Origem","Aplicado","Saldo","Saldo pela taxa cadastrada",
+    "Rendimento do mês","Rendimento acumulado","Come-cotas","Alíquota IR %","IOF",
+    "IR provisionado","Líquido se resgatar"].join(sep);
+  const body=e.pontos.map(x=>[x.ym,x.dias,x.futuro?"projetado":"realizado",n(x.aportado),n(x.saldo),
+    n(x.modelo),n(x.rendMes),n(x.rendAcum),n(x.comeCotas),n(x.aliq),n(x.iof),n(x.ir),n(x.liquido)].join(sep)).join("\n");
+  const blob=new Blob(["\uFEFF"+head+"\n"+body],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob),el=document.createElement("a");
+  el.href=url;el.download=`rendimento_${(a.name||"aplicacao").replace(/[^\w]+/g,"_")}_${today()}.csv`;
+  document.body.appendChild(el);el.click();document.body.removeChild(el);
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  toast(TR("✓ Rendimento exportado"));
+}
+
+
+/* ═══ 11.8 FGTS — ficha de simulação por financiamento ═══ */
+let FGTS_ID=null, FGTS_TMP=null;
+/* o onclick inline entrega o id sempre como string */
+const findDebt=id=>DEBTS.find(x=>String(x.id)===String(id));
+
+function openFgts(id){
+  const d=findDebt(id); if(!d) return;
+  FGTS_ID=id;
+  FGTS_TMP=fgtsPlano(d);
+  FGTS_TMP.on=true;
+  if(!(+FGTS_TMP.aporte>0)) FGTS_TMP.aporte=fgtsAporteMensal();
+  const ov=document.createElement("div");
+  ov.className="overlay open"; ov.style.zIndex="215"; ov.style.alignItems="flex-end";
+  ov.id="modal-fgts";
+  ov.innerHTML=H`<div class="sheet">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="this.closest('.overlay').remove()">✕</button>
+    <div id="fgts-body"></div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  renderFgts();
+  setCurrencyInput($("fgts-saldo"),FGTS_TMP.saldo||0);
+  setCurrencyInput($("fgts-aporte"),FGTS_TMP.aporte||0);
+  fgtsCalc();
+}
+function setFgtsModo(m){ FGTS_TMP.modo=m; fgtsCalc(); renderFgtsChips(); }
+function setFgtsReduz(v){ FGTS_TMP.reduz=v; fgtsCalc(); renderFgtsChips(); }
+function toggleFgtsRepetir(){ FGTS_TMP.repetir=!FGTS_TMP.repetir; fgtsCalc(); renderFgtsChips(); }
+function renderFgtsChips(){
+  const c=$("fgts-modos"); if(!c) return;
+  [...c.children].forEach(b=>b.classList.toggle("on",b.dataset.modo===FGTS_TMP.modo));
+  const rz=$("fgts-reduz-row"); if(rz) rz.style.display=FGTS_TMP.modo==="amortizacao"?"":"none";
+  const pc=$("fgts-pct-row");   if(pc) pc.style.display=FGTS_TMP.modo==="abatimento"?"":"none";
+  const rp=$("fgts-rep");
+  if(rp) rp.innerHTML=TR(FGTS_TMP.modo==="liquidacao"?"":
+    `<span class="pro-pill ${FGTS_TMP.repetir?"on":""}" onclick="PRO.toggleFgtsRepetir()">🔁 Repetir a cada 24 meses</span>`);
+  ["fgts-reduz-prazo","fgts-reduz-parcela"].forEach(id=>{
+    const b=$(id); if(b) b.classList.toggle("on",FGTS_TMP.reduz===id.split("-")[2]);
+  });
+}
+
+function renderFgts(){
+  const d=findDebt(FGTS_ID); if(!d||!$("fgts-body")) return;
+  ensureStyles();
+  const dt=gDebtType(d.type);
+  const F=(id,lbl,step)=>`<div class="pro-f"><label>${lbl}</label>
+    <input id="${id}" type="number" step="${step||"1"}" inputmode="decimal"/></div>`;
+  $("fgts-body").innerHTML=H`
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px">
+      <div style="width:42px;height:42px;border-radius:12px;background:${dt.color}18;display:flex;align-items:center;justify-content:center;font-size:20px">🏦</div>
+      <div style="min-width:0"><div style="font-family:var(--serif);font-size:19px;color:var(--body)">Uso do FGTS</div>
+      <div style="font-size:11px;color:#6B6760">${raw(d.name)} · saldo devedor ${fmt(debtBalance(d))}</div></div>
+    </div>
+
+    <div class="pro-h"><b>Modalidade</b><i></i></div>
+    <div class="pro-chips" id="fgts-modos" style="margin-top:0">
+      ${FGTS_MODOS.map(m=>`<span class="pro-pill" data-modo="${m.id}" onclick="PRO.setFgtsModo('${m.id}')">${m.emoji} ${m.lbl}</span>`).join("")}
+    </div>
+    <div class="pro-note" id="fgts-hint"></div>
+
+    <div class="pro-grid" style="margin-top:10px">
+      <div class="pro-f"><label>Saldo de FGTS (R$)</label>
+        <input id="fgts-saldo" class="f-input" type="text" inputmode="decimal" oninput="maskCurrencyInput(this);PRO.fgtsCalc()"/></div>
+      <div class="pro-f"><label>Depósito mensal (R$)</label>
+        <input id="fgts-aporte" class="f-input" type="text" inputmode="decimal" oninput="maskCurrencyInput(this);PRO.fgtsCalc()"/></div>
+    </div>
+    <div class="pro-grid" style="margin-top:8px">
+      ${F("fgts-inicio","Começar no mês","1")}
+      <div class="pro-f" id="fgts-pct-row"><label>% da prestação (máx. 80)</label>
+        <input id="fgts-pct" type="number" step="5" min="1" max="80"/></div>
+    </div>
+    <div id="fgts-reduz-row" style="display:none;margin-top:8px">
+      <div class="pro-f"><label>A amortização reduz</label></div>
+      <div class="pro-chips" style="margin-top:0">
+        <span class="pro-pill" id="fgts-reduz-prazo" onclick="PRO.setFgtsReduz('prazo')">⏱ O prazo</span>
+        <span class="pro-pill" id="fgts-reduz-parcela" onclick="PRO.setFgtsReduz('parcela')">💵 A prestação</span>
+      </div>
+    </div>
+    <div class="pro-chips" id="fgts-rep" style="margin-top:8px"></div>
+
+    <div id="fgts-out"></div>
+
+    <div style="display:flex;gap:6px;margin-top:12px">
+      <button class="pro-btn-lg" onclick="PRO.limparFgts()" style="flex:1;background:none;border:1.5px solid var(--line);color:#6B6760;font-weight:600;cursor:pointer">Remover</button>
+      <button class="pro-btn-lg" onclick="PRO.salvarFgts()" style="flex:2;background:#6E2B3A;color:#fff;border:none;font-weight:600;cursor:pointer">Aplicar ao financiamento</button>
+    </div>`;
+  ["fgts-inicio","fgts-pct"].forEach(id=>{
+    const el=$(id); if(el){ el.value=(id==="fgts-pct")?FGTS_TMP.pct:FGTS_TMP.inicio;
+      el.addEventListener("input",fgtsCalc); }
+  });
+  renderFgtsChips();
+}
+
+function fgtsCalc(){
+  const d=findDebt(FGTS_ID); if(!d||!$("fgts-out")) return;
+  FGTS_TMP.saldo=unmaskCurrency($("fgts-saldo"))||0;
+  FGTS_TMP.aporte=unmaskCurrency($("fgts-aporte"))||0;
+  FGTS_TMP.inicio=Math.max(1,parseInt($("fgts-inicio")?.value)||1);
+  FGTS_TMP.pct=Math.min(80,Math.max(1,parseInt($("fgts-pct")?.value)||80));
+  const hint=(FGTS_MODOS.find(m=>m.id===FGTS_TMP.modo)||{}).hint||"";
+  if($("fgts-hint")) $("fgts-hint").innerHTML=TR(hint+". O intervalo mínimo entre utilizações é de 24 meses.");
+
+  const cmp=fgtsModosComparados(d,FGTS_TMP);
+  if(!cmp){ $("fgts-out").innerHTML=H`<div class="pro-note">Informe saldo devedor, taxa e prazo para simular.</div>`; return; }
+  const {base,out}=cmp;
+  const cur=out.find(o=>o.modo===FGTS_TMP.modo);
+  const GRN="#5A8A4A", RED="#B85A6A", WIN="#6E2B3A";
+  const R=(lbl,val,cls,color)=>`<div class="pro-cf ${cls||""}"><span>${lbl}</span>`+
+    `<span style="color:${color||"var(--body)"}">${val}</span></div>`;
+  const sim=cur.sim;
+  const rows=(sim?sim.rows:[]).slice(0,Math.min(15,sim?sim.rows.length:0));
+
+  $("fgts-out").innerHTML=H`
+    ${(()=>{const ab=FGTS_TMP.modo==="abatimento";
+      const alivio=R2(Math.max(0,base.primeira-cur.primeira));
+      const mesesAb=sim?sim.rows.filter(x=>x.fgts>0).length:0;
+      return `<div style="background:${WIN};border-radius:16px;padding:15px 17px;color:#fff;margin:14px 0 12px">
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.55)">${ab?"Alívio mensal":"Economia de juros"}</div>
+      <div style="font-family:var(--serif);font-style:italic;font-size:28px;line-height:1.1;margin:3px 0 8px">
+        ${fmt(ab?alivio:cur.economiaJuros)}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span style="background:rgba(255,255,255,.12);border-radius:8px;padding:3px 9px;font-size:10.5px">FGTS usado ${fmt(cur.usado)}</span>
+        ${ab?`<span style="background:rgba(255,255,255,.12);border-radius:8px;padding:3px 9px;font-size:10.5px">${mesesAb} prestações cobertas</span>`:""}
+        ${cur.mesesMenos>0?`<span style="background:rgba(255,255,255,.12);border-radius:8px;padding:3px 9px;font-size:10.5px">${cur.mesesMenos} parcelas a menos</span>`:""}
+        <span style="background:rgba(255,255,255,.12);border-radius:8px;padding:3px 9px;font-size:10.5px">Quita em ${cur.meses} meses</span>
+      </div>
+      ${ab?`<div style="font-size:10.5px;color:rgba(255,255,255,.6);margin-top:9px;line-height:1.5">O abatimento não reduz os juros do contrato: ele troca desembolso próprio por FGTS durante a janela. O ganho está no caixa do mês.</div>`:""}
+      ${!cur.viavel?`<div style="font-size:11px;color:#FFC9B8;margin-top:9px;line-height:1.5">O saldo de FGTS não cobre o saldo devedor de ${fmt(debtBalance(d))}. A simulação trata como amortização parcial.</div>`:""}
+    </div>`;})()}
+
+    <div class="sec-label">Efeito nas prestações</div>
+    <div style="background:var(--surface);border-radius:14px;padding:12px 15px;margin-bottom:12px">
+      ${R("Prestação sem FGTS",fmt(base.primeira),"","#6B6760")}
+      ${R("Prestação com FGTS",fmt(cur.primeira),"",WIN)}
+      ${cur.menor<cur.primeira?R("Menor prestação do período",fmt(cur.menor),"sub",GRN):""}
+      ${R("(=) Alívio mensal",fmt(Math.max(0,base.primeira-cur.primeira)),"tot",GRN)}
+      ${R("Juros sem FGTS",fmt(base.juros),"","#6B6760")}
+      ${R("Juros com FGTS",fmt(cur.juros),"",RED)}
+      ${R("Prazo",base.meses+" → "+cur.meses+" meses","tot",WIN)}
+    </div>
+
+    <div class="sec-label">As três modalidades com o mesmo saldo</div>
+    <div style="background:var(--surface);border-radius:14px;padding:4px 12px 10px;margin-bottom:12px">
+      <table style="width:100%;border-collapse:collapse;font-size:10.5px;table-layout:fixed">
+        <thead><tr style="color:#8A857D;text-align:right">
+          <th style="padding:7px 3px;text-align:left;font-weight:600;width:32%">Modalidade</th>
+          <th style="padding:7px 3px;font-weight:600;width:24%">Prestação</th>
+          <th style="padding:7px 3px;font-weight:600;width:20%">Prazo</th>
+          <th style="padding:7px 3px;font-weight:600;width:24%">Economia</th>
+        </tr></thead>
+        <tbody>${out.map(o=>`<tr style="border-top:1px solid var(--line);${o.modo===FGTS_TMP.modo?"background:rgba(110,43,58,.06)":""}${o.viavel?"":";opacity:.5"}">
+          <td style="padding:5px 3px;text-align:left;color:var(--body)">${o.emoji} ${o.lbl}</td>
+          <td style="padding:5px 3px;text-align:right;color:var(--body)">${fmt(o.primeira)}</td>
+          <td style="padding:5px 3px;text-align:right;color:var(--body)">${o.meses}m</td>
+          <td style="padding:5px 3px;text-align:right;color:${GRN};font-weight:600">${fmt(o.economiaJuros)}</td>
+        </tr>`).join("")}</tbody>
+      </table>
+    </div>
+
+    <div class="sec-label">Primeiras parcelas com FGTS</div>
+    <div style="background:var(--surface);border-radius:14px;padding:4px 12px 10px;margin-bottom:8px">
+      <table style="width:100%;border-collapse:collapse;font-size:10.5px;table-layout:fixed">
+        <thead><tr style="color:#8A857D;text-align:right">
+          <th style="padding:7px 3px;text-align:left;font-weight:600;width:14%">Mês</th>
+          <th style="padding:7px 3px;font-weight:600;width:24%">Prestação</th>
+          <th style="padding:7px 3px;font-weight:600;width:22%">FGTS</th>
+          <th style="padding:7px 3px;font-weight:600;width:22%">Você paga</th>
+          <th style="padding:7px 3px;font-weight:600;width:18%">Saldo</th>
+        </tr></thead>
+        <tbody>${rows.map(x=>`<tr style="border-top:1px solid var(--line)">
+          <td style="padding:5px 3px;text-align:left;color:var(--body)">${x.i}${x.evento?" <span style='color:#6E2B3A'>•</span>":""}</td>
+          <td style="padding:5px 3px;text-align:right;color:#8A857D">${fmt(x.parcela)}</td>
+          <td style="padding:5px 3px;text-align:right;color:${GRN}">${x.fgts>0?fmt(x.fgts):"—"}</td>
+          <td style="padding:5px 3px;text-align:right;color:${WIN};font-weight:600">${fmt(x.desembolso)}</td>
+          <td style="padding:5px 3px;text-align:right;color:#8A857D">${fmt(x.saldo)}</td>
+        </tr>`).join("")}</tbody>
+      </table>
+      <div style="font-size:9.5px;color:#8A857D;margin-top:6px;line-height:1.5">O ponto marca o mês em que o FGTS é utilizado. O depósito mensal continua entrando na conta vinculada e é considerado nas utilizações seguintes.</div>
+    </div>`;
+}
+
+function salvarFgts(){
+  const d=findDebt(FGTS_ID); if(!d) return;
+  d.fgts=Object.assign({},FGTS_TMP,{on:true});
+  persistDebts();
+  const o=document.getElementById("modal-fgts"); if(o) o.remove();
+  const dd=document.getElementById("modal-debt-detail");
+  renderDebts();
+  if(dd&&dd.classList.contains("open")) openDebtDetail(d.id);
+  refreshPro();
+  toast("✓ "+TR("FGTS aplicado ao financiamento"));
+}
+function limparFgts(){
+  const d=findDebt(FGTS_ID); if(!d) return;
+  delete d.fgts;
+  persistDebts();
+  const o=document.getElementById("modal-fgts"); if(o) o.remove();
+  const dd=document.getElementById("modal-debt-detail");
+  renderDebts();
+  if(dd&&dd.classList.contains("open")) openDebtDetail(d.id);
+  refreshPro();
+  toast("✓ "+TR("Uso do FGTS removido"));
 }
 
 /* ═══ 12. SOBRESCRITAS DO NÚCLEO ═══ */
@@ -13458,15 +14406,18 @@ window.showInc=function(v){
   _showInc(v);
 };
 const _showAst=window.showAst;
+const AST_EXTRA={proj:renderProj, rend:renderRendimentos};
 window.showAst=function(v){
-  if(v==="proj"){
+  if(AST_EXTRA[v]){
     ["dashboard","list","history","goals"].forEach(id=>{const e=$("ast-view-"+id);if(e)e.style.display="none";});
-    const e=$("ast-view-proj");if(e){e.style.display="block";e.classList.remove("tab-enter");void e.offsetWidth;e.classList.add("tab-enter");}
+    Object.keys(AST_EXTRA).forEach(k=>{const e=$("ast-view-"+k);if(e)e.style.display=(k===v)?"block":"none";});
+    const e=$("ast-view-"+v);
+    if(e){e.classList.remove("tab-enter");void e.offsetWidth;e.classList.add("tab-enter");}
     document.querySelectorAll("#nav-patrimonio .nav-btn").forEach(b=>{
-      const on=b.dataset.astview==="proj";b.classList.toggle("active",on);b.style.color=on?"#0F2440":"#6B6760";});
-    AST_V="proj";renderProj();return;
+      const on=b.dataset.astview===v;b.classList.toggle("active",on);b.style.color=on?"#0F2440":"#6B6760";});
+    AST_V=v; astExpandHero(); AST_EXTRA[v](); return;
   }
-  const e=$("ast-view-proj");if(e)e.style.display="none";
+  Object.keys(AST_EXTRA).forEach(k=>{const e=$("ast-view-"+k);if(e)e.style.display="none";});
   _showAst(v);
 };
 
@@ -13500,7 +14451,7 @@ window.renderAssetList=function(){
     </div>`;
     const foot=card.lastElementChild;
     if(foot) foot.insertAdjacentHTML("beforebegin",badges);
-    if(foot) foot.insertAdjacentHTML("afterbegin",H`<button onclick="PRO.openResgate(${a.id})" style="background:none;border:none;color:#0F2440;font-size:11.5px;font-weight:600;cursor:pointer;margin-right:auto">💰 Simular resgate</button>`);
+    if(foot) foot.insertAdjacentHTML("afterbegin",H`<button onclick="PRO.openRendimento(${a.id})" style="background:none;border:none;color:#0F2440;font-size:11.5px;font-weight:600;cursor:pointer;margin-right:auto">📈 Rendimento</button><button onclick="PRO.openResgate(${a.id})" style="background:none;border:none;color:#0F2440;font-size:11.5px;font-weight:600;cursor:pointer;margin-right:8px">💰 Resgate</button>`);
   });
 };
 
@@ -13611,6 +14562,7 @@ function refreshPro(){
       if(SCREEN==="home")renderHome();
       if(SCREEN==="vidafinanceira")renderFinLife();
       if(SCREEN==="dividas"&&typeof renderDebts==="function")renderDebts();
+      if(SCREEN==="patrimonio"&&AST_V==="rend")renderRendimentos();
     }
   }catch(e){}
 }
@@ -13629,6 +14581,10 @@ window.PRO={
   setIncRegime,toggle13,toggleFer,astPreview,setAstIdx,setAstTrib,setAstLiq,toggleCC,
   toggleFgts,toggleSplit,setIncScale,setFinScale,toggleFinDetail,syncFab,
   cashflowForYM,sugestaoPoupanca,renderCashFlow,
+  openRendimento,renderRendimentos,setRendHoriz,exportRendimento,
+  openFgts,setFgtsModo,setFgtsReduz,toggleFgtsRepetir,fgtsCalc,salvarFgts,limparFgts,
+  debtScheduleFGTS,fgtsComparativo,fgtsModosComparados,debtParcelaEfetiva,fgtsPlano,
+  astEvolucao,astRendimentoCarteira,astProvisao,
   toggleRegPick,toggleAstPick,applyIncTypeDefaults,applyAstClassDefaults,
   openFiscal,saveFiscalForm,resetFiscal,toggleIsen,openResgate,calcResgate,setResgatePct,
   exportProj,refreshRates:()=>fetchMarket(false),
@@ -13861,6 +14817,9 @@ window.PRO={
 :is(#modal-income,#modal-asset) .pro-f>label{ margin-bottom:4px!important; }
 :is(#modal-income,#modal-asset) .pro-grid,
 :is(#modal-income,#modal-asset) .pro-grid3{ gap:8px!important; }
+:is(#nav-patrimonio,#nav-dividas) .nav-btn{
+  padding:0 9px!important; font-size:10.5px!important;
+}
 /* três colunas: rótulo mais justo para não truncar */
 :is(#modal-income,#modal-asset) .pro-grid3{ grid-template-columns:1fr 1fr 1fr!important; }
 :is(#modal-income,#modal-asset) .pro-grid3 .pro-f>label{
