@@ -2955,6 +2955,9 @@ const I18N={
     debt_tab_sim:"Simulador",
     debt_by_type:"Por tipo de dívida",
     next_payments:"Próximos pagamentos",
+    fgts_covers:"FGTS cobre",
+    fgts_by:"pelo FGTS",
+    fgts_locked:"FGTS indisponível até",
     payoff_progress:"Progresso de quitação",
     monthly_commitment:"Compromisso mensal",
     payoff_timeline:"Linha do tempo de quitação",
@@ -3638,6 +3641,9 @@ const I18N={
     debt_tab_sim:"Simulator",
     debt_by_type:"By debt type",
     next_payments:"Upcoming payments",
+    fgts_covers:"FGTS covers",
+    fgts_by:"paid by FGTS",
+    fgts_locked:"FGTS unavailable until",
     payoff_progress:"Payoff progress",
     monthly_commitment:"Monthly commitment",
     payoff_timeline:"Payoff timeline",
@@ -4321,6 +4327,9 @@ const I18N={
     debt_tab_sim:"Simulator",
     debt_by_type:"Nach Schuldenart",
     next_payments:"Nächste Zahlungen",
+    fgts_covers:"FGTS deckt",
+    fgts_by:"durch FGTS",
+    fgts_locked:"FGTS gesperrt bis",
     payoff_progress:"Tilgungsfortschritt",
     monthly_commitment:"Monatliche Belastung",
     payoff_timeline:"Tilgungszeitplan",
@@ -10149,6 +10158,21 @@ function openAmortTable(balance, mRate, n, system){
 }
 const totalDebt=()=>DEBTS.reduce((s,d)=>s+debtBalance(d),0);
 const totalMonthly=()=>DEBTS.reduce((s,d)=>s+(parseFloat(d.monthlyPayment)||0),0);
+/* Prestação de contrato × desembolso do mês. Quando o FGTS cobre parte da
+   prestação ou já amortizou o saldo, quem sai do bolso é menor — e é esse
+   número que os cabeçalhos e os resumos precisam mostrar. */
+function debtPagamentoMes(d){
+  const cheia=parseFloat(d&&d.monthlyPayment)||0;
+  try{
+    if(window.PRO&&PRO.debtParcelaEfetiva&&d&&d.fgts&&d.fgts.on){
+      const e=PRO.debtParcelaEfetiva(d);
+      if(e&&isFinite(e.parcela)) return {cheia,pago:e.parcela,fgts:e.fgts||0};
+    }
+  }catch(err){}
+  return {cheia,pago:cheia,fgts:0};
+}
+const totalMonthlyEfetivo=()=>DEBTS.reduce((s,d)=>s+debtPagamentoMes(d).pago,0);
+const totalFgtsMes=()=>DEBTS.reduce((s,d)=>s+debtPagamentoMes(d).fgts,0);
 const debtPaid=d=>(d.payments||[]).reduce((s,p)=>s+(parseFloat(p.amount)||0),0);
 
 /* monthly interest portion across all debts */
@@ -10180,13 +10204,15 @@ function renderDebts(){
   // hero
   const total=totalDebt();
   const heroEl=document.getElementById("debt-hero");
-  const monthly=totalMonthly();
+  const monthly=totalMonthlyEfetivo();
+  const fgtsMes=totalFgtsMes();
   const activeCount=DEBTS.length;
   if(heroEl) heroEl.innerHTML=`
     <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:6px">${t("total_owed")}</div>
     <div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,38px);line-height:1;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fmt(total)}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">📅 ${fmt(monthly)}${t("w_per_month")}</div>
+      ${fgtsMes>0?`<div style="background:rgba(127,228,160,.18);border-radius:20px;padding:3px 10px;font-size:11px;color:#CFF3DA">🏦 ${t("fgts_covers")} ${fmt(fgtsMes)}</div>`:""}
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">${activeCount} ${activeCount===1?t("w_debt_one"):t("w_debt_many")}</div>
     </div>`;
   const mini=document.getElementById("debt-mini-val");
@@ -10208,7 +10234,8 @@ function renderDebts(){
 
 function renderDebtDash(){
   const total=totalDebt();
-  const monthly=totalMonthly();
+  const monthly=totalMonthlyEfetivo();
+  const fgtsMes=totalFgtsMes();
   const monthlyInt=totalMonthlyInterest();
   const origTotal=DEBTS.reduce((s,d)=>s+debtOriginal(d),0);
   // paid off = original − current balance (across debts that have an original value)
@@ -10220,13 +10247,14 @@ function renderDebtDash(){
     const sc=debtScheduleSummary(d);
     if(sc){ mInterest+=sc.firstInterest; mAmort+=sc.amortMonthly; }
   });
-  const mInstallment=mInterest+mAmort;
+  /* o somatório de parcelas é o que sai do bolso, já líquido do FGTS */
+  const mInstallment=Math.max(0,mInterest+mAmort-fgtsMes);
 
   // stats
   const stats=document.getElementById("debt-stats");
   if(stats) stats.innerHTML=`
     <div class="stat"><div class="stat-label">${t("total_owed")}</div><div class="stat-val" style="color:#6E2B3A">${fmt(total)}</div></div>
-    <div class="stat"><div class="stat-label">${t("installment_sum")}</div><div class="stat-val">${fmt(mInstallment>0?mInstallment:monthly)}</div></div>
+    <div class="stat"><div class="stat-label">${t("installment_sum")}</div><div class="stat-val">${fmt(mInstallment>0?mInstallment:monthly)}</div>${fgtsMes>0?`<div style="font-size:9.5px;color:#3F6B33;margin-top:2px">🏦 ${fmt(fgtsMes)} ${t("fgts_by")}</div>`:""}</div>
     <div class="stat"><div class="stat-label">${t("monthly_interest")}</div><div class="stat-val" style="color:#B85A6A">${fmt(mInterest>0?mInterest:monthlyInt)}</div></div>
     <div class="stat"><div class="stat-label">${t("amort_monthly_lbl")}</div><div class="stat-val" style="color:#5A8A4A">${fmt(mAmort)}</div></div>`;
 
@@ -10280,13 +10308,17 @@ function renderDebtDash(){
       const dt=gDebtType(d.type);
       const days=Math.ceil((due-new Date())/(1000*60*60*24));
       const soon=days<=5;
+      const pg=debtPagamentoMes(d);
       return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08)">
         <div style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:15px">${dt.emoji}</div>
         <div style="flex:1;min-width:0">
           <div style="color:#fff;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}</div>
           <div style="color:rgba(255,255,255,.55);font-size:11px">${due.getDate()}/${due.getMonth()+1} · ${soon?'<span style="color:#FFB3A3">'+t("w_in_days").replace("{n}",days)+'</span>':t("w_in_days").replace("{n}",days)}</div>
         </div>
-        <div style="color:#fff;font-weight:600;font-size:13px">${fmt(parseFloat(d.monthlyPayment)||0)}</div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="color:#fff;font-weight:600;font-size:13px">${fmt(pg.pago)}</div>
+          ${pg.fgts>0?`<div style="font-size:10px;color:#CFF3DA;white-space:nowrap">🏦 ${fmt(pg.fgts)} · <span style="text-decoration:line-through;opacity:.65">${fmt(pg.cheia)}</span></div>`:""}
+        </div>
       </div>`;
     }).join("");
   }
@@ -11837,6 +11869,11 @@ const TXD={
 "% de cada uma das 12.":["% of each of the 12.","% jeder der 12."],
 ". A conta vinculada rende e recebe o depósito mensal até a data da utilização.":[". The restricted account accrues and receives the monthly deposit until the date of use.",". Das gebundene Konto verzinst sich und erhält die monatliche Einzahlung bis zum Nutzungsdatum."],
 "Nenhum FGTS cadastrado em Patrimônio. Deixe desmarcado e informe o valor abaixo.":["No FGTS registered under Assets. Leave it unticked and enter the amount below.","Kein FGTS im Vermögen erfasst. Nicht ankreuzen und den Betrag unten eingeben."],
+"FGTS depositado pelo empregador":["FGTS deposited by the employer","FGTS vom Arbeitgeber eingezahlt"],
+"Aportes programados às aplicações":["Scheduled contributions to holdings","Geplante Einzahlungen in Anlagen"],
+"↳ retido até ":["↳ locked until ","↳ gesperrt bis "],
+" pela utilização em curso":[" by the utilisation under way"," durch die laufende Nutzung"],
+"Estas linhas não passam pela conta corrente: o depósito do FGTS é do empregador e os aportes apenas trocam caixa por aplicação.":["These lines never touch the current account: the FGTS deposit comes from the employer and contributions merely swap cash for holdings.","Diese Zeilen berühren das Girokonto nicht: Die FGTS-Einzahlung kommt vom Arbeitgeber, und Einzahlungen tauschen nur Bargeld gegen Anlagen."],
 "Saldo de FGTS hoje (R$)":["FGTS balance today (R$)","FGTS-Guthaben heute (R$)"],
 "Abater 12 parcelas":["Cover 12 instalments","12 Raten decken"],
 "Reduzir a parcela":["Lower the instalment","Rate senken"],
@@ -13365,6 +13402,10 @@ function debtScheduleFGTS(d,plano){
 
   let prox=liga?fgtsMesDe(P.ym):1e9;
   let janelaFim=0, janelaPote=0;
+  /* Regra do FGTS: iniciada a utilização, os depósitos que entram durante a
+     leva ficam retidos e só voltam a ser sacáveis quando o intervalo legal
+     se encerra. Eles rendem na conta, mas não financiam esta utilização. */
+  let travadoAte=0, retido=0;
 
   function sacar(pedido){
     if(!(pedido>0)) return 0;
@@ -13386,8 +13427,14 @@ function debtScheduleFGTS(d,plano){
 
   while(bal>0.01&&i<1200){
     i++;
-    /* a conta vinculada rende e recebe o depósito do mês */
-    if(usaPat&&i>1) saldoPat=R2(saldoPat*(1+taxaF)+aporte);
+    /* a conta vinculada rende sempre; o depósito do mês só entra no saldo
+       disponível se não houver utilização em curso */
+    if(usaPat&&i>1){
+      saldoPat=R2(saldoPat*(1+taxaF));
+      retido=R2(retido*(1+taxaF));
+      if(travadoAte>=i){ retido=R2(retido+aporte); }
+      else { saldoPat=R2(saldoPat+aporte+retido); retido=0; }
+    }
 
     let usoMes=0, evento="";
 
@@ -13407,6 +13454,7 @@ function debtScheduleFGTS(d,plano){
           if(sys==="sac"&&amortSac>bal) amortSac=bal;
         }
       }
+      travadoAte=i+renova-1;
       if(P.repetir){ prox=i+renova; pote=base; } else prox=1e9;
     }
 
@@ -13432,6 +13480,7 @@ function debtScheduleFGTS(d,plano){
         janelaFim=i+FGTS_MESES_ABAT-1;
         pote=base;
         janelaPote=base>0?(usaPat?Math.min(base,saldoPat):base):(usaPat?saldoPat:0);
+        travadoAte=i+renova-1;
         /* renovável a cada 12 meses, findo o período */
         prox=P.repetir?(janelaFim+1):1e9;
       }
@@ -13508,6 +13557,29 @@ function fgtsModosComparados(d,plano){
       usado:sim?sim.fgtsUsado:0};
   });
   return {base,out};
+}
+
+/* Até quando o FGTS depositado fica retido por causa da utilização em curso.
+   Devolve o mês de liberação para que o fluxo de caixa avise o titular. */
+function fgtsBloqueio(d){
+  const P=fgtsPlano(d);
+  if(!P.on||!fgtsPlanoTemFonte(P)) return null;
+  const ini=fgtsMesDe(P.ym);
+  const renova=fgtsModo(P.modo).ren;
+  const fim=ini+renova-1;
+  if(fim<1) return null;
+  return {ini,fim,renova,modo:P.modo,
+          inicioYm:ymAdd(ymNow(),ini-1),
+          liberaYm:ymAdd(ymNow(),fim)};
+}
+/* A trava mais longa entre as dívidas: é ela que prende o depósito do mês */
+function fgtsBloqueioVigente(){
+  let melhor=null;
+  (typeof DEBTS!=="undefined"?DEBTS:[]).forEach(d=>{
+    const b=fgtsBloqueio(d);
+    if(b&&b.fim>=1&&(!melhor||b.fim>melhor.fim)) melhor=b;
+  });
+  return melhor;
 }
 
 /* Cronograma corrente do financiamento, com memória por dívida. É o que o
@@ -14769,6 +14841,10 @@ function renderCashFlow(){
       R("↳ "+raw(x.nome)+(x.aliq>0?" · IR "+String(x.aliq).replace(".",",")+"%":" · isento"),
         "+"+V(x.bruto),"sub",GRN)).join(""):"";
 
+  /* trava do FGTS: o depósito do mês fica retido enquanto a leva corre */
+  const bloq=fgtsBloqueioVigente();
+  const mesLabel=k=>{try{return typeof monthFullLabel==="function"?monthFullLabel(k):k;}catch(e){return k;}};
+
   const mot={reserva:"Prioridade: completar a reserva de emergência.",
              meta:"Reserva completa. Alvo de 20% da renda líquida.",
              deficit:"O mês fecha negativo. Não há sobra para guardar."}[sg.motivo];
@@ -14807,9 +14883,12 @@ function renderCashFlow(){
       ${R("(=) Caixa operacional",(cf.caixaOper<0?"−":"+")+V(Math.abs(cf.caixaOper)),"grand",cf.caixaOper>=0?GRN:RED)}
       ${R("(=) Resultado total",(cf.caixaTotal<0?"−":"+")+V(Math.abs(cf.caixaTotal)),"tot",cf.caixaTotal>=0?GRN:RED)}
 
-      ${cf.fgts>0?`<div class="pro-cfh">Memória — fora do caixa</div>`+
-        R("FGTS depositado","+"+V(cf.fgts),"sub",GRN):""}
-      ${cf.aplic.aportes>0?R("Aportes programados","−"+V(cf.aplic.aportes),"sub","#8A857D"):""}
+      ${(cf.fgts>0||cf.aplic.aportes>0)?`<div class="pro-cfh">Memória — fora do caixa</div>`:""}
+      ${cf.fgts>0?R("FGTS depositado pelo empregador","+"+V(cf.fgts),"sub",GRN):""}
+      ${(cf.fgts>0&&bloq)?R("↳ retido até "+mesLabel(bloq.liberaYm)+" pela utilização em curso","",
+          "sub","#B85A6A"):""}
+      ${cf.aplic.aportes>0?R("Aportes programados às aplicações","−"+V(cf.aplic.aportes),"sub","#8A857D"):""}
+      ${(cf.fgts>0||cf.aplic.aportes>0)?`<div style="font-size:10px;color:#8A857D;line-height:1.5;margin-top:6px">Estas linhas não passam pela conta corrente: o depósito do FGTS é do empregador e os aportes apenas trocam caixa por aplicação.</div>`:""}
 
       <div style="text-align:right;margin-top:8px">
         <button type="button" class="pro-pill" onclick="PRO.toggleFinDetail()"
@@ -15653,6 +15732,7 @@ window.PRO={
   openFgts,setFgtsModo,toggleFgtsRepetir,toggleFgtsPatr,fgtsCalc,salvarFgts,limparFgts,
   debtScheduleFGTS,fgtsComparativo,fgtsModosComparados,debtParcelaEfetiva,fgtsPlano,
   fgtsCronograma,debtMesFGTS,fgtsPlanoTemFonte,fgtsDisponivel,fgtsModo,FGTS_MODOS,
+  fgtsBloqueio,fgtsBloqueioVigente,
   astEvolucao,astRendimentoCarteira,astProvisao,
   astCustoRegressivo,astDisponivel,toggleCustoAuto,custoManual,astRecalc,
   astAtualizacao,astValorAtual,materializarPosicoes,
