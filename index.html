@@ -1500,7 +1500,7 @@
   </div>
 
   <!-- MONTH NAV -->
-  <div class="month-nav" style="background:#1A3A5C;margin:8px 16px 0">
+  <div class="month-nav" id="month-nav-inc" style="background:#1A3A5C;margin:8px 16px 0">
     <button class="month-nav-btn" id="btn-prev-month-inc">‹</button>
     <div class="month-label" id="month-nav-label-inc"></div>
     <button class="month-today-btn hidden" id="btn-today-inc" data-i18n="today">Hoje</button>
@@ -1608,7 +1608,7 @@
   </div>
 
   <!-- Month nav (for snapshots) -->
-  <div class="month-nav" style="background:#0F2440;margin:8px 16px 0">
+  <div class="month-nav" id="month-nav-ast" style="background:#0F2440;margin:8px 16px 0">
     <button class="month-nav-btn" id="btn-prev-month-ast">‹</button>
     <div class="month-label" id="month-nav-label-ast"></div>
     <button class="month-today-btn hidden" id="btn-today-ast" data-i18n="today">Hoje</button>
@@ -4954,6 +4954,7 @@ async function authRecoverSubmit(){
 function authEnterApp(){
   AUTH_OK=true;
   showScreen("home");
+  try{ encaixarNavMes(); }catch(e){}
   updateHeader();updateMonthNav();updateHero();
   try{renderHome();}catch(e){console.error("renderHome error:",e);}
   initHeroScroll();
@@ -5206,10 +5207,38 @@ function updateMonthNav(){
   document.getElementById("month-nav-label").textContent=MPT[activeMonth]+" "+activeYear;
   const todayBtn=document.getElementById("btn-today");
   todayBtn.classList.toggle("hidden", isCurrentMonth());
-  /* disable next if already on current month */
-  document.getElementById("btn-next-month").disabled=isCurrentMonth();
+  /* O mês seguinte fica liberado: é assim que se enxerga a projeção de
+     despesas. O limite é o mesmo horizonte do painel de fluxo de caixa. */
+  const lim=(()=>{const h=new Date();return (activeYear-h.getFullYear())*12+(activeMonth-h.getMonth());})();
+  document.getElementById("btn-next-month").disabled=lim>=24;
+  const hd=document.getElementById("hero-despesas");
+  if(hd) hd.classList.toggle("mes-projetado",lim>0);
+  const nt=document.getElementById("hero-split-note");
+  if(nt&&lim>0) nt.textContent="· "+t("w_projected_lc");
+  else if(nt&&nt.textContent.indexOf(t("w_projected_lc"))>=0) nt.textContent="";
   const ymS=activeYM();
   setMonthDelta("month-delta-desp",monthExpTotal(ymS),monthExpTotal(prevYMStr(ymS)),true);
+}
+
+/* As barras de mês ocupavam uma faixa inteira da tela só para exibir o mês.
+   O controle passa a morar no canto do próprio resumo: mesma função, sem
+   custar altura de rolagem. */
+function encaixarNavMes(){
+  [["month-nav-despesas","hero-despesas"],
+   ["month-nav-inc","inc-hero-wrap"],
+   ["month-nav-ast","ast-hero-wrap"]].forEach(par=>{
+    const nav=document.getElementById(par[0]), hero=document.getElementById(par[1]);
+    if(!nav||!hero||nav.dataset.encaixado) return;
+    nav.dataset.encaixado="1";
+    nav.classList.add("month-nav-inline");
+    hero.appendChild(nav);
+  });
+  const hn=document.getElementById("home-month-nav");
+  const alvo=document.querySelector("#screen-home .content");
+  if(hn&&alvo&&!hn.dataset.encaixado){
+    hn.dataset.encaixado="1";
+    hn.classList.add("month-nav-inline","solta");
+  }
 }
 
 function shiftMonth(delta){
@@ -7344,6 +7373,7 @@ function enterSection(s){
   },300);
 
   try{
+    encaixarNavMes();
     if(s==="despesas"){updateHeader();updateMonthNav();updateHero();show("dashboard");}
     if(s==="entradas"){updateMonthNavInc();renderIncome();}
     if(s==="patrimonio"){populateAstClassFilter();renderAssets();showAst("dashboard");}
@@ -17639,6 +17669,48 @@ input[type=month]::-webkit-datetime-edit-fields-wrapper{ padding:0; }
 #screen-despesas .month-delta{ display:none!important; }
 #screen-despesas .month-nav-btn{ width:24px!important; height:24px!important; font-size:13px!important; }
 #screen-despesas .month-today-btn{ font-size:9.5px!important; padding:2px 7px!important; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   CONTROLE DE MÊS DENTRO DO RESUMO
+   Setas e rótulo no canto do cartão, em vez de uma faixa própria. Devolve
+   uma linha inteira de altura para o conteúdo e a rolagem.
+   ══════════════════════════════════════════════════════════════════════ */
+.month-nav-inline{
+  position:absolute!important; top:8px!important; right:11px!important;
+  width:auto!important; max-width:calc(100% - 22px)!important;
+  margin:0!important; padding:1px 2px!important;
+  background:rgba(255,255,255,.14)!important;
+  box-shadow:none!important; border-radius:9px!important;
+  gap:0!important; z-index:4;
+}
+.month-nav-inline .month-label{
+  flex:0 0 auto!important; min-width:0!important;
+  font-size:10.5px!important; padding:0 5px!important; white-space:nowrap;
+}
+.month-nav-inline .month-nav-btn{
+  width:20px!important; height:20px!important; font-size:12px!important;
+}
+/* em Despesas o rótulo divide a linha com o controle, para que o valor
+   comece abaixo dele e nada se sobreponha */
+#hero-despesas .hero-label{
+  min-height:22px; display:flex; align-items:center;
+  padding-right:0; margin-bottom:0!important;
+}
+.month-nav-inline .month-today-btn{ font-size:8.5px!important; padding:1px 5px!important; }
+.month-nav-inline .month-delta{ display:none!important; }
+.month-nav-inline #btn-clear-month{ font-size:11px!important; }
+/* na tela inicial não há cartão de resumo: o controle fica solto no topo */
+.month-nav-inline.solta{
+  position:static!important; width:fit-content!important;
+  margin:2px auto 8px!important;
+  background:var(--surface)!important; border:1px solid var(--line);
+}
+.month-nav-inline.solta .month-label{ color:var(--body)!important; }
+.month-nav-inline.solta .month-nav-btn{ color:#6B6760!important; }
+/* o selo de recebíveis cede o canto de cima e desce */
+#hero-splits-chip{ top:auto!important; bottom:10px!important; }
+/* mês projetado: o resumo avisa sem gritar */
+#hero-despesas.mes-projetado{ box-shadow:inset 0 0 0 1.5px rgba(240,196,90,.45); }
 
 /* ── respiro abaixo da linha do mês, em todas as telas ── */
 :is(#screen-home,#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-dividas) .month-nav{
