@@ -5204,7 +5204,7 @@ function monthExpTotal(ym){ return getExpensesForYM(ym).filter(e=>!isNeutral(e))
 function monthIncTotal(ym){ return incomeForYM(ym).reduce((s,i)=>s+i.amount,0); }
 
 function updateMonthNav(){
-  document.getElementById("month-nav-label").textContent=MPT[activeMonth]+" "+activeYear;
+  document.getElementById("month-nav-label").textContent=rotuloMes(activeYear,activeMonth);
   const todayBtn=document.getElementById("btn-today");
   todayBtn.classList.toggle("hidden", isCurrentMonth());
   /* O mês seguinte fica liberado: é assim que se enxerga a projeção de
@@ -5223,6 +5223,9 @@ function updateMonthNav(){
 /* As barras de mês ocupavam uma faixa inteira da tela só para exibir o mês.
    O controle passa a morar no canto do próprio resumo: mesma função, sem
    custar altura de rolagem. */
+/* Dentro do resumo o espaço é do conteúdo: o mês vira mm/aa. */
+const rotuloMes=(y,m)=>String(m+1).padStart(2,"0")+"/"+String(y).slice(2);
+
 function encaixarNavMes(){
   [["month-nav-despesas","hero-despesas"],
    ["month-nav-inc","inc-hero-wrap"],
@@ -5355,11 +5358,12 @@ function updateHero(){
        inteiro roubando altura do conteúdo do mês. */
     if(openSplits.totalVal>0||openSplits.futVal>0){
       chip.style.display="flex";
-      chip.innerHTML=`<span style="font-size:11px">⚠️</span>`
-        +`<span>${fmt(openSplits.totalVal)}</span>`
-        +(openSplits.futVal>0?`<span style="opacity:.7">+${fmt(openSplits.futVal)}</span>`:"")
-        +`<span style="opacity:.6">›</span>`;
-      chip.title=t("receivables_label");
+      chip.textContent="R";
+      chip.title=t("receivables_label")+": "+fmt(openSplits.totalVal)
+        +(openSplits.futVal>0?" (+"+fmt(openSplits.futVal)+" "+t("w_forecast_lc")+")":"");
+      /* mora dentro do controle de mês: assim nunca cobre outro dado */
+      const nav=document.getElementById("month-nav-despesas");
+      if(nav&&chip.parentElement!==nav) nav.insertBefore(chip,nav.firstChild);
     } else chip.style.display="none";
   }
   if(banner) banner.style.display="none";
@@ -6867,7 +6871,7 @@ function activeYMAst(){ return activeYearAst+"-"+String(activeMonthAst+1).padSta
 
 function updateMonthNavAst(){
   const lbl=document.getElementById("month-nav-label-ast");
-  if(lbl) lbl.textContent=MPT[activeMonthAst]+" "+activeYearAst;
+  if(lbl) lbl.textContent=rotuloMes(activeYearAst,activeMonthAst);
   const todayBtn=document.getElementById("btn-today-ast");
   if(todayBtn) todayBtn.classList.toggle("hidden", activeYMAst()===cym());
   const snapLabel=document.getElementById("ast-snapshot-label");
@@ -7405,7 +7409,7 @@ function goHome(){
 
 function updateMonthNavInc(){
   const lbl=document.getElementById("month-nav-label-inc");
-  if(lbl) lbl.textContent=MPT[activeMonth]+" "+activeYear;
+  if(lbl) lbl.textContent=rotuloMes(activeYear,activeMonth);
   const todayBtn=document.getElementById("btn-today-inc");
   if(todayBtn) todayBtn.classList.toggle("hidden",activeYM()===cym());
   const ymS=activeYM();
@@ -7419,7 +7423,7 @@ function renderHome(){
 
   // update home month nav label
   const lbl=document.getElementById("month-nav-label-home");
-  if(lbl) lbl.textContent=monthLabel;
+  if(lbl) lbl.textContent=rotuloMes(activeYear,activeMonth);
   const todayBtn=document.getElementById("btn-today-home");
   if(todayBtn) todayBtn.classList.toggle("hidden",ymStr===cym());
   setMonthDelta("month-delta-home",monthExpTotal(ymStr),monthExpTotal(prevYMStr(ymStr)),true);
@@ -17631,16 +17635,16 @@ input[type=month]::-webkit-datetime-edit-fields-wrapper{ padding:0; }
 #hero-splits-banner{ display:none!important; }
 
 /* ── selo de valores a receber: canto do hero, sem custar altura ── */
+/* Rateios em aberto: um R circulado, sem número, para não disputar espaço
+   com os valores do mês. O detalhe está a um toque, na aba Rateios. */
 #hero-splits-chip{
-  position:absolute; top:10px; right:12px; z-index:2;
-  display:flex; align-items:center; gap:5px;
-  background:rgba(240,196,90,.22); border:1px solid rgba(240,196,90,.45);
-  color:#F6D98A; border-radius:9px; padding:3px 8px;
-  font-size:10.5px; font-weight:600; letter-spacing:.2px;
-  cursor:pointer; max-width:62%; white-space:nowrap;
-  overflow:hidden; text-overflow:ellipsis;
+  display:none; align-items:center; justify-content:center;
+  width:18px; height:18px; margin:0 3px 0 1px; flex-shrink:0;
+  background:#F0C45A; color:#3A3A38; border-radius:50%;
+  font-size:10px; font-weight:800; line-height:1;
+  cursor:pointer; user-select:none;
 }
-#hero-splits-chip:active{ background:rgba(240,196,90,.32); }
+#hero-splits-chip:active{ background:#E0B44A; }
 
 /* ── o resumo de despesas passa a ocupar o mesmo espaço de Patrimônio
       e Entradas: o mês tem mais área de rolagem ── */
@@ -17676,7 +17680,8 @@ input[type=month]::-webkit-datetime-edit-fields-wrapper{ padding:0; }
    uma linha inteira de altura para o conteúdo e a rolagem.
    ══════════════════════════════════════════════════════════════════════ */
 .month-nav-inline{
-  position:absolute!important; top:8px!important; right:11px!important;
+  position:absolute!important; top:7px!important; right:11px!important;
+  height:22px!important; min-height:0!important; align-items:center!important;
   width:auto!important; max-width:calc(100% - 22px)!important;
   margin:0!important; padding:1px 2px!important;
   background:rgba(255,255,255,.14)!important;
@@ -17685,18 +17690,24 @@ input[type=month]::-webkit-datetime-edit-fields-wrapper{ padding:0; }
 }
 .month-nav-inline .month-label{
   flex:0 0 auto!important; min-width:0!important;
-  font-size:10.5px!important; padding:0 5px!important; white-space:nowrap;
+  font-size:9.5px!important; letter-spacing:.2px!important;
+  padding:0 4px!important; white-space:nowrap;
 }
 .month-nav-inline .month-nav-btn{
-  width:20px!important; height:20px!important; font-size:12px!important;
+  width:18px!important; height:18px!important; font-size:11px!important;
 }
 /* em Despesas o rótulo divide a linha com o controle, para que o valor
    comece abaixo dele e nada se sobreponha */
 #hero-despesas .hero-label{
-  min-height:22px; display:flex; align-items:center;
+  min-height:24px; display:flex; align-items:center;
   padding-right:0; margin-bottom:0!important;
 }
-.month-nav-inline .month-today-btn{ font-size:8.5px!important; padding:1px 5px!important; }
+.month-nav-inline .month-today-btn{
+  font-size:8px!important; padding:0 4px!important; height:16px!important;
+  min-height:0!important; line-height:16px!important;
+}
+.month-nav-inline > *{ min-height:0!important; }
+.month-nav-inline{ min-height:0!important; }
 .month-nav-inline .month-delta{ display:none!important; }
 .month-nav-inline #btn-clear-month{ font-size:11px!important; }
 /* na tela inicial não há cartão de resumo: o controle fica solto no topo */
@@ -17708,7 +17719,7 @@ input[type=month]::-webkit-datetime-edit-fields-wrapper{ padding:0; }
 .month-nav-inline.solta .month-label{ color:var(--body)!important; }
 .month-nav-inline.solta .month-nav-btn{ color:#6B6760!important; }
 /* o selo de recebíveis cede o canto de cima e desce */
-#hero-splits-chip{ top:auto!important; bottom:10px!important; }
+
 /* mês projetado: o resumo avisa sem gritar */
 #hero-despesas.mes-projetado{ box-shadow:inset 0 0 0 1.5px rgba(240,196,90,.45); }
 
