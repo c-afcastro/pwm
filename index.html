@@ -2226,6 +2226,22 @@
       </div>
     </div>
 
+    <!-- Encargos mensais que o banco soma ao boleto -->
+    <div id="debt-encargos-row" style="display:none;margin-top:8px">
+      <label class="f-label" data-i18n="debt_charges">Encargos mensais do contrato</label>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1">
+          <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#8A857D;font-weight:600;margin-bottom:4px" data-i18n="debt_insurance">Seguros (MIP + DFI)</div>
+          <input id="debt-seguro" class="f-input" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this);updateDebtEstimate()"/>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#8A857D;font-weight:600;margin-bottom:4px" data-i18n="debt_admin_fee">Taxa de administração</div>
+          <input id="debt-taxaadm" class="f-input" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this);updateDebtEstimate()"/>
+        </div>
+      </div>
+      <div style="font-size:10.5px;color:#8A857D;line-height:1.55;margin-top:2px" data-i18n="debt_charges_hint">Somados à prestação no boleto. Não amortizam a dívida nem são cobertos pelo FGTS.</div>
+    </div>
+
     <!-- Indexador do saldo devedor (financiamento) -->
     <div id="debt-index-row" style="display:none;margin-top:8px">
       <label class="f-label" data-i18n="debt_indexer">Indexador do saldo devedor</label>
@@ -2959,6 +2975,10 @@ const I18N={
     debt_tab_sim:"Simulador",
     debt_by_type:"Por tipo de dívida",
     next_payments:"Próximos pagamentos",
+    debt_charges:"Encargos mensais do contrato",
+    debt_insurance:"Seguros (MIP + DFI)",
+    debt_admin_fee:"Taxa de administração",
+    debt_charges_hint:"Somados à prestação no boleto. Não amortizam a dívida nem são cobertos pelo FGTS.",
     debt_indexer:"Indexador do saldo devedor",
     idx_today:"hoje",
     idx_zero_now:"Zerada no patamar atual da Selic.",
@@ -3659,6 +3679,10 @@ const I18N={
     debt_tab_sim:"Simulator",
     debt_by_type:"By debt type",
     next_payments:"Upcoming payments",
+    debt_charges:"Monthly contract charges",
+    debt_insurance:"Insurance (MIP + DFI)",
+    debt_admin_fee:"Administration fee",
+    debt_charges_hint:"Added to the instalment on the bill. They do not amortise the debt and are not covered by FGTS.",
     debt_indexer:"Balance indexer",
     idx_today:"today",
     idx_zero_now:"Zeroed at the current Selic level.",
@@ -4359,6 +4383,10 @@ const I18N={
     debt_tab_sim:"Simulator",
     debt_by_type:"Nach Schuldenart",
     next_payments:"Nächste Zahlungen",
+    debt_charges:"Monatliche Vertragsgebühren",
+    debt_insurance:"Versicherungen (MIP + DFI)",
+    debt_admin_fee:"Verwaltungsgebühr",
+    debt_charges_hint:"Werden der Rate auf der Rechnung zugeschlagen. Sie tilgen nicht und werden nicht vom FGTS gedeckt.",
     debt_indexer:"Index des Restsaldos",
     idx_today:"heute",
     idx_zero_now:"Beim aktuellen Selic-Niveau auf null.",
@@ -10237,7 +10265,7 @@ function openAmortTable(balance, mRate, n, system){
 const totalDebt=()=>DEBTS.reduce((s,d)=>s+debtBalance(d),0);
 /* Soma das prestações de contrato, sem considerar o FGTS. Só serve para
    comparar "cheio × pago"; nenhum indicador deve usá-la sozinha. */
-const totalMonthlyContrato=()=>DEBTS.reduce((s,d)=>s+(parseFloat(d.monthlyPayment)||0),0);
+const totalMonthlyContrato=()=>DEBTS.reduce((s,d)=>s+(parseFloat(d.monthlyPayment)||0)+debtEncargos(d),0);
 /* O que realmente sai do bolso no mês. É esta que vale em toda a interface,
    para que nenhum ponto novo volte a mostrar a parcela cheia por engano. */
 const totalMonthly=ymStr=>totalMonthlyEfetivo(ymStr);
@@ -10246,6 +10274,12 @@ const totalMonthly=ymStr=>totalMonthlyEfetivo(ymStr);
    número que os cabeçalhos e os resumos precisam mostrar. */
 /* Distância em meses entre hoje e um AAAA-MM. O cronograma da dívida começa
    no mês corrente, então é isto que traduz o mês na tela para a linha certa. */
+/* Seguros e taxa de administração: entram no boleto, mas não amortizam a
+   dívida nem entram na base coberta pelo FGTS. */
+const R2c=v=>Math.round((v||0)*100)/100;
+function debtEncargos(d){
+  return R2c((parseFloat(d&&d.seguro)||0)+(parseFloat(d&&d.taxaAdm)||0));
+}
 const todayYM=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
 function ymOffHoje(ymStr){
   const h=new Date(), p=String(ymStr||"").split("-");
@@ -10258,7 +10292,8 @@ function ymOffHoje(ymStr){
    estão quitados: os dois casos precisam responder por si, e não repetir
    o número do mês atual. */
 function debtPagamentoMes(d,ymStr){
-  const cheia=parseFloat(d&&d.monthlyPayment)||0;
+  const enc=debtEncargos(d);
+  const cheia=R2c((parseFloat(d&&d.monthlyPayment)||0)+enc);
   const off=ymOffHoje(ymStr||(typeof activeYM==="function"?activeYM():null));
   if(off<0) return {cheia,pago:cheia,fgts:0,passado:true};
   try{
@@ -10269,9 +10304,10 @@ function debtPagamentoMes(d,ymStr){
       /* passou do fim do cronograma: a dívida já foi quitada */
       const sch=PRO.fgtsCronograma(d);
       if(sch&&off+1>sch.rows.length) return {cheia,pago:0,fgts:0,quitada:true};
+      return {cheia,pago:cheia,fgts:0,encargos:enc};
     }
   }catch(err){}
-  return {cheia,pago:cheia,fgts:0};
+  return {cheia,pago:cheia,fgts:0,encargos:enc};
 }
 function totalMonthlyEfetivo(ymStr){ return DEBTS.reduce((s,d)=>s+debtPagamentoMes(d,ymStr).pago,0); }
 function totalFgtsMes(ymStr){ return DEBTS.reduce((s,d)=>s+debtPagamentoMes(d,ymStr).fgts,0); }
@@ -11084,6 +11120,8 @@ function openDebt(id){
   document.getElementById("amort-price").classList.toggle("active",DEBT_AMORT_SYS==="price");
   document.getElementById("amort-sac").classList.toggle("active",DEBT_AMORT_SYS==="sac");
   DEBT_INDEXADOR=d?(d.indexador||"tr"):"tr";
+  setCurrencyInput(document.getElementById("debt-seguro"), d&&d.seguro?parseFloat(d.seguro):"");
+  setCurrencyInput(document.getElementById("debt-taxaadm"), d&&d.taxaAdm?parseFloat(d.taxaAdm):"");
   updateRateTypeButtons();
   renderDebtTypeGrid();
   renderDebtIndex();
@@ -11184,8 +11222,11 @@ function updateDebtEstimate(){
   const s=amortSummary(balance,mRate,term,sys);
 
   // payment is always computed and shown in the display label
+  const encM=(unmaskCurrency(document.getElementById("debt-seguro"))||0)
+            +(unmaskCurrency(document.getElementById("debt-taxaadm"))||0);
   const disp=document.getElementById("debt-payment-display");
-  if(disp) disp.textContent=fmt(s.firstPayment);
+  if(disp) disp.innerHTML=fmt(s.firstPayment+encM)
+    +(encM>0?`<span style="font-size:9.5px;font-weight:500;color:#8A857D;margin-left:5px">(${fmt(s.firstPayment)} + ${fmt(encM)})</span>`:"");
   const computed=true;
 
   // headline amortization (monthly) and interest+amort sum
@@ -11284,6 +11325,8 @@ function renderDebtIndex(){
   const row=document.getElementById("debt-index-row"); if(!row) return;
   const fin=DEBT_TYPE_SEL==="mortgage"||DEBT_TYPE_SEL==="vehicle";
   row.style.display=fin?"":"none";
+  const enc=document.getElementById("debt-encargos-row");
+  if(enc) enc.style.display=fin?"":"none";
   if(!fin) return;
   const LS=(window.PRO&&PRO.DEBT_INDEX)||[];
   const btns=document.getElementById("debt-index-btns");
@@ -11328,6 +11371,8 @@ function saveDebt(){
     term:parseInt(document.getElementById("debt-term").value)||null,
     dueDay:parseInt(document.getElementById("debt-dueday").value)||null,
     indexador:(DEBT_TYPE_SEL==="mortgage"||DEBT_TYPE_SEL==="vehicle")?DEBT_INDEXADOR:null,
+    seguro:unmaskCurrency(document.getElementById("debt-seguro"))||0,
+    taxaAdm:unmaskCurrency(document.getElementById("debt-taxaadm"))||0,
   };
   if(DEBT_EID){
     const i=DEBTS.findIndex(x=>x.id===DEBT_EID);
@@ -11437,7 +11482,7 @@ function debtPayRecalc(){
     +(p.fgts>0?`<br>${t("payment_fgts_note")}`:"")
     +(DEBT_PAY_SALDO_MANUAL?`<br>${t("payment_balance_manual")}`:"");
 }
-const R2c=v=>Math.round((v||0)*100)/100;
+
 
 function saveDebtPayment(){
   const d=DEBTS.find(x=>x.id===DEBT_PAY_ID); if(!d) return;
@@ -11526,6 +11571,10 @@ function openDebtDetail(id){
           <div class="stat-val">${fmt(pgm.pago)}</div>
           ${pgm.fgts>0?`<div style="font-size:9.5px;color:#3F6B33;margin-top:2px">🏦 ${fmt(pgm.fgts)} ${t("fgts_by")} · <span style="color:#8A857D;text-decoration:line-through">${fmt(pgm.cheia)}</span></div>`:""}</div>`;})()}
       ${d.dueDay?`<div class="stat"><div class="stat-label">${t("debt_due_day")}</div><div class="stat-val">${t("w_day")} ${d.dueDay}</div></div>`:""}
+      ${(()=>{ const e=debtEncargos(d); if(!(e>0)) return "";
+        return `<div class="stat"><div class="stat-label">${t("debt_charges")}</div>
+          <div class="stat-val">${fmt(e)}</div>
+          <div style="font-size:9.5px;color:#8A857D;margin-top:2px">${(parseFloat(d.seguro)||0)>0?t("debt_insurance")+" "+fmt(parseFloat(d.seguro)||0):""}${((parseFloat(d.seguro)||0)>0&&(parseFloat(d.taxaAdm)||0)>0)?" · ":""}${(parseFloat(d.taxaAdm)||0)>0?t("debt_admin_fee")+" "+fmt(parseFloat(d.taxaAdm)||0):""}</div></div>`;})()}
       ${(()=>{ if(!d.indexador||!window.PRO||!PRO.debtIndexAM) return "";
         const am=PRO.debtIndexAM(d), sch=PRO.fgtsCronograma(d)||PRO.debtScheduleFGTS(d,{on:false});
         return `<div class="stat"><div class="stat-label">${t("debt_indexer")}</div>
@@ -12106,6 +12155,9 @@ const TXD={
 "Juros iniciais menores, saldo corrigido pela inflação. Risco alto no longo prazo.":["Lower headline interest, balance indexed to inflation. High long-term risk.","Niedrigere Anfangszinsen, Saldo an die Inflation gekoppelt. Langfristig hohes Risiko."],
 "Varia com a Selic, somada a uma parte prefixada.":["Varies with Selic plus a fixed component.","Variiert mit Selic zuzüglich eines festen Anteils."],
 "Taxa única do começo ao fim. Previsível, mas mais cara na largada.":["One rate from start to finish. Predictable, but costlier upfront.","Ein Satz von Anfang bis Ende. Planbar, aber anfangs teurer."],
+"↳ seguros e taxa de administração":["↳ insurance and administration fee","↳ Versicherungen und Verwaltungsgebühr"],
+"Dívidas · seguros e taxa adm.":["Debts · insurance and admin fee","Schulden · Versicherung und Gebühr"],
+"seguros e taxa adm.":["insurance and admin fee","Versicherung und Gebühr"],
 "Saldo de FGTS hoje (R$)":["FGTS balance today (R$)","FGTS-Guthaben heute (R$)"],
 "Abater 12 parcelas":["Cover 12 instalments","12 Raten decken"],
 "Reduzir a parcela":["Lower the instalment","Rate senken"],
@@ -12803,22 +12855,24 @@ function debtFlowForYM(ymStr){
   const offCf=(()=>{const h=new Date(),p=String(ymStr||"").split("-");
     const y=+p[0],m=+p[1]; if(!y||!m) return 0;
     return (y-h.getFullYear())*12+(m-1-h.getMonth());})();
-  let juros=0,amort=0,parcela=0,fgtsAbat=0; const itens=[];
+  let juros=0,amort=0,parcela=0,fgtsAbat=0,encargos=0; const itens=[];
   (typeof DEBTS!=="undefined"?DEBTS:[]).forEach(d=>{
     const bal=debtBalance(d), r=debtRateMonthly(d), pmt=parseFloat(d.monthlyPayment)||0;
     if(bal<=0||pmt<=0) return;
     const j=bal*r, a=Math.min(Math.max(0,pmt-j),bal);
     /* o abatimento pelo FGTS reduz o desembolso, nao os juros nem a amortizacao */
     const row=(offCf>=0)?debtMesFGTS(d,offCf+1):null;
-    const ef=row?{parcela:row.desembolso,fgts:row.fgts}:{parcela:pmt,fgts:0};
+    const encD=row?(row.encargos||0):R2((parseFloat(d.seguro)||0)+(parseFloat(d.taxaAdm)||0));
+    const ef=row?{parcela:row.desembolso,fgts:row.fgts}:{parcela:pmt+encD,fgts:0};
     const cob=Math.min(ef.fgts||0,j+a);
-    const pg=Math.min(pmt,j+a)-cob;
-    juros+=j; amort+=a; parcela+=pg; fgtsAbat+=cob;
+    const pg=Math.min(pmt,j+a)-cob+encD;
+    juros+=j; amort+=a; parcela+=pg; fgtsAbat+=cob; encargos+=encD;
     itens.push({nome:d.name||catLabel(gDebtType(d.type)),emoji:gDebtType(d.type).emoji,
-      juros:R2(j),amort:R2(a),parcela:R2(pg),fgts:R2(cob)});
+      juros:R2(j),amort:R2(a),parcela:R2(pg),fgts:R2(cob),encargos:R2(encD)});
   });
   itens.sort((a,b)=>b.parcela-a.parcela);
-  return {juros:R2(juros),amort:R2(amort),parcela:R2(parcela),fgtsAbat:R2(fgtsAbat),itens};
+  return {juros:R2(juros),amort:R2(amort),parcela:R2(parcela),fgtsAbat:R2(fgtsAbat),
+          encargos:R2(encargos),itens};
 }
 /* Receita financeira do mês e a provisão de IRRF correspondente */
 function assetFlowForYM(ymStr){
@@ -13686,6 +13740,8 @@ function debtScheduleFGTS(d,plano){
   const renova=fgtsModo(modo).ren;
 
   const ci=debtIndexAM(d)/100;   // correção monetária do saldo, ao mês
+  /* encargos acessórios: entram no boleto, mas fora da base do FGTS */
+  const enc=R2((parseFloat(d&&d.seguro)||0)+(parseFloat(d&&d.taxaAdm)||0));
   let bal=bal0;
   let pmt=(sys==="price")?amortPayment(bal0,r,n0):0;   // Price: prestação fixa
   let amortSac=bal0/n0;                                // SAC: amortização constante
@@ -13720,7 +13776,7 @@ function debtScheduleFGTS(d,plano){
   }
 
   const rows=[];
-  let juros=0, desembolso=0, fgtsUsado=0, i=0, quitadoPorFgts=false;
+  let juros=0, desembolso=0, fgtsUsado=0, encargos=0, i=0, quitadoPorFgts=false;
   let parcelasCobertas=0, aplicado=0;
 
   while(bal>0.01&&i<1200){
@@ -13803,9 +13859,12 @@ function debtScheduleFGTS(d,plano){
 
     bal=R2(bal-amortMes);
     juros=R2(juros+jurosMes);
-    const pago=R2(Math.max(0,parcela-cob));
+    /* o FGTS cobre a prestação; os encargos são somados depois, por inteiro */
+    const pago=R2(Math.max(0,parcela-cob)+enc);
     desembolso=R2(desembolso+pago);
-    rows.push({i,parcela:R2(parcela),juros:R2(jurosMes),amort:R2(amortMes),
+    encargos=R2(encargos+enc);
+    rows.push({i,parcela:R2(parcela+enc),prestacao:R2(parcela),encargos:enc,
+      juros:R2(jurosMes),amort:R2(amortMes),
       correcao:R2(corrMes),fgts:R2(usoMes),desembolso:pago,saldo:Math.max(0,bal),
       saldoFgts:R2(saldoPat),evento});
   }
@@ -13818,6 +13877,7 @@ function debtScheduleFGTS(d,plano){
   return {
     rows, meses:rows.length, juros:R2(juros), desembolso:R2(desembolso),
     correcao:R2(rows.reduce((x,y)=>x+(y.correcao||0),0)), indexAM:Math.round(ci*1000000)/10000,
+    encargos:R2(encargos), encargoMes:enc,
     fgtsUsado:R2(fgtsUsado), saldoFgtsFinal:R2(saldoPat), aplicado:R2(aplicado),
     modo, parcelasCobertas, pctMedio,
     primeira:rows.length?rows[0].desembolso:0,
@@ -15180,6 +15240,7 @@ function renderCashFlow(){
       ${R("Despesas",cf.despesas>0?"−"+V(cf.despesas):V(0),"",RED)}
       ${R("Dívidas · juros",cf.divida.juros>0?"−"+V(cf.divida.juros):V(0),"",RED)}
       ${R("Dívidas · amortização",cf.divida.amort>0?"−"+V(cf.divida.amort):V(0),"",RED)}
+      ${cf.divida.encargos>0?R("Dívidas · seguros e taxa adm.","−"+V(cf.divida.encargos),"",RED):""}
       ${cf.divida.fgtsAbat>0?R("(+) Abatimento pelo FGTS","+"+V(cf.divida.fgtsAbat),"",GRN):""}
       ${detDiv}
       ${R("(=) Total de saídas","−"+V(cf.saidas),"tot",RED)}
@@ -16109,15 +16170,16 @@ function cfMes(ym,k,st){
 
   /* ── dívidas, pelo cronograma (já com o FGTS quando houver plano) ── */
   const idx=Math.max(1,k+1);
-  let dJuros=0,dAmort=0,dPago=0,dFgts=0; const dItens=[];
+  let dJuros=0,dAmort=0,dPago=0,dFgts=0,dEnc=0; const dItens=[];
   (typeof DEBTS!=="undefined"?DEBTS:[]).forEach(d=>{
     const sch=cfDebtSch(d);
     const row=sch&&sch.rows?sch.rows[idx-1]:null;
     if(!row) return;
-    dJuros+=row.juros; dAmort+=row.amort; dPago+=row.desembolso; dFgts+=row.fgts;
+    dJuros+=row.juros; dAmort+=row.amort; dPago+=row.desembolso;
+    dFgts+=row.fgts; dEnc+=(row.encargos||0);
     dItens.push({nome:d.name||catLabel(gDebtType(d.type)),emoji:gDebtType(d.type).emoji,
       juros:R2(row.juros),amort:R2(row.amort),pago:R2(row.desembolso),
-      fgts:R2(row.fgts),saldo:R2(row.saldo)});
+      fgts:R2(row.fgts),encargos:R2(row.encargos||0),saldo:R2(row.saldo)});
   });
   dItens.sort((a,b)=>b.pago-a.pago);
 
@@ -16158,7 +16220,7 @@ function cfMes(ym,k,st){
     impostos:R2(inc.ir), entLiquidas:entLiq, fgts:R2(inc.fgts||0),
     despesas, despItens,
     divida:{juros:R2(dJuros),amort:R2(dAmort),parcela:R2(dPago),
-            fgtsAbat:R2(dFgts),itens:dItens},
+            fgtsAbat:R2(dFgts),encargos:R2(dEnc),itens:dItens},
     aplic:{bruto:R2(apBruto),ir:R2(apIr),comeCotas:R2(apCc),
            liquido:apLiq,aportes:R2(apAportes),itens:apItens},
     saidas, caixaOper, caixaTotal:R2(caixaOper+apLiq)
@@ -16182,7 +16244,7 @@ function cfConsolida(ms){
   const z={ym:"",k:0,proj:ms.some(m=>m.proj),
     tipos:[],bruto:0,inss:0,irrf:0,outrasDed:0,deducoes:0,impostos:0,
     entLiquidas:0,fgts:0,despesas:0,despItens:[],
-    divida:{juros:0,amort:0,parcela:0,fgtsAbat:0,itens:[]},
+    divida:{juros:0,amort:0,parcela:0,fgtsAbat:0,encargos:0,itens:[]},
     aplic:{bruto:0,ir:0,comeCotas:0,liquido:0,aportes:0,itens:[]},
     saidas:0,caixaOper:0,caixaTotal:0};
   const somaEm=(arr,chave,obj,campos)=>{
@@ -16195,10 +16257,10 @@ function cfConsolida(ms){
   ms.forEach(m=>{
     ["bruto","inss","irrf","outrasDed","deducoes","impostos","entLiquidas",
      "fgts","despesas","saidas","caixaOper","caixaTotal"].forEach(c=>z[c]=R2(z[c]+m[c]));
-    ["juros","amort","parcela","fgtsAbat"].forEach(c=>z.divida[c]=R2(z.divida[c]+m.divida[c]));
+    ["juros","amort","parcela","fgtsAbat","encargos"].forEach(c=>z.divida[c]=R2(z.divida[c]+(m.divida[c]||0)));
     ["bruto","ir","comeCotas","liquido","aportes"].forEach(c=>z.aplic[c]=R2(z.aplic[c]+m.aplic[c]));
     m.tipos.forEach(o=>somaEm(z.tipos,"id",o,["bruto","inss","ir","ded","liq","fgts","base"]));
-    m.divida.itens.forEach(o=>somaEm(z.divida.itens,"nome",o,["juros","amort","pago","fgts"]));
+    m.divida.itens.forEach(o=>somaEm(z.divida.itens,"nome",o,["juros","amort","pago","fgts","encargos"]));
     m.aplic.itens.forEach(o=>somaEm(z.aplic.itens,"nome",o,["bruto","ir"]));
     m.despItens.forEach(o=>somaEm(z.despItens,"nome",o,["valor"]));
   });
@@ -16336,6 +16398,7 @@ function cfDemonstrativo(cf,pref){
     R("↳ "+(x.emoji||"")+" "+raw(x.nome),"−"+V(x.pago),"sub",RED),
     R("&nbsp;&nbsp;&nbsp;juros","−"+V(x.juros),"sub","#8A857D"),
     R("&nbsp;&nbsp;&nbsp;amortização","−"+V(x.amort),"sub","#8A857D"),
+    x.encargos>0?R("&nbsp;&nbsp;&nbsp;seguros e taxa adm.","−"+V(x.encargos),"sub","#8A857D"):"",
     x.fgts>0?R("&nbsp;&nbsp;&nbsp;coberto pelo FGTS","+"+V(x.fgts),"sub",GRN):""
   ].filter(Boolean).join("")));
   const apl=sub(ID("apl"),cf.aplic.itens.slice(0,20).map(x=>
@@ -16357,6 +16420,7 @@ function cfDemonstrativo(cf,pref){
     ${div}
     ${R("↳ juros","−"+V(cf.divida.juros),"sub","#8A857D")}
     ${R("↳ amortização","−"+V(cf.divida.amort),"sub","#8A857D")}
+    ${cf.divida.encargos>0?R("↳ seguros e taxa de administração","−"+V(cf.divida.encargos),"sub","#8A857D"):""}
     ${cf.divida.fgtsAbat>0?R("↳ coberto pelo FGTS","+"+V(cf.divida.fgtsAbat),"sub",GRN):""}
     ${R("(=) Total de saídas","−"+V(cf.saidas),"tot",RED)}
 
