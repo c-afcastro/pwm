@@ -16927,7 +16927,8 @@ function renderImpactos(){
   const L=S.linhas, soma=c=>R2(L.reduce((a,x)=>a+(x[c]||0),0));
   const mesLbl=k=>{try{return monthFullLabel(k).slice(0,3)+"/"+k.slice(2,4);}catch(e){return k;}};
 
-  let titulo="", sub="", emoji="📌", fluxo="", patr="", div="", tabela="";
+  let titulo="", sub="", emoji="📌", fluxo="", patr="", div="", tabela="", extra="";
+  const bloco=(t2,c)=>`<div class="sec-label">${t2}</div><div class="cfp-card">${c}</div>`;
 
   if(S.tipo==="income"){
     const T=gIncomeType(S.obj.type||"other_in");
@@ -16999,13 +17000,85 @@ function renderImpactos(){
       +R("(−) Amortizado no período","−"+V(soma("amort")),"","#8A857D")
       +R("(=) Saldo projetado em "+IMP_N+" meses",V(fim),"grand",WIN)
       +R("Quitação estimada",S.sch.meses+" meses","sub","#8A857D");
-    tabela=`<tr><th style="text-align:left">Mês</th><th>Juros</th><th>Amort.</th><th>FGTS</th><th>Você paga</th><th>Saldo</th></tr>`
+    tabela=`<tr><th style="text-align:left">Mês</th><th>Corr.</th><th>Juros</th><th>Amort.</th><th>Enc.</th><th>FGTS</th><th>Paga</th><th>Saldo</th></tr>`
       +L.map(x=>`<tr class="lin"><td>${mesLbl(x.ym)}</td>
+        <td style="color:${RED}">${x.correcao>0?V(x.correcao):"—"}</td>
         <td style="color:${RED}">${V(x.juros)}</td>
         <td style="color:#8A857D">${V(x.amort)}</td>
+        <td style="color:#8A857D">${x.encargos>0?V(x.encargos):"—"}</td>
         <td style="color:${GRN}">${x.fgts>0?V(x.fgts):"—"}</td>
         <td style="color:${WIN};font-weight:600">${V(x.saida)}</td>
         <td style="color:#8A857D">${V(x.saldo)}</td></tr>`).join("");
+
+    /* ── as regras que produziram esses números, abertas ── */
+    const d0=S.obj, r0=L[0]||{}, sch=S.sch;
+    const rm=debtRateMonthly(d0)*100;
+    const sis=(d0.amortSystem||"price")==="sac"?"SAC · amortização constante":"Price · prestação fixa";
+    const idxAM=debtIndexAM(d0);
+
+    /* 1. composição da prestação do mês corrente, passo a passo */
+    const comp=R("Saldo devedor no início do mês",V(ini),"","#8A857D")
+      +(r0.correcao>0?R("(+) Correção "+debtIndexLbl(d0)+" · "+String(idxAM.toFixed(4)).replace(".",",")+"% a.m.","+"+V(r0.correcao),"",RED):"")
+      +R("(=) Base de cálculo dos juros",V(R2(ini+(r0.correcao||0))),"tot","#8A857D")
+      +R("Juros do contrato · "+String(R2(rm)).replace(".",",")+"% a.m.","−"+V(r0.juros||0),"",RED)
+      +R("Amortização do principal","−"+V(r0.amort||0),"","#8A857D")
+      +R("(=) Prestação",V(R2((r0.juros||0)+(r0.amort||0))),"tot",BLU)
+      +(r0.encargos>0?R("(+) Seguros e taxa de administração","+"+V(r0.encargos),"",RED):"")
+      +(r0.fgts>0?R("(−) Coberto pelo FGTS","−"+V(r0.fgts),"",GRN):"")
+      +R("(=) Você desembolsa",V(r0.saida||0),"grand",WIN);
+
+    /* 2. onde cada componente entra no fluxo de caixa */
+    const mapa=`<div class="cfp-row"><span>Juros</span><span style="color:${RED}">despesa financeira</span></div>
+      <div class="cfp-row"><span>Amortização</span><span style="color:#8A857D">saída de caixa · reduz a dívida</span></div>
+      ${r0.encargos>0?`<div class="cfp-row"><span>Seguros e taxa adm.</span><span style="color:${RED}">despesa · não amortiza</span></div>`:""}
+      ${r0.correcao>0?`<div class="cfp-row"><span>Correção ${debtIndexLbl(d0)}</span><span style="color:${RED}">não é caixa · aumenta a dívida</span></div>`:""}
+      ${r0.fgts>0?`<div class="cfp-row"><span>FGTS</span><span style="color:${GRN}">não é caixa · quita no seu lugar</span></div>`:""}
+      <div class="cfp-row tot"><span>Sai da conta corrente</span><span style="color:${WIN}">${V(r0.saida||0)}</span></div>`;
+
+    /* 3. indexador */
+    const idx=d0.indexador?(
+      R("Indexador do contrato",debtIndexLbl(d0),"",BLU)
+      +(d0.indexador==="tr"?R("Selic vigente",String(R2(MARKET.selic)).replace(".",",")+"% a.a.","sub","#8A857D")
+        +R(MARKET.selic<=TR_SELIC_PISO?"Selic em 8,5% a.a. ou menos: TR zerada":"Selic acima de 8,5% a.a.: TR positiva",
+           String(idxAM.toFixed(4)).replace(".",",")+"% a.m.","sub",idxAM>0?RED:GRN):"")
+      +(idxAM>0?R("Correção no horizonte de "+IMP_N+" meses","+"+V(soma("correcao")),"",RED)
+        +R("Correção até a quitação","+"+V(sch.correcao||0),"tot",RED)
+        :R("Sem correção monetária no patamar atual","—","sub",GRN))
+      +R("Sistema de amortização",sis,"sub","#8A857D")
+    ):R("Contrato sem indexador declarado","—","sub","#8A857D");
+
+    /* 4. FGTS */
+    const P=fgtsPlano(d0);
+    const bloq=fgtsBloqueio(d0);
+    const fg=(P.on&&fgtsPlanoTemFonte(P))?(
+      R("Modalidade",fgtsModo(P.modo).lbl,"",BLU)
+      +R("Fonte declarada",V(fgtsDisponivel(P)),"sub","#8A857D")
+      +(P.modo==="abater"
+        ? R("Cobertura","até "+String(P.pct).replace(".",",")+"% de 12 prestações","sub","#8A857D")
+          +R("Coberto na prática",sch.parcelasCobertas+" de 12 · "+sch.pctMedio.toFixed(0)+"% de cada","sub",GRN)
+        : R("Efeito","amortiza o saldo devedor em "+mesLbl(ymAdd(ymNow(),fgtsMesDe(P.ym)-1)),"sub","#8A857D"))
+      +R("FGTS aplicado no horizonte","+"+V(soma("fgts")),"",GRN)
+      +R("FGTS aplicado até a quitação","+"+V(sch.fgtsUsado||0),"tot",GRN)
+      +(bloq?R("Depósitos retidos até","​"+cfMesLabel(bloq.liberaYm),"sub",RED):"")
+      +(P.deduzido?R("Saldo já debitado do Patrimônio","sim","sub","#8A857D"):"")
+    ):R("Nenhum plano de FGTS aplicado","—","sub","#8A857D");
+
+    /* 5. custo total do contrato */
+    const base=debtScheduleFGTS(d0,{on:false});
+    const tot=R("Principal a quitar",V(ini),"","#8A857D")
+      +R("(+) Juros até a quitação","+"+V(sch.juros),"",RED)
+      +((sch.correcao||0)>0?R("(+) Correção "+debtIndexLbl(d0),"+"+V(sch.correcao),"",RED):"")
+      +((sch.encargos||0)>0?R("(+) Seguros e taxa de administração","+"+V(sch.encargos),"",RED):"")
+      +((sch.fgtsUsado||0)>0?R("(−) Pago pelo FGTS","−"+V(sch.fgtsUsado),"",GRN):"")
+      +R("(=) Desembolso total do seu bolso",V(sch.desembolso),"grand",WIN)
+      +R("Prazo",sch.meses+" meses"+(base&&base.meses!==sch.meses?" (sem FGTS: "+base.meses+")":""),"sub","#8A857D")
+      +R("Custo sobre o principal",String(ini>0?R2((sch.desembolso/ini-1)*100):0).replace(".",",")+"%","sub",RED);
+
+    extra=bloco("Composição da prestação deste mês",comp)
+      +bloco("Onde entra no fluxo de caixa",mapa)
+      +bloco("Correção monetária do saldo",idx)
+      +bloco("Regra do FGTS",fg)
+      +bloco("Custo total do contrato",tot);
   }
 
   /* número-síntese do item no horizonte escolhido */
@@ -17051,6 +17124,8 @@ function renderImpactos(){
 
     <div class="sec-label">Impacto nas dívidas</div>
     <div class="cfp-card">${div}</div>
+
+    ${extra}
 
     <div class="sec-label">Projeção mês a mês</div>
     <div class="cfp-card" style="padding:4px 12px 10px">
