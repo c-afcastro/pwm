@@ -2128,7 +2128,6 @@
       <button class="btn-cancel-f" onclick="document.getElementById('modal-income').classList.remove('open')" data-i18n="cancel">Cancelar</button>
       <button class="btn-primary" style="background:#1A3A5C" onclick="saveIncome()" id="inc-save" data-i18n="add">Adicionar</button>
     </div>
-    <button class="btn-delete" id="inc-impact" style="display:none;background:rgba(26,58,92,.08);color:#1A3A5C;border:none" onclick="PRO.openImpactos('income',INC_EID)">🔎 <span data-i18n="impacts">Impactos</span></button>
     <button class="btn-delete" id="inc-destroy" style="display:none" onclick="confirmDelIncome(INC_EID)" data-i18n="delete_income">Excluir entrada</button>
   </div>
 </div>
@@ -2162,7 +2161,6 @@
       <button class="btn-cancel-f" onclick="document.getElementById('modal-asset').classList.remove('open')" data-i18n="cancel">Cancelar</button>
       <button class="btn-primary" style="background:#0F2440" onclick="saveAsset()" id="ast-save" data-i18n="add">Adicionar</button>
     </div>
-    <button class="btn-delete" id="ast-impact" style="display:none;background:rgba(26,58,92,.08);color:#1A3A5C;border:none" onclick="PRO.openImpactos('asset',AST_EID)">🔎 <span data-i18n="impacts">Impactos</span></button>
     <button class="btn-delete" id="ast-destroy" style="display:none" onclick="confirmDelAsset(AST_EID)" data-i18n="delete_asset">Excluir aplicação</button>
   </div>
 </div>
@@ -6704,6 +6702,7 @@ function renderIncomeList(){
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;margin-left:8px">
         <div style="font-family:var(--serif);font-style:italic;font-size:17px;color:#1A3A5C">${fmt(i.amount)}</div>
         <div style="display:flex;gap:6px">
+          <button style="background:none;border:none;color:#1A3A5C;font-size:12px;font-weight:600;cursor:pointer" onclick="event.stopPropagation();PRO.openImpactos('income','${i._parentId||i.id}')">🔎 ${t("impacts")}</button>
           <button style="background:none;border:none;color:#6B6760;font-size:12px;cursor:pointer" onclick="openIncomeEdit(${i._parentId||i.id})">✏️</button>
           <button style="background:none;border:none;color:#C47A5C;font-size:12px;cursor:pointer" onclick="confirmDelIncome(${i._parentId||i.id})">🗑️</button>
         </div>
@@ -7022,6 +7021,7 @@ function renderAssetList(){
         </div>
       </div>
       <div style="display:flex;gap:6px;justify-content:flex-end;border-top:1px solid var(--line);padding-top:6px">
+        <button style="background:none;border:none;color:#1A3A5C;font-size:12px;font-weight:600;cursor:pointer" onclick="event.stopPropagation();PRO.openImpactos('asset','${a.id}')">🔎 ${t("impacts")}</button>
         <button style="background:none;border:none;color:#6B6760;font-size:12px;cursor:pointer" onclick="openAssetEdit(${a.id})">✏️</button>
         <button style="background:none;border:none;color:#C47A5C;font-size:12px;cursor:pointer" onclick="confirmDelAsset(${a.id})">🗑️</button>
       </div>
@@ -7190,7 +7190,6 @@ function openIncome(){
   document.getElementById("income-form-title").textContent=t("new_income");
   document.getElementById("inc-save").textContent=t("add");
   document.getElementById("inc-destroy").style.display="none";
-  {const q=document.getElementById("inc-impact"); if(q) q.style.display="none";}
   document.getElementById("inc-desc").value="";
   setCurrencyInput(document.getElementById("inc-amount"),"");
   document.getElementById("inc-date").value=today();
@@ -7206,7 +7205,6 @@ function openIncomeEdit(id){
   document.getElementById("income-form-title").textContent=t("edit_income");
   document.getElementById("inc-save").textContent=t("save");
   document.getElementById("inc-destroy").style.display="block";
-  {const q=document.getElementById("inc-impact"); if(q) q.style.display="block";}
   document.getElementById("inc-desc").value=inc.desc||"";
   setCurrencyInput(document.getElementById("inc-amount"),inc.amount);
   document.getElementById("inc-date").value=inc.date;
@@ -7253,7 +7251,6 @@ function openAsset(){
   document.getElementById("asset-form-title").textContent=t("new_asset");
   document.getElementById("ast-save").textContent=t("add");
   document.getElementById("ast-destroy").style.display="none";
-  {const q=document.getElementById("ast-impact"); if(q) q.style.display="none";}
   document.getElementById("ast-name").value="";
   setCurrencyInput(document.getElementById("ast-balance"),"");
   document.getElementById("ast-yield").value="";
@@ -7269,7 +7266,6 @@ function openAssetEdit(id){
   document.getElementById("asset-form-title").textContent=t("edit_asset");
   document.getElementById("ast-save").textContent=t("save");
   document.getElementById("ast-destroy").style.display="block";
-  {const q=document.getElementById("ast-impact"); if(q) q.style.display="block";}
   document.getElementById("ast-name").value=a.name||"";
   setCurrencyInput(document.getElementById("ast-balance"),a.balance);
   document.getElementById("ast-yield").value=a.yieldPct||"";
@@ -12182,6 +12178,16 @@ const TXD={
 "↳ seguros e taxa de administração":["↳ insurance and administration fee","↳ Versicherungen und Verwaltungsgebühr"],
 "Dívidas · seguros e taxa adm.":["Debts · insurance and admin fee","Schulden · Versicherung und Gebühr"],
 "seguros e taxa adm.":["insurance and admin fee","Versicherung und Gebühr"],
+"Histórico de posições":["Position history","Positionsverlauf"],
+"posição salva":["position saved","gespeicherte Position"],
+"posições salvas":["positions saved","gespeicherte Positionen"],
+"patrimônio líquido":["net worth","Nettovermögen"],
+"Excluir esta posição":["Delete this position","Diese Position löschen"],
+"Nenhuma posição salva ainda. Use o botão abaixo para guardar a foto de hoje.":["No position saved yet. Use the button below to store today's snapshot.","Noch keine Position gespeichert. Mit der Schaltfläche unten die heutige Aufnahme sichern."],
+"Salvar posição no histórico":["Save position to history","Position im Verlauf speichern"],
+"Posição salva no histórico":["Position saved to history","Position im Verlauf gespeichert"],
+"Posição removida":["Position removed","Position entfernt"],
+"Projetado × realizado":["Projected vs actual","Prognose vs. Ist"],
 "Saldo de FGTS hoje (R$)":["FGTS balance today (R$)","FGTS-Guthaben heute (R$)"],
 "Abater 12 parcelas":["Cover 12 instalments","12 Raten decken"],
 "Reduzir a parcela":["Lower the instalment","Rate senken"],
@@ -12914,7 +12920,7 @@ function assetFlowForYM(ymStr){
       const ganho=Math.max(0,bal-(+p.custo||0));
       cc+=ganho*(p.trib==="fundoCP"?FISCAL.irFundoCP:FISCAL.irFundoLP)/100;
     }
-    itens.push({nome:a.name||"—",bruto:R2(rb),ir:R2(vIr),aliq:R2(aliq)});
+    itens.push({id:a.id,nome:a.name||"—",bruto:R2(rb),ir:R2(vIr),aliq:R2(aliq)});
   });
   itens.sort((a,b)=>b.bruto-a.bruto);
   return {bruto:R2(bruto),ir:R2(ir),comeCotas:R2(cc),liquido:R2(bruto-ir),aportes:R2(aportes),itens};
@@ -16161,7 +16167,7 @@ function cfMes(ym,k,st){
     o.base+=(e.irBase||0);
     o.bruto+=e.bruto; o.inss+=e.inss; o.ir+=e.ir; o.ded+=(e.deducoes||0);
     o.liq+=e.liquido; o.fgts+=(e.fgts||0);
-    o.itens.push({nome:(e.inc&&e.inc.desc)||catLabel(T),
+    o.itens.push({id:(e.inc&&e.inc.id),tipo:"income",nome:(e.inc&&e.inc.desc)||catLabel(T),
       bruto:R2(e.bruto),inss:R2(e.inss),ir:R2(e.ir),ded:R2(e.deducoes||0),
       liq:R2(e.liquido),fgts:R2(e.fgts||0),data:e.data||(e.inc&&e.inc.date)||""});
   });
@@ -16172,7 +16178,8 @@ function cfMes(ym,k,st){
 
   /* ── despesas ── */
   const exps=getExpensesForYM(ym).filter(e=>!isNeutral(e));
-  const lin=e=>({nome:e.desc||"—",valor:R2(myAmount(e)),data:e.date||"",
+  const lin=e=>({id:String(e._parentId||e.id).split("_r")[0],tipo:"expense",
+    nome:e.desc||"—",valor:R2(myAmount(e)),data:e.date||"",
     fixa:!!(e.recurrence&&e.recurrence!=="none"),
     emoji:((typeof gc==="function"?gc(e.category||e.cat):null)||{}).emoji||"•"});
   let despItens=exps.map(lin);
@@ -16201,7 +16208,7 @@ function cfMes(ym,k,st){
     if(!row) return;
     dJuros+=row.juros; dAmort+=row.amort; dPago+=row.desembolso;
     dFgts+=row.fgts; dEnc+=(row.encargos||0);
-    dItens.push({nome:d.name||catLabel(gDebtType(d.type)),emoji:gDebtType(d.type).emoji,
+    dItens.push({id:d.id,tipo:"debt",nome:d.name||catLabel(gDebtType(d.type)),emoji:gDebtType(d.type).emoji,
       juros:R2(row.juros),amort:R2(row.amort),pago:R2(row.desembolso),
       fgts:R2(row.fgts),encargos:R2(row.encargos||0),saldo:R2(row.saldo)});
   });
@@ -16213,7 +16220,7 @@ function cfMes(ym,k,st){
   if(!proj||!st){
     const ap=assetFlowForYM(ym);
     apBruto=ap.bruto; apIr=ap.ir; apAportes=ap.aportes; apCc=ap.comeCotas;
-    ap.itens.forEach(x=>apItens.push({nome:x.nome,bruto:x.bruto,ir:x.ir,aliq:x.aliq}));
+    ap.itens.forEach(x=>apItens.push({id:x.id,tipo:"asset",nome:x.nome,bruto:x.bruto,ir:x.ir,aliq:x.aliq}));
   }else{
     st.forEach(x=>{
       const rb=x.saldo*x.rate;
@@ -16228,7 +16235,7 @@ function cfMes(ym,k,st){
         const imp=ganho*(x.p.trib==="fundoCP"?FISCAL.irFundoCP:FISCAL.irFundoLP)/100;
         x.saldo=R2(x.saldo-imp); x.custo=x.saldo; apCc+=imp;
       }
-      if(rb>0) apItens.push({nome:x.nome,bruto:R2(rb),ir:R2(vIr),aliq:R2(aliq)});
+      if(rb>0) apItens.push({id:x.a.id,tipo:"asset",nome:x.nome,bruto:R2(rb),ir:R2(vIr),aliq:R2(aliq)});
     });
   }
   apItens.sort((a,b)=>b.bruto-a.bruto);
@@ -16405,38 +16412,41 @@ function ensureCfStyles(){
   if($("cfp-style")) return;
   const s=document.createElement("style"); s.id="cfp-style";
   s.textContent=`
-  #cfp-body .cfp-nav{display:flex;align-items:center;gap:6px;margin-bottom:10px}
-  #cfp-body .cfp-nav .lbl{flex:1;text-align:center;font-family:var(--serif);font-style:italic;
+  :is(#cfp-body,#imp-body) .cfp-nav{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+  :is(#cfp-body,#imp-body) .cfp-nav .lbl{flex:1;text-align:center;font-family:var(--serif);font-style:italic;
     font-size:15px;color:var(--body)}
-  #cfp-body .cfp-nav button{width:30px;height:30px;border-radius:9px;border:1.5px solid var(--line);
+  :is(#cfp-body,#imp-body) .cfp-nav button{width:30px;height:30px;border-radius:9px;border:1.5px solid var(--line);
     background:none;color:#6B6760;font-size:15px;cursor:pointer;flex-shrink:0;
     display:flex;align-items:center;justify-content:center}
-  #cfp-body .cfp-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  :is(#cfp-body,#imp-body) .cfp-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
     padding:5px 0;font-size:12.5px;cursor:default}
-  #cfp-body .cfp-row.clic{cursor:pointer}
-  #cfp-body .cfp-row>span:first-child{color:var(--body);min-width:0;overflow:hidden;
+  :is(#cfp-body,#imp-body) .cfp-row.clic{cursor:pointer}
+  :is(#cfp-body,#imp-body) .cfp-row>span:first-child{color:var(--body);min-width:0;overflow:hidden;
     text-overflow:ellipsis;white-space:nowrap}
-  #cfp-body .cfp-row>span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
-  #cfp-body .cfp-row.sub{font-size:11.5px;padding-left:14px}
-  #cfp-body .cfp-row.sub>span:first-child{color:#8A857D}
-  #cfp-body .cfp-row.sub>span:last-child{font-weight:500;color:#8A857D}
-  #cfp-body .cfp-row.tot{border-top:1px solid var(--line);margin-top:5px;padding-top:8px;font-size:13px}
-  #cfp-body .cfp-row.tot span{font-weight:700}
-  #cfp-body .cfp-row.grand{border-top:2px solid var(--line);margin-top:7px;padding-top:9px;font-size:13.5px}
-  #cfp-body .cfp-row.grand span{font-weight:700}
-  #cfp-body .cfp-h{font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:#8A857D;
+  :is(#cfp-body,#imp-body) .cfp-row>span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+  :is(#cfp-body,#imp-body) .cfp-row.sub{font-size:11.5px;padding-left:14px}
+  :is(#cfp-body,#imp-body) .cfp-row.sub>span:first-child{color:#8A857D}
+  :is(#cfp-body,#imp-body) .cfp-row.sub>span:last-child{font-weight:500;color:#8A857D}
+  :is(#cfp-body,#imp-body) .cfp-row.tot{border-top:1px solid var(--line);margin-top:5px;padding-top:8px;font-size:13px}
+  :is(#cfp-body,#imp-body) .cfp-row.tot span{font-weight:700}
+  :is(#cfp-body,#imp-body) .cfp-row.grand{border-top:2px solid var(--line);margin-top:7px;padding-top:9px;font-size:13.5px}
+  :is(#cfp-body,#imp-body) .cfp-row.grand span{font-weight:700}
+  :is(#cfp-body,#imp-body) .cfp-h{font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:#8A857D;
     font-weight:700;margin:13px 0 4px}
-  #cfp-body .cfp-h:first-child{margin-top:0}
-  #cfp-body .cfp-card{background:var(--surface);border-radius:14px;padding:13px 15px;margin-bottom:12px}
-  #cfp-body .cfp-tag{font-size:9px;border-radius:6px;padding:1px 6px;font-weight:700;letter-spacing:.5px}
-  #cfp-body table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
-  #cfp-body th{color:#8A857D;font-weight:600;padding:6px 3px;text-align:right}
-  #cfp-body th:first-child{text-align:left}
-  #cfp-body td{padding:5px 3px;text-align:right;color:var(--body);font-variant-numeric:tabular-nums}
-  #cfp-body td:first-child{text-align:left}
-  #cfp-body tr.lin{border-top:1px solid var(--line);cursor:pointer}
-  #cfp-body tr.lin.hoje{background:rgba(26,58,92,.07)}
-  #cfp-body .cfp-caret{color:#8A857D;font-size:9px;margin-right:4px}`;
+  :is(#cfp-body,#imp-body) .cfp-h:first-child{margin-top:0}
+  :is(#cfp-body,#imp-body) .cfp-card{background:var(--surface);border-radius:14px;padding:13px 15px;margin-bottom:12px}
+  :is(#cfp-body,#imp-body) .cfp-tag{font-size:9px;border-radius:6px;padding:1px 6px;font-weight:700;letter-spacing:.5px}
+  :is(#cfp-body,#imp-body) table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
+  :is(#cfp-body,#imp-body) th{color:#8A857D;font-weight:600;padding:6px 3px;text-align:right}
+  :is(#cfp-body,#imp-body) th:first-child{text-align:left}
+  :is(#cfp-body,#imp-body) td{padding:5px 3px;text-align:right;color:var(--body);font-variant-numeric:tabular-nums}
+  :is(#cfp-body,#imp-body) td:first-child{text-align:left}
+  :is(#cfp-body,#imp-body) tr.lin{border-top:1px solid var(--line);cursor:pointer}
+  :is(#cfp-body,#imp-body) tr.lin.hoje{background:rgba(26,58,92,.07)}
+  :is(#cfp-body,#imp-body) .cfp-caret{color:#8A857D;font-size:9px;margin-right:4px}
+  #imp-body table{font-size:10px}
+  #imp-body td,#imp-body th{padding:5px 2px}
+  #imp-body .cfp-row{gap:8px}`;
   document.head.appendChild(s);
 }
 
@@ -16449,6 +16459,13 @@ function cfDemonstrativo(cf,pref){
       `<span>${id?`<span class="cfp-caret">${ab?"▾":"▸"}</span>`:""}${lbl}</span>`+
       `<span style="color:${color||"var(--body)"}">${val}</span></div>`;
   };
+  /* Linha de lançamento: leva à ficha de impactos do próprio item, onde a
+     conta é aberta até o último nível. */
+  const RI=(it,lbl,val,color)=>{
+    if(!it||!it.id||!it.tipo) return R(lbl,val,"sub",color);
+    return `<div class="cfp-row sub clic" onclick="PRO.openImpactos('${it.tipo}','${it.id}')">`+
+      `<span>${lbl}</span><span style="color:${color||"#8A857D"}">${val} <span style="color:#B8B3AA">›</span></span></div>`;
+  };
   const V=v=>fmt(v||0);
   const sub=(id,linhas)=>CFP.aberto[id]?linhas.join(""):"";
   const ID=k=>pref+"-"+k;
@@ -16456,8 +16473,8 @@ function cfDemonstrativo(cf,pref){
   const ent=cf.tipos.length
     ? cf.tipos.map((o,i)=>R(o.emoji+" "+raw(o.label),"+"+V(o.bruto),"",GRN,ID("t"+i))
         +sub(ID("t"+i),(o.itens||[]).map(x=>
-          R("↳ "+raw(x.nome)+(x.data?" · "+x.data.split("-").reverse().slice(0,2).join("/"):""),
-            "+"+V(x.bruto),"sub","#8A857D"))
+          RI(x,"↳ "+raw(x.nome)+(x.data?" · "+x.data.split("-").reverse().slice(0,2).join("/"):""),
+            "+"+V(x.bruto)))
           .concat([
             o.inss>0?R("↳ INSS","−"+V(o.inss),"sub","#8A857D"):"",
             o.ded>0?R("↳ Previdência, pensão e outros","−"+V(o.ded),"sub","#8A857D"):"",
@@ -16468,18 +16485,18 @@ function cfDemonstrativo(cf,pref){
     : `<div class="cfp-row sub"><span>Nenhuma entrada no período</span><span>—</span></div>`;
 
   const desp=sub(ID("desp"),cf.despItens.slice(0,40).map(x=>
-    R("↳ "+(x.emoji||"")+" "+raw(x.nome)+(x.fixa?" · fixa":"")+(x.estimado?" · estimada":""),
-      "−"+V(x.valor),"sub","#8A857D")));
+    RI(x,"↳ "+(x.emoji||"")+" "+raw(x.nome)+(x.fixa?" · fixa":"")+(x.estimado?" · estimada":""),
+      "−"+V(x.valor))));
   const div=sub(ID("div"),cf.divida.itens.map(x=>[
-    R("↳ "+(x.emoji||"")+" "+raw(x.nome),"−"+V(x.pago),"sub",RED),
+    RI(x,"↳ "+(x.emoji||"")+" "+raw(x.nome),"−"+V(x.pago),RED),
     R("&nbsp;&nbsp;&nbsp;juros","−"+V(x.juros),"sub","#8A857D"),
     R("&nbsp;&nbsp;&nbsp;amortização","−"+V(x.amort),"sub","#8A857D"),
     x.encargos>0?R("&nbsp;&nbsp;&nbsp;seguros e taxa adm.","−"+V(x.encargos),"sub","#8A857D"):"",
     x.fgts>0?R("&nbsp;&nbsp;&nbsp;coberto pelo FGTS","+"+V(x.fgts),"sub",GRN):""
   ].filter(Boolean).join("")));
   const apl=sub(ID("apl"),cf.aplic.itens.slice(0,20).map(x=>
-    R("↳ "+raw(x.nome)+(x.aliq>0?" · IR "+String(x.aliq).replace(".",",")+"%":" · isento"),
-      "+"+V(x.bruto),"sub",GRN)));
+    RI(x,"↳ "+raw(x.nome)+(x.aliq>0?" · IR "+String(x.aliq).replace(".",",")+"%":" · isento"),
+      "+"+V(x.bruto),GRN)));
 
   return `<div class="cfp-card">
     <div class="cfp-h">Entradas</div>
@@ -16525,6 +16542,7 @@ function renderCfPainel(){
   const hoje=ymNow();
   const serie=cfSerie(CFP.atras,CFP.frente);
   const sc=(id,lbl)=>`<button type="button" class="${CFP.escala===id?"on":""}" onclick="PRO.cfSetEscala('${id}')">${lbl}</button>`;
+  const GRN2="#5A8A4A", RED2="#B85A6A";
   const tag=p=>`<span class="cfp-tag" style="background:${p?"rgba(110,43,58,.12)":"rgba(90,138,74,.14)"};color:${p?"#6E2B3A":"#3F6B33"}">${p?"PROJ":"REAL"}</span>`;
   const V=v=>fmt(v||0);
   let cabec="", corpo="", cf=null;
@@ -16584,6 +16602,30 @@ function renderCfPainel(){
       </tbody></table>
     </div>`;
   }
+  else if(CFP.escala==="hist"){
+    cabec=`<div class="cfp-nav"><div class="lbl">${TR("Histórico de posições")}</div></div>`;
+    cf=null;
+    corpo=`<div class="sec-label">${SNAPS.length} ${SNAPS.length===1?TR("posição salva"):TR("posições salvas")}</div>
+    ${SNAPS.length?SNAPS.map(x=>`
+      <div class="cfp-card" style="padding:0;overflow:hidden;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 15px;cursor:pointer"
+             onclick="PRO.cfAbrirSnap('${x.id}')">
+          <span class="cfp-caret">${CFP.snap===x.id?"▾":"▸"}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;color:var(--body);font-weight:600">${x.label}</div>
+            <div style="font-size:10.5px;color:#8A857D">${new Date(x.ts).toLocaleString("pt-BR")}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:13px;font-weight:700;color:${x.atual.pl>=0?GRN2:RED2}">${V(x.atual.pl)}</div>
+            <div style="font-size:9.5px;color:#8A857D">${TR("patrimônio líquido")}</div>
+          </div>
+        </div>
+        ${CFP.snap===x.id?`<div style="padding:0 15px 14px">${cfRelatorio(x)}
+          <button class="pro-btn-lg" onclick="PRO.cfExcluirSnap('${x.id}')"
+            style="width:100%;background:none;border:1.5px solid var(--line);color:#B85A6A;font-weight:600;cursor:pointer;margin-top:8px">${TR("Excluir esta posição")}</button>
+        </div>`:""}
+      </div>`).join(""):`<div class="pro-note">${TR("Nenhuma posição salva ainda. Use o botão abaixo para guardar a foto de hoje.")}</div>`}`;
+  }
   else{
     const m=serie.find(x=>x.ym===CFP.ym)||cfMes(CFP.ym,0,null);
     cf=m;
@@ -16621,19 +16663,160 @@ function renderCfPainel(){
   el.innerHTML=H`
     ${cabec}
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
-      <div class="pro-scale">${sc("dia","Diário")}${sc("mes","Mensal")}${sc("ano","Anual")}</div>
+      <div class="pro-scale">${sc("dia","Diário")}${sc("mes","Mensal")}${sc("ano","Anual")}${sc("hist","Hist.")}</div>
       <button type="button" class="pro-pill" onclick="PRO.cfHoje()"
         style="border:1.5px solid var(--line);background:none;color:#6B6760">hoje</button>
     </div>
-    <div class="sec-label">Demonstrativo${CFP.escala==="ano"?" consolidado do ano":" do período"}</div>
-    ${cfDemonstrativo(cf,"c")}
+    ${cf?`<div class="sec-label">Demonstrativo${CFP.escala==="ano"?" consolidado do ano":" do período"}</div>
+    ${cfDemonstrativo(cf,"c")}`:""}
     ${corpo}
+    ${CFP.escala!=="hist"?`<button class="pro-btn-lg" onclick="PRO.cfSalvarPosicao()"
+      style="width:100%;background:#1A3A5C;color:#fff;border:none;font-weight:600;cursor:pointer;margin:4px 0 12px">💾 ${TR("Salvar posição no histórico")}</button>`:""}
     <div style="font-size:10px;color:#8A857D;line-height:1.55;padding-bottom:6px">
       Meses até o corrente usam os lançamentos reais. A partir do próximo, as entradas e despesas recorrentes se repetem, as variáveis entram pela média, as dívidas seguem o cronograma (já com o FGTS, quando há plano) e as aplicações rendem com o indexador de cada uma.
     </div>`;
 }
 function cfSetAno(a){ CFP.ano=a; renderCfPainel(); }
 
+
+/* ═══ 11.11 HISTÓRICO DE POSIÇÕES ════════════════════════════════════
+   Uma fotografia do momento: demonstrativo aberto, posição de patrimônio e
+   dívida, e a projeção que valia naquele dia. Guardada, ela permite comparar
+   depois o que foi projetado com o que de fato aconteceu. */
+
+const SNAP_KEY="gastos_v2_snapshots";
+let SNAPS=[];
+try{ SNAPS=JSON.parse(localStorage.getItem(SNAP_KEY)||"[]"); }catch(e){ SNAPS=[]; }
+function snapPersist(){ try{ localStorage.setItem(SNAP_KEY,JSON.stringify(SNAPS)); }catch(e){} }
+
+function cfSalvarPosicao(){
+  const hoje=ymNow();
+  const serie=cfSerie(0,12);
+  const m0=serie[0];
+  const resumo=m=>({ym:m.ym,bruto:m.bruto,deducoes:m.deducoes,impostos:m.impostos,
+    entLiquidas:m.entLiquidas,despesas:m.despesas,
+    divServico:m.divida.parcela,divJuros:m.divida.juros,divAmort:m.divida.amort,
+    divEncargos:m.divida.encargos||0,divFgts:m.divida.fgtsAbat,
+    rendBruto:m.aplic.bruto,rendIr:m.aplic.ir,rendLiq:m.aplic.liquido,
+    aportes:m.aplic.aportes,fgts:m.fgts,
+    caixaOper:m.caixaOper,caixaTotal:m.caixaTotal,
+    patrimonio:m.patrimonio,dividaSaldo:m.dividaSaldo,pl:m.pl});
+  const snap={
+    id:"s"+Date.now(),
+    ts:new Date().toISOString(),
+    ym:hoje,
+    label:cfMesLabel(hoje),
+    atual:resumo(m0),
+    detalhe:{
+      tipos:m0.tipos.map(o=>({label:o.label,emoji:o.emoji,bruto:o.bruto,inss:o.inss,
+        ir:o.ir,ded:o.ded,liq:o.liq,fgts:o.fgts})),
+      despesas:m0.despItens.map(x=>({nome:x.nome,emoji:x.emoji,valor:x.valor,fixa:!!x.fixa})),
+      dividas:m0.divida.itens.map(x=>({nome:x.nome,emoji:x.emoji,juros:x.juros,
+        amort:x.amort,encargos:x.encargos||0,fgts:x.fgts,pago:x.pago,saldo:x.saldo})),
+      aplic:m0.aplic.itens.map(x=>({nome:x.nome,bruto:x.bruto,ir:x.ir,aliq:x.aliq}))
+    },
+    projecao:serie.slice(1).map(resumo)
+  };
+  SNAPS.unshift(snap);
+  if(SNAPS.length>60) SNAPS.length=60;
+  snapPersist();
+  CFP.escala="hist"; CFP.snap=snap.id;
+  renderCfPainel();
+  toast("✓ "+TR("Posição salva no histórico"));
+}
+function cfAbrirSnap(id){ CFP.snap=(CFP.snap===id?null:id); renderCfPainel(); }
+function cfExcluirSnap(id){
+  SNAPS=SNAPS.filter(x=>x.id!==id); snapPersist();
+  if(CFP.snap===id) CFP.snap=null;
+  renderCfPainel();
+  toast("✓ "+TR("Posição removida"));
+}
+
+/* Projetado × realizado: para cada mês da projeção que já passou, recalcula
+   o mês com os dados de hoje e mostra a diferença. */
+function cfComparaSnap(snap){
+  const hoje=ymNow();
+  return (snap.projecao||[]).filter(p=>p.ym<=hoje).map(p=>{
+    const real=cfMes(p.ym,-1,null);
+    return {ym:p.ym,
+      projEnt:p.entLiquidas, realEnt:real.entLiquidas,
+      projDesp:p.despesas,   realDesp:real.despesas,
+      projDiv:p.divServico,  realDiv:real.divida.parcela,
+      projRes:p.caixaTotal,  realRes:real.caixaTotal};
+  });
+}
+
+function cfRelatorio(snap){
+  const GRN="#5A8A4A", RED="#B85A6A", BLU="#1A3A5C", WIN="#6E2B3A";
+  const V=v=>fmt(v||0);
+  const R=(l,v,c,col)=>`<div class="cfp-row ${c||""}"><span>${l}</span><span style="color:${col||"var(--body)"}">${v}</span></div>`;
+  const a=snap.atual, cmp=cfComparaSnap(snap);
+  const dif=(p,r)=>{const d=R2(r-p); return `<span style="color:${Math.abs(d)<0.5?"#8A857D":(d>0?GRN:RED)}">${d>0?"+":""}${V(d)}</span>`;};
+  return `
+  <div class="cfp-card">
+    <div class="cfp-h">Entradas</div>
+    ${(snap.detalhe.tipos||[]).map(o=>R(o.emoji+" "+raw(o.label),"+"+V(o.bruto),"",GRN)).join("")}
+    ${R("(=) Receita bruta",V(a.bruto),"tot",BLU)}
+    ${a.deducoes>0?R("(−) Deduções da base","−"+V(a.deducoes),"","#8A857D"):""}
+    ${a.impostos>0?R("(−) Imposto de renda","−"+V(a.impostos),"",RED):""}
+    ${R("(=) Entradas líquidas",V(a.entLiquidas),"tot",GRN)}
+
+    <div class="cfp-h">Despesas</div>
+    ${(snap.detalhe.despesas||[]).slice(0,30).map(x=>R((x.emoji||"")+" "+raw(x.nome)+(x.fixa?" · fixa":""),"−"+V(x.valor),"sub","#8A857D")).join("")}
+    ${R("(=) Total de despesas","−"+V(a.despesas),"tot",RED)}
+
+    <div class="cfp-h">Dívidas</div>
+    ${(snap.detalhe.dividas||[]).map(x=>R((x.emoji||"")+" "+raw(x.nome),"−"+V(x.pago),"sub",RED)).join("")}
+    ${R("↳ juros","−"+V(a.divJuros),"sub","#8A857D")}
+    ${R("↳ amortização","−"+V(a.divAmort),"sub","#8A857D")}
+    ${a.divEncargos>0?R("↳ seguros e taxa adm.","−"+V(a.divEncargos),"sub","#8A857D"):""}
+    ${a.divFgts>0?R("↳ coberto pelo FGTS","+"+V(a.divFgts),"sub",GRN):""}
+    ${R("(=) Serviço da dívida","−"+V(a.divServico),"tot",RED)}
+
+    <div class="cfp-h">Aplicações</div>
+    ${(snap.detalhe.aplic||[]).slice(0,20).map(x=>R(raw(x.nome),"+"+V(x.bruto),"sub",GRN)).join("")}
+    ${R("(−) Provisão de IRRF","−"+V(a.rendIr),"sub",RED)}
+    ${R("(=) Rendimento líquido",V(a.rendLiq),"tot",GRN)}
+
+    ${R("(=) Resultado do mês",(a.caixaTotal<0?"−":"+")+V(Math.abs(a.caixaTotal)),"grand",a.caixaTotal>=0?GRN:RED)}
+
+    <div class="cfp-h">Posição</div>
+    ${R("Patrimônio",V(a.patrimonio),"",BLU)}
+    ${R("Dívidas","−"+V(a.dividaSaldo),"",RED)}
+    ${R("(=) Patrimônio líquido",(a.pl<0?"−":"")+V(Math.abs(a.pl)),"grand",a.pl>=0?GRN:RED)}
+  </div>
+
+  <div class="sec-label">Projeção salva · 12 meses</div>
+  <div class="cfp-card" style="padding:4px 12px 10px">
+    <table><thead><tr>
+      <th style="width:22%">Mês</th><th style="width:26%">Entradas</th>
+      <th style="width:26%">Saídas</th><th style="width:26%">Patrimônio</th>
+    </tr></thead><tbody>
+    ${(snap.projecao||[]).map(p=>`<tr class="lin">
+      <td>${cfMesLabel(p.ym).slice(0,3)}/${p.ym.slice(2,4)}</td>
+      <td style="color:${GRN}">${V(p.entLiquidas+p.rendLiq)}</td>
+      <td style="color:${RED}">${V(p.despesas+p.divServico)}</td>
+      <td>${V(p.patrimonio)}</td></tr>`).join("")}
+    </tbody></table>
+  </div>
+
+  ${cmp.length?`<div class="sec-label">Projetado × realizado</div>
+  <div class="cfp-card" style="padding:4px 12px 10px">
+    <table><thead><tr>
+      <th style="width:20%">Mês</th><th style="width:20%">Conta</th>
+      <th style="width:20%">Projetado</th><th style="width:20%">Real</th><th style="width:20%">Dif.</th>
+    </tr></thead><tbody>
+    ${cmp.map(c=>[
+      ["Entradas",c.projEnt,c.realEnt],["Despesas",c.projDesp,c.realDesp],
+      ["Dívidas",c.projDiv,c.realDiv],["Resultado",c.projRes,c.realRes]
+    ].map((l,j)=>`<tr class="lin">
+      <td>${j===0?cfMesLabel(c.ym).slice(0,3)+"/"+c.ym.slice(2,4):""}</td>
+      <td style="color:#8A857D">${l[0]}</td>
+      <td>${V(l[1])}</td><td>${V(l[2])}</td><td>${dif(l[1],l[2])}</td></tr>`).join("")).join("")}
+    </tbody></table>
+    <div style="font-size:9.5px;color:#8A857D;margin-top:6px;line-height:1.5">Só os meses da projeção que já venceram entram na comparação.</div>
+  </div>`:`<div class="pro-note">A comparação com o realizado aparece à medida que os meses projetados forem vencendo.</div>`}`;
+}
 
 /* ═══ 11.10 IMPACTOS DE UM ITEM ═══════════════════════════════════════
    Todo lançamento do app desdobra em receita, despesa, patrimônio e dívida.
@@ -16825,14 +17008,38 @@ function renderImpactos(){
         <td style="color:#8A857D">${V(x.saldo)}</td></tr>`).join("");
   }
 
+  /* número-síntese do item no horizonte escolhido */
+  let head=0, headLbl="", headCor=GRN;
+  if(S.tipo==="income"){ head=soma("liquido"); headLbl="Entra no caixa"; }
+  else if(S.tipo==="expense"){ head=-soma("meu"); headLbl="Sai do caixa"; headCor=RED; }
+  else if(S.tipo==="asset"){ head=soma("liquido"); headLbl="Rendimento líquido"; }
+  else { head=-soma("saida"); headLbl="Sai do caixa"; headCor=RED; }
+  const kpi=(l,v,c)=>`<div style="flex:1;min-width:0;background:var(--surface);border-radius:12px;padding:9px 11px">
+    <div style="font-size:8.5px;letter-spacing:1.2px;text-transform:uppercase;color:#A8A49B;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l}</div>
+    <div style="font-size:12px;font-weight:700;color:${c||"var(--body)"};margin-top:2px;line-height:1.25;word-break:break-word">${v}</div></div>`;
+  let kpis="";
+  if(S.tipo==="income") kpis=kpi("Bruto",V(soma("bruto")),BLU)+kpi("Impostos",V(soma("ir")+soma("inss")),RED)+kpi("Efetivo",(soma("bruto")>0?Math.round(soma("liquido")/soma("bruto")*100):0)+"%",GRN);
+  else if(S.tipo==="asset") kpis=kpi("Saldo hoje",V(astValorAtual(S.obj)),"#6B6760")+kpi("Em "+IMP_N+"m",V(L.length?L[L.length-1].saldo:0),BLU)+kpi("IR",V(soma("ir")+soma("comeCotas")),RED);
+  else if(S.tipo==="debt") kpis=kpi("Saldo hoje",V(debtBalance(S.obj)),"#6B6760")+kpi("Em "+IMP_N+"m",V(L.length?L[L.length-1].saldo:0),WIN)+kpi("Juros",V(soma("juros")),RED);
+  else kpis=kpi("Total",V(soma("total")),"#6B6760")+kpi("Terceiros",V(soma("terceiros")),"#8A857D")+kpi("Sua parte",V(soma("meu")),RED);
+
   el.innerHTML=H`
-    <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px">
-      <div style="width:42px;height:42px;border-radius:12px;background:rgba(26,58,92,.09);display:flex;align-items:center;justify-content:center;font-size:20px">${emoji}</div>
-      <div style="min-width:0"><div style="font-family:var(--serif);font-size:19px;color:var(--body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${raw(titulo)}</div>
-      <div style="font-size:11px;color:#6B6760">${raw(sub)}</div></div>
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px">
+      <div style="width:44px;height:44px;border-radius:13px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0">${emoji}</div>
+      <div style="min-width:0">
+        <div style="font-family:var(--serif);font-size:19px;color:var(--body);line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${raw(titulo)}</div>
+        <div style="font-size:10.5px;letter-spacing:.4px;text-transform:uppercase;color:#A8A49B;font-weight:600;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${raw(sub)}</div>
+      </div>
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px">
-      <span style="font-size:10.5px;color:#8A857D">Horizonte da projeção</span>
+
+    <div style="border:1.5px solid var(--line);border-radius:16px;padding:15px 17px;margin-bottom:12px">
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#A8A49B;font-weight:700">${headLbl} · ${IMP_N} meses</div>
+      <div style="font-family:var(--serif);font-style:italic;font-size:30px;line-height:1.1;margin:4px 0 12px;color:${headCor}">${head<0?"−":""}${V(Math.abs(head))}</div>
+      <div style="display:flex;gap:6px">${kpis}</div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px">
+      <span style="font-size:10.5px;color:#8A857D">Horizonte</span>
       <div class="pro-scale">${hz(6)}${hz(12)}${hz(24)}${hz(60)}</div>
     </div>
 
@@ -16864,6 +17071,7 @@ window.PRO={
   renderCfPainel,cfSetEscala,cfNav,cfHoje,cfToggle,cfFoco,cfSetAno,
   cfMes,cfSerie,cfConsolida,cfDias,cfPosicaoYM,cfLimparCache,
   openImpactos,impHoriz,impSerie,
+  cfSalvarPosicao,cfAbrirSnap,cfExcluirSnap,cfRelatorio,cfComparaSnap,snaps:()=>SNAPS,
 
   openRendimento,renderRendimentos,setRendHoriz,exportRendimento,
   aplicarProduto,sincronizarFgtsPatrimonio,PRODUTOS,
