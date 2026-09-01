@@ -11727,6 +11727,27 @@ const pct=v=>(v>=0?"":"−")+Math.abs(v||0).toFixed(2).replace(".",",")+"%";
 
 /* ═══ 0.1 TRADUÇÃO DOS TEXTOS DESTE MÓDULO (pt → [en, de]) ═══ */
 const TXD={
+"auto · fixar":["auto · pin","auto · fixieren"],
+"fixo · deduzir":["pinned · derive","fix · ableiten"],
+"(=) Total aportado":["(=) Total invested","(=) Gesamt eingezahlt"],
+"Valor aplicado deduzido por regressão: ":["Invested amount derived by regression: ","Anlagebetrag per Regression abgeleitet: "],
+" descontados ":[" discounted at "," abgezinst mit "],
+"% ao mês ao longo de ":["% per month over ","% pro Monat über "],
+" dias. Toque em <strong>fixar</strong> ao lado do campo para informar o valor exato.":[" days. Tap <strong>pin</strong> next to the field to enter the exact amount."," Tage. Auf <strong>fixieren</strong> neben dem Feld tippen, um den genauen Betrag einzugeben."],
+"Recurso preso até ":["Funds locked until ","Mittel gesperrt bis "],
+": não entra na reserva de emergência.":[": does not count towards the emergency fund.",": zählt nicht zur Notreserve."],
+"Aguardando mais ":["Waiting another ","Nach weiteren "],
+" dias, o IR cai de ":[" days, the tax rate drops from "," Tagen sinkt der Steuersatz von "],
+"Valor aplicado (deduzido)":["Invested amount (derived)","Anlagebetrag (abgeleitet)"],
+"deduzido pelo app · fixar":["derived by the app · pin","von der App abgeleitet · fixieren"],
+"informado · deduzir":["entered · derive","eingegeben · ableiten"],
+"Disponível para resgate":["Available to redeem","Verfügbar zur Auszahlung"],
+"(=) Rendimento acumulado":["(=) Accumulated return","(=) Kumulierter Ertrag"],
+"Liberável em ":["Released on ","Freigabe am "],
+"Liberado em ":["Released on ","Freigabe am "],
+"Saldo de hoje":["Balance today","Saldo heute"],
+"Valor aplicado":["Invested amount","Anlagebetrag"],
+"Cai em ":["Settles ","Gutschrift "],
 "% em ":["% in ","% in "],
 " dias</span>":[" days</span>"," Tagen</span>"],
 "Carnê-leão sobre o aluguel menos estas despesas. O aluguel soma-se à renda do ajuste anual, então o imposto é calculado na margem da faixa já ocupada pelo salário. A dedução por dependente pertence a uma única fonte e fica no salário.":["Monthly PIT on rent less these costs. Rent is added to the annual adjustment, so the tax is computed at the margin of the bracket already taken by salary. The dependent allowance belongs to a single source and stays with salary.","Monatliche ESt auf Miete abzüglich dieser Kosten. Miete zählt zur Jahresveranlagung, daher wird die Steuer am Rand der bereits vom Gehalt belegten Stufe berechnet. Der Kinderfreibetrag gehört zu einer Quelle und bleibt beim Gehalt."],
@@ -12504,12 +12525,54 @@ function astDefaults(cls){
 }
 function astPro(a){
   const d=astDefaults(a.class);
-  return Object.assign({
+  const p=Object.assign({
     idx:d.idx, idxVal:d.idxVal, trib:d.trib, liq:d.liq, liqDias:1,
     taxaAdm:0, taxaPerf:0, benchPerf:"cdi", comeCotas:(d.trib||"").indexOf("fundo")===0,
     aplic:a.lastUpdate||today(), venc:"", carencia:"", aporte:0,
-    custo:parseFloat(a.balance)||0, dy:0
+    custoAuto:true, custo:0, dy:0
   },a.pro||{});
+  /* Sem valor aplicado informado, o app o deduz por regressão a partir do
+     saldo atual, da taxa do produto e do tempo decorrido. */
+  if(p.custoAuto||!(+p.custo>0)) p.custo=astCustoRegressivo(a,p);
+  return p;
+}
+
+/* Regressão: quanto foi aplicado para chegar ao saldo de hoje.
+   Sem aportes:  custo = saldo / (1+i)^m
+   Com aportes:  custo = [saldo − aporte·((1+i)^m−1)/i] / (1+i)^m   */
+function astCustoRegressivo(a,pro){
+  const p=pro||Object.assign({},a.pro||{});
+  const saldo=parseFloat(a.balance)||0;
+  if(saldo<=0) return 0;
+  const aplic=p.aplic||a.lastUpdate||today();
+  const m=mesesEntre(aplic,today());
+  if(m<=0.03) return R2(saldo);                     // aplicado hoje
+  /* custoAuto:false quebra a recursão — astLiquidoAM chama astPro de volta */
+  const base=Object.assign({},p,{custoAuto:false,custo:saldo});
+  const i=astLiquidoAM({class:a.class,balance:saldo,pro:base})/100;
+  if(!(i>0)) return R2(saldo);
+  const fator=Math.pow(1+i,m);
+  const aporte=+p.aporte||0;
+  const fvAportes=aporte>0?aporte*((fator-1)/i):0;
+  return R2(Math.max(0,Math.min(saldo,(saldo-fvAportes)/fator)));
+}
+
+/* Quanto está efetivamente disponível para resgatar, já líquido de IR e IOF.
+   Liquidez diária libera hoje; vencimento e carência bloqueiam até a data. */
+function astDisponivel(a){
+  const p=astPro(a), res=astResgate(a);
+  const dt=astLiquidezData(a), hj=today();
+  const preso=(p.liq==="venc"||p.liq==="car")&&dt&&dt>hj;
+  return {
+    saldo:parseFloat(a.balance)||0, custo:R2(p.custo||0),
+    ganho:res.ganho, ir:res.ir, iof:res.iof, aliq:res.aliq, iofPct:res.iofPct,
+    liquido:res.liquido,
+    agora:preso?0:res.liquido,
+    data:dt, dias:dt?Math.max(0,dias(hj,dt)):0,
+    preso:!!preso,
+    /* penalidade de resgatar agora em vez de esperar a próxima faixa de IR */
+    proxFaixa:astProxFaixaIR(a,res.dias)
+  };
 }
 /* Rentabilidade bruta ao mês (%) */
 function astBrutoAM(a){
@@ -12599,6 +12662,33 @@ function addMonths(iso,n){
   d.setDate(Math.min(dia,ult));
   return d.toISOString().split("T")[0];
 }
+/* Meses de calendário entre duas datas, com a fração do mês parcial.
+   Usar 30,4375 dias distorce a regressão: 24 meses viram 23,98. */
+function mesesEntre(ini,fim){
+  if(!ini||!fim) return 0;
+  const a=new Date(ini+"T12:00:00"), b=new Date(fim+"T12:00:00");
+  if(!(b>a)) return 0;
+  let m=(b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth());
+  const anc=new Date(a); anc.setMonth(anc.getMonth()+m);
+  if(anc>b){ m--; anc.setMonth(anc.getMonth()-1); }
+  const prox=new Date(anc); prox.setMonth(prox.getMonth()+1);
+  return m+(b-anc)/(prox-anc);
+}
+/* Valor futuro de um capital com aportes mensais constantes */
+function fvComAportes(pv,i,m,aporte){
+  const f=Math.pow(1+i,m);
+  return pv*f+(aporte>0&&i>0?aporte*((f-1)/i):aporte*m);
+}
+/* Taxa implícita que leva o capital e os aportes ao saldo observado */
+function taxaImplicita(pv,saldo,m,aporte){
+  if(!(pv>0)||!(m>0)) return 0;
+  let lo=-0.9, hi=1.0;
+  for(let k=0;k<80;k++){
+    const mid=(lo+hi)/2;
+    if(fvComAportes(pv,mid,m,aporte)<saldo) lo=mid; else hi=mid;
+  }
+  return (lo+hi)/2;
+}
 const ymOf=iso=>String(iso||"").slice(0,7);
 const mesOf=iso=>parseInt(String(iso||"").slice(5,7),10)||1;
 
@@ -12631,7 +12721,7 @@ function astEvolucao(a,mesesFuturos){
   const real=parseFloat(a.balance)||0;
   const aporte=+p.aporte||0;
   const diasHoje=Math.max(0,dias(inicio,hoje));
-  const mesesHoje=diasHoje/30.4375;
+  const mesesHoje=mesesEntre(inicio,hoje);
   const decorridos=Math.max(0,Math.floor(mesesHoje));
   const futuros=Math.max(0,mesesFuturos===undefined?12:mesesFuturos);
   const comeCotas=!!p.comeCotas&&p.trib.indexOf("fundo")===0;
@@ -12639,10 +12729,12 @@ function astEvolucao(a,mesesFuturos){
      aplicação. Enquanto o usuário não informar uma nova posição, o valor de
      hoje é o montante aplicado rendendo pela taxa cadastrada — é isso que
      faz uma aplicação de poucos dias já mostrar rendimento. */
-  const ancorado=!!(real>0&&a.lastUpdate&&a.lastUpdate>inicio&&Math.abs(real-custo)>0.005);
-  const valorHoje=ancorado?real:R2(custo*Math.pow(1+iAM,mesesHoje));
-  /* taxa efetiva implícita na posição de hoje */
-  const efet=(ancorado&&custo>0&&mesesHoje>0.03)?(Math.pow(valorHoje/custo,1/mesesHoje)-1):iAM;
+  const ancorado=!!(real>0&&a.lastUpdate&&a.lastUpdate>inicio
+    &&Math.abs(real-fvComAportes(custo,iAM,mesesHoje,aporte))>0.005);
+  const valorHoje=ancorado?real:R2(fvComAportes(custo,iAM,mesesHoje,aporte));
+  /* taxa implícita na posição de hoje, já descontados os aportes do período */
+  const efet=(ancorado&&custo>0&&mesesHoje>0.03)
+    ?taxaImplicita(custo,valorHoje,mesesHoje,aporte):iAM;
 
   const pts=[];
   const push=(data,d,aportado,saldo,modelo,rendMes,cc,futuro)=>{
@@ -12660,27 +12752,29 @@ function astEvolucao(a,mesesFuturos){
   for(let m=0;m<=decorridos;m++){
     const data=m===0?inicio:addMonths(inicio,m);
     const d=Math.max(0,dias(inicio,data));
-    const t=d/30.4375;
-    let saldo=custo*Math.pow(1+efet,t);
-    const modelo=custo*Math.pow(1+iAM,t);
+    const t=mesesEntre(inicio,data);
+    const aport=R2(custo+aporte*Math.floor(t));
+    let saldo=fvComAportes(custo,efet,t,aporte);
+    const modelo=fvComAportes(custo,iAM,t,aporte);
     let cc=0;
     if(comeCotas&&m>0&&FISCAL.comeCotasMeses.indexOf(mesOf(data))>=0){
       const aliqCC=(p.trib==="fundoCP")?FISCAL.irFundoCP:FISCAL.irFundoLP;
-      cc=R2(Math.max(0,Math.max(0,saldo-custo)*aliqCC/100-ccPago));
+      cc=R2(Math.max(0,Math.max(0,saldo-aport)*aliqCC/100-ccPago));
       ccPago=R2(ccPago+cc);
     }
     const ant=pts.length?pts[pts.length-1].saldo:custo;
-    push(data,d,custo,saldo,modelo,m?saldo-ant:0,cc,false);
+    push(data,d,aport,saldo,modelo,m?saldo-ant:0,cc,false);
   }
   /* ponto de hoje, para a curva fechar no saldo informado */
   const ultH=pts[pts.length-1];
+  const aportHoje=R2(custo+aporte*Math.floor(mesesHoje));
   if(!ultH||ultH.data!==hoje){
-    const modelo=custo*Math.pow(1+iAM,mesesHoje);
-    push(hoje,diasHoje,custo,valorHoje,modelo,valorHoje-(ultH?ultH.saldo:custo),0,false);
+    const modelo=fvComAportes(custo,iAM,mesesHoje,aporte);
+    push(hoje,diasHoje,aportHoje,valorHoje,modelo,valorHoje-(ultH?ultH.saldo:custo),0,false);
   }
 
   /* ── projeção: taxa cadastrada e aportes programados ── */
-  let saldo=valorHoje, aportado=custo, modelo=pts[pts.length-1].modelo;
+  let saldo=valorHoje, aportado=aportHoje, modelo=pts[pts.length-1].modelo;
   for(let m=1;m<=futuros;m++){
     const data=addMonths(hoje,m);
     const d=Math.max(0,dias(inicio,data));
@@ -12710,8 +12804,9 @@ function astEvolucao(a,mesesFuturos){
     calculado:R2(atual.modelo),
     desvio:R2(valorHoje-atual.modelo),
     desvioPct:atual.modelo>0?R2((valorHoje/atual.modelo-1)*100):0,
-    ganho:R2(valorHoje-custo),
-    ganhoPct:custo>0?R2((valorHoje/custo-1)*100):0,
+    aportado:aportHoje,
+    ganho:R2(valorHoje-aportHoje),
+    ganhoPct:aportHoje>0?R2((valorHoje/aportHoje-1)*100):0,
     diasCorridos:diasHoje,
     proxFaixa:astProxFaixaIR(a,diasHoje)
   };
@@ -13374,7 +13469,15 @@ function assetProHTML(){
     <div class="pro-grid" style="margin-top:12px">
       <div class="pro-f" id="ast-idxval-wrap"><label id="ast-idxval-lbl">Taxa contratada</label>
         <input id="ast-idxval" type="number" step="0.01"/></div>
-      ${FM("ast-custo","Valor aplicado (custo)","PRO.astPreview()")}
+      <div class="pro-f">
+        <label style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;overflow:visible">
+          <span style="min-width:0;overflow:hidden;text-overflow:ellipsis">Valor aplicado</span>
+          <u id="ast-custo-mode" onclick="PRO.toggleCustoAuto()"
+             style="cursor:pointer;flex-shrink:0;text-decoration:none;border-bottom:1px dotted currentColor;font-size:8.5px;letter-spacing:.2px;text-transform:none"></u>
+        </label>
+        <input id="ast-custo" class="f-input" type="text" inputmode="decimal"
+               oninput="maskCurrencyInput(this);PRO.custoManual()"/>
+      </div>
     </div>
     <div class="pro-note" id="ast-idx-hint"></div>
 
@@ -13416,13 +13519,37 @@ function ensureAssetPro(){
   const acts=document.querySelector("#modal-asset .f-actions");
   if(!acts) return;
   acts.insertAdjacentHTML("beforebegin",assetProHTML());
-  ["ast-idxval","ast-adm","ast-perf","ast-aporte"].forEach(id=>$(id)&&$(id).addEventListener("input",astPreview));
-  ["ast-aplic","ast-venc","ast-bench"].forEach(id=>$(id)&&$(id).addEventListener("change",astPreview));
-  $("ast-balance")&&$("ast-balance").addEventListener("input",astPreview);
+  ["ast-idxval","ast-adm","ast-perf","ast-aporte"].forEach(id=>$(id)&&$(id).addEventListener("input",astRecalc));
+  ["ast-aplic","ast-venc","ast-bench"].forEach(id=>$(id)&&$(id).addEventListener("change",astRecalc));
+  $("ast-balance")&&$("ast-balance").addEventListener("input",astRecalc);
   /* o indexador substitui o campo "rendimento ao mês" do núcleo */
   const y=$("ast-yield");
   if(y&&y.parentElement){ y.parentElement.style.display="none";
     const l=y.parentElement.previousElementSibling; if(l&&l.classList.contains("f-label")) l.style.display="none"; }
+}
+/* Valor aplicado: por padrão o app deduz por regressão; o usuário pode fixar. */
+let AST_CUSTO_AUTO=true;
+function toggleCustoAuto(){ AST_CUSTO_AUTO=!AST_CUSTO_AUTO; astRecalc(); }
+function custoManual(){ AST_CUSTO_AUTO=false; renderCustoMode(); astPreview(); }
+function renderCustoMode(){
+  const u=$("ast-custo-mode"), inp=$("ast-custo");
+  if(!u||!inp) return;
+  u.textContent=TR(AST_CUSTO_AUTO?"auto · fixar":"fixo · deduzir");
+  u.style.color=AST_CUSTO_AUTO?"#5A8A4A":"#8A857D";
+  inp.style.background=AST_CUSTO_AUTO?"rgba(90,138,74,.08)":"";
+  inp.style.color=AST_CUSTO_AUTO?"#3F6B33":"";
+  inp.style.fontWeight=AST_CUSTO_AUTO?"600":"";
+}
+/* Recalcula o custo deduzido sempre que saldo, taxa ou data mudarem */
+function astRecalc(){
+  if(AST_CUSTO_AUTO){
+    const saldo=unmaskCurrency($("ast-balance"))||0;
+    const p=collectAstPro(); p.custoAuto=false; p.custo=saldo;
+    const fake={class:AST_CLASS_CUR(),balance:saldo,lastUpdate:$("ast-date")?.value||today(),pro:p};
+    setCurrencyInput($("ast-custo"),astCustoRegressivo(fake,p));
+  }
+  renderCustoMode();
+  astPreview();
 }
 function toggleAstPick(){AST_OPT_OPEN=!AST_OPT_OPEN;renderAstPro();}
 function setAstIdx(v){AST_IDX=v;const I=INDEXADORES.find(x=>x.id===v);if(I&&$("ast-idxval"))$("ast-idxval").value=I.def;renderAstPro();}
@@ -13469,7 +13596,8 @@ function collectAstPro(){
     taxaAdm:+($("ast-adm")?.value||0),taxaPerf:+($("ast-perf")?.value||0),
     benchPerf:$("ast-bench")?.value||"cdi",comeCotas:AST_CC,
     aplic:$("ast-aplic")?.value||today(), venc:AST_LIQ==="car"?"":venc, carencia:AST_LIQ==="car"?venc:"",
-    aporte:+($("ast-aporte")?.value||0), custo:unmaskCurrency($("ast-custo"))||0};
+    aporte:+($("ast-aporte")?.value||0), custo:unmaskCurrency($("ast-custo"))||0,
+    custoAuto:AST_CUSTO_AUTO};
 }
 function fillAstPro(a){
   const p=a?astPro(a):astPro({class:AST_CLASS_CUR(),balance:0});
@@ -13479,15 +13607,19 @@ function fillAstPro(a){
   set("ast-aporte",p.aporte||"");set("ast-aplic",p.aplic||today());
   set("ast-venc",p.venc||p.carencia||"");
   if($("ast-bench"))$("ast-bench").value=p.benchPerf||"cdi";
-  setCurrencyInput($("ast-custo"),a?(p.custo||parseFloat(a.balance)||0):"");
+  AST_CUSTO_AUTO=a?(p.custoAuto!==false):true;
+  setCurrencyInput($("ast-custo"),a?(p.custo||0):"");
   renderAstPro();
+  astRecalc();
 }
 function AST_CLASS_CUR(){try{return AST_CLASS;}catch(e){return "fixed_income";}}
 function astPreview(){
   const el=$("ast-preview"); if(!el) return;
   const saldo=unmaskCurrency($("ast-balance"))||0;
   const fake={class:AST_CLASS_CUR(),balance:saldo,yieldPct:0,pro:collectAstPro()};
+  const custoAuto=AST_CUSTO_AUTO;
   const bruto=astBrutoAM(fake), liq=astLiquidoAM(fake), res=astResgate(fake), dt=astLiquidezData(fake);
+  const dv=astDisponivel(fake);
   const num=(v,u)=>`<div style="font-family:var(--serif);font-style:italic;font-size:19px;line-height:1">${v}<span style="font-size:10px;font-style:normal"> ${u}</span></div>`;
   const tag=(txt,bg,fg)=>`<span style="background:${bg};border-radius:8px;padding:3px 8px;font-size:11px;color:${fg}">${txt}</span>`;
   el.innerHTML=H`
@@ -13506,9 +13638,25 @@ function astPreview(){
     <div style="display:flex;gap:6px;flex-wrap:wrap">
       ${tag("Rende "+fmt(saldo*liq/100)+"/mês","rgba(15,36,64,.08)","#0F2440")}
       ${tag("IR hoje "+res.aliq+"%"+(res.iofPct>0?" + IOF "+res.iofPct+"%":""),"rgba(184,90,106,.12)","#B85A6A")}
-      ${tag("Resgate líquido "+fmt(res.liquido),"rgba(90,138,74,.12)","#5A8A4A")}
-      ${dt?tag("Cai em "+brDate(dt),"rgba(0,0,0,.05)","#8A857D"):""}
-    </div>`;
+      ${dv.dias>0?tag((dv.preso?"Liberado em ":"Cai em ")+brDate(dt),"rgba(0,0,0,.05)","#8A857D"):""}
+    </div>
+    <div style="border-top:1px solid rgba(15,36,64,.12);margin-top:11px;padding-top:9px">
+      <div class="pro-cf"><span>${custoAuto?"Valor aplicado (deduzido)":"Valor aplicado"}</span>
+        <span style="color:#6B6760">${fmt(dv.custo)}</span></div>
+      <div class="pro-cf"><span>Saldo de hoje</span>
+        <span style="color:#0F2440">${fmt(dv.saldo)}</span></div>
+      <div class="pro-cf"><span>(=) Rendimento acumulado</span>
+        <span style="color:#5A8A4A">${dv.ganho>0?"+":""}${fmt(dv.ganho)}</span></div>
+      ${dv.iof>0?`<div class="pro-cf sub"><span>(−) IOF ${String(dv.iofPct).replace(".",",")}% · ${res.dias} dias</span>
+        <span style="color:#B85A6A">−${fmt(dv.iof)}</span></div>`:""}
+      <div class="pro-cf sub"><span>(−) IR ${String(dv.aliq).replace(".",",")}%</span>
+        <span style="color:#B85A6A">−${fmt(dv.ir)}</span></div>
+      <div class="pro-cf tot"><span>${dv.preso?"Liberável em "+brDate(dv.data):"Disponível para resgate"}</span>
+        <span style="color:${dv.preso?"#8A857D":"#5A8A4A"}">${fmt(dv.preso?dv.liquido:dv.agora)}</span></div>
+    </div>
+    ${custoAuto&&saldo>0?`<div class="pro-note">Valor aplicado deduzido por regressão: ${fmt(dv.saldo)} descontados ${String(liq.toFixed(3)).replace(".",",")}% ao mês ao longo de ${res.dias} dias. Toque em <strong>fixar</strong> ao lado do campo para informar o valor exato.</div>`:""}
+    ${dv.preso?`<div class="pro-note">Recurso preso até ${brDate(dv.data)}${dv.dias>0?" ("+dv.dias+" dias)":""}: não entra na reserva de emergência.</div>`:""}
+    ${dv.proxFaixa?`<div class="pro-note">Aguardando mais ${dv.proxFaixa.dias} dias, o IR cai de ${String(dv.proxFaixa.de).replace(".",",")}% para ${String(dv.proxFaixa.aliq).replace(".",",")}%.</div>`:""}`;
 }
 
 /* o tipo/classe escolhido no grid já configura o formulário */
@@ -14050,7 +14198,7 @@ function renderRendimento(){
   const R=(lbl,val,cls,color)=>`<div class="pro-cf ${cls||""}"><span>${lbl}</span>`+
     `<span style="color:${color||"var(--body)"}">${val}</span></div>`;
   const hz=n=>`<button type="button" class="${REND_HORIZ===n?"on":""}" onclick="PRO.setRendHoriz(${n})">${n===0?"Só histórico":"+"+n+"m"}</button>`;
-  const provHoje=astProvisao(a,Math.max(0,e.real-e.custo),e.diasCorridos);
+  const provHoje=astProvisao(a,Math.max(0,e.ganho),e.diasCorridos);
 
   /* tabela: últimos meses e os projetados */
   const pts=e.pontos.filter((x,i)=>{
@@ -14069,7 +14217,7 @@ function renderRendimento(){
     <div style="background:${NAV};border-radius:16px;padding:15px 17px;color:#fff;margin-bottom:12px">
       <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.55)">Rendimento acumulado</div>
       <div style="font-family:var(--serif);font-style:italic;font-size:28px;line-height:1.1;margin:3px 0 7px">
-        ${e.real-e.custo>=0?"+":"−"}${fmt(Math.abs(e.real-e.custo))}</div>
+        ${e.ganho>=0?"+":"−"}${fmt(Math.abs(e.ganho))}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <span style="background:rgba(255,255,255,.12);border-radius:8px;padding:3px 9px;font-size:10.5px">${e.curto
           ?"Realizada "+String(e.retornoPeriodo).replace(".",",")+"% em "+e.diasCorridos+" dias"
@@ -14096,8 +14244,9 @@ function renderRendimento(){
     <div style="background:var(--surface);border-radius:14px;padding:12px 15px;margin-bottom:12px">
       ${R("Montante aplicado",fmt(e.custo),"","#6B6760")}
       ${e.aporte>0?R("Aporte mensal",fmt(e.aporte),"sub","#6B6760"):""}
+      ${e.aporte>0?R("(=) Total aportado",fmt(e.aportado),"sub","#6B6760"):""}
       ${R(e.ancorado?"Saldo informado":"Valor de hoje pela taxa",fmt(e.real),"",NAV)}
-      ${R("(=) Rendimento bruto",(e.real-e.custo>=0?"+":"−")+fmt(Math.abs(e.real-e.custo)),"tot",GRN)}
+      ${R("(=) Rendimento bruto",(e.ganho>=0?"+":"−")+fmt(Math.abs(e.ganho)),"tot",GRN)}
       ${provHoje.iof>0?R("(−) IOF "+String(provHoje.iofPct).replace(".",",")+"% · "+e.diasCorridos+" dias","−"+fmt(provHoje.iof),"sub",RED):""}
       ${R("(−) IR "+String(provHoje.aliq).replace(".",",")+"%","−"+fmt(provHoje.ir),"",RED)}
       ${e.atual.ccAcum>0?R("Come-cotas já debitado","−"+fmt(e.atual.ccAcum),"sub",RED):""}
@@ -14455,7 +14604,10 @@ window.saveAsset=function(){
   _saveAsset();
   const target=editing?ASSETS.find(a=>a.id===editing):ASSETS[ASSETS.length-1];
   if(target&&(editing||ASSETS.length>before)){
-    if(!pro.custo) pro.custo=parseFloat(target.balance)||0;
+    if(pro.custoAuto||!(+pro.custo>0)){
+      pro.custoAuto=true;
+      pro.custo=astCustoRegressivo(target,pro);
+    }
     target.pro=pro;
     target.yieldPct=R2(astLiquidoAM(target));   // mantém o núcleo coerente
     persist();
@@ -14655,6 +14807,7 @@ window.PRO={
   openFgts,setFgtsModo,setFgtsReduz,toggleFgtsRepetir,fgtsCalc,salvarFgts,limparFgts,
   debtScheduleFGTS,fgtsComparativo,fgtsModosComparados,debtParcelaEfetiva,fgtsPlano,
   astEvolucao,astRendimentoCarteira,astProvisao,
+  astCustoRegressivo,astDisponivel,toggleCustoAuto,custoManual,astRecalc,
   toggleRegPick,toggleAstPick,applyIncTypeDefaults,applyAstClassDefaults,
   openFiscal,saveFiscalForm,resetFiscal,toggleIsen,openResgate,calcResgate,setResgatePct,
   exportProj,refreshRates:()=>fetchMarket(false),
