@@ -2280,16 +2280,7 @@
       <div style="font-family:var(--serif);font-size:20px;color:var(--body)" data-i18n="cashflow_title">Fluxo de caixa</div>
       <button onclick="document.getElementById('modal-cashflow').classList.remove('open')" style="width:34px;height:34px;border-radius:50%;background:var(--surface);border:none;cursor:pointer;color:#7A766D;font-size:16px">✕</button>
     </div>
-    <div style="display:flex;gap:4px;margin-bottom:12px">
-      <button type="button" id="cf-view-monthly" onclick="selCashFlowView('monthly')" class="rate-type-btn active" data-i18n="cashflow_monthly">Mensal</button>
-      <button type="button" id="cf-view-daily" onclick="selCashFlowView('daily')" class="rate-type-btn" data-i18n="cashflow_daily">Diário</button>
-    </div>
-    <div id="cf-month-sel-row" style="display:none;margin-bottom:10px">
-      <select id="cf-month-sel" class="sel-sm" onchange="renderCashFlow()" style="width:100%;background:rgba(110,43,58,.08);border:1px solid rgba(110,43,58,.2);color:var(--body);border-radius:10px;padding:7px 10px;font-size:12px;cursor:pointer"></select>
-    </div>
-    <div id="cf-summary" style="margin-bottom:10px"></div>
-    <canvas id="cf-chart" style="width:100%;display:block;margin-bottom:10px"></canvas>
-    <div id="cf-table" style="overflow-x:auto"></div>
+    <div id="cfp-body"></div>
   </div>
 </div>
 
@@ -7954,9 +7945,10 @@ function generateIRPFReport(year){
 
 
 function openCashFlowHistory(){
-  // default the daily-view month selector to the current month
   CF_DAILY_YM=activeYM();
   document.getElementById("modal-cashflow").classList.add("open");
+  /* o painel completo vive no módulo; o núcleo apenas o abre */
+  if(window.PRO&&PRO.renderCfPainel){ PRO.renderCfPainel(); return; }
   renderCashFlow();
 }
 
@@ -7971,6 +7963,7 @@ function selCashFlowView(v){
 let CF_DAILY_YM=null;
 
 function renderCashFlow(){
+  if(!document.getElementById("cf-summary")) return;   /* painel novo no lugar */
   const entries=getAllCashFlowEntries();
   if(!entries.length){
     document.getElementById("cf-summary").innerHTML=`<div class="empty">${t("cashflow_no_data")}</div>`;
@@ -15721,12 +15714,477 @@ function init(){
 document.addEventListener("DOMContentLoaded",()=>setTimeout(init,50));
 setTimeout(init,3200);   // após o splash do app
 
+/* ═══ 11.9 PAINEL DE FLUXO DE CAIXA ═══════════════════════════════════
+   Um só demonstrativo para tudo: real onde já existe lançamento, projetado
+   daí para frente, nas três escalas. Cada linha abre nos itens que a
+   compõem, para que qualquer número do app possa ser auditado até a
+   origem. A estrutura é a mesma do fluxo da tela de Vida Financeira. */
+
+const CFP={escala:"mes", ym:null, ano:null, atras:6, frente:12, aberto:{}, foco:null};
+
+/* Cronograma da dívida: o do FGTS quando há plano, o limpo quando não há */
+const CFP_SCH={};
+function cfDebtSch(d){
+  const k=[d.id,debtBalance(d),d.term,d.rate,d.amortSystem,d.monthlyPayment,
+    JSON.stringify(d.fgts||null)].join("|");
+  if(CFP_SCH[d.id]&&CFP_SCH[d.id].k===k) return CFP_SCH[d.id].v;
+  const v=fgtsCronograma(d)||debtScheduleFGTS(d,{on:false});
+  CFP_SCH[d.id]={k,v};
+  return v;
+}
+function cfLimparCache(){ Object.keys(CFP_SCH).forEach(k=>delete CFP_SCH[k]); }
+
+/* Estado inicial das aplicações, que evolui ao longo da projeção */
+function cfEstadoAplic(){
+  return (typeof ASSETS!=="undefined"?ASSETS:[]).map(a=>{
+    const p=astPro(a);
+    return {a,p,nome:a.name||"—",saldo:astValorAtual(a),custo:+p.custo||0,
+            rate:astLiquidoAM(a)/100,aporte:+p.aporte||0,dias0:dias(p.aplic)};
+  });
+}
+
+/* Demonstrativo completo de um mês. k = distância do mês corrente
+   (negativo = passado, 0 = mês atual, positivo = projeção). */
+function cfMes(ym,k,st){
+  const proj=k>0;
+
+  /* ── entradas, com o detalhe por lançamento ── */
+  const inc=incomeTotalsForYM(ym);
+  const porTipo={};
+  (inc.eventos||[]).forEach(e=>{
+    const key=(e.inc&&e.inc.type)||"other_in", T=gIncomeType(key);
+    const o=porTipo[key]||(porTipo[key]={id:key,emoji:T.emoji,label:catLabel(T),
+      bruto:0,inss:0,ir:0,ded:0,liq:0,fgts:0,base:0,regime:e.p?e.p.regime:"",itens:[]});
+    o.base+=(e.irBase||0);
+    o.bruto+=e.bruto; o.inss+=e.inss; o.ir+=e.ir; o.ded+=(e.deducoes||0);
+    o.liq+=e.liquido; o.fgts+=(e.fgts||0);
+    o.itens.push({nome:(e.inc&&e.inc.desc)||catLabel(T),
+      bruto:R2(e.bruto),inss:R2(e.inss),ir:R2(e.ir),ded:R2(e.deducoes||0),
+      liq:R2(e.liquido),fgts:R2(e.fgts||0),data:e.data||(e.inc&&e.inc.date)||""});
+  });
+  const tipos=Object.keys(porTipo).map(x=>{const o=porTipo[x];
+    ["bruto","inss","ir","ded","liq","fgts","base"].forEach(y=>o[y]=R2(o[y]));
+    o.aliq=o.base>0?R2(o.ir/o.base*100):0; return o;})
+    .sort((a,b)=>b.bruto-a.bruto);
+
+  /* ── despesas ── */
+  const exps=getExpensesForYM(ym).filter(e=>!isNeutral(e));
+  const lin=e=>({nome:e.desc||"—",valor:R2(myAmount(e)),data:e.date||"",
+    fixa:!!(e.recurrence&&e.recurrence!=="none"),
+    emoji:((typeof gc==="function"?gc(e.category||e.cat):null)||{}).emoji||"•"});
+  let despItens=exps.map(lin);
+  let despesas=R2(despItens.reduce((s,x)=>s+x.valor,0));
+  if(proj){
+    /* na projeção valem as recorrentes reais mais a média das variáveis */
+    despItens=despItens.filter(x=>x.fixa);
+    let mv=0;
+    try{
+      mv=(typeof PROJ!=="undefined"&&PROJ.mediaVar)?mediaVariaveis():0;
+      if(mv>0&&typeof PROJ!=="undefined"&&PROJ.corrigirDesp)
+        mv=mv*Math.pow(1+aaToMm(MARKET.ipca)/100,k);
+    }catch(err){ mv=0; }
+    if(mv>0) despItens.push({nome:"Média de despesas variáveis",valor:R2(mv),
+      data:"",fixa:false,emoji:"⚡",estimado:true});
+    despesas=R2(despItens.reduce((s,x)=>s+x.valor,0));
+  }
+  despItens.sort((a,b)=>b.valor-a.valor);
+
+  /* ── dívidas, pelo cronograma (já com o FGTS quando houver plano) ── */
+  const idx=Math.max(1,k+1);
+  let dJuros=0,dAmort=0,dPago=0,dFgts=0; const dItens=[];
+  (typeof DEBTS!=="undefined"?DEBTS:[]).forEach(d=>{
+    const sch=cfDebtSch(d);
+    const row=sch&&sch.rows?sch.rows[idx-1]:null;
+    if(!row) return;
+    dJuros+=row.juros; dAmort+=row.amort; dPago+=row.desembolso; dFgts+=row.fgts;
+    dItens.push({nome:d.name||catLabel(gDebtType(d.type)),emoji:gDebtType(d.type).emoji,
+      juros:R2(row.juros),amort:R2(row.amort),pago:R2(row.desembolso),
+      fgts:R2(row.fgts),saldo:R2(row.saldo)});
+  });
+  dItens.sort((a,b)=>b.pago-a.pago);
+
+  /* ── aplicações ── */
+  let apBruto=0,apIr=0,apAportes=0,apCc=0; const apItens=[];
+  const mes=ymMonth(ym);
+  if(!proj||!st){
+    const ap=assetFlowForYM(ym);
+    apBruto=ap.bruto; apIr=ap.ir; apAportes=ap.aportes; apCc=ap.comeCotas;
+    ap.itens.forEach(x=>apItens.push({nome:x.nome,bruto:x.bruto,ir:x.ir,aliq:x.aliq}));
+  }else{
+    st.forEach(x=>{
+      const rb=x.saldo*x.rate;
+      let aliq=0;
+      try{ aliq=astAliqIR(x.a,x.dias0+30*k); }catch(err){ aliq=0; }
+      if(x.p.trib==="isento"||x.p.trib==="fii") aliq=0;
+      const vIr=Math.max(0,rb)*aliq/100;
+      x.saldo=R2(x.saldo+rb); apBruto+=rb; apIr+=vIr;
+      if(x.aporte>0){ x.saldo=R2(x.saldo+x.aporte); x.custo=R2(x.custo+x.aporte); apAportes+=x.aporte; }
+      if(x.p.comeCotas&&FISCAL.comeCotasMeses.indexOf(mes)>=0){
+        const ganho=Math.max(0,x.saldo-x.custo);
+        const imp=ganho*(x.p.trib==="fundoCP"?FISCAL.irFundoCP:FISCAL.irFundoLP)/100;
+        x.saldo=R2(x.saldo-imp); x.custo=x.saldo; apCc+=imp;
+      }
+      if(rb>0) apItens.push({nome:x.nome,bruto:R2(rb),ir:R2(vIr),aliq:R2(aliq)});
+    });
+  }
+  apItens.sort((a,b)=>b.bruto-a.bruto);
+  const apLiq=R2(apBruto-apIr);
+
+  const entLiq=R2(inc.liquido);
+  const saidas=R2(despesas+dPago);
+  const caixaOper=R2(entLiq-saidas);
+  return {
+    ym, k, proj,
+    tipos, bruto:R2(inc.bruto), inss:R2(inc.inss), irrf:R2(inc.ir),
+    outrasDed:R2(inc.deducoes||0), deducoes:R2(inc.inss+(inc.deducoes||0)),
+    impostos:R2(inc.ir), entLiquidas:entLiq, fgts:R2(inc.fgts||0),
+    despesas, despItens,
+    divida:{juros:R2(dJuros),amort:R2(dAmort),parcela:R2(dPago),
+            fgtsAbat:R2(dFgts),itens:dItens},
+    aplic:{bruto:R2(apBruto),ir:R2(apIr),comeCotas:R2(apCc),
+           liquido:apLiq,aportes:R2(apAportes),itens:apItens},
+    saidas, caixaOper, caixaTotal:R2(caixaOper+apLiq)
+  };
+}
+
+/* Série de meses em volta de hoje: passado real, futuro projetado */
+function cfSerie(atras,frente){
+  const hoje=ymNow();
+  const st=cfEstadoAplic();
+  const out=[];
+  for(let k=-Math.abs(atras);k<=Math.abs(frente);k++)
+    out.push(cfMes(ymAdd(hoje,k),k,k>0?st:null));
+  let acum=0;
+  out.forEach(m=>{ acum=R2(acum+m.caixaTotal); m.acumulado=acum; });
+  return out;
+}
+
+/* Consolida um conjunto de meses num único demonstrativo */
+function cfConsolida(ms){
+  const z={ym:"",k:0,proj:ms.some(m=>m.proj),
+    tipos:[],bruto:0,inss:0,irrf:0,outrasDed:0,deducoes:0,impostos:0,
+    entLiquidas:0,fgts:0,despesas:0,despItens:[],
+    divida:{juros:0,amort:0,parcela:0,fgtsAbat:0,itens:[]},
+    aplic:{bruto:0,ir:0,comeCotas:0,liquido:0,aportes:0,itens:[]},
+    saidas:0,caixaOper:0,caixaTotal:0};
+  const somaEm=(arr,chave,obj,campos)=>{
+    let a=arr.find(x=>x[chave]===obj[chave]);
+    if(!a){ a=Object.assign({},obj); campos.forEach(c=>a[c]=0); if(a.itens)a.itens=[]; arr.push(a); }
+    campos.forEach(c=>a[c]=R2((a[c]||0)+(obj[c]||0)));
+    if(obj.itens&&a.itens) a.itens=a.itens.concat(obj.itens);
+    return a;
+  };
+  ms.forEach(m=>{
+    ["bruto","inss","irrf","outrasDed","deducoes","impostos","entLiquidas",
+     "fgts","despesas","saidas","caixaOper","caixaTotal"].forEach(c=>z[c]=R2(z[c]+m[c]));
+    ["juros","amort","parcela","fgtsAbat"].forEach(c=>z.divida[c]=R2(z.divida[c]+m.divida[c]));
+    ["bruto","ir","comeCotas","liquido","aportes"].forEach(c=>z.aplic[c]=R2(z.aplic[c]+m.aplic[c]));
+    m.tipos.forEach(o=>somaEm(z.tipos,"id",o,["bruto","inss","ir","ded","liq","fgts","base"]));
+    m.divida.itens.forEach(o=>somaEm(z.divida.itens,"nome",o,["juros","amort","pago","fgts"]));
+    m.aplic.itens.forEach(o=>somaEm(z.aplic.itens,"nome",o,["bruto","ir"]));
+    m.despItens.forEach(o=>somaEm(z.despItens,"nome",o,["valor"]));
+  });
+  z.tipos.sort((a,b)=>b.bruto-a.bruto);
+  z.despItens.sort((a,b)=>b.valor-a.valor);
+  z.divida.itens.sort((a,b)=>b.pago-a.pago);
+  z.aplic.itens.sort((a,b)=>b.bruto-a.bruto);
+  return z;
+}
+
+/* Lançamentos de um dia, para a escala diária */
+function cfDias(ym){
+  const [y,mo]=ym.split("-").map(Number);
+  const nd=new Date(y,mo,0).getDate();
+  const dd={};
+  for(let i=1;i<=nd;i++) dd[i]={dia:i,ent:0,sai:0,itens:[]};
+  const push=(dt,tipo,nome,val,emoji)=>{
+    const p=String(dt||"").split("-");
+    const n=p.length===3?parseInt(p[2],10):1;
+    const b=dd[n]||dd[1];
+    if(tipo==="ent") b.ent=R2(b.ent+val); else b.sai=R2(b.sai+val);
+    b.itens.push({tipo,nome,valor:R2(val),emoji:emoji||"•"});
+  };
+  const inc=incomeTotalsForYM(ym);
+  (inc.eventos||[]).forEach(e=>{
+    const T=gIncomeType((e.inc&&e.inc.type)||"other_in");
+    push(e.data||(e.inc&&e.inc.date),"ent",(e.inc&&e.inc.desc)||catLabel(T),e.liquido,T.emoji);
+  });
+  getExpensesForYM(ym).filter(e=>!isNeutral(e)).forEach(e=>{
+    const c=(typeof gc==="function"?gc(e.category||e.cat):null)||{};
+    push(e.date,"sai",e.desc||"—",myAmount(e),c.emoji||"•");
+  });
+  const hoje=ymNow();
+  let k=0; { const a=ym.split("-").map(Number), b=hoje.split("-").map(Number);
+    k=(a[0]-b[0])*12+(a[1]-b[1]); }
+  const idx=Math.max(1,k+1);
+  (typeof DEBTS!=="undefined"?DEBTS:[]).forEach(d=>{
+    const sch=cfDebtSch(d); const row=sch&&sch.rows?sch.rows[idx-1]:null;
+    if(!row||row.desembolso<=0) return;
+    const dia=d.dueDay||1;
+    push(ym+"-"+String(dia).padStart(2,"0"),"sai",
+      (d.name||"—")+(row.fgts>0?" · FGTS "+fmt(row.fgts):""),row.desembolso,
+      gDebtType(d.type).emoji);
+  });
+  let acum=0;
+  const out=Object.keys(dd).map(Number).sort((a,b)=>a-b).map(i=>dd[i]);
+  out.forEach(x=>{ x.liq=R2(x.ent-x.sai); acum=R2(acum+x.liq); x.acum=acum; });
+  return out;
+}
+
+/* ── Interface do painel ─────────────────────────────────────────── */
+function cfSetEscala(e){ CFP.escala=e; renderCfPainel(); }
+function cfNav(n){
+  if(CFP.escala==="ano"){ CFP.ano=(CFP.ano||new Date().getFullYear())+n; }
+  else { CFP.ym=ymAdd(CFP.ym||ymNow(),n); }
+  renderCfPainel();
+}
+function cfHoje(){ CFP.ym=ymNow(); CFP.ano=new Date().getFullYear(); renderCfPainel(); }
+function cfToggle(id){ CFP.aberto[id]=!CFP.aberto[id]; renderCfPainel(); }
+function cfFoco(ym){ CFP.ym=ym; CFP.escala="mes"; renderCfPainel(); }
+
+function cfMesLabel(k){
+  try{ return typeof monthFullLabel==="function"?monthFullLabel(k):k; }catch(e){ return k; }
+}
+function ensureCfStyles(){
+  if($("cfp-style")) return;
+  const s=document.createElement("style"); s.id="cfp-style";
+  s.textContent=`
+  #cfp-body .cfp-nav{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+  #cfp-body .cfp-nav .lbl{flex:1;text-align:center;font-family:var(--serif);font-style:italic;
+    font-size:15px;color:var(--body)}
+  #cfp-body .cfp-nav button{width:30px;height:30px;border-radius:9px;border:1.5px solid var(--line);
+    background:none;color:#6B6760;font-size:15px;cursor:pointer;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center}
+  #cfp-body .cfp-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    padding:5px 0;font-size:12.5px;cursor:default}
+  #cfp-body .cfp-row.clic{cursor:pointer}
+  #cfp-body .cfp-row>span:first-child{color:var(--body);min-width:0;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  #cfp-body .cfp-row>span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+  #cfp-body .cfp-row.sub{font-size:11.5px;padding-left:14px}
+  #cfp-body .cfp-row.sub>span:first-child{color:#8A857D}
+  #cfp-body .cfp-row.sub>span:last-child{font-weight:500;color:#8A857D}
+  #cfp-body .cfp-row.tot{border-top:1px solid var(--line);margin-top:5px;padding-top:8px;font-size:13px}
+  #cfp-body .cfp-row.tot span{font-weight:700}
+  #cfp-body .cfp-row.grand{border-top:2px solid var(--line);margin-top:7px;padding-top:9px;font-size:13.5px}
+  #cfp-body .cfp-row.grand span{font-weight:700}
+  #cfp-body .cfp-h{font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:#8A857D;
+    font-weight:700;margin:13px 0 4px}
+  #cfp-body .cfp-h:first-child{margin-top:0}
+  #cfp-body .cfp-card{background:var(--surface);border-radius:14px;padding:13px 15px;margin-bottom:12px}
+  #cfp-body .cfp-tag{font-size:9px;border-radius:6px;padding:1px 6px;font-weight:700;letter-spacing:.5px}
+  #cfp-body table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
+  #cfp-body th{color:#8A857D;font-weight:600;padding:6px 3px;text-align:right}
+  #cfp-body th:first-child{text-align:left}
+  #cfp-body td{padding:5px 3px;text-align:right;color:var(--body);font-variant-numeric:tabular-nums}
+  #cfp-body td:first-child{text-align:left}
+  #cfp-body tr.lin{border-top:1px solid var(--line);cursor:pointer}
+  #cfp-body tr.lin.hoje{background:rgba(26,58,92,.07)}
+  #cfp-body .cfp-caret{color:#8A857D;font-size:9px;margin-right:4px}`;
+  document.head.appendChild(s);
+}
+
+/* Demonstrativo estruturado, com cada linha abrindo nos seus itens */
+function cfDemonstrativo(cf,pref){
+  const GRN="#5A8A4A", RED="#B85A6A", BLU="#1A3A5C";
+  const R=(lbl,val,cls,color,id)=>{
+    const ab=id?CFP.aberto[id]:false;
+    return `<div class="cfp-row ${cls||""}${id?" clic":""}"${id?` onclick="PRO.cfToggle('${id}')"`:""}>`+
+      `<span>${id?`<span class="cfp-caret">${ab?"▾":"▸"}</span>`:""}${lbl}</span>`+
+      `<span style="color:${color||"var(--body)"}">${val}</span></div>`;
+  };
+  const V=v=>fmt(v||0);
+  const sub=(id,linhas)=>CFP.aberto[id]?linhas.join(""):"";
+  const ID=k=>pref+"-"+k;
+
+  const ent=cf.tipos.length
+    ? cf.tipos.map((o,i)=>R(o.emoji+" "+raw(o.label),"+"+V(o.bruto),"",GRN,ID("t"+i))
+        +sub(ID("t"+i),(o.itens||[]).map(x=>
+          R("↳ "+raw(x.nome)+(x.data?" · "+x.data.split("-").reverse().slice(0,2).join("/"):""),
+            "+"+V(x.bruto),"sub","#8A857D"))
+          .concat([
+            o.inss>0?R("↳ INSS","−"+V(o.inss),"sub","#8A857D"):"",
+            o.ded>0?R("↳ Previdência, pensão e outros","−"+V(o.ded),"sub","#8A857D"):"",
+            o.ir>0?R("↳ IR"+(o.aliq>0?" · "+String(o.aliq).replace(".",",")+"%":""),"−"+V(o.ir),"sub",RED):"",
+            R("↳ Líquido","+"+V(o.liq),"sub",GRN)
+          ].filter(Boolean)))
+      ).join("")
+    : `<div class="cfp-row sub"><span>Nenhuma entrada no período</span><span>—</span></div>`;
+
+  const desp=sub(ID("desp"),cf.despItens.slice(0,40).map(x=>
+    R("↳ "+(x.emoji||"")+" "+raw(x.nome)+(x.fixa?" · fixa":"")+(x.estimado?" · estimada":""),
+      "−"+V(x.valor),"sub","#8A857D")));
+  const div=sub(ID("div"),cf.divida.itens.map(x=>[
+    R("↳ "+(x.emoji||"")+" "+raw(x.nome),"−"+V(x.pago),"sub",RED),
+    R("&nbsp;&nbsp;&nbsp;juros","−"+V(x.juros),"sub","#8A857D"),
+    R("&nbsp;&nbsp;&nbsp;amortização","−"+V(x.amort),"sub","#8A857D"),
+    x.fgts>0?R("&nbsp;&nbsp;&nbsp;coberto pelo FGTS","+"+V(x.fgts),"sub",GRN):""
+  ].filter(Boolean).join("")));
+  const apl=sub(ID("apl"),cf.aplic.itens.slice(0,20).map(x=>
+    R("↳ "+raw(x.nome)+(x.aliq>0?" · IR "+String(x.aliq).replace(".",",")+"%":" · isento"),
+      "+"+V(x.bruto),"sub",GRN)));
+
+  return `<div class="cfp-card">
+    <div class="cfp-h">Entradas</div>
+    ${ent}
+    ${R("(=) Receita bruta",V(cf.bruto),"tot",BLU)}
+    ${cf.deducoes>0?R("(−) Deduções da base","−"+V(cf.deducoes),"","#8A857D"):""}
+    ${cf.impostos>0?R("(−) Imposto de renda","−"+V(cf.impostos),"",RED):""}
+    ${R("(=) Entradas líquidas",V(cf.entLiquidas),"tot",GRN)}
+
+    <div class="cfp-h">Saídas</div>
+    ${R("Despesas","−"+V(cf.despesas),"",RED,ID("desp"))}
+    ${desp}
+    ${R("Dívidas · desembolso","−"+V(cf.divida.parcela),"",RED,ID("div"))}
+    ${div}
+    ${R("↳ juros","−"+V(cf.divida.juros),"sub","#8A857D")}
+    ${R("↳ amortização","−"+V(cf.divida.amort),"sub","#8A857D")}
+    ${cf.divida.fgtsAbat>0?R("↳ coberto pelo FGTS","+"+V(cf.divida.fgtsAbat),"sub",GRN):""}
+    ${R("(=) Total de saídas","−"+V(cf.saidas),"tot",RED)}
+
+    <div class="cfp-h">Rendimento de aplicações</div>
+    ${R("Receita financeira","+"+V(cf.aplic.bruto),"",GRN,ID("apl"))}
+    ${apl}
+    ${R("(−) Provisão de IRRF","−"+V(cf.aplic.ir),"",RED)}
+    ${cf.aplic.comeCotas>0?R("(−) Come-cotas","−"+V(cf.aplic.comeCotas),"sub",RED):""}
+    ${R("(=) Rendimento líquido",V(cf.aplic.liquido),"tot",GRN)}
+
+    ${R("(=) Caixa operacional",(cf.caixaOper<0?"−":"+")+V(Math.abs(cf.caixaOper)),"grand",cf.caixaOper>=0?GRN:RED)}
+    ${R("(=) Resultado total",(cf.caixaTotal<0?"−":"+")+V(Math.abs(cf.caixaTotal)),"tot",cf.caixaTotal>=0?GRN:RED)}
+
+    ${(cf.fgts>0||cf.aplic.aportes>0)?`<div class="cfp-h">Memória — fora do caixa</div>`:""}
+    ${cf.fgts>0?R("FGTS depositado pelo empregador","+"+V(cf.fgts),"sub",GRN):""}
+    ${cf.aplic.aportes>0?R("Aportes programados às aplicações","−"+V(cf.aplic.aportes),"sub","#8A857D"):""}
+  </div>`;
+}
+
+function renderCfPainel(){
+  const el=$("cfp-body"); if(!el) return;
+  ensureStyles(); ensureCfStyles(); cfLimparCache();
+  if(!CFP.ym) CFP.ym=ymNow();
+  if(!CFP.ano) CFP.ano=new Date().getFullYear();
+  const GRN="#5A8A4A", RED="#B85A6A", BLU="#1A3A5C";
+  const hoje=ymNow();
+  const serie=cfSerie(CFP.atras,CFP.frente);
+  const sc=(id,lbl)=>`<button type="button" class="${CFP.escala===id?"on":""}" onclick="PRO.cfSetEscala('${id}')">${lbl}</button>`;
+  const tag=p=>`<span class="cfp-tag" style="background:${p?"rgba(110,43,58,.12)":"rgba(90,138,74,.14)"};color:${p?"#6E2B3A":"#3F6B33"}">${p?"PROJ":"REAL"}</span>`;
+  const V=v=>fmt(v||0);
+  let cabec="", corpo="", cf=null;
+
+  if(CFP.escala==="mes"){
+    const m=serie.find(x=>x.ym===CFP.ym)||cfMes(CFP.ym,0,null);
+    cf=m;
+    cabec=`<div class="cfp-nav">
+      <button onclick="PRO.cfNav(-1)">‹</button>
+      <div class="lbl">${cfMesLabel(m.ym)} ${tag(m.proj)}</div>
+      <button onclick="PRO.cfNav(1)">›</button>
+    </div>`;
+    corpo=`<div class="sec-label">Série mensal · real e projeção</div>
+    <div class="cfp-card" style="padding:4px 12px 10px">
+      <table><thead><tr>
+        <th style="width:26%">Mês</th><th style="width:24%">Entradas</th>
+        <th style="width:24%">Saídas</th><th style="width:26%">Resultado</th>
+      </tr></thead><tbody>
+      ${serie.map(x=>`<tr class="lin${x.ym===CFP.ym?" hoje":""}" onclick="PRO.cfFoco('${x.ym}')">
+        <td>${x.proj?"·":""} ${cfMesLabel(x.ym).slice(0,3)}/${x.ym.slice(2,4)}</td>
+        <td style="color:${GRN}">${V(x.entLiquidas+x.aplic.liquido)}</td>
+        <td style="color:${RED}">${V(x.saidas)}</td>
+        <td style="color:${x.caixaTotal>=0?GRN:RED};font-weight:600">${x.caixaTotal<0?"−":""}${V(Math.abs(x.caixaTotal))}</td>
+      </tr>`).join("")}
+      </tbody></table>
+      <div style="font-size:9.5px;color:#8A857D;margin-top:6px;line-height:1.5">O ponto marca os meses projetados. Toque num mês para abrir o demonstrativo dele.</div>
+    </div>`;
+  }
+  else if(CFP.escala==="ano"){
+    const ms=serie.filter(x=>parseInt(x.ym.slice(0,4),10)===CFP.ano);
+    cf=ms.length?cfConsolida(ms):cfMes(hoje,0,null);
+    cabec=`<div class="cfp-nav">
+      <button onclick="PRO.cfNav(-1)">‹</button>
+      <div class="lbl">${CFP.ano} ${ms.length?tag(ms.some(x=>x.proj)):""}</div>
+      <button onclick="PRO.cfNav(1)">›</button>
+    </div>
+    ${ms.length<12?`<div class="pro-note" style="margin:-4px 0 10px">A série cobre ${CFP.atras} meses para trás e ${CFP.frente} para frente: ${CFP.ano} aparece com ${ms.length} ${ms.length===1?"mês":"meses"}.</div>`:""}`;
+    const anos={};
+    serie.forEach(x=>{const a=x.ym.slice(0,4);
+      (anos[a]||(anos[a]={ano:a,ent:0,sai:0,res:0,proj:false}));
+      anos[a].ent=R2(anos[a].ent+x.entLiquidas+x.aplic.liquido);
+      anos[a].sai=R2(anos[a].sai+x.saidas);
+      anos[a].res=R2(anos[a].res+x.caixaTotal);
+      if(x.proj) anos[a].proj=true;});
+    corpo=`<div class="sec-label">Série anual</div>
+    <div class="cfp-card" style="padding:4px 12px 10px">
+      <table><thead><tr>
+        <th style="width:22%">Ano</th><th style="width:26%">Entradas</th>
+        <th style="width:26%">Saídas</th><th style="width:26%">Resultado</th>
+      </tr></thead><tbody>
+      ${Object.keys(anos).sort().map(a=>`<tr class="lin${+a===CFP.ano?" hoje":""}" onclick="PRO.cfSetAno(${a})">
+        <td>${anos[a].proj?"·":""} ${a}</td>
+        <td style="color:${GRN}">${V(anos[a].ent)}</td>
+        <td style="color:${RED}">${V(anos[a].sai)}</td>
+        <td style="color:${anos[a].res>=0?GRN:RED};font-weight:600">${anos[a].res<0?"−":""}${V(Math.abs(anos[a].res))}</td>
+      </tr>`).join("")}
+      </tbody></table>
+    </div>`;
+  }
+  else{
+    const m=serie.find(x=>x.ym===CFP.ym)||cfMes(CFP.ym,0,null);
+    cf=m;
+    const ds=cfDias(CFP.ym);
+    cabec=`<div class="cfp-nav">
+      <button onclick="PRO.cfNav(-1)">‹</button>
+      <div class="lbl">${cfMesLabel(m.ym)} ${tag(m.proj)}</div>
+      <button onclick="PRO.cfNav(1)">›</button>
+    </div>`;
+    corpo=`<div class="sec-label">Dia a dia</div>
+    <div class="cfp-card" style="padding:4px 12px 10px">
+      <table><thead><tr>
+        <th style="width:12%">Dia</th><th style="width:24%">Entradas</th>
+        <th style="width:24%">Saídas</th><th style="width:20%">Líquido</th>
+        <th style="width:20%">Acum.</th>
+      </tr></thead><tbody>
+      ${ds.filter(x=>x.itens.length).map(x=>`
+        <tr class="lin" onclick="PRO.cfToggle('d${x.dia}')">
+          <td><span class="cfp-caret">${CFP.aberto["d"+x.dia]?"▾":"▸"}</span>${x.dia}</td>
+          <td style="color:${GRN}">${x.ent>0?V(x.ent):"—"}</td>
+          <td style="color:${RED}">${x.sai>0?V(x.sai):"—"}</td>
+          <td style="color:${x.liq>=0?GRN:RED}">${x.liq<0?"−":""}${V(Math.abs(x.liq))}</td>
+          <td style="color:#8A857D">${x.acum<0?"−":""}${V(Math.abs(x.acum))}</td>
+        </tr>
+        ${CFP.aberto["d"+x.dia]?x.itens.map(it=>`<tr><td colspan="5" style="padding:3px 3px 3px 16px">
+          <div class="cfp-row sub" style="padding:2px 0"><span>${it.emoji} ${raw(it.nome)}</span>
+          <span style="color:${it.tipo==="ent"?GRN:RED}">${it.tipo==="ent"?"+":"−"}${V(it.valor)}</span></div>
+        </td></tr>`).join(""):""}
+      `).join("")}
+      </tbody></table>
+      <div style="font-size:9.5px;color:#8A857D;margin-top:6px;line-height:1.5">Só os dias com movimento aparecem. Toque num dia para ver os lançamentos.</div>
+    </div>`;
+  }
+
+  el.innerHTML=H`
+    ${cabec}
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
+      <div class="pro-scale">${sc("dia","Diário")}${sc("mes","Mensal")}${sc("ano","Anual")}</div>
+      <button type="button" class="pro-pill" onclick="PRO.cfHoje()"
+        style="border:1.5px solid var(--line);background:none;color:#6B6760">hoje</button>
+    </div>
+    <div class="sec-label">Demonstrativo${CFP.escala==="ano"?" consolidado do ano":" do período"}</div>
+    ${cfDemonstrativo(cf,"c")}
+    ${corpo}
+    <div style="font-size:10px;color:#8A857D;line-height:1.55;padding-bottom:6px">
+      Meses até o corrente usam os lançamentos reais. A partir do próximo, as entradas e despesas recorrentes se repetem, as variáveis entram pela média, as dívidas seguem o cronograma (já com o FGTS, quando há plano) e as aplicações rendem com o indexador de cada uma.
+    </div>`;
+}
+function cfSetAno(a){ CFP.ano=a; renderCfPainel(); }
+
 /* API pública usada pelos onclick inline */
 window.PRO={
   setIncRegime,toggle13,toggleFer,astPreview,setAstIdx,setAstTrib,setAstLiq,toggleCC,
   toggleFgts,toggleSplit,setIncScale,setFinScale,toggleFinDetail,syncFab,
   fgtsSaldoPatrimonio,fgtsFonte,getFgtsTmp:()=>FGTS_TMP,maskDec,valDec,setDec,incTouched,
   cashflowForYM,sugestaoPoupanca,renderCashFlow,
+  renderCfPainel,cfSetEscala,cfNav,cfHoje,cfToggle,cfFoco,cfSetAno,
+  cfMes,cfSerie,cfConsolida,cfDias,
+
   openRendimento,renderRendimentos,setRendHoriz,exportRendimento,
   aplicarProduto,sincronizarFgtsPatrimonio,PRODUTOS,
   openFgts,setFgtsModo,toggleFgtsRepetir,toggleFgtsPatr,fgtsCalc,salvarFgts,limparFgts,
