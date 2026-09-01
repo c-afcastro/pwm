@@ -2946,6 +2946,8 @@ const I18N={
     debt_tab_sim:"Simulador",
     debt_by_type:"Por tipo de dívida",
     next_payments:"Próximos pagamentos",
+    w_forecast:"Previsto",
+    w_forecast_lc:"previsto",
     fgts_covers:"FGTS cobre",
     fgts_by:"pelo FGTS",
     fgts_locked:"FGTS indisponível até",
@@ -3632,6 +3634,8 @@ const I18N={
     debt_tab_sim:"Simulator",
     debt_by_type:"By debt type",
     next_payments:"Upcoming payments",
+    w_forecast:"Forecast",
+    w_forecast_lc:"forecast",
     fgts_covers:"FGTS covers",
     fgts_by:"paid by FGTS",
     fgts_locked:"FGTS unavailable until",
@@ -4318,6 +4322,8 @@ const I18N={
     debt_tab_sim:"Simulator",
     debt_by_type:"Nach Schuldenart",
     next_payments:"Nächste Zahlungen",
+    w_forecast:"Erwartet",
+    w_forecast_lc:"erwartet",
     fgts_covers:"FGTS deckt",
     fgts_by:"durch FGTS",
     fgts_locked:"FGTS gesperrt bis",
@@ -5230,13 +5236,19 @@ function updateHero(){
   const openSplits=buildOpenSplits();
   const banner=document.getElementById("hero-splits-banner");
   const content=document.getElementById("hero-splits-content");
-  if(openSplits.totalCount>0){
+  if(openSplits.totalCount>0||openSplits.futCount>0){
     banner.style.display="block";
     const byPerson={};
     openSplits.items.forEach(item=>{
-      if(!byPerson[item.name]) byPerson[item.name]={count:0,val:0,cur:item.cur};
+      if(!byPerson[item.name]) byPerson[item.name]={count:0,val:0,fut:0,futN:0,cur:item.cur};
       byPerson[item.name].count++;
       byPerson[item.name].val+=item.amount;
+    });
+    /* o previsto aparece, mas separado do que já é devido */
+    (openSplits.futuros||[]).forEach(item=>{
+      if(!byPerson[item.name]) byPerson[item.name]={count:0,val:0,fut:0,futN:0,cur:item.cur};
+      byPerson[item.name].fut+=item.amount;
+      byPerson[item.name].futN++;
     });
     content.innerHTML=Object.entries(byPerson).map(([name,d])=>
       `<div onclick="openPersonDetail('${name.replace(/'/g,"\\'")}');event.stopPropagation()"
@@ -5244,7 +5256,7 @@ function updateHero(){
         onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='transparent'">
         <span style="color:rgba(255,255,255,.7);font-size:12px;font-weight:600">${name}</span>
         <span style="color:rgba(255,255,255,.9);font-family:var(--serif);font-style:italic;font-size:16px">${fmtCur(d.val,d.cur)}</span>
-        <span style="color:rgba(255,255,255,.4);font-size:10px">(${d.count}) ›</span>
+        <span style="color:rgba(255,255,255,.4);font-size:10px">(${d.count})${d.fut>0?` · +${fmtCur(d.fut,d.cur)} ${t("w_forecast_lc")}`:""} ›</span>
       </div>`
     ).join('<span style="color:rgba(255,255,255,.2);margin:0 2px">·</span>');
   } else {
@@ -5252,18 +5264,28 @@ function updateHero(){
   }
 }
 
+/* Um rateio só vira crédito quando a despesa efetivamente ocorre. Enquanto
+   a data ainda está no futuro, ninguém deve nada: o valor fica separado
+   como previsto e não entra no total a receber. */
+function splitFuturo(e){
+  const hj=new Date().toISOString().split("T")[0];
+  return String((e&&e.date)||"")>hj;
+}
 function buildOpenSplits(){
-  // gather all unsettled split rows across ALL expenses (all time)
-  const items=[];
+  const items=[], futuros=[];
   EX.forEach(e=>{
     if(!e.split||e.split.mode==="none"||!e.split.rows?.length) return;
+    const fut=splitFuturo(e);
     e.split.rows.forEach((row,idx)=>{
-      if(!isSettled(e,idx)){
-        items.push({expId:e.id,idx,name:row.name||"?",amount:personAmount(e,idx),cur:e.currency||"BRL",e});
-      }
+      if(isSettled(e,idx)) return;
+      const o={expId:e.id,idx,name:row.name||"?",amount:personAmount(e,idx),
+               cur:e.currency||"BRL",e,futuro:fut,ym:ym(e.date)};
+      (fut?futuros:items).push(o);
     });
   });
-  return {items, totalCount:items.length, totalVal:items.reduce((s,i)=>s+i.amount,0)};
+  return {items, futuros,
+    totalCount:items.length, totalVal:items.reduce((s,i)=>s+i.amount,0),
+    futCount:futuros.length, futVal:futuros.reduce((s,i)=>s+i.amount,0)};
 }
 
 function openPersonDetail(personName){
@@ -5279,10 +5301,14 @@ function openPersonDetail(personName){
     });
   });
   // sort by date desc
+  open.forEach(o=>{o.futuro=splitFuturo(o.e);});
+  settled.forEach(o=>{o.futuro=false;});
   const sortFn=(a,b)=>b.e.date.localeCompare(a.e.date);
   open.sort(sortFn); settled.sort(sortFn);
 
-  const totalOpen=open.reduce((s,i)=>s+i.amount,0);
+  /* o previsto não entra no total devido */
+  const totalFut=open.filter(i=>i.futuro).reduce((s,i)=>s+i.amount,0);
+  const totalOpen=open.filter(i=>!i.futuro).reduce((s,i)=>s+i.amount,0);
   const totalSettled=settled.reduce((s,i)=>s+i.amount,0);
   const cur=open[0]?.cur||settled[0]?.cur||"BRL";
   const person=PEOPLE.find(p=>p.name===personName);
@@ -5305,6 +5331,10 @@ function openPersonDetail(personName){
       <div style="font-size:10px;color:#6B6760;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">${t("w_open_label")}</div>
       <span style="color:var(--wood)">${fmtCur(totalOpen,cur)}</span>
     </div>
+    ${totalFut>0?`<div class="pd-summary-pill">
+      <div style="font-size:10px;color:#6B6760;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">${t("w_forecast")}</div>
+      <span style="color:#8A857D">${fmtCur(totalFut,cur)}</span>
+    </div>`:""}
     <div class="pd-summary-pill">
       <div style="font-size:10px;color:#6B6760;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">${t("received")}</div>
       <span style="color:var(--green)">${fmtCur(totalSettled,cur)}</span>
@@ -5322,7 +5352,7 @@ function openPersonDetail(personName){
     return `<div class="pd-item">
       <div class="pd-cat-icon" style="background:${c.color}18">${c.emoji}</div>
       <div class="pd-body">
-        <div class="pd-desc">${item.e.desc}</div>
+        <div class="pd-desc">${item.e.desc}${item.futuro?` <span style="font-size:10px;color:#8A857D">· ${t("w_forecast_lc")} ${monthFullLabel(ym(item.e.date))}</span>`:""}</div>
         <div class="pd-meta">${item.e.date} · ${pctInfo}</div>
       </div>
       <div class="pd-right">
@@ -10364,7 +10394,9 @@ function renderDebtList(){
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-family:var(--serif);font-style:italic;font-size:17px;color:#6E2B3A">${fmt(bal)}</div>
-          ${(parseFloat(d.monthlyPayment)||0)>0?`<div style="font-size:10px;color:#6B6760">${fmt(parseFloat(d.monthlyPayment))}${t("w_per_month")}</div>`:""}
+          ${(()=>{const pgm=debtPagamentoMes(d); if(!(pgm.cheia>0)) return "";
+            return `<div style="font-size:10px;color:#6B6760">${fmt(pgm.pago)}${t("w_per_month")}</div>`
+              +(pgm.fgts>0?`<div style="font-size:9.5px;color:#3F6B33">🏦 ${fmt(pgm.fgts)}</div>`:"");})()}
         </div>
       </div>
       ${orig>0?`<div style="height:5px;background:rgba(110,43,58,.08);border-radius:3px;overflow:hidden">
@@ -11269,7 +11301,14 @@ function openDebtDetail(id){
   const orig=parseFloat(d.principal)||0;
   const paid=Math.max(0,debtOriginal(d)-debtBalance(d));
   const pct=orig>0?Math.min(100,(paid/orig)*100):0;
-  const est=estimatePayoff(bal,parseFloat(d.rate)||0,parseFloat(d.monthlyPayment)||0);
+  /* a quitação também muda quando o FGTS amortiza: usa o cronograma real */
+  let est=estimatePayoff(bal,parseFloat(d.rate)||0,parseFloat(d.monthlyPayment)||0);
+  try{
+    if(window.PRO&&PRO.fgtsCronograma&&d.fgts&&d.fgts.on){
+      const sch=PRO.fgtsCronograma(d);
+      if(sch&&sch.meses>0) est={months:sch.meses,totalInterest:sch.juros,never:false};
+    }
+  }catch(err){}
   let payoffTxt="—";
   if(est.never) payoffTxt=t("never_payoff");
   else if(est.months===0) payoffTxt=t("w_paid_off");
@@ -11295,7 +11334,10 @@ function openDebtDetail(id){
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
       ${(parseFloat(d.rate)||0)>0?`<div class="stat"><div class="stat-label">${t("debt_rate")}</div><div class="stat-val">${(d.rateType==="year"?monthlyToAnnual(parseFloat(d.rate)):parseFloat(d.rate)).toFixed(2)}%${d.rateType==="year"?" "+t("w_per_year_short"):" "+t("w_per_month_short")}</div></div>`:""}
-      ${(parseFloat(d.monthlyPayment)||0)>0?`<div class="stat"><div class="stat-label">${t("monthly_payment_lbl")}</div><div class="stat-val">${fmt(parseFloat(d.monthlyPayment))}</div></div>`:""}
+      ${(()=>{const pgm=debtPagamentoMes(d); if(!(pgm.cheia>0)) return "";
+        return `<div class="stat"><div class="stat-label">${t("monthly_payment_lbl")}</div>
+          <div class="stat-val">${fmt(pgm.pago)}</div>
+          ${pgm.fgts>0?`<div style="font-size:9.5px;color:#3F6B33;margin-top:2px">🏦 ${fmt(pgm.fgts)} ${t("fgts_by")} · <span style="color:#8A857D;text-decoration:line-through">${fmt(pgm.cheia)}</span></div>`:""}</div>`;})()}
       ${d.dueDay?`<div class="stat"><div class="stat-label">${t("debt_due_day")}</div><div class="stat-val">${t("w_day")} ${d.dueDay}</div></div>`:""}
       <div class="stat"><div class="stat-label">${t("estimated_payoff")}</div><div class="stat-val" style="font-size:13px">${payoffTxt}</div></div>
     </div>
@@ -12875,7 +12917,7 @@ function serieFatores(a,ini,fim,pro){
     const parte=Math.max(0,dias(de,ate))/ultimo;
     if(parte>0){
       let base=1, real=true, idxUsado="";
-      switch(p.idx){
+      switch(astIdxNorm(p.idx)){
         case "cdi_pct":
           idxUsado="cdi"; base=1+indiceMes("cdi",cur)*(+p.idxVal||0)/10000; break;
         case "cdi_spread":
@@ -12887,7 +12929,8 @@ function serieFatores(a,ini,fim,pro){
         case "pre":
           base=Math.pow(1+(+p.idxVal||0)/100,1/12); break;
         default:
-          base=1+(+p.idxVal||0)/100;
+          /* rendimento informado à mão, em % ao mês */
+          base=1+astManualAM(a,p)/100;
       }
       if(idxUsado) real=indiceMesEhReal(idxUsado,cur);
       out.push({ym:cur,de,ate,parte:R2(parte),
@@ -12954,17 +12997,40 @@ function astDisponivel(a){
     proxFaixa:astProxFaixaIR(a,res.dias)
   };
 }
+/* Normaliza o indexador. Havia um buraco aqui: qualquer valor fora da lista
+   caía no default e o número era lido como "% ao mês". Um CDB a 105% do CDI
+   gravado como idx "cdi" virava 105% ao mês — e contaminava rendimento,
+   projeção e sugestão de poupança. Agora os apelidos são traduzidos e só
+   o rendimento realmente manual usa o valor direto. */
+const AST_IDX_ALIAS={cdi:"cdi_pct", cdi_pc:"cdi_pct", "%cdi":"cdi_pct",
+  selic:"cdi_pct", ipca:"ipca_spread", ipca_mais:"ipca_spread",
+  pre_fixado:"pre", prefixado:"pre", pos:"cdi_pct", poup:"poupanca"};
+function astIdxNorm(idx){
+  const k=String(idx||"").trim().toLowerCase();
+  if(!k) return "";
+  if(["cdi_pct","cdi_spread","ipca_spread","pre","poupanca"].indexOf(k)>=0) return k;
+  return AST_IDX_ALIAS[k]||"";
+}
 /* Rentabilidade bruta ao mês (%) */
 function astBrutoAM(a){
   const p=astPro(a), v=+p.idxVal||0;
-  switch(p.idx){
+  switch(astIdxNorm(p.idx)){
     case "cdi_pct":    return aaToMm(MARKET.cdi*v/100);
     case "cdi_spread": return aaToMm(((1+MARKET.cdi/100)*(1+v/100)-1)*100);
     case "ipca_spread":return aaToMm(((1+MARKET.ipca/100)*(1+v/100)-1)*100);
     case "pre":        return aaToMm(v);
     case "poupanca":   return poupancaAM();
-    default:           return v||parseFloat(a.yieldPct)||0;
+    default:           return astManualAM(a,p);
   }
+}
+/* Rendimento manual: o campo do formulário é "% ao mês". Acima de 20% a.m.
+   o número quase certamente é % de um indexador digitado no lugar errado —
+   nesse caso vale o CDI, para não inflar a carteira em dezenas de vezes. */
+function astManualAM(a,pro){
+  const p=pro||astPro(a);
+  const v=+p.idxVal||parseFloat(a&&a.yieldPct)||0;
+  if(v>20&&String(p.idx||"").trim()!=="") return aaToMm(MARKET.cdi*v/100);
+  return v;
 }
 /* Rentabilidade líquida de taxas ao mês (%) — antes de IR */
 function astLiquidoAM(a){
