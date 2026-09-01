@@ -2890,6 +2890,9 @@ const I18N={
     fgts_m_liq:"FGTS quitando a dívida",
     fgts_balance:"Saldo FGTS",
     fgts_you_pay:"Você paga neste mês",
+    ast_updated:"atualizado",
+    ast_informed:"informado",
+    ast_update_all:"Atualizar posições",
     inc_added:"Entrada adicionada",
     no_tx_with:"Nenhum lançamento encontrado com",
     offline_rate:"Sem conexão — usando cotação aproximada",
@@ -3569,6 +3572,9 @@ const I18N={
     fgts_m_liq:"FGTS paying off the debt",
     fgts_balance:"FGTS balance",
     fgts_you_pay:"You pay this month",
+    ast_updated:"updated",
+    ast_informed:"reported",
+    ast_update_all:"Update positions",
     inc_added:"Income added",
     no_tx_with:"No transactions found with",
     offline_rate:"Offline — using approximate rate",
@@ -4248,6 +4254,9 @@ const I18N={
     fgts_m_liq:"FGTS löst die Schuld ab",
     fgts_balance:"FGTS-Guthaben",
     fgts_you_pay:"Sie zahlen diesen Monat",
+    ast_updated:"aktualisiert",
+    ast_informed:"gemeldet",
+    ast_update_all:"Positionen aktualisieren",
     inc_added:"Einnahme hinzugefügt",
     no_tx_with:"Keine Buchungen gefunden mit",
     offline_rate:"Offline — ungefährer Kurs",
@@ -4954,6 +4963,9 @@ const ASSET_CLASSES=[
   {id:"other_asset",  label:"Outros",            emoji:"💎", color:"#7A7A6A"},
 ];
 const gAssetClass=id=>ASSET_CLASSES.find(c=>c.id===id)||ASSET_CLASSES[7];
+/* Valor de uma aplicação hoje. O módulo fiscal sobrescreve isto para
+   corrigir a posição pelo histórico do indexador desde a data informada. */
+function astValorAtual(a){ return parseFloat(a&&a.balance)||0; }
 
 const DEBT_TYPES=[
   {id:"mortgage",   label:"Financiamento Imob.", emoji:"🏠", color:"#6E2B3A", fields:["creditor","principal","rate","term","dueDay","amort"]},
@@ -6778,8 +6790,8 @@ function initAstHeroScroll(){
 /* ── RENDER ASSETS (main, called on section enter) ── */
 function renderAssets(){
   updateMonthNavAst();
-  const total=ASSETS.reduce((s,a)=>s+(parseFloat(a.balance)||0),0);
-  const monthYield=ASSETS.reduce((s,a)=>s+((parseFloat(a.balance)||0)*(parseFloat(a.yieldPct)||0)/100),0);
+  const total=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
+  const monthYield=ASSETS.reduce((s,a)=>s+((astValorAtual(a))*(parseFloat(a.yieldPct)||0)/100),0);
   const heroEl=document.getElementById("assets-hero");
   if(heroEl) heroEl.innerHTML=`
         <div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,38px);line-height:1;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" data-total="${fmt(total)}">${fmt(total)}</div>
@@ -6795,8 +6807,8 @@ function renderAssets(){
 
 /* ── RESUMO TAB ── */
 function renderAssetsDash(){
-  const total=ASSETS.reduce((s,a)=>s+(parseFloat(a.balance)||0),0);
-  const monthYield=ASSETS.reduce((s,a)=>s+((parseFloat(a.balance)||0)*(parseFloat(a.yieldPct)||0)/100),0);
+  const total=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
+  const monthYield=ASSETS.reduce((s,a)=>s+((astValorAtual(a))*(parseFloat(a.yieldPct)||0)/100),0);
   const goalTotal=Object.values(astGoals).reduce((s,v)=>s+(parseFloat(v)||0),0);
   const avgYield=total>0?(monthYield/total*100):0;
 
@@ -6810,7 +6822,7 @@ function renderAssetsDash(){
 
   // allocation bars — clickable to filter list
   const byClass={};
-  ASSETS.forEach(a=>{byClass[a.class]=(byClass[a.class]||0)+(parseFloat(a.balance)||0);});
+  ASSETS.forEach(a=>{byClass[a.class]=(byClass[a.class]||0)+(astValorAtual(a));});
   const classes=ASSET_CLASSES.map(c=>({...c,total:byClass[c.id]||0})).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
   const mx=Math.max(...classes.map(c=>c.total),1);
   const byClassEl=document.getElementById("assets-by-class");
@@ -6831,10 +6843,10 @@ function renderAssetsDash(){
   // top positions
   const topEl=document.getElementById("ast-top-list");
   if(!topEl) return;
-  const top=[...ASSETS].sort((a,b)=>(parseFloat(b.balance)||0)-(parseFloat(a.balance)||0)).slice(0,5);
+  const top=[...ASSETS].sort((a,b)=>(astValorAtual(b))-(astValorAtual(a))).slice(0,5);
   topEl.innerHTML=top.length?top.map(a=>{
     const c=gAssetClass(a.class);
-    const bal=parseFloat(a.balance)||0;
+    const bal=astValorAtual(a);
     const pct=total>0?(bal/total*100):0;
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.1)">
       <div style="display:flex;gap:10px;align-items:center;min-width:0">
@@ -6863,16 +6875,16 @@ function renderAssetList(){
   if(q) items=items.filter(a=>(a.name||"").toLowerCase().includes(q));
   if(classF!=="all") items=items.filter(a=>a.class===classF);
   items.sort((a,b)=>{
-    if(sortV==="bal-asc") return (parseFloat(a.balance)||0)-(parseFloat(b.balance)||0);
+    if(sortV==="bal-asc") return (astValorAtual(a))-(astValorAtual(b));
     if(sortV==="yield-desc") return (parseFloat(b.yieldPct)||0)-(parseFloat(a.yieldPct)||0);
     if(sortV==="az") return (a.name||"").localeCompare(b.name||"","pt-BR");
-    return (parseFloat(b.balance)||0)-(parseFloat(a.balance)||0);
+    return (astValorAtual(b))-(astValorAtual(a));
   });
   const el=document.getElementById("assets-list");
   if(!el) return;
   el.innerHTML=items.length?items.map(a=>{
     const c=gAssetClass(a.class);
-    const bal=parseFloat(a.balance)||0,y=parseFloat(a.yieldPct)||0,monthRend=bal*y/100;
+    const bal=astValorAtual(a),y=parseFloat(a.yieldPct)||0,monthRend=bal*y/100;
     return `<div style="background:var(--surface);border-radius:14px;padding:12px;margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
         <div style="display:flex;gap:10px;align-items:center;min-width:0">
@@ -6884,7 +6896,11 @@ function renderAssetList(){
         </div>
         <div style="text-align:right;flex-shrink:0;margin-left:8px">
           <div style="font-family:var(--serif);font-style:italic;font-size:17px;color:var(--body)">${fmt(bal)}</div>
-          ${y?`<div style="font-size:10px;color:var(--green)">+${y}% · ${fmt(monthRend)}${t("w_per_month")}</div>`:""}
+          ${(()=>{const z=(typeof PRO!=="undefined"&&PRO.astAtualizacao)?PRO.astAtualizacao(a):null;
+            return (z&&z.corrigido)
+              ?`<div style="font-size:9.5px;color:var(--green)">${t("ast_updated")} · +${fmt(z.correcao+z.aportes-z.comeCotas)}</div>`
+              +`<div style="font-size:9.5px;color:#9A958C">${t("ast_informed")} ${fmt(z.informado)}</div>`
+              :(y?`<div style="font-size:10px;color:var(--green)">+${y}% · ${fmt(monthRend)}${t("w_per_month")}</div>`:"");})()}
         </div>
       </div>
       <div style="display:flex;gap:6px;justify-content:flex-end;border-top:1px solid var(--line);padding-top:6px">
@@ -6897,7 +6913,7 @@ function renderAssetList(){
 /* ── HISTÓRICO TAB ── */
 function saveAssetSnapshot(){
   const ymKey=activeYMAst();
-  const total=ASSETS.reduce((s,a)=>s+(parseFloat(a.balance)||0),0);
+  const total=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
   if(total===0){toast(t("toast_no_asset_balance"));return;}
   ASSET_SNAPSHOTS[ymKey]=parseFloat(total.toFixed(2));
   persist();
@@ -6977,7 +6993,7 @@ function deleteAssetSnapshot(ymKey){
 
 /* ── METAS TAB ── */
 function renderAstGoals(){
-  const total=ASSETS.reduce((s,a)=>s+(parseFloat(a.balance)||0),0);
+  const total=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
   const goalTotal=Object.values(astGoals).reduce((s,v)=>s+(parseFloat(v)||0),0);
   const over=goalTotal>0&&total>=goalTotal;
   const summEl=document.getElementById("ast-goals-summary");
@@ -6992,7 +7008,7 @@ function renderAstGoals(){
       <div style="font-size:11px;color:${over?"var(--green)":"#6B6760"};margin-top:4px;text-align:right">${over?t("goal_reached"):fmt(goalTotal-total)+" "+t("to_goal")}</div>`:""}
     </div>`;
   const byClass={};
-  ASSETS.forEach(a=>{byClass[a.class]=(byClass[a.class]||0)+(parseFloat(a.balance)||0);});
+  ASSETS.forEach(a=>{byClass[a.class]=(byClass[a.class]||0)+(astValorAtual(a));});
   const goalsEl=document.getElementById("ast-goals-list");
   if(goalsEl) goalsEl.innerHTML=ASSET_CLASSES.map(c=>{
     const got=byClass[c.id]||0,g=parseFloat(astGoals[c.id])||0,ov=g>0&&got>=g;
@@ -7023,7 +7039,7 @@ function confirmDelAsset(id){
   document.getElementById("clear-modal-icon").textContent=c.emoji;
   document.getElementById("clear-modal-title").textContent=t("del_ast_q");
   document.getElementById("btn-confirm-clear").textContent=t("delete");
-  document.getElementById("clear-modal-desc").innerHTML=`<strong>${a.name}</strong><br><span style="font-size:12px;color:#6B6760">${catLabel(c)} · ${fmt(parseFloat(a.balance)||0)}</span>`;
+  document.getElementById("clear-modal-desc").innerHTML=`<strong>${a.name}</strong><br><span style="font-size:12px;color:#6B6760">${catLabel(c)} · ${fmt(astValorAtual(a))}</span>`;
   document.getElementById("modal-confirm-clear").classList.add("open");
   document.getElementById("btn-confirm-clear").onclick=()=>{
     ASSETS=ASSETS.filter(x=>x.id!==id);persist();
@@ -7254,8 +7270,8 @@ function renderHome(){
   const incItems=incomeForYM(ymStr);
   const totalInc=incItems.reduce((s,i)=>s+i.amount,0);
   const balance=totalInc-totalExp;
-  const totalAssets=ASSETS.reduce((s,a)=>s+(parseFloat(a.balance)||0),0);
-  const monthYield=ASSETS.reduce((s,a)=>s+((parseFloat(a.balance)||0)*(parseFloat(a.yieldPct)||0)/100),0);
+  const totalAssets=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
+  const monthYield=ASSETS.reduce((s,a)=>s+((astValorAtual(a))*(parseFloat(a.yieldPct)||0)/100),0);
 
   // home summary cards
   const fixedExp=expItems.filter(e=>e.type==="fixed").reduce((s,e)=>s+myAmount(e),0);
@@ -7296,8 +7312,8 @@ function computeFinMetrics(){
   const ymStr=activeYM();
   const totalExp=getExpensesForYM(ymStr).filter(e=>!isNeutral(e)).reduce((s,e)=>s+myAmount(e),0);
   const totalInc=incomeForYM(ymStr).reduce((s,i)=>s+i.amount,0);
-  const totalAssets=ASSETS.reduce((s,a)=>s+(parseFloat(a.balance)||0),0);
-  const monthYield=ASSETS.reduce((s,a)=>s+((parseFloat(a.balance)||0)*(parseFloat(a.yieldPct)||0)/100),0);
+  const totalAssets=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
+  const monthYield=ASSETS.reduce((s,a)=>s+((astValorAtual(a))*(parseFloat(a.yieldPct)||0)/100),0);
   const totDebt=totalDebt();
   const totMonthly=totalMonthly();
   let monthlyDebtInterest=0;
@@ -7331,7 +7347,7 @@ function computeFinMetrics(){
   // ── Balance-sheet breakdowns ──
   // Ativo (assets) grouped by class
   const assetByClass={};
-  ASSETS.forEach(a=>{ assetByClass[a.class]=(assetByClass[a.class]||0)+(parseFloat(a.balance)||0); });
+  ASSETS.forEach(a=>{ assetByClass[a.class]=(assetByClass[a.class]||0)+(astValorAtual(a)); });
   const ativo=ASSET_CLASSES.map(c=>({id:c.id,emoji:c.emoji,color:c.color,label:catLabel(c),val:assetByClass[c.id]||0}))
     .filter(x=>x.val>0).sort((a,b)=>b.val-a.val);
   // Passivo (liabilities) grouped by debt type
@@ -8213,7 +8229,7 @@ function drawHomeBalanceChart(){
 function drawHomeAssetsChart(){
   const c=document.getElementById("home-chart-assets");
   if(!c) return;
-  const total=ASSETS.reduce((s,a)=>s+(parseFloat(a.balance)||0),0);
+  const total=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
   if(!total){c.style.display="none";return;}
   c.style.display="block";
   const W=c.parentElement.offsetWidth-32;
@@ -8223,7 +8239,7 @@ function drawHomeAssetsChart(){
 
   // horizontal stacked bar
   const byClass={};
-  ASSETS.forEach(a=>{byClass[a.class]=(byClass[a.class]||0)+(parseFloat(a.balance)||0);});
+  ASSETS.forEach(a=>{byClass[a.class]=(byClass[a.class]||0)+(astValorAtual(a));});
   const classes=ASSET_CLASSES.map(c=>({...c,v:byClass[c.id]||0})).filter(c=>c.v>0);
   let x=0;
   const barH=32,barY=20;
@@ -11747,6 +11763,15 @@ const pct=v=>(v>=0?"":"−")+Math.abs(v||0).toFixed(2).replace(".",",")+"%";
 
 /* ═══ 0.1 TRADUÇÃO DOS TEXTOS DESTE MÓDULO (pt → [en, de]) ═══ */
 const TXD={
+" aplicações corrigidas desde ":[" holdings updated since "," Anlagen aktualisiert seit "],
+" aplicação corrigida desde ":[" holding updated since "," Anlage aktualisiert seit "],
+" pelo histórico do indexador.":[" using the index history."," anhand der Indexhistorie."],
+" Parte do período usa índice estimado.":[" Part of the period uses an estimated index."," Ein Teil des Zeitraums nutzt einen geschätzten Index."],
+"Gravar como posição atual":["Save as current position","Als aktuelle Position speichern"],
+"Nenhuma posição a atualizar":["No position to update","Keine Position zu aktualisieren"],
+"Atualização monetária":["Monetary update","Monetäre Fortschreibung"],
+"posições atualizadas":["positions updated","Positionen aktualisiert"],
+"↳ correção desde ":["↳ update since ","↳ Fortschreibung seit "],
 " dias, capitalizados pelo histórico do indexador (":[" days ago, compounded by the index history ("," Tagen, aufgezinst mit der Indexhistorie ("],
 "% ao mês equivalente, contra ":["% per month equivalent, against ","% pro Monat äquivalent, gegenüber "],
 "% na taxa de hoje). Atualize o saldo na aplicação, com a data da nova posição, para acompanhar o realizado.":["% at today's rate). Update the balance on the holding, with the date of the new position, to track the realized figure.","% zum heutigen Satz). Saldo mit dem Datum der neuen Position aktualisieren, um den Ist-Wert zu verfolgen."],
@@ -12440,7 +12465,7 @@ function assetFlowForYM(ymStr){
   let bruto=0, ir=0, aportes=0, cc=0;
   const mes=ymMonth(ymStr), itens=[];
   (typeof ASSETS!=="undefined"?ASSETS:[]).forEach(a=>{
-    const p=astPro(a), bal=parseFloat(a.balance)||0;
+    const p=astPro(a), bal=astValorAtual(a);
     if(bal<=0) return;
     const rb=bal*(astLiquidoAM(a)/100);
     let aliq=astAliqIR(a,dias(p.aplic));
@@ -12494,7 +12519,7 @@ function sugestaoPoupanca(cf){
   const custoMensal=R2(cf.despesas+cf.divida.parcela);
   const reservaAlvo=R2(custoMensal*6);
   const reservaHoje=R2((typeof ASSETS!=="undefined"?ASSETS:[])
-    .filter(a=>astDisponivelEm(a,30)).reduce((s,a)=>s+(parseFloat(a.balance)||0),0));
+    .filter(a=>astDisponivelEm(a,30)).reduce((s,a)=>s+(astValorAtual(a)),0));
   const falta=R2(Math.max(0,reservaAlvo-reservaHoje));
   const ideal=R2(cf.entLiquidas*0.20);
   let alvo=0, motivo="deficit";
@@ -12770,14 +12795,16 @@ function fatorProduto(a,ini,fim,pro){
    Com aportes:  custo = [saldo − aporte·((1+i)^m−1)/i] / (1+i)^m   */
 function astCustoRegressivo(a,pro){
   const p=pro||Object.assign({},a.pro||{});
-  const saldo=parseFloat(a.balance)||0;
+  const saldo=parseFloat(a.balance)||0;          // posição informada, não corrigida
   if(saldo<=0) return 0;
   const aplic=p.aplic||a.lastUpdate||today();
-  const m=mesesEntre(aplic,today());
-  if(m<=0.03) return R2(saldo);                     // aplicado hoje
+  /* a posição informada vale para a data informada */
+  const posData=(a.lastUpdate&&a.lastUpdate>aplic)?a.lastUpdate:aplic;
+  const m=mesesEntre(aplic,posData);
+  if(m<=0.03) return R2(saldo);                     // posição é a da aplicação
   /* custoAuto:false quebra a recursão — astPro chamaria de volta */
   const base=Object.assign({},p,{custoAuto:false,custo:saldo});
-  const S=serieFatores({class:a.class,balance:saldo,pro:base},aplic,today(),base);
+  const S=serieFatores({class:a.class,balance:saldo,pro:base},aplic,posData,base);
   if(!S.length) return R2(saldo);
   const F=S.reduce((x,r)=>x*r.f,1);
   if(!(F>0)) return R2(saldo);
@@ -12798,7 +12825,7 @@ function astDisponivel(a){
   const dt=astLiquidezData(a), hj=today();
   const preso=(p.liq==="venc"||p.liq==="car")&&dt&&dt>hj;
   return {
-    saldo:parseFloat(a.balance)||0, custo:R2(p.custo||0),
+    saldo:astValorAtual(a), custo:R2(p.custo||0),
     ganho:res.ganho, ir:res.ir, iof:res.iof, aliq:res.aliq, iofPct:res.iofPct,
     liquido:res.liquido,
     agora:preso?0:res.liquido,
@@ -12845,7 +12872,7 @@ function astAliqIR(a,d){
 }
 /* Resgate: quanto sai líquido hoje (ou de um valor parcial) */
 function astResgate(a,valor){
-  const p=astPro(a), saldo=parseFloat(a.balance)||0;
+  const p=astPro(a), saldo=astValorAtual(a);
   valor=Math.min(valor||saldo,saldo);
   const custo=Math.min(+p.custo||0,saldo);
   const ganhoTotal=Math.max(0,saldo-custo);
@@ -12952,7 +12979,8 @@ function astEvolucao(a,mesesFuturos){
   const inicio=p.aplic||a.lastUpdate||today();
   const hoje=today();
   const custo=(+p.custo||0)>0?+p.custo:(parseFloat(a.balance)||0);
-  const real=parseFloat(a.balance)||0;
+  const atz=astAtualizacao(a);            /* posição informada + correção */
+  const real=atz.valor;                   /* valor de hoje */
   const aporte=+p.aporte||0;
   const diasHoje=Math.max(0,dias(inicio,hoje));
   const mesesHoje=mesesEntre(inicio,hoje);
@@ -12973,14 +13001,33 @@ function astEvolucao(a,mesesFuturos){
   };
   const modeloHoje=modelaAte(S.length);
   const aportHoje=R2(custo+aporte*Math.max(0,S.length-1));
-  const ancorado=!!(real>0&&a.lastUpdate&&a.lastUpdate>inicio
-    &&Math.abs(real-modeloHoje)>0.005);
-  const valorHoje=ancorado?real:R2(modeloHoje);
-  /* a divergência entre o informado e o modelado é atribuída ao ganho */
-  const kAj=(ancorado&&modeloHoje-aportHoje>0.005)
-    ?((valorHoje-aportHoje)/(modeloHoje-aportHoje)):1;
-  const efet=(custo>0&&mesesHoje>0.03)
-    ?taxaImplicita(custo,valorHoje,mesesHoje,aporte):iAM;
+  const infor=parseFloat(a.balance)||0;
+  const posData=(a.lastUpdate&&a.lastUpdate>inicio)?a.lastUpdate:inicio;
+  const ancorado=posData>inicio;
+  /* Saldo mês a mês: sai do custo pela série do indexador, encosta no saldo
+     informado na data dele e segue corrigido daí até hoje. */
+  const saldoAte=[custo], ccAte=[0]; {
+    let sal=custo, encostou=false, ccAcum=0, aportadoAc=custo;
+    const aliqCC=(p.trib==="fundoCP")?FISCAL.irFundoCP:FISCAL.irFundoLP;
+    for(let j=0;j<S.length;j++){
+      /* ao alcançar a data da posição, a curva encosta no valor informado
+         ANTES de render o mês, e daí em diante é correção monetária */
+      if(!encostou&&S[j].de>=posData&&infor>0){ sal=infor; aportadoAc=infor; encostou=true; }
+      sal=sal*S[j].f;
+      if(j>0&&aporte>0){ sal+=aporte; aportadoAc+=aporte; }
+      if(comeCotas&&j>0&&FISCAL.comeCotasMeses.indexOf(mesOf(S[j].ym+"-15"))>=0){
+        const d=R2(Math.max(0,(sal-aportadoAc)*aliqCC/100-ccAcum));
+        if(d>0){ sal-=d; ccAcum=R2(ccAcum+d); }
+      }
+      saldoAte[j+1]=sal; ccAte[j+1]=ccAcum;
+    }
+    if(!encostou&&infor>0) saldoAte[S.length]=infor;   // posição é de hoje
+  }
+  const valorHoje=R2(saldoAte[S.length]);
+  const mesesPos=mesesEntre(inicio,posData);
+  /* taxa realizada: só o trecho de fato observado, do aporte à posição */
+  const efet=(custo>0&&mesesPos>0.03&&infor>0)
+    ?taxaImplicita(custo,infor,mesesPos,aporte):iAM;
 
   const pts=[];
   const push=(data,d,aportado,saldo,modelo,rendMes,cc,futuro)=>{
@@ -13002,15 +13049,11 @@ function astEvolucao(a,mesesFuturos){
     const aport=R2(custo+aporte*Math.floor(t));
     /* quantos meses da série já correram até esta data */
     let k=0; while(k<S.length&&S[k].ate<=data) k++;
-    const mod=modelaAte(k);
-    const modelo=R2(mod);
-    let saldo=R2(aport+(mod-aport)*kAj);
-    let cc=0;
-    if(comeCotas&&m>0&&FISCAL.comeCotasMeses.indexOf(mesOf(data))>=0){
-      const aliqCC=(p.trib==="fundoCP")?FISCAL.irFundoCP:FISCAL.irFundoLP;
-      cc=R2(Math.max(0,Math.max(0,saldo-aport)*aliqCC/100-ccPago));
-      ccPago=R2(ccPago+cc);
-    }
+    const kk=Math.min(k,S.length);
+    const modelo=R2(modelaAte(k));
+    let saldo=R2(saldoAte[kk]);
+    const cc=R2((ccAte[kk]||0)-ccPago);
+    ccPago=R2(ccAte[kk]||0);
     const ant=pts.length?pts[pts.length-1].saldo:custo;
     push(data,d,aport,saldo,modelo,m?saldo-ant:0,cc,false);
   }
@@ -13043,8 +13086,8 @@ function astEvolucao(a,mesesFuturos){
   const atual=pts.filter(x=>!x.futuro).pop()||pts[0];
   return {
     asset:a, inicio, hoje, custo, aporte,
-    real:R2(valorHoje), saldoInformado:R2(real), ancorado,
-    curto:mesesHoje<1,
+    real:R2(valorHoje), saldoInformado:R2(infor), posData, atualizacao:atz, ancorado,
+    curto:mesesPos<1,
     retornoPeriodo:custo>0?R2((valorHoje/custo-1)*100):0,
     iAM:R2(iAM*100), iAA:R2((Math.pow(1+iAM,12)-1)*100),
     efetivaAM:R2(efet*100), efetivaAA:R2((Math.pow(1+efet,12)-1)*100),
@@ -13291,6 +13334,83 @@ function debtParcelaEfetiva(d){
   return {parcela:r0.desembolso,fgts:r0.fgts,juros:r0.juros,amort:r0.amort};
 }
 
+
+/* ═══ 5.6 ATUALIZAÇÃO MONETÁRIA DAS POSIÇÕES ═══
+   O saldo que o usuário digita vale para a data que ele informou. Daquele
+   dia até hoje o dinheiro continuou rendendo, e o patrimônio precisa
+   refletir isso sem exigir que ele redigite nada. A correção usa o mesmo
+   histórico de indexadores da regressão, mais os aportes programados e o
+   come-cotas dos fundos. */
+
+const AST_CACHE={};
+function astAtualizacao(a){
+  const bal=parseFloat(a&&a.balance)||0;
+  const p=astPro(a);
+  const de=a.lastUpdate||p.aplic||today();
+  const hj=today();
+  const chave=[a.id,bal,de,hj,p.idx,p.idxVal,p.aporte,p.taxaAdm,HIST.ts].join("|");
+  if(AST_CACHE[chave]) return AST_CACHE[chave];
+
+  const base={informado:bal,desde:de,dias:Math.max(0,dias(de,hj)),
+    valor:R2(bal),correcao:0,aportes:0,comeCotas:0,
+    corrigido:false,estimado:false,fator:1};
+  if(!(bal>0)||de>=hj){ AST_CACHE[chave]=base; return base; }
+
+  const S=serieFatores(a,de,hj,p);
+  if(!S.length){ AST_CACHE[chave]=base; return base; }
+  const aporte=+p.aporte||0;
+  const cc=!!p.comeCotas&&p.trib.indexOf("fundo")===0;
+  const aliqCC=(p.trib==="fundoCP")?FISCAL.irFundoCP:FISCAL.irFundoLP;
+
+  let v=bal, rend=0, apo=0, imp=0;
+  S.forEach((r,i)=>{
+    const antes=v;
+    v*=r.f; rend+=v-antes;
+    if(i>0&&aporte>0){ v+=aporte; apo+=aporte; }
+    if(cc&&i>0&&FISCAL.comeCotasMeses.indexOf(mesOf(r.ym+"-15"))>=0){
+      /* o come-cotas alcança só o ganho ainda não tributado */
+      const ganho=Math.max(0,v-(bal+apo));
+      const d=R2(Math.max(0,ganho*aliqCC/100-imp));
+      if(d>0){ v-=d; imp=R2(imp+d); }
+    }
+  });
+  const out={informado:bal,desde:de,dias:Math.max(0,dias(de,hj)),
+    valor:R2(v),correcao:R2(rend),aportes:R2(apo),comeCotas:R2(imp),
+    corrigido:R2(v)!==R2(bal),
+    estimado:S.some(r=>!r.real),
+    meses:R2(S.reduce((x,r)=>x+r.parte,0)),
+    fator:S.reduce((x,r)=>x*r.f,1),
+    pct:bal>0?R2((v/bal-1)*100):0};
+  AST_CACHE[chave]=out;
+  return out;
+}
+/* Substitui o stub do núcleo: agora todo total do app usa a posição de hoje */
+window.astValorAtual=function(a){
+  if(!a) return 0;
+  try{ return astAtualizacao(a).valor; }catch(e){ return parseFloat(a.balance)||0; }
+};
+/* Grava a posição corrigida como a nova posição informada */
+function materializarPosicoes(){
+  let n=0, delta=0;
+  ASSETS.forEach(a=>{
+    const at=astAtualizacao(a);
+    if(at.corrigido&&at.valor>0){
+      const custo=astPro(a).custo;
+      delta+=at.valor-at.informado;
+      a.balance=at.valor; a.lastUpdate=today();
+      /* fixa a base: confirmada a posição, o custo não deve escorregar */
+      a.pro=Object.assign({},a.pro||{},{custo:R2(custo),custoAuto:false});
+      n++;
+    }
+  });
+  if(!n){ toast(TR("Nenhuma posição a atualizar")); return; }
+  persist();
+  Object.keys(AST_CACHE).forEach(k=>delete AST_CACHE[k]);
+  refreshPro();
+  if(typeof renderAssets==="function") renderAssets();
+  toast("✓ "+n+" "+TR("posições atualizadas")+" · "+fmt(delta));
+}
+
 /* ═══ 6. PROJEÇÃO ═══ */
 const PROJ_KEY="gastos_v2_proj_cfg";
 let PROJ=(()=>{try{return Object.assign({meses:24,investir:true,mediaVar:true,corrigirDesp:true},
@@ -13314,7 +13434,7 @@ function projetar(n){
   const infl=aaToMm(MARKET.ipca)/100;
   const st=ASSETS.map(a=>{
     const p=astPro(a);
-    return {a,p,saldo:parseFloat(a.balance)||0,custo:+p.custo||0,
+    return {a,p,saldo:astValorAtual(a),custo:+p.custo||0,
       rate:astLiquidoAM(a)/100,aporte:+p.aporte||0};
   });
   const dv=DEBTS.map(d=>({d,saldo:debtBalance(d),r:debtRateMonthly(d),pmt:parseFloat(d.monthlyPayment)||0}));
@@ -13894,6 +14014,9 @@ function astPreview(){
         <span style="color:#6B6760">${fmt(dv.custo)}</span></div>
       <div class="pro-cf"><span>Saldo de hoje</span>
         <span style="color:#0F2440">${fmt(dv.saldo)}</span></div>
+      ${(()=>{const z=astAtualizacao(fake);
+        return z.corrigido?`<div class="pro-cf sub"><span>↳ correção desde ${brDate(z.desde)} · ${z.dias} dias</span>
+          <span style="color:#5A8A4A">+${fmt(z.correcao+z.aportes-z.comeCotas)}</span></div>`:"";})()}
       <div class="pro-cf"><span>(=) Rendimento acumulado</span>
         <span style="color:#5A8A4A">${dv.ganho>0?"+":""}${fmt(dv.ganho)}</span></div>
       ${dv.iof>0?`<div class="pro-cf sub"><span>(−) IOF ${String(dv.iofPct).replace(".",",")}% · ${res.dias} dias</span>
@@ -14011,7 +14134,7 @@ function renderProj(){
   const impTot=rows.reduce((s,r)=>s+r.imposto,0);
   const rendTot=rows.reduce((s,r)=>s+r.rend,0);
   const ccTot=rows.reduce((s,r)=>s+r.comeCotas,0);
-  const hoje=ASSETS.reduce((s,a)=>s+(parseFloat(a.balance)||0),0);
+  const hoje=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
   const liqHoje=astLiquidoHojeTotal();
   const d30=ASSETS.filter(a=>astDisponivelEm(a,30)).reduce((s,a)=>s+astResgate(a).liquido,0);
   const opt=(v,l)=>`<option value="${v}"${PROJ.meses===v?" selected":""}>${l}</option>`;
@@ -14227,7 +14350,7 @@ function resetFiscal(btn){
 /* ═══ 11. RESGATE — simulador por aplicação ═══ */
 function openResgate(id){
   const a=ASSETS.find(x=>x.id===id); if(!a) return;
-  const c=gAssetClass(a.class),saldo=parseFloat(a.balance)||0;
+  const c=gAssetClass(a.class),saldo=astValorAtual(a);
   const ov=document.createElement("div");
   ov.className="overlay open";ov.style.zIndex="210";ov.style.alignItems="flex-end";
   ov.innerHTML=H`<div class="sheet">
@@ -14251,7 +14374,7 @@ function openResgate(id){
 }
 function setResgatePct(id,p){
   const a=ASSETS.find(x=>x.id===id);if(!a)return;
-  setCurrencyInput($("res-val"),(parseFloat(a.balance)||0)*p/100);calcResgate(id);
+  setCurrencyInput($("res-val"),(astValorAtual(a))*p/100);calcResgate(id);
 }
 function calcResgate(id){
   const a=ASSETS.find(x=>x.id===id);if(!a||!$("res-out"))return;
@@ -14437,6 +14560,20 @@ function renderRendimentos(){
         </div>
       </div>
     </div>
+    ${(()=>{const z=ASSETS.map(a=>astAtualizacao(a)).filter(x=>x.corrigido);
+      if(!z.length) return "";
+      const tot=z.reduce((s,x)=>s+(x.valor-x.informado),0);
+      const desde=z.map(x=>x.desde).sort()[0];
+      const est=z.some(x=>x.estimado);
+      return `<div style="background:rgba(90,138,74,.1);border-radius:14px;padding:12px 14px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+          <span style="font-size:11.5px;color:#3F6B33;font-weight:600">Atualização monetária</span>
+          <span style="font-size:14px;font-weight:700;color:#3F6B33">+${fmt(tot)}</span></div>
+        <div style="font-size:10.5px;color:#6B6760;margin-top:5px;line-height:1.5">
+          ${z.length} aplicaç${z.length>1?"ões":"ão"} corrigid${z.length>1?"as":"a"} desde ${brDate(desde)} pelo histórico do indexador.${est?" Parte do período usa índice estimado.":""}</div>
+        <button class="pro-pill" onclick="PRO.materializarPosicoes()"
+          style="margin-top:9px;border:1.5px solid rgba(90,138,74,.4);background:none;color:#3F6B33;cursor:pointer">Gravar como posição atual</button>
+      </div>`;})()}
     <div class="sec-label">Por aplicação</div>
     ${linhas.map(card).join("")}
     <div class="info-card" style="background:rgba(15,36,64,.06);color:#0F2440">
@@ -14929,10 +15066,10 @@ window.renderAssetList=function(){
   if(q) items=items.filter(a=>(a.name||"").toLowerCase().includes(q));
   if(cf!=="all") items=items.filter(a=>a.class===cf);
   items.sort((a,b)=>{
-    if(sv==="bal-asc")return(parseFloat(a.balance)||0)-(parseFloat(b.balance)||0);
+    if(sv==="bal-asc")return(astValorAtual(a))-(astValorAtual(b));
     if(sv==="yield-desc")return(parseFloat(b.yieldPct)||0)-(parseFloat(a.yieldPct)||0);
     if(sv==="az")return(a.name||"").localeCompare(b.name||"","pt-BR");
-    return(parseFloat(b.balance)||0)-(parseFloat(a.balance)||0);
+    return(astValorAtual(b))-(astValorAtual(a));
   });
   items.forEach((a,i)=>{
     const card=cards[i];if(!card)return;
@@ -15083,6 +15220,7 @@ window.PRO={
   debtScheduleFGTS,fgtsComparativo,fgtsModosComparados,debtParcelaEfetiva,fgtsPlano,
   astEvolucao,astRendimentoCarteira,astProvisao,
   astCustoRegressivo,astDisponivel,toggleCustoAuto,custoManual,astRecalc,
+  astAtualizacao,astValorAtual,materializarPosicoes,
   toggleRegPick,toggleAstPick,applyIncTypeDefaults,applyAstClassDefaults,
   openFiscal,saveFiscalForm,resetFiscal,toggleIsen,openResgate,calcResgate,setResgatePct,
   exportProj,refreshRates:()=>fetchMarket(false),
