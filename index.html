@@ -7334,7 +7334,11 @@ function renderHome(){
   const hdxl=document.getElementById("home-debt-x-label");
   if(hdxl) hdxl.textContent=t("w_installment_lc");
   const hdxv=document.getElementById("home-debt-x-val");
-  if(hdxv) hdxv.textContent=fmt(totMonthly);
+  if(hdxv){
+    const fg=totalFgtsMes();
+    hdxv.innerHTML=fmt(totMonthly)
+      +(fg>0?`<div style="font-size:9.5px;font-weight:500;color:rgba(207,243,218,.9);margin-top:1px;white-space:nowrap">🏦 ${fmt(fg)} ${t("fgts_by")}</div>`:"");
+  }
 
   // ═══════ FINANCIAL HEALTH EVALUATOR ═══════
   renderHealthCard();
@@ -10180,7 +10184,12 @@ function openAmortTable(balance, mRate, n, system){
   document.getElementById("modal-amort-table").classList.add("open");
 }
 const totalDebt=()=>DEBTS.reduce((s,d)=>s+debtBalance(d),0);
-const totalMonthly=()=>DEBTS.reduce((s,d)=>s+(parseFloat(d.monthlyPayment)||0),0);
+/* Soma das prestações de contrato, sem considerar o FGTS. Só serve para
+   comparar "cheio × pago"; nenhum indicador deve usá-la sozinha. */
+const totalMonthlyContrato=()=>DEBTS.reduce((s,d)=>s+(parseFloat(d.monthlyPayment)||0),0);
+/* O que realmente sai do bolso no mês. É esta que vale em toda a interface,
+   para que nenhum ponto novo volte a mostrar a parcela cheia por engano. */
+const totalMonthly=()=>totalMonthlyEfetivo();
 /* Prestação de contrato × desembolso do mês. Quando o FGTS cobre parte da
    prestação ou já amortizou o saldo, quem sai do bolso é menor — e é esse
    número que os cabeçalhos e os resumos precisam mostrar. */
@@ -10194,8 +10203,8 @@ function debtPagamentoMes(d){
   }catch(err){}
   return {cheia,pago:cheia,fgts:0};
 }
-const totalMonthlyEfetivo=()=>DEBTS.reduce((s,d)=>s+debtPagamentoMes(d).pago,0);
-const totalFgtsMes=()=>DEBTS.reduce((s,d)=>s+debtPagamentoMes(d).fgts,0);
+function totalMonthlyEfetivo(){ return DEBTS.reduce((s,d)=>s+debtPagamentoMes(d).pago,0); }
+function totalFgtsMes(){ return DEBTS.reduce((s,d)=>s+debtPagamentoMes(d).fgts,0); }
 const debtPaid=d=>(d.payments||[]).reduce((s,p)=>s+(parseFloat(p.amount)||0),0);
 
 /* monthly interest portion across all debts */
@@ -10410,14 +10419,19 @@ function renderDebtList(){
 function renderDebtSchedule(){
   const commit=document.getElementById("debt-monthly-commit");
   const monthly=totalMonthly();
+  const fgtsMes=totalFgtsMes();
   const monthlyInt=totalMonthlyInterest();
-  const principal=Math.max(0,monthly-monthlyInt);
+  const principal=Math.max(0,totalMonthlyContrato()-monthlyInt);
   if(commit){
     commit.innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
         <span style="font-size:13px;color:var(--body)">${t("total_monthly")}</span>
         <span style="font-family:var(--serif);font-style:italic;font-size:22px;color:#6E2B3A">${fmt(monthly)}</span>
       </div>
+      ${fgtsMes>0?`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;font-size:11.5px">
+        <span style="color:#3F6B33">🏦 ${t("fgts_covers")}</span>
+        <span style="color:#3F6B33;font-weight:600">${fmt(fgtsMes)} · <span style="color:#8A857D;text-decoration:line-through;font-weight:400">${fmt(totalMonthlyContrato())}</span></span>
+      </div>`:""}
       <div style="display:flex;gap:8px">
         <div style="flex:1;background:rgba(184,90,106,.1);border-radius:10px;padding:8px 10px">
           <div style="font-size:10px;color:#6B6760;text-transform:uppercase;letter-spacing:.5px">${t("interest_part")}</div>
