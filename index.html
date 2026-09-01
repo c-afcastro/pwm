@@ -1288,7 +1288,7 @@
     </div>
     <div class="header-actions" style="align-items:center">
       <!-- 2x2 grid of action circles -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+      <div id="desp-header-actions" style="display:flex;gap:5px">
         <button class="btn-ghost" id="btn-open-import" title="Importar" data-i18n-title="import" style="width:28px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:50%">↑</button>
         <button class="btn-ghost" id="btn-open-export" title="Exportar" data-i18n-title="export" style="width:28px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:50%">↓</button>
         <button class="btn-ghost" onclick="openRulesModal()" title="Regras de classificação" style="width:28px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%">
@@ -1321,16 +1321,12 @@
     </div>
   </div>
   <!-- collapsed mini-hero shown when scrolled -->
-  <div id="hero-mini" style="display:none;background:var(--green);margin:0 16px;border-radius:14px;padding:10px 18px;flex-direction:row;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:0 4px 16px rgba(61,90,62,.3)" onclick="expandHero()">
-    <!-- back to full hero button -->
-    <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-      <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">↑</div>
-      <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px;text-transform:uppercase" data-i18n="back_label">Voltar</div>
+  <div id="hero-mini" style="display:none;background:var(--green);margin:0 16px;border-radius:13px;padding:7px 14px;flex-direction:row;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;box-shadow:0 3px 12px rgba(61,90,62,.28)" onclick="expandHero(true)">
+    <div style="display:flex;align-items:center;gap:9px;min-width:0">
+      <div style="width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;flex-shrink:0">↑</div>
+      <div style="font-size:10.5px;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="header-month-mini"></div>
     </div>
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
-      <div style="font-family:var(--serif);font-style:italic;font-size:22px;color:#fff" id="hero-mini-val">—</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.55)" id="header-month-mini"></div>
-    </div>
+    <div style="font-family:var(--serif);font-style:italic;font-size:17px;color:#fff;white-space:nowrap" id="hero-mini-val">—</div>
   </div>
   <div id="month-nav-despesas" class="month-nav">
     <button class="month-nav-btn" id="btn-prev-month">‹</button>
@@ -1492,7 +1488,7 @@
     <div id="income-hero" style="position:relative"></div>
   </div>
   <!-- mini hero -->
-  <div id="inc-hero-mini" style="display:none;background:#1A3A5C;margin:0 16px;border-radius:14px;padding:10px 18px;flex-direction:row;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:0 4px 16px rgba(26,58,92,.3)" onclick="incExpandHero()">
+  <div id="inc-hero-mini" style="display:none;background:#1A3A5C;margin:0 16px;border-radius:14px;padding:10px 18px;flex-direction:row;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:0 4px 16px rgba(26,58,92,.3)" onclick="incExpandHero(true)">
     <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
       <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">↑</div>
       <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px;text-transform:uppercase" data-i18n="back_label">Voltar</div>
@@ -1600,7 +1596,7 @@
     <div id="assets-hero" style="position:relative"></div>
   </div>
   <!-- mini hero -->
-  <div id="ast-hero-mini" style="display:none;background:#0F2440;margin:0 16px;border-radius:14px;padding:10px 18px;flex-direction:row;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:0 4px 16px rgba(15,36,64,.3)" onclick="astExpandHero()">
+  <div id="ast-hero-mini" style="display:none;background:#0F2440;margin:0 16px;border-radius:14px;padding:10px 18px;flex-direction:row;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:0 4px 16px rgba(15,36,64,.3)" onclick="astExpandHero(true)">
     <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
       <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">↑</div>
       <div style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px;text-transform:uppercase" data-i18n="back_label">Voltar</div>
@@ -6440,12 +6436,13 @@ function incCollapseHero(){
     if(mm&&mnl) mm.textContent=mnl.textContent;
   }
 }
-function incExpandHero(){
+function incExpandHero(userTap){
   if(!incHeroCollapsed) return; incHeroCollapsed=false;
   const wrap=document.getElementById("inc-hero-wrap");
   const mini=document.getElementById("inc-hero-mini");
-  if(wrap){ wrap.style.maxHeight=""; wrap.style.padding="24px 28px 20px"; wrap.style.opacity="1"; wrap.style.overflow="hidden"; }
+  if(wrap){ wrap.style.maxHeight=""; wrap.style.padding=""; wrap.style.opacity="1"; wrap.style.overflow="hidden"; }
   if(mini) mini.style.display="none";
+  if(userTap!==true) return;
   const content=document.getElementById("inc-content");
   if(content){ _incScrollPaused=true; content.scrollTo({top:0,behavior:"smooth"}); setTimeout(()=>{_incScrollPaused=false;},400); }
 }
@@ -6453,10 +6450,16 @@ function incExpandHero(){
 function initIncHeroScroll(){
   const content=document.getElementById("inc-content");
   if(!content) return;
+  let tick_inc=false;
   content.addEventListener("scroll",()=>{
-    if(_incScrollPaused) return;
-    if(content.scrollTop>60) incCollapseHero();
-    else if(content.scrollTop<10) incExpandHero();
+    if(_incScrollPaused||tick_inc) return;
+    tick_inc=true;
+    requestAnimationFrame(()=>{
+      tick_inc=false;
+      const st=content.scrollTop;
+      if(st>78) incCollapseHero();
+      else if(st<26) incExpandHero(false);
+    });
   },{passive:true});
 }
 
@@ -6746,22 +6749,29 @@ function astCollapseHero(){
     if(mv&&heroTotal) mv.textContent=heroTotal.dataset.total;
   }
 }
-function astExpandHero(){
+function astExpandHero(userTap){
   if(!astHeroCollapsed) return; astHeroCollapsed=false;
   const wrap=document.getElementById("ast-hero-wrap");
   const mini=document.getElementById("ast-hero-mini");
-  if(wrap){ wrap.style.maxHeight=""; wrap.style.padding="24px 28px 20px"; wrap.style.opacity="1"; wrap.style.overflow="hidden"; }
+  if(wrap){ wrap.style.maxHeight=""; wrap.style.padding=""; wrap.style.opacity="1"; wrap.style.overflow="hidden"; }
   if(mini) mini.style.display="none";
+  if(userTap!==true) return;
   const content=document.getElementById("ast-content");
   if(content){ _astScrollPaused=true; content.scrollTo({top:0,behavior:"smooth"}); setTimeout(()=>{_astScrollPaused=false;},400); }
 }
 function initAstHeroScroll(){
   const content=document.getElementById("ast-content");
   if(!content) return;
+  let tick_ast=false;
   content.addEventListener("scroll",()=>{
-    if(_astScrollPaused) return;
-    if(content.scrollTop>60) astCollapseHero();
-    else if(content.scrollTop<10) astExpandHero();
+    if(_astScrollPaused||tick_ast) return;
+    tick_ast=true;
+    requestAnimationFrame(()=>{
+      tick_ast=false;
+      const st=content.scrollTop;
+      if(st>78) astCollapseHero();
+      else if(st<26) astExpandHero(false);
+    });
   },{passive:true});
 }
 
@@ -8261,14 +8271,16 @@ function collapseHero(){
   }
 }
 
-function expandHero(){
+function expandHero(userTap){
   if(!heroCollapsed) return;
   heroCollapsed=false;
   const hero=document.getElementById("hero-despesas");
   const mini=document.getElementById("hero-mini");
   if(hero) hero.classList.remove("collapsed");
   if(mini) mini.style.display="none";
-  // scroll to top without triggering collapse
+  /* só leva ao topo quando o usuário tocou na barra: durante a rolagem
+     isso brigava com o dedo e travava a tela por 400ms */
+  if(userTap!==true) return;
   const content=document.querySelector("#screen-despesas .content");
   if(content){
     _heroScrollPaused=true;
@@ -8282,10 +8294,18 @@ let _heroScrollPaused=false;
 function initHeroScroll(){
   const content=document.querySelector("#screen-despesas .content");
   if(!content) return;
+  let tick=false;
   content.addEventListener("scroll",()=>{
-    if(_heroScrollPaused) return;
-    if(content.scrollTop>60) collapseHero();
-    else if(content.scrollTop<10) expandHero();
+    if(_heroScrollPaused||tick) return;
+    tick=true;
+    requestAnimationFrame(()=>{
+      tick=false;
+      /* banda larga entre os dois limites: recolher encurta o conteúdo e
+         mexe no scrollTop, o que fazia a barra piscar */
+      const st=content.scrollTop;
+      if(st>78) collapseHero();
+      else if(st<26) expandHero(false);
+    });
   },{passive:true});
 }
 
@@ -15353,7 +15373,74 @@ button,.cat-btn,.stat,.nav-btn,.recur-btn,.pro-pill{
 }
 
 /* respeita o notch e o indicador de home */
-/* Despesas fica fora desta passada, conforme combinado */
+
+/* ══════════════════════════════════════════════════════════════════════
+   DESPESAS — cabeçalho na mesma escala de Entradas, Patrimônio e Dívidas
+   ══════════════════════════════════════════════════════════════════════ */
+#screen-despesas .header{
+  padding-top:calc(20px + env(safe-area-inset-top))!important;
+  padding-bottom:12px!important;
+}
+/* quatro ações numa linha só: 60px de altura viram 34px, e o alvo cresce */
+#desp-header-actions{ display:flex!important; gap:4px!important; flex-shrink:0; }
+#desp-header-actions .btn-ghost{
+  width:32px!important; height:32px!important; font-size:13.5px!important; flex-shrink:0;
+}
+#desp-header-actions .btn-ghost svg{ width:14px!important; height:14px!important; }
+/* a marca cede espaço para as ações em vez de empurrá-las para fora */
+#screen-despesas .header{ gap:8px!important; }
+#screen-despesas .header > div:first-child{ min-width:0!important; }
+#screen-despesas .wordmark{
+  font-size:clamp(19px,5.6vw,25px)!important;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+#screen-despesas .header-actions{ gap:7px!important; flex-shrink:0; }
+
+#hero-despesas{ padding:12px 16px 11px!important; border-radius:15px!important; }
+#hero-despesas .hero-label{
+  font-size:9px!important; letter-spacing:1.2px!important; margin-bottom:3px!important;
+}
+#hero-despesas .hero-value{
+  font-size:clamp(20px,6.2vw,26px)!important; letter-spacing:-.3px!important;
+}
+#hero-despesas .hero-meta{ margin-top:6px!important; gap:12px!important; }
+#hero-despesas .hero-meta-item{ font-size:10.5px!important; }
+#hero-despesas .hero-pills{ margin-top:8px!important; gap:5px!important; }
+#hero-despesas .hero-pill{ padding:2px 9px!important; font-size:10.5px!important; }
+#hero-despesas::before{
+  width:120px!important; height:120px!important; top:-32px!important; right:-32px!important;
+}
+#hero-despesas::after{ display:none!important; }
+#hero-splits-banner{ margin-top:9px!important; padding:8px 11px!important; border-radius:10px!important; }
+#hero-splits-banner > div:first-child{ font-size:9px!important; margin-bottom:2px!important; }
+
+/* ── rolagem fluida: a troca hero ↔ barra fina não pode piscar ── */
+#hero-despesas,#inc-hero-wrap,#ast-hero-wrap{
+  transition:max-height .26s cubic-bezier(.22,.9,.32,1),
+             padding .26s cubic-bezier(.22,.9,.32,1),
+             opacity .18s ease!important;
+  will-change:max-height,padding,opacity;
+}
+#hero-mini,#inc-hero-mini,#ast-hero-mini{
+  animation:miniIn .22s cubic-bezier(.22,.9,.32,1);
+}
+@keyframes miniIn{ from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+
+/* a barra de mês e as abas acompanham sem saltar */
+#screen-despesas .month-nav{
+  padding:1px 6px!important; border-radius:9px!important; margin-top:6px!important;
+}
+#screen-despesas .month-label{ font-size:11.5px!important; }
+#screen-despesas .month-nav-btn{ width:28px!important; height:28px!important; font-size:15px!important; }
+#screen-despesas .month-today-btn{ padding:5px 9px!important; }
+#screen-despesas .nav-btn{ padding:0 9px!important; font-size:10.5px!important; min-height:44px!important; }
+#screen-despesas .content{
+  padding-bottom:calc(96px + env(safe-area-inset-bottom))!important;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  scroll-behavior:auto;
+}
+
 :is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,
     #screen-vidafinanceira) .header{
   padding-top:calc(20px + env(safe-area-inset-top))!important;
