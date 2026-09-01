@@ -2226,6 +2226,13 @@
       </div>
     </div>
 
+    <!-- Indexador do saldo devedor (financiamento) -->
+    <div id="debt-index-row" style="display:none;margin-top:8px">
+      <label class="f-label" data-i18n="debt_indexer">Indexador do saldo devedor</label>
+      <div style="display:flex;gap:4px;flex-wrap:wrap" id="debt-index-btns"></div>
+      <div id="debt-index-hint" style="font-size:10.5px;color:#8A857D;line-height:1.55;margin-top:6px"></div>
+    </div>
+
     <!-- Live estimate (financing) -->
     <div id="debt-estimate" style="display:none;background:rgba(110,43,58,.07);border:1px solid rgba(110,43,58,.18);border-radius:14px;padding:13px 15px;margin-top:8px"></div>
 
@@ -2238,17 +2245,23 @@
 </div>
 
 <!-- DEBT PAYMENT MODAL -->
-<div class="overlay" id="modal-debt-payment" style="z-index:140">
+<div class="overlay" id="modal-debt-payment" style="align-items:flex-end;z-index:180">
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div style="font-family:var(--serif);font-size:20px;color:var(--body);margin-bottom:4px" data-i18n="register_payment">Registrar pagamento</div>
     <div style="font-size:12px;color:#6B6760;margin-bottom:16px" id="debt-pay-subtitle"></div>
 
+    <div id="debt-pay-prev"></div>
+
     <label class="f-label" data-i18n="payment_amount">Valor pago</label>
-    <input id="debt-pay-amount" class="f-input" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this)"/>
+    <input id="debt-pay-amount" class="f-input" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this);debtPayRecalc()"/>
 
     <label class="f-label" data-i18n="payment_date">Data do pagamento</label>
-    <input id="debt-pay-date" class="f-input" type="date"/>
+    <input id="debt-pay-date" class="f-input" type="date" onchange="debtPayRecalc()"/>
+
+    <label class="f-label" data-i18n="payment_new_balance">Saldo devedor após o pagamento</label>
+    <input id="debt-pay-balance" class="f-input" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this);debtPaySaldoTocado()"/>
+    <div id="debt-pay-break" style="font-size:10.5px;color:#8A857D;line-height:1.55;margin:-8px 0 12px"></div>
 
     <label class="f-label" data-i18n="payment_note">Observação (opcional)</label>
     <input id="debt-pay-note" class="f-input" placeholder="Ex: parcela 12/36, amortização…" data-i18n="payment_note_ph"/>
@@ -2946,6 +2959,18 @@ const I18N={
     debt_tab_sim:"Simulador",
     debt_by_type:"Por tipo de dívida",
     next_payments:"Próximos pagamentos",
+    debt_indexer:"Indexador do saldo devedor",
+    idx_today:"hoje",
+    idx_zero_now:"Zerada no patamar atual da Selic.",
+    idx_correction:"correção",
+    idx_over_term:"de correção no prazo",
+    idx_explain:"O indexador corrige o saldo devedor todo mês, antes de a parcela ser abatida. Os juros do contrato incidem sobre o saldo já reajustado.",
+    payment_expected:"Previsto para o mês",
+    payment_full_instalment:"Prestação cheia",
+    payment_you_pay:"Você paga",
+    payment_new_balance:"Saldo devedor após o pagamento",
+    payment_fgts_note:"O FGTS entra junto com o seu pagamento para amortizar.",
+    payment_balance_manual:"Saldo informado à mão: será gravado como está.",
     w_forecast:"Previsto",
     w_forecast_lc:"previsto",
     fgts_covers:"FGTS cobre",
@@ -3634,6 +3659,18 @@ const I18N={
     debt_tab_sim:"Simulator",
     debt_by_type:"By debt type",
     next_payments:"Upcoming payments",
+    debt_indexer:"Balance indexer",
+    idx_today:"today",
+    idx_zero_now:"Zeroed at the current Selic level.",
+    idx_correction:"indexation",
+    idx_over_term:"of indexation over the term",
+    idx_explain:"The indexer corrects the outstanding balance every month, before the instalment is deducted. Contract interest accrues on the already-adjusted balance.",
+    payment_expected:"Expected for the month",
+    payment_full_instalment:"Full instalment",
+    payment_you_pay:"You pay",
+    payment_new_balance:"Outstanding balance after payment",
+    payment_fgts_note:"FGTS is applied together with your payment to amortise.",
+    payment_balance_manual:"Balance entered manually: it will be saved as is.",
     w_forecast:"Forecast",
     w_forecast_lc:"forecast",
     fgts_covers:"FGTS covers",
@@ -4322,6 +4359,18 @@ const I18N={
     debt_tab_sim:"Simulator",
     debt_by_type:"Nach Schuldenart",
     next_payments:"Nächste Zahlungen",
+    debt_indexer:"Index des Restsaldos",
+    idx_today:"heute",
+    idx_zero_now:"Beim aktuellen Selic-Niveau auf null.",
+    idx_correction:"Indexierung",
+    idx_over_term:"Indexierung über die Laufzeit",
+    idx_explain:"Der Index korrigiert den Restsaldo jeden Monat, bevor die Rate abgezogen wird. Die Vertragszinsen laufen auf dem bereits angepassten Saldo.",
+    payment_expected:"Für den Monat erwartet",
+    payment_full_instalment:"Volle Rate",
+    payment_you_pay:"Sie zahlen",
+    payment_new_balance:"Restsaldo nach der Zahlung",
+    payment_fgts_note:"FGTS tilgt zusammen mit Ihrer Zahlung.",
+    payment_balance_manual:"Saldo manuell eingegeben: wird so gespeichert.",
     w_forecast:"Erwartet",
     w_forecast_lc:"erwartet",
     fgts_covers:"FGTS deckt",
@@ -7326,7 +7375,9 @@ function renderHome(){
   document.getElementById("home-asset-x-val").textContent=fmt(monthYield);
   // debt card
   const totDebt=totalDebt();
-  const totMonthly=totalMonthly();
+  /* o cartão acompanha o mês em que o usuário está navegando */
+  const ymHome=activeYM();
+  const totMonthly=totalMonthly(ymHome);
   const hdv=document.getElementById("home-debt-val");
   if(hdv) hdv.textContent=fmt(totDebt);
   const hds=document.getElementById("home-debt-sub");
@@ -7335,7 +7386,7 @@ function renderHome(){
   if(hdxl) hdxl.textContent=t("w_installment_lc");
   const hdxv=document.getElementById("home-debt-x-val");
   if(hdxv){
-    const fg=totalFgtsMes();
+    const fg=totalFgtsMes(ymHome);
     hdxv.innerHTML=fmt(totMonthly)
       +(fg>0?`<div style="font-size:9.5px;font-weight:500;color:rgba(207,243,218,.9);margin-top:1px;white-space:nowrap">🏦 ${fmt(fg)} ${t("fgts_by")}</div>`:"");
   }
@@ -7352,7 +7403,7 @@ function computeFinMetrics(){
   const totalAssets=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
   const monthYield=ASSETS.reduce((s,a)=>s+((astValorAtual(a))*(parseFloat(a.yieldPct)||0)/100),0);
   const totDebt=totalDebt();
-  const totMonthly=totalMonthly();
+  const totMonthly=totalMonthly(ymStr);
   let monthlyDebtInterest=0;
   DEBTS.forEach(x=>{ monthlyDebtInterest+=debtBalance(x)*debtRateMonthly(x); });
 
@@ -10189,22 +10240,41 @@ const totalDebt=()=>DEBTS.reduce((s,d)=>s+debtBalance(d),0);
 const totalMonthlyContrato=()=>DEBTS.reduce((s,d)=>s+(parseFloat(d.monthlyPayment)||0),0);
 /* O que realmente sai do bolso no mês. É esta que vale em toda a interface,
    para que nenhum ponto novo volte a mostrar a parcela cheia por engano. */
-const totalMonthly=()=>totalMonthlyEfetivo();
+const totalMonthly=ymStr=>totalMonthlyEfetivo(ymStr);
 /* Prestação de contrato × desembolso do mês. Quando o FGTS cobre parte da
    prestação ou já amortizou o saldo, quem sai do bolso é menor — e é esse
    número que os cabeçalhos e os resumos precisam mostrar. */
-function debtPagamentoMes(d){
+/* Distância em meses entre hoje e um AAAA-MM. O cronograma da dívida começa
+   no mês corrente, então é isto que traduz o mês na tela para a linha certa. */
+const todayYM=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
+function ymOffHoje(ymStr){
+  const h=new Date(), p=String(ymStr||"").split("-");
+  const y=+p[0], m=+p[1];
+  if(!y||!m) return 0;
+  return (y-h.getFullYear())*12+(m-1-h.getMonth());
+}
+/* Prestação de contrato × desembolso do mês PEDIDO. Meses anteriores ao
+   corrente não têm plano de FGTS aplicado, e meses fora do cronograma já
+   estão quitados: os dois casos precisam responder por si, e não repetir
+   o número do mês atual. */
+function debtPagamentoMes(d,ymStr){
   const cheia=parseFloat(d&&d.monthlyPayment)||0;
+  const off=ymOffHoje(ymStr||(typeof activeYM==="function"?activeYM():null));
+  if(off<0) return {cheia,pago:cheia,fgts:0,passado:true};
   try{
-    if(window.PRO&&PRO.debtParcelaEfetiva&&d&&d.fgts&&d.fgts.on){
-      const e=PRO.debtParcelaEfetiva(d);
-      if(e&&isFinite(e.parcela)) return {cheia,pago:e.parcela,fgts:e.fgts||0};
+    if(window.PRO&&PRO.debtMesFGTS&&d&&d.fgts&&d.fgts.on){
+      const r=PRO.debtMesFGTS(d,off+1);
+      if(r&&isFinite(r.desembolso))
+        return {cheia,pago:r.desembolso,fgts:r.fgts||0,juros:r.juros,amort:r.amort};
+      /* passou do fim do cronograma: a dívida já foi quitada */
+      const sch=PRO.fgtsCronograma(d);
+      if(sch&&off+1>sch.rows.length) return {cheia,pago:0,fgts:0,quitada:true};
     }
   }catch(err){}
   return {cheia,pago:cheia,fgts:0};
 }
-function totalMonthlyEfetivo(){ return DEBTS.reduce((s,d)=>s+debtPagamentoMes(d).pago,0); }
-function totalFgtsMes(){ return DEBTS.reduce((s,d)=>s+debtPagamentoMes(d).fgts,0); }
+function totalMonthlyEfetivo(ymStr){ return DEBTS.reduce((s,d)=>s+debtPagamentoMes(d,ymStr).pago,0); }
+function totalFgtsMes(ymStr){ return DEBTS.reduce((s,d)=>s+debtPagamentoMes(d,ymStr).fgts,0); }
 const debtPaid=d=>(d.payments||[]).reduce((s,p)=>s+(parseFloat(p.amount)||0),0);
 
 /* monthly interest portion across all debts */
@@ -10236,8 +10306,8 @@ function renderDebts(){
   // hero
   const total=totalDebt();
   const heroEl=document.getElementById("debt-hero");
-  const monthly=totalMonthlyEfetivo();
-  const fgtsMes=totalFgtsMes();
+  const monthly=totalMonthlyEfetivo(todayYM());
+  const fgtsMes=totalFgtsMes(todayYM());
   const activeCount=DEBTS.length;
   if(heroEl) heroEl.innerHTML=`
     <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:6px">${t("total_owed")}</div>
@@ -10266,8 +10336,8 @@ function renderDebts(){
 
 function renderDebtDash(){
   const total=totalDebt();
-  const monthly=totalMonthlyEfetivo();
-  const fgtsMes=totalFgtsMes();
+  const monthly=totalMonthlyEfetivo(todayYM());
+  const fgtsMes=totalFgtsMes(todayYM());
   const monthlyInt=totalMonthlyInterest();
   const origTotal=DEBTS.reduce((s,d)=>s+debtOriginal(d),0);
   // paid off = original − current balance (across debts that have an original value)
@@ -10340,7 +10410,7 @@ function renderDebtDash(){
       const dt=gDebtType(d.type);
       const days=Math.ceil((due-new Date())/(1000*60*60*24));
       const soon=days<=5;
-      const pg=debtPagamentoMes(d);
+      const pg=debtPagamentoMes(d,ym(due.toISOString().split("T")[0]));
       return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08)">
         <div style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:15px">${dt.emoji}</div>
         <div style="flex:1;min-width:0">
@@ -10403,7 +10473,7 @@ function renderDebtList(){
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-family:var(--serif);font-style:italic;font-size:17px;color:#6E2B3A">${fmt(bal)}</div>
-          ${(()=>{const pgm=debtPagamentoMes(d); if(!(pgm.cheia>0)) return "";
+          ${(()=>{const pgm=debtPagamentoMes(d,todayYM()); if(!(pgm.cheia>0)) return "";
             return `<div style="font-size:10px;color:#6B6760">${fmt(pgm.pago)}${t("w_per_month")}</div>`
               +(pgm.fgts>0?`<div style="font-size:9.5px;color:#3F6B33">🏦 ${fmt(pgm.fgts)}</div>`:"");})()}
         </div>
@@ -10418,8 +10488,8 @@ function renderDebtList(){
 
 function renderDebtSchedule(){
   const commit=document.getElementById("debt-monthly-commit");
-  const monthly=totalMonthly();
-  const fgtsMes=totalFgtsMes();
+  const monthly=totalMonthly(todayYM());
+  const fgtsMes=totalFgtsMes(todayYM());
   const monthlyInt=totalMonthlyInterest();
   const principal=Math.max(0,totalMonthlyContrato()-monthlyInt);
   if(commit){
@@ -11013,8 +11083,10 @@ function openDebt(id){
   DEBT_AMORT_SYS=d?(d.amortSystem||"price"):"price";
   document.getElementById("amort-price").classList.toggle("active",DEBT_AMORT_SYS==="price");
   document.getElementById("amort-sac").classList.toggle("active",DEBT_AMORT_SYS==="sac");
+  DEBT_INDEXADOR=d?(d.indexador||"tr"):"tr";
   updateRateTypeButtons();
   renderDebtTypeGrid();
+  renderDebtIndex();
   const estBox=document.getElementById("debt-estimate");
   if(estBox) estBox.style.display="none";
   updateDebtEstimate();
@@ -11174,7 +11246,7 @@ function renderDebtTypeGrid(){
   if(!g) return;
   g.innerHTML=DEBT_TYPES.map(d=>{
     const a=DEBT_TYPE_SEL===d.id;
-    return `<button class="cat-btn${a?" active":""}" onclick="DEBT_TYPE_SEL='${d.id}';renderDebtTypeGrid()"
+    return `<button class="cat-btn${a?" active":""}" onclick="DEBT_TYPE_SEL='${d.id}';renderDebtTypeGrid();renderDebtIndex()"
       style="${a?`border-color:#fff;background:rgba(255,255,255,.22);`:''}">
       <span class="ico">${d.emoji}</span>
       <span class="lbl" style="${a?`color:#fff;font-weight:600`:''}">${catLabel(d)}</span>
@@ -11206,6 +11278,32 @@ function applyDebtFieldProfile(){
   updateDebtEstimate();
 }
 
+let DEBT_INDEXADOR="tr";
+function selDebtIndex(id){ DEBT_INDEXADOR=id; renderDebtIndex(); updateDebtEstimate&&updateDebtEstimate(); }
+function renderDebtIndex(){
+  const row=document.getElementById("debt-index-row"); if(!row) return;
+  const fin=DEBT_TYPE_SEL==="mortgage"||DEBT_TYPE_SEL==="vehicle";
+  row.style.display=fin?"":"none";
+  if(!fin) return;
+  const LS=(window.PRO&&PRO.DEBT_INDEX)||[];
+  const btns=document.getElementById("debt-index-btns");
+  if(btns) btns.innerHTML=LS.map(x=>
+    `<button type="button" onclick="selDebtIndex('${x.id}')" class="rate-type-btn${x.id===DEBT_INDEXADOR?" active":""}">${x.lbl}</button>`).join("");
+  const h=document.getElementById("debt-index-hint");
+  const cur=LS.find(x=>x.id===DEBT_INDEXADOR);
+  if(h&&cur){
+    let tx="";
+    try{
+      const am=PRO.debtIndexAM({indexador:DEBT_INDEXADOR});
+      tx=am>0?` ${t("idx_today")} ${String(am.toFixed(4)).replace(".",",")}% ${t("w_per_month_short")}.`
+             :` ${t("idx_zero_now")}`;
+    }catch(e){}
+    h.innerHTML=TRD(cur.hint)+tx+"<br>"+t("idx_explain");
+  }
+}
+/* tradução das dicas do módulo, sem depender do H`` */
+function TRD(x){ try{ return (window.PRO&&PRO.tr)?PRO.tr(x):x; }catch(e){ return x; } }
+
 function saveDebt(){
   const name=document.getElementById("debt-name").value.trim();
   const balance=unmaskCurrency(document.getElementById("debt-balance"));
@@ -11229,6 +11327,7 @@ function saveDebt(){
     })(),
     term:parseInt(document.getElementById("debt-term").value)||null,
     dueDay:parseInt(document.getElementById("debt-dueday").value)||null,
+    indexador:(DEBT_TYPE_SEL==="mortgage"||DEBT_TYPE_SEL==="vehicle")?DEBT_INDEXADOR:null,
   };
   if(DEBT_EID){
     const i=DEBTS.findIndex(x=>x.id===DEBT_EID);
@@ -11269,15 +11368,76 @@ function confirmDelDebt(id){
 }
 
 /* ── Payments ── */
+let DEBT_PAY_SALDO_MANUAL=false;
+function debtPaySaldoTocado(){ DEBT_PAY_SALDO_MANUAL=true; }
+
+/* O que o cronograma prevê para o mês do pagamento: prestação cheia, quanto
+   o FGTS cobre, quanto sai do bolso e como a parcela se reparte. */
+function debtPayPrevisto(d,dateStr){
+  const ymStr=String(dateStr||"").slice(0,7)||todayYM();
+  const pg=debtPagamentoMes(d,ymStr);
+  const bal=debtBalance(d);
+  let juros=bal*debtRateMonthly(d), amort=Math.max(0,pg.cheia-juros), corr=0;
+  try{
+    if(window.PRO&&PRO.debtMesFGTS){
+      const off=ymOffHoje(ymStr);
+      const r=off>=0?PRO.debtMesFGTS(d,off+1):null;
+      if(r){ juros=r.juros; amort=r.amort; corr=r.correcao||0; }
+    }
+  }catch(err){}
+  return {ymStr,cheia:pg.cheia,fgts:pg.fgts||0,pago:pg.pago,juros,amort,corr,bal};
+}
 function openDebtPayment(id){
   DEBT_PAY_ID=id;
-  const d=DEBTS.find(x=>x.id===id); if(!d) return;
+  const d=DEBTS.find(x=>String(x.id)===String(id)); if(!d) return;
+  DEBT_PAY_ID=d.id;
+  DEBT_PAY_SALDO_MANUAL=false;
   document.getElementById("debt-pay-subtitle").textContent=d.name+" · "+t("w_balance")+": "+fmt(debtBalance(d));
-  setCurrencyInput(document.getElementById("debt-pay-amount"), d.monthlyPayment?parseFloat(d.monthlyPayment):"");
   document.getElementById("debt-pay-date").value=new Date().toISOString().split("T")[0];
   document.getElementById("debt-pay-note").value="";
+  const p=debtPayPrevisto(d,document.getElementById("debt-pay-date").value);
+  setCurrencyInput(document.getElementById("debt-pay-amount"), p.pago>0?p.pago:(p.cheia||""));
   document.getElementById("modal-debt-payment").classList.add("open");
+  debtPayRecalc();
 }
+
+/* Refaz a previsão e o saldo projetado a cada digitação */
+function debtPayRecalc(){
+  const d=DEBTS.find(x=>String(x.id)===String(DEBT_PAY_ID)); if(!d) return;
+  const dt=document.getElementById("debt-pay-date").value;
+  const p=debtPayPrevisto(d,dt);
+  const pago=unmaskCurrency(document.getElementById("debt-pay-amount"))||0;
+  /* o desembolso do mês inclui o que o FGTS cobriu: os dois juntos amortizam */
+  const totalQuita=pago+(p.fgts||0);
+  const amortReal=Math.max(0,totalQuita-p.juros);
+  const saldoNovo=Math.max(0,R2c(p.bal+(p.corr||0)-amortReal));
+
+  const prev=document.getElementById("debt-pay-prev");
+  if(prev) prev.innerHTML=`
+    <div style="background:rgba(110,43,58,.06);border-radius:13px;padding:11px 13px;margin-bottom:14px">
+      <div style="font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:#8A857D;font-weight:700;margin-bottom:6px">${t("payment_expected")}</div>
+      <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:2px 0">
+        <span style="color:var(--body)">${t("payment_full_instalment")}</span>
+        <span style="font-weight:600;color:var(--body)">${fmt(p.cheia)}</span></div>
+      ${p.fgts>0?`<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0">
+        <span style="color:#3F6B33">🏦 ${t("fgts_covers")}</span>
+        <span style="font-weight:600;color:#3F6B33">−${fmt(p.fgts)}</span></div>`:""}
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0 0;margin-top:4px;border-top:1px solid var(--line)">
+        <span style="color:var(--body);font-weight:600">${t("payment_you_pay")}</span>
+        <span style="font-weight:700;color:#6E2B3A">${fmt(p.pago)}</span></div>
+    </div>`;
+
+  const bel=document.getElementById("debt-pay-balance");
+  if(bel&&!DEBT_PAY_SALDO_MANUAL) setCurrencyInput(bel,saldoNovo);
+
+  const br=document.getElementById("debt-pay-break");
+  if(br) br.innerHTML=
+     `${t("w_interest")}: ${fmt(p.juros)} · ${t("amort_monthly_lbl")}: ${fmt(amortReal)}`
+    +(p.corr>0?` · ${t("idx_correction")}: +${fmt(p.corr)}`:"")
+    +(p.fgts>0?`<br>${t("payment_fgts_note")}`:"")
+    +(DEBT_PAY_SALDO_MANUAL?`<br>${t("payment_balance_manual")}`:"");
+}
+const R2c=v=>Math.round((v||0)*100)/100;
 
 function saveDebtPayment(){
   const d=DEBTS.find(x=>x.id===DEBT_PAY_ID); if(!d) return;
@@ -11291,8 +11451,21 @@ function saveDebtPayment(){
   };
   d.payments=d.payments||[];
   d.payments.push(pay);
-  d.balance=Math.max(0,debtBalance(d)-amount);
+  /* O saldo é o que o titular confirmou (extrato do banco). Sem isso, o app
+     abateria a parcela inteira do saldo devedor — mas só a amortização
+     reduz a dívida; os juros do mês são despesa. */
+  const saldoInf=unmaskCurrency(document.getElementById("debt-pay-balance"));
+  if(!isNaN(saldoInf)&&saldoInf>=0){
+    d.balance=R2c(saldoInf);
+  }else{
+    const p=debtPayPrevisto(d,pay.date);
+    const amortReal=Math.max(0,amount+(p.fgts||0)-p.juros);
+    d.balance=Math.max(0,R2c(p.bal+(p.corr||0)-amortReal));
+  }
+  d.lastPaymentYM=String(pay.date).slice(0,7);
+  pay.saldoApos=d.balance;
   persistDebts();
+  if(window.PRO&&PRO.limparCacheDivida) PRO.limparCacheDivida();
   document.getElementById("modal-debt-payment").classList.remove("open");
   // auto-archive when paid off
   if(debtBalance(d)<=0){
@@ -11348,11 +11521,17 @@ function openDebtDetail(id){
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
       ${(parseFloat(d.rate)||0)>0?`<div class="stat"><div class="stat-label">${t("debt_rate")}</div><div class="stat-val">${(d.rateType==="year"?monthlyToAnnual(parseFloat(d.rate)):parseFloat(d.rate)).toFixed(2)}%${d.rateType==="year"?" "+t("w_per_year_short"):" "+t("w_per_month_short")}</div></div>`:""}
-      ${(()=>{const pgm=debtPagamentoMes(d); if(!(pgm.cheia>0)) return "";
+      ${(()=>{const pgm=debtPagamentoMes(d,todayYM()); if(!(pgm.cheia>0)) return "";
         return `<div class="stat"><div class="stat-label">${t("monthly_payment_lbl")}</div>
           <div class="stat-val">${fmt(pgm.pago)}</div>
           ${pgm.fgts>0?`<div style="font-size:9.5px;color:#3F6B33;margin-top:2px">🏦 ${fmt(pgm.fgts)} ${t("fgts_by")} · <span style="color:#8A857D;text-decoration:line-through">${fmt(pgm.cheia)}</span></div>`:""}</div>`;})()}
       ${d.dueDay?`<div class="stat"><div class="stat-label">${t("debt_due_day")}</div><div class="stat-val">${t("w_day")} ${d.dueDay}</div></div>`:""}
+      ${(()=>{ if(!d.indexador||!window.PRO||!PRO.debtIndexAM) return "";
+        const am=PRO.debtIndexAM(d), sch=PRO.fgtsCronograma(d)||PRO.debtScheduleFGTS(d,{on:false});
+        return `<div class="stat"><div class="stat-label">${t("debt_indexer")}</div>
+          <div class="stat-val">${PRO.debtIndexLbl(d)}${am>0?" · "+String(am.toFixed(4)).replace(".",",")+"%":""}</div>
+          ${(sch&&sch.correcao>0)?`<div style="font-size:9.5px;color:#B85A6A;margin-top:2px">+${fmt(sch.correcao)} ${t("idx_over_term")}</div>`
+            :`<div style="font-size:9.5px;color:#3F6B33;margin-top:2px">${t("idx_zero_now")}</div>`}</div>`;})()}
       <div class="stat"><div class="stat-label">${t("estimated_payoff")}</div><div class="stat-val" style="font-size:13px">${payoffTxt}</div></div>
     </div>
     ${(d.fgts&&d.fgts.on)?(()=>{
@@ -11923,6 +12102,10 @@ const TXD={
 "↳ retido até ":["↳ locked until ","↳ gesperrt bis "],
 " pela utilização em curso":[" by the utilisation under way"," durch die laufende Nutzung"],
 "Estas linhas não passam pela conta corrente: o depósito do FGTS é do empregador e os aportes apenas trocam caixa por aplicação.":["These lines never touch the current account: the FGTS deposit comes from the employer and contributions merely swap cash for holdings.","Diese Zeilen berühren das Girokonto nicht: Die FGTS-Einzahlung kommt vom Arbeitgeber, und Einzahlungen tauschen nur Bargeld gegen Anlagen."],
+"Padrão do SFH. Zera com a Selic em 8,5% a.a. ou menos.":["SFH standard. Zeroed when Selic is 8.5% p.a. or lower.","SFH-Standard. Null, wenn Selic 8,5% p. a. oder niedriger ist."],
+"Juros iniciais menores, saldo corrigido pela inflação. Risco alto no longo prazo.":["Lower headline interest, balance indexed to inflation. High long-term risk.","Niedrigere Anfangszinsen, Saldo an die Inflation gekoppelt. Langfristig hohes Risiko."],
+"Varia com a Selic, somada a uma parte prefixada.":["Varies with Selic plus a fixed component.","Variiert mit Selic zuzüglich eines festen Anteils."],
+"Taxa única do começo ao fim. Previsível, mas mais cara na largada.":["One rate from start to finish. Predictable, but costlier upfront.","Ein Satz von Anfang bis Ende. Planbar, aber anfangs teurer."],
 "Saldo de FGTS hoje (R$)":["FGTS balance today (R$)","FGTS-Guthaben heute (R$)"],
 "Abater 12 parcelas":["Cover 12 instalments","12 Raten decken"],
 "Reduzir a parcela":["Lower the instalment","Rate senken"],
@@ -12616,14 +12799,18 @@ function incomeTotalsForYM(ymStr){
 
 /* ═══ 3.5 FLUXO DE CAIXA COMPLETO — tudo que impacta o caixa do mês ═══ */
 /* Serviço da dívida do mês, separando juros de amortização */
-function debtFlowForYM(){
+function debtFlowForYM(ymStr){
+  const offCf=(()=>{const h=new Date(),p=String(ymStr||"").split("-");
+    const y=+p[0],m=+p[1]; if(!y||!m) return 0;
+    return (y-h.getFullYear())*12+(m-1-h.getMonth());})();
   let juros=0,amort=0,parcela=0,fgtsAbat=0; const itens=[];
   (typeof DEBTS!=="undefined"?DEBTS:[]).forEach(d=>{
     const bal=debtBalance(d), r=debtRateMonthly(d), pmt=parseFloat(d.monthlyPayment)||0;
     if(bal<=0||pmt<=0) return;
     const j=bal*r, a=Math.min(Math.max(0,pmt-j),bal);
     /* o abatimento pelo FGTS reduz o desembolso, nao os juros nem a amortizacao */
-    const ef=debtParcelaEfetiva(d);
+    const row=(offCf>=0)?debtMesFGTS(d,offCf+1):null;
+    const ef=row?{parcela:row.desembolso,fgts:row.fgts}:{parcela:pmt,fgts:0};
     const cob=Math.min(ef.fgts||0,j+a);
     const pg=Math.min(pmt,j+a)-cob;
     juros+=j; amort+=a; parcela+=pg; fgtsAbat+=cob;
@@ -12672,7 +12859,7 @@ function cashflowForYM(ymStr){
     return o;}).sort((a,b)=>b.bruto-a.bruto);
   const exps=getExpensesForYM(ymStr).filter(e=>!isNeutral(e));
   const despesas=R2(exps.reduce((s,e)=>s+myAmount(e),0));
-  const dv=debtFlowForYM(), ap=assetFlowForYM(ymStr);
+  const dv=debtFlowForYM(ymStr), ap=assetFlowForYM(ymStr);
   const entLiq=R2(inc.liquido), saidas=R2(despesas+dv.parcela);
   const caixaOper=R2(entLiq-saidas);
   /* INSS e contribuicoes sao DEDUCOES da base; imposto e apenas o IR. */
@@ -13443,6 +13630,43 @@ function fgtsFonte(){
   return {saldo:R2(saldo),aporte:R2(aporte),taxaAM:R2(taxa),temAtivo:true};
 }
 
+/* ═══ CORREÇÃO MONETÁRIA DO SALDO DEVEDOR ═════════════════════════════
+   A quase totalidade dos contratos do SFH é corrigida pela TR. Todo mês, o
+   banco aplica o indexador sobre o saldo devedor ANTES de abater a parcela.
+   Os juros do contrato incidem sempre sobre um saldo já reajustado — é isso
+   que encarece o custo efetivo e faz a parcela do SAC cair devagar.
+
+   Regra da TR: o Banco Central zera a taxa quando a Selic está em 8,5% a.a.
+   ou abaixo; acima disso ela volta a ser positiva e cresce junto com a Selic.
+   Sem a série 226 do BCB em mãos, o app estima a partir da Selic vigente. */
+const TR_SELIC_PISO=8.5;
+function trAM(){
+  if(+MARKET.tr>0) return +MARKET.tr;          // série 226, quando disponível
+  const sel=+MARKET.selic||0;
+  if(sel<=TR_SELIC_PISO) return 0;             // TR zerada por regra
+  return Math.round((sel-TR_SELIC_PISO)*0.016*10000)/10000;
+}
+const DEBT_INDEX=[
+  {id:"tr",      lbl:"TR",        hint:"Padrão do SFH. Zera com a Selic em 8,5% a.a. ou menos."},
+  {id:"ipca",    lbl:"IPCA",      hint:"Juros iniciais menores, saldo corrigido pela inflação. Risco alto no longo prazo."},
+  {id:"poupanca",lbl:"Poupança",  hint:"Varia com a Selic, somada a uma parte prefixada."},
+  {id:"pre",     lbl:"Prefixado", hint:"Taxa única do começo ao fim. Previsível, mas mais cara na largada."}
+];
+/* Correção monetária do saldo devedor, em % ao mês */
+function debtIndexAM(d){
+  switch(d&&d.indexador){
+    case "tr":       return trAM();
+    case "ipca":     return aaToMm(MARKET.ipca);
+    case "poupanca": return poupancaAM();
+    case "pre":      return 0;
+    default:         return 0;   /* contrato sem indexador declarado */
+  }
+}
+function debtIndexLbl(d){
+  const x=DEBT_INDEX.find(i=>i.id===(d&&d.indexador));
+  return x?x.lbl:"";
+}
+
 /* ── Cronograma mês a mês do financiamento com a utilização do FGTS ──
    Mês 1 é o mês corrente. No abatimento, o saldo disponível é repartido
    pelas DOZE prestações da janela: o teto de 80% é limite, não meta. Se o
@@ -13461,6 +13685,7 @@ function debtScheduleFGTS(d,plano){
   const modo=P.modo;
   const renova=fgtsModo(modo).ren;
 
+  const ci=debtIndexAM(d)/100;   // correção monetária do saldo, ao mês
   let bal=bal0;
   let pmt=(sys==="price")?amortPayment(bal0,r,n0):0;   // Price: prestação fixa
   let amortSac=bal0/n0;                                // SAC: amortização constante
@@ -13509,7 +13734,16 @@ function debtScheduleFGTS(d,plano){
       else { saldoPat=R2(saldoPat+aporte+retido); retido=0; }
     }
 
-    let usoMes=0, evento="";
+    let usoMes=0, evento="", corrMes=0;
+
+    /* ── correção monetária: incide sobre o saldo antes de tudo ── */
+    if(ci>0){
+      corrMes=R2(bal*ci);
+      bal=R2(bal+corrMes);
+      /* amortização e prestação acompanham o indexador, como no contrato */
+      amortSac=amortSac*(1+ci);
+      if(sys==="price") pmt=pmt*(1+ci);
+    }
 
     /* ── amortização extraordinária: abate o saldo devedor ── */
     if(liga&&modo!=="abater"&&i===prox){
@@ -13572,7 +13806,7 @@ function debtScheduleFGTS(d,plano){
     const pago=R2(Math.max(0,parcela-cob));
     desembolso=R2(desembolso+pago);
     rows.push({i,parcela:R2(parcela),juros:R2(jurosMes),amort:R2(amortMes),
-      fgts:R2(usoMes),desembolso:pago,saldo:Math.max(0,bal),
+      correcao:R2(corrMes),fgts:R2(usoMes),desembolso:pago,saldo:Math.max(0,bal),
       saldoFgts:R2(saldoPat),evento});
   }
 
@@ -13583,6 +13817,7 @@ function debtScheduleFGTS(d,plano){
     : 0;
   return {
     rows, meses:rows.length, juros:R2(juros), desembolso:R2(desembolso),
+    correcao:R2(rows.reduce((x,y)=>x+(y.correcao||0),0)), indexAM:Math.round(ci*1000000)/10000,
     fgtsUsado:R2(fgtsUsado), saldoFgtsFinal:R2(saldoPat), aplicado:R2(aplicado),
     modo, parcelasCobertas, pctMedio,
     primeira:rows.length?rows[0].desembolso:0,
@@ -13674,7 +13909,9 @@ function fgtsCronograma(d){
 function debtMesFGTS(d,i){
   const sch=fgtsCronograma(d);
   if(!sch||!sch.rows.length) return null;
-  return sch.rows[Math.max(0,(i||1)-1)]||null;
+  const k=(i||1)-1;
+  if(k<0||k>=sch.rows.length) return null;   /* fora do cronograma: sem palpite */
+  return sch.rows[k]||null;
 }
 /* Parcela efetiva deste mês, já descontado o abatimento do FGTS. */
 function debtParcelaEfetiva(d){
@@ -13884,7 +14121,8 @@ function projetar(n){
   /* o cronograma do FGTS, quando existe, manda na dívida: saldo, juros e
      desembolso já saem dele mês a mês */
   const dv=DEBTS.map(d=>({d,saldo:debtBalance(d),r:debtRateMonthly(d),
-    pmt:parseFloat(d.monthlyPayment)||0,sch:fgtsCronograma(d)}));
+    pmt:parseFloat(d.monthlyPayment)||0,
+    sch:fgtsCronograma(d)||debtScheduleFGTS(d,{on:false})}));
   /* o mês exibido pode não ser o mês corrente; o cronograma começa em hoje */
   const offFg=(()=>{const h=new Date(),q=base.split("-").map(Number);
     return (q[0]-h.getFullYear())*12+(q[1]-1-h.getMonth());})();
@@ -16270,7 +16508,9 @@ window.PRO={
   openFgts,setFgtsModo,toggleFgtsRepetir,toggleFgtsPatr,fgtsCalc,salvarFgts,limparFgts,
   debtScheduleFGTS,fgtsComparativo,fgtsModosComparados,debtParcelaEfetiva,fgtsPlano,
   fgtsCronograma,debtMesFGTS,fgtsPlanoTemFonte,fgtsDisponivel,fgtsModo,FGTS_MODOS,
-  fgtsBloqueio,fgtsBloqueioVigente,
+  fgtsBloqueio,fgtsBloqueioVigente,trAM,debtIndexAM,debtIndexLbl,DEBT_INDEX,
+  tr:TR,
+  limparCacheDivida:()=>{Object.keys(FGTS_SCH_CACHE).forEach(k=>delete FGTS_SCH_CACHE[k]);},
   astEvolucao,astRendimentoCarteira,astProvisao,
   astCustoRegressivo,astDisponivel,toggleCustoAuto,custoManual,astRecalc,
   astAtualizacao,astValorAtual,materializarPosicoes,
