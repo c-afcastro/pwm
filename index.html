@@ -1836,7 +1836,7 @@
 </div><!-- end screen-vidafinanceira -->
 
 <!-- retorno ao início ao alcance do polegar (telas internas) -->
-<button class="fab-home" id="fab-home" onclick="goHome()" aria-label="Início" title="Início">⌂</button>
+<button class="fab-home" id="fab-home" onclick="fabAcao()" aria-label="Início" title="Início">⌂</button>
 
 <!-- diálogo de confirmação: precisa viver fora das telas,
      senão fica oculto junto com a tela que o continha -->
@@ -16128,16 +16128,64 @@ if(_renderHealthCard) window.renderHealthCard=function(){
     </div>`);
 };
 
-/* Botao de retorno so aparece nas telas internas. */
-const FAB_ON=["entradas","patrimonio","dividas","vidafinanceira","despesas"];
-function syncFab(){
-  const f=document.getElementById("fab-home"); if(!f) return;
+/* O botão flutuante tem duas etapas: rolado para baixo, ele sobe a tela;
+   já no topo, volta para o início. O ícone acompanha o estado. */
+function fabTelaAtual(){
+  /* SCREEN é a fonte confiável: mais de uma tela pode ficar com a classe
+     "active" durante a transição, e aí a varredura elegia a errada. */
+  if(typeof SCREEN!=="undefined"&&SCREEN) return SCREEN;
   let cur=null;
   ["home","despesas","entradas","patrimonio","dividas","vidafinanceira","auth"].forEach(k=>{
     const e=document.getElementById("screen-"+k);
     if(e&&e.classList.contains("active")) cur=k;
   });
+  return cur;
+}
+function fabScroller(){
+  const cur=fabTelaAtual();
+  if(!cur) return null;
+  return document.querySelector("#screen-"+cur+" .content")
+      || document.getElementById("screen-"+cur);
+}
+function fabRolado(){
+  const sc=fabScroller();
+  return !!(sc&&sc.scrollTop>120);
+}
+function fabAcao(){
+  const sc=fabScroller();
+  if(fabRolado()&&sc){
+    sc.scrollTo({top:0,behavior:"smooth"});
+    setTimeout(syncFab,420);
+    return;
+  }
+  goHome();
+}
+function fabIcone(){
+  const f=document.getElementById("fab-home"); if(!f) return;
+  const sobe=fabRolado();
+  f.textContent=sobe?"↑":"⌂";
+  f.classList.toggle("subir",sobe);
+  const lbl=sobe?"Voltar ao topo":"Início";
+  f.title=lbl; f.setAttribute("aria-label",lbl);
+}
+/* acompanha a rolagem de cada tela para trocar o ícone na hora certa */
+function fabLigarScroll(){
+  ["home","despesas","entradas","patrimonio","dividas","vidafinanceira"].forEach(k=>{
+    const sc=document.querySelector("#screen-"+k+" .content")||document.getElementById("screen-"+k);
+    if(!sc||sc.dataset.fabLigado) return;
+    sc.dataset.fabLigado="1";
+    sc.addEventListener("scroll",()=>{ fabIcone(); },{passive:true});
+  });
+}
+
+/* Botao de retorno so aparece nas telas internas. */
+const FAB_ON=["entradas","patrimonio","dividas","vidafinanceira","despesas"];
+function syncFab(){
+  const f=document.getElementById("fab-home"); if(!f) return;
+  const cur=fabTelaAtual();
   f.classList.toggle("on",FAB_ON.indexOf(cur)>=0);
+  fabLigarScroll();
+  fabIcone();
 }
 ["showScreen","enterSection","goHome"].forEach(fn=>{
   const orig=window[fn];
@@ -16148,6 +16196,8 @@ function syncFab(){
   };
 });
 setTimeout(syncFab,3200);
+/* o módulo roda dentro de uma IIFE: o onclick inline precisa do escopo global */
+window.fabAcao=fabAcao; window.fabIcone=fabIcone; window.syncFab=syncFab;
 
 function refreshPro(){
   try{
@@ -17702,10 +17752,8 @@ input[type=month]::-webkit-datetime-edit-fields-wrapper{ padding:0; }
   min-height:24px; display:flex; align-items:center;
   padding-right:0; margin-bottom:0!important;
 }
-.month-nav-inline .month-today-btn{
-  font-size:8px!important; padding:0 4px!important; height:16px!important;
-  min-height:0!important; line-height:16px!important;
-}
+/* dentro do resumo o "Hoje" sai: as setas dão conta e a barra encurta */
+.month-nav-inline .month-today-btn{ display:none!important; }
 .month-nav-inline > *{ min-height:0!important; }
 .month-nav-inline{ min-height:0!important; }
 .month-nav-inline .month-delta{ display:none!important; }
@@ -17792,6 +17840,9 @@ input[type=month]::-webkit-datetime-edit-fields-wrapper{ padding:0; }
 }
 .fab-home.on{ display:flex; }
 .fab-home:active{ transform:scale(.92); }
+/* primeira etapa: subir a tela. A cor muda para diferenciar da segunda. */
+.fab-home.subir{ background:rgba(26,58,92,.9); font-size:20px; }
+.fab-home{ transition:background .2s ease, transform .12s ease; }
 
 /* rótulos das grades de categoria sem quebra feia */
 :is(#modal-income,#modal-asset,#modal-debt) .cat-btn .lbl{
