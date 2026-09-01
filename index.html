@@ -1307,6 +1307,7 @@
   </div>
 
   <div class="hero" id="hero-despesas">
+    <div id="hero-splits-chip" style="display:none" onclick="show('splits');event.stopPropagation()"></div>
     <div class="hero-label">Total <span id="hero-split-note" style="font-size:10px;opacity:.6;margin-left:6px"></span></div>
     <div class="hero-value" id="total-value">R$ 0,00</div>
     <div class="hero-meta" id="total-meta"></div>
@@ -5319,8 +5320,21 @@ function updateHero(){
   const openSplits=buildOpenSplits();
   const banner=document.getElementById("hero-splits-banner");
   const content=document.getElementById("hero-splits-content");
-  if(openSplits.totalCount>0||openSplits.futCount>0){
-    banner.style.display="block";
+  const chip=document.getElementById("hero-splits-chip");
+  if(chip){
+    /* Um selo discreto no canto: o valor a receber não precisa de um painel
+       inteiro roubando altura do conteúdo do mês. */
+    if(openSplits.totalVal>0||openSplits.futVal>0){
+      chip.style.display="flex";
+      chip.innerHTML=`<span style="font-size:11px">⚠️</span>`
+        +`<span>${fmt(openSplits.totalVal)}</span>`
+        +(openSplits.futVal>0?`<span style="opacity:.7">+${fmt(openSplits.futVal)}</span>`:"")
+        +`<span style="opacity:.6">›</span>`;
+      chip.title=t("receivables_label");
+    } else chip.style.display="none";
+  }
+  if(banner) banner.style.display="none";
+  if(false){
     const byPerson={};
     openSplits.items.forEach(item=>{
       if(!byPerson[item.name]) byPerson[item.name]={count:0,val:0,fut:0,futN:0,cur:item.cur};
@@ -10537,6 +10551,9 @@ function renderDebtList(){
         <div style="height:100%;background:${dt.color};width:${pct}%;border-radius:3px"></div>
       </div>
       <div style="font-size:10px;color:#6B6760;margin-top:3px">${pct.toFixed(0)}% ${t("w_paid_off")} · ${fmt(paid)} ${t("w_of2")} ${fmt(orig)}</div>`:""}
+      <div style="display:flex;gap:6px;justify-content:flex-end;border-top:1px solid var(--line);padding-top:6px;margin-top:8px">
+        <button style="background:none;border:none;color:#1A3A5C;font-size:12px;font-weight:600;cursor:pointer" onclick="event.stopPropagation();PRO.openImpactos('debt','${d.id}')">🔎 ${t("impacts")}</button>
+      </div>
     </div>`;
   }).join("");
 }
@@ -11621,7 +11638,6 @@ function openDebtDetail(id){
 
     <button onclick="openDebtPayment('${d.id}')" style="width:100%;background:#6E2B3A;color:#fff;border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">💵 ${t("register_payment")}</button>
     ${(parseInt(d.term)||0)>0?`<button onclick="openAmortTable(${debtBalance(d)},${debtRateMonthly(d)},${parseInt(d.term)},'${d.amortSystem||"price"}')" style="width:100%;background:rgba(110,43,58,.08);color:#6E2B3A;border:none;border-radius:13px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px">📋 ${t("view_full_table")}</button>`:""}
-    <button onclick="PRO.openImpactos('debt','${d.id}')" style="width:100%;background:rgba(26,58,92,.08);color:#1A3A5C;border:none;border-radius:13px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px">🔎 ${t("impacts")}</button>
     ${(d.type==="mortgage"&&(parseInt(d.term)||0)>0)?`<button onclick="PRO.openFgts('${d.id}')" style="width:100%;background:rgba(110,43,58,.08);color:#6E2B3A;border:none;border-radius:13px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px">🏦 ${t("fgts_use")}</button>`:""}
     <button onclick="confirmDelDebt('${d.id}')" style="width:100%;background:none;color:#B85A6A;border:1px solid #B85A6A44;border-radius:13px;padding:11px;font-size:13px;cursor:pointer;margin-bottom:18px">${t("delete_debt")}</button>
 
@@ -16445,7 +16461,13 @@ function ensureCfStyles(){
   :is(#cfp-body,#imp-body) tr.lin.hoje{background:rgba(26,58,92,.07)}
   :is(#cfp-body,#imp-body) .cfp-caret{color:#8A857D;font-size:9px;margin-right:4px}
   #imp-body table{font-size:10px}
-  #imp-body td,#imp-body th{padding:5px 2px}
+  #imp-body td,#imp-body th{padding:5px 3px;white-space:nowrap}
+  /* tabelas largas rolam na horizontal em vez de espremer as colunas */
+  .cfp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
+  .cfp-scroll::-webkit-scrollbar{height:4px}
+  .cfp-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,.14);border-radius:2px}
+  .cfp-scroll table{table-layout:auto!important;min-width:100%}
+  #imp-body .cfp-scroll.larga table{min-width:560px}
   #imp-body .cfp-row{gap:8px}`;
   document.head.appendChild(s);
 }
@@ -17129,8 +17151,11 @@ function renderImpactos(){
 
     <div class="sec-label">Projeção mês a mês</div>
     <div class="cfp-card" style="padding:4px 12px 10px">
-      <table><thead>${tabela.split("</tr>")[0]}</tr></thead>
-      <tbody>${tabela.split("</tr>").slice(1).join("</tr>")}</tbody></table>
+      <div class="cfp-scroll${S.tipo==="debt"?" larga":""}">
+        <table><thead>${tabela.split("</tr>")[0]}</tr></thead>
+        <tbody>${tabela.split("</tr>").slice(1).join("</tr>")}</tbody></table>
+      </div>
+      ${S.tipo==="debt"?`<div style="font-size:9.5px;color:#8A857D;margin-top:6px">Arraste a tabela para o lado para ver todas as colunas.</div>`:""}
     </div>
     <div style="font-size:10px;color:#8A857D;line-height:1.55;padding-bottom:6px">
       Os números vêm da mesma projeção do painel de fluxo de caixa: recorrências se repetem, variáveis entram pela média dos últimos três meses, dívidas seguem o cronograma com indexador e FGTS, e as aplicações rendem pelo indexador de cada uma.
@@ -17573,8 +17598,52 @@ input[type=month]::-webkit-datetime-edit-fields-wrapper{ padding:0; }
   width:120px!important; height:120px!important; top:-32px!important; right:-32px!important;
 }
 #hero-despesas::after{ display:none!important; }
-#hero-splits-banner{ margin-top:9px!important; padding:8px 11px!important; border-radius:10px!important; }
-#hero-splits-banner > div:first-child{ font-size:9px!important; margin-bottom:2px!important; }
+#hero-splits-banner{ display:none!important; }
+
+/* ── selo de valores a receber: canto do hero, sem custar altura ── */
+#hero-splits-chip{
+  position:absolute; top:10px; right:12px; z-index:2;
+  display:flex; align-items:center; gap:5px;
+  background:rgba(240,196,90,.22); border:1px solid rgba(240,196,90,.45);
+  color:#F6D98A; border-radius:9px; padding:3px 8px;
+  font-size:10.5px; font-weight:600; letter-spacing:.2px;
+  cursor:pointer; max-width:62%; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+}
+#hero-splits-chip:active{ background:rgba(240,196,90,.32); }
+
+/* ── o resumo de despesas passa a ocupar o mesmo espaço de Patrimônio
+      e Entradas: o mês tem mais área de rolagem ── */
+#hero-despesas{ position:relative; padding:11px 15px 10px!important; }
+#hero-despesas .hero-label{ font-size:8.5px!important; margin-bottom:2px!important; }
+#hero-despesas .hero-value{ font-size:clamp(19px,5.8vw,24px)!important; line-height:1.05!important; }
+#hero-despesas .hero-meta{ margin-top:5px!important; gap:10px!important; }
+#hero-despesas .hero-meta-item{ font-size:10px!important; }
+#hero-despesas .hero-pills{ margin-top:6px!important; gap:4px!important; }
+#hero-despesas .hero-pill{ padding:2px 8px!important; font-size:10px!important; }
+
+/* ── a linha do mês na mesma escala compacta das outras telas ── */
+#screen-despesas .month-nav{
+  width:fit-content!important;
+  max-width:calc(100% - 32px)!important;
+  margin:6px auto 0!important;
+  padding:1px 5px!important;
+  border-radius:9px!important;
+  gap:2px;
+}
+#screen-despesas .month-label{
+  flex:0 0 auto!important; min-width:88px; font-size:11.5px!important; padding:0 2px;
+}
+/* a variação contra o mês anterior sozinha ocupava 127px na barra: ela já
+   aparece no resumo, então sai daqui e a linha volta ao tamanho das outras */
+#screen-despesas .month-delta{ display:none!important; }
+#screen-despesas .month-nav-btn{ width:24px!important; height:24px!important; font-size:13px!important; }
+#screen-despesas .month-today-btn{ font-size:9.5px!important; padding:2px 7px!important; }
+
+/* ── respiro abaixo da linha do mês, em todas as telas ── */
+:is(#screen-home,#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-dividas) .month-nav{
+  margin-bottom:8px!important;
+}
 
 /* ── rolagem fluida: a troca hero ↔ barra fina não pode piscar ── */
 #hero-despesas,#inc-hero-wrap,#ast-hero-wrap{
