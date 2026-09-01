@@ -2128,6 +2128,7 @@
       <button class="btn-cancel-f" onclick="document.getElementById('modal-income').classList.remove('open')" data-i18n="cancel">Cancelar</button>
       <button class="btn-primary" style="background:#1A3A5C" onclick="saveIncome()" id="inc-save" data-i18n="add">Adicionar</button>
     </div>
+    <button class="btn-delete" id="inc-impact" style="display:none;background:rgba(26,58,92,.08);color:#1A3A5C;border:none" onclick="PRO.openImpactos('income',INC_EID)">🔎 <span data-i18n="impacts">Impactos</span></button>
     <button class="btn-delete" id="inc-destroy" style="display:none" onclick="confirmDelIncome(INC_EID)" data-i18n="delete_income">Excluir entrada</button>
   </div>
 </div>
@@ -2161,6 +2162,7 @@
       <button class="btn-cancel-f" onclick="document.getElementById('modal-asset').classList.remove('open')" data-i18n="cancel">Cancelar</button>
       <button class="btn-primary" style="background:#0F2440" onclick="saveAsset()" id="ast-save" data-i18n="add">Adicionar</button>
     </div>
+    <button class="btn-delete" id="ast-impact" style="display:none;background:rgba(26,58,92,.08);color:#1A3A5C;border:none" onclick="PRO.openImpactos('asset',AST_EID)">🔎 <span data-i18n="impacts">Impactos</span></button>
     <button class="btn-delete" id="ast-destroy" style="display:none" onclick="confirmDelAsset(AST_EID)" data-i18n="delete_asset">Excluir aplicação</button>
   </div>
 </div>
@@ -2975,6 +2977,8 @@ const I18N={
     debt_tab_sim:"Simulador",
     debt_by_type:"Por tipo de dívida",
     next_payments:"Próximos pagamentos",
+    impacts:"Impactos",
+    w_projected_lc:"projetado",
     debt_charges:"Encargos mensais do contrato",
     debt_insurance:"Seguros (MIP + DFI)",
     debt_admin_fee:"Taxa de administração",
@@ -3679,6 +3683,8 @@ const I18N={
     debt_tab_sim:"Simulator",
     debt_by_type:"By debt type",
     next_payments:"Upcoming payments",
+    impacts:"Impacts",
+    w_projected_lc:"projected",
     debt_charges:"Monthly contract charges",
     debt_insurance:"Insurance (MIP + DFI)",
     debt_admin_fee:"Administration fee",
@@ -4383,6 +4389,8 @@ const I18N={
     debt_tab_sim:"Simulator",
     debt_by_type:"Nach Schuldenart",
     next_payments:"Nächste Zahlungen",
+    impacts:"Auswirkungen",
+    w_projected_lc:"projiziert",
     debt_charges:"Monatliche Vertragsgebühren",
     debt_insurance:"Versicherungen (MIP + DFI)",
     debt_admin_fee:"Verwaltungsgebühr",
@@ -7182,6 +7190,7 @@ function openIncome(){
   document.getElementById("income-form-title").textContent=t("new_income");
   document.getElementById("inc-save").textContent=t("add");
   document.getElementById("inc-destroy").style.display="none";
+  {const q=document.getElementById("inc-impact"); if(q) q.style.display="none";}
   document.getElementById("inc-desc").value="";
   setCurrencyInput(document.getElementById("inc-amount"),"");
   document.getElementById("inc-date").value=today();
@@ -7197,6 +7206,7 @@ function openIncomeEdit(id){
   document.getElementById("income-form-title").textContent=t("edit_income");
   document.getElementById("inc-save").textContent=t("save");
   document.getElementById("inc-destroy").style.display="block";
+  {const q=document.getElementById("inc-impact"); if(q) q.style.display="block";}
   document.getElementById("inc-desc").value=inc.desc||"";
   setCurrencyInput(document.getElementById("inc-amount"),inc.amount);
   document.getElementById("inc-date").value=inc.date;
@@ -7243,6 +7253,7 @@ function openAsset(){
   document.getElementById("asset-form-title").textContent=t("new_asset");
   document.getElementById("ast-save").textContent=t("add");
   document.getElementById("ast-destroy").style.display="none";
+  {const q=document.getElementById("ast-impact"); if(q) q.style.display="none";}
   document.getElementById("ast-name").value="";
   setCurrencyInput(document.getElementById("ast-balance"),"");
   document.getElementById("ast-yield").value="";
@@ -7258,6 +7269,7 @@ function openAssetEdit(id){
   document.getElementById("asset-form-title").textContent=t("edit_asset");
   document.getElementById("ast-save").textContent=t("save");
   document.getElementById("ast-destroy").style.display="block";
+  {const q=document.getElementById("ast-impact"); if(q) q.style.display="block";}
   document.getElementById("ast-name").value=a.name||"";
   setCurrencyInput(document.getElementById("ast-balance"),a.balance);
   document.getElementById("ast-yield").value=a.yieldPct||"";
@@ -7376,17 +7388,26 @@ function renderHome(){
 
   // totals for the month
   const expItems=TMexp();
-  const totalExp=expItems.reduce((s,e)=>s+myAmount(e),0);
   const incItems=incomeForYM(ymStr);
+  /* Posição do mês navegado, pela mesma projeção do fluxo de caixa: dívida
+     amortizada e corrigida, patrimônio rendendo com o indexador de cada
+     aplicação, variáveis pela média dos últimos três meses. */
+  const POS=(window.PRO&&PRO.cfPosicaoYM)?PRO.cfPosicaoYM(ymStr):null;
+  const futuro=ymStr>cym();
+  const totalExp=POS?POS.despesas:expItems.reduce((s,e)=>s+myAmount(e),0);
   const totalInc=incItems.reduce((s,i)=>s+i.amount,0);
   const balance=totalInc-totalExp;
-  const totalAssets=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
-  const monthYield=ASSETS.reduce((s,a)=>s+((astValorAtual(a))*(parseFloat(a.yieldPct)||0)/100),0);
+  const totalAssets=POS?POS.patrimonio:ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
+  const monthYield=POS?POS.aplic.bruto
+    :ASSETS.reduce((s,a)=>s+((astValorAtual(a))*(parseFloat(a.yieldPct)||0)/100),0);
 
   // home summary cards
-  const fixedExp=expItems.filter(e=>e.type==="fixed").reduce((s,e)=>s+myAmount(e),0);
+  const fixedExp=POS?R2c(POS.despItens.filter(x=>x.fixa).reduce((s,x)=>s+x.valor,0))
+                     :expItems.filter(e=>e.type==="fixed").reduce((s,e)=>s+myAmount(e),0);
   document.getElementById("home-expense-val").textContent=fmt(totalExp);
-  document.getElementById("home-expense-sub").textContent=expItems.length+" "+t("w_expenses")+" · "+monthLabel;
+  document.getElementById("home-expense-sub").textContent=
+    (POS?POS.despItens.length:expItems.length)+" "+t("w_expenses")+" · "+monthLabel
+    +(futuro?" · "+t("w_projected_lc"):"");
   document.getElementById("home-expense-x-label").textContent=t("stat_fixed_lc");
   document.getElementById("home-expense-x-val").textContent=fmt(fixedExp);
 
@@ -7398,18 +7419,20 @@ function renderHome(){
   incXEl.style.color=balance>=0?"#9BE8C0":"#FF9B8A";
 
   document.getElementById("home-asset-val").textContent=fmt(totalAssets);
-  document.getElementById("home-asset-sub").textContent=ASSETS.length+" "+t("w_holdings");
+  document.getElementById("home-asset-sub").textContent=ASSETS.length+" "+t("w_holdings")
+    +(futuro?" · "+t("w_projected_lc"):"");
   document.getElementById("home-asset-x-label").textContent=t("w_yield_lc");
   document.getElementById("home-asset-x-val").textContent=fmt(monthYield);
   // debt card
-  const totDebt=totalDebt();
+  const totDebt=POS?POS.dividaSaldo:totalDebt();
   /* o cartão acompanha o mês em que o usuário está navegando */
-  const ymHome=activeYM();
+  const ymHome=ymStr;
   const totMonthly=totalMonthly(ymHome);
   const hdv=document.getElementById("home-debt-val");
   if(hdv) hdv.textContent=fmt(totDebt);
   const hds=document.getElementById("home-debt-sub");
-  if(hds) hds.textContent=DEBTS.length+" "+(DEBTS.length===1?t("w_debt_one"):t("w_debt_many"));
+  if(hds) hds.textContent=DEBTS.length+" "+(DEBTS.length===1?t("w_debt_one"):t("w_debt_many"))
+    +(futuro?" · "+t("w_projected_lc"):"");
   const hdxl=document.getElementById("home-debt-x-label");
   if(hdxl) hdxl.textContent=t("w_installment_lc");
   const hdxv=document.getElementById("home-debt-x-val");
@@ -11602,6 +11625,7 @@ function openDebtDetail(id){
 
     <button onclick="openDebtPayment('${d.id}')" style="width:100%;background:#6E2B3A;color:#fff;border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">💵 ${t("register_payment")}</button>
     ${(parseInt(d.term)||0)>0?`<button onclick="openAmortTable(${debtBalance(d)},${debtRateMonthly(d)},${parseInt(d.term)},'${d.amortSystem||"price"}')" style="width:100%;background:rgba(110,43,58,.08);color:#6E2B3A;border:none;border-radius:13px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px">📋 ${t("view_full_table")}</button>`:""}
+    <button onclick="PRO.openImpactos('debt','${d.id}')" style="width:100%;background:rgba(26,58,92,.08);color:#1A3A5C;border:none;border-radius:13px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px">🔎 ${t("impacts")}</button>
     ${(d.type==="mortgage"&&(parseInt(d.term)||0)>0)?`<button onclick="PRO.openFgts('${d.id}')" style="width:100%;background:rgba(110,43,58,.08);color:#6E2B3A;border:none;border-radius:13px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px">🏦 ${t("fgts_use")}</button>`:""}
     <button onclick="confirmDelDebt('${d.id}')" style="width:100%;background:none;color:#B85A6A;border:1px solid #B85A6A44;border-radius:13px;padding:11px;font-size:13px;cursor:pointer;margin-bottom:18px">${t("delete_debt")}</button>
 
@@ -14161,7 +14185,7 @@ const saveProj=()=>localStorage.setItem(PROJ_KEY,JSON.stringify(PROJ));
 function mediaVariaveis(){
   let tot=0,n=0;
   for(let i=1;i<=3;i++){
-    const k=ymAdd(activeYM(),-i);
+    const k=ymAdd(ymNow(),-i);
     const v=getExpensesForYM(k).filter(e=>!isNeutral(e)&&(!e.recurrence||e.recurrence==="none"))
       .reduce((s,e)=>s+myAmount(e),0);
     if(v>0){tot+=v;n++;}
@@ -16210,11 +16234,28 @@ function cfMes(ym,k,st){
   apItens.sort((a,b)=>b.bruto-a.bruto);
   const apLiq=R2(apBruto-apIr);
 
+  /* ── posições de fim de mês ──
+     Dívida: saldo do cronograma, já com amortização e correção monetária.
+     Patrimônio: saldo dos ativos evoluídos pelo indexador de cada um. */
+  let saldoDivida=0;
+  (typeof DEBTS!=="undefined"?DEBTS:[]).forEach(d=>{
+    const sch=cfDebtSch(d);
+    const row=sch&&sch.rows?sch.rows[idx-1]:null;
+    if(row) saldoDivida+=row.saldo;
+    else if(sch&&sch.rows&&idx-1>=sch.rows.length) saldoDivida+=0;
+    else saldoDivida+=debtBalance(d);
+  });
+  let saldoPatr=0;
+  if(proj&&st) st.forEach(x=>{saldoPatr+=x.saldo;});
+  else saldoPatr=(typeof ASSETS!=="undefined"?ASSETS:[]).reduce((a,x)=>a+astValorAtual(x),0);
+
   const entLiq=R2(inc.liquido);
   const saidas=R2(despesas+dPago);
   const caixaOper=R2(entLiq-saidas);
   return {
     ym, k, proj,
+    patrimonio:R2(saldoPatr), dividaSaldo:R2(saldoDivida),
+    pl:R2(saldoPatr-saldoDivida),
     tipos, bruto:R2(inc.bruto), inss:R2(inc.inss), irrf:R2(inc.ir),
     outrasDed:R2(inc.deducoes||0), deducoes:R2(inc.inss+(inc.deducoes||0)),
     impostos:R2(inc.ir), entLiquidas:entLiq, fgts:R2(inc.fgts||0),
@@ -16239,11 +16280,43 @@ function cfSerie(atras,frente){
   return out;
 }
 
+/* Posição projetada de um mês qualquer. É a fonte única que a tela inicial,
+   o painel e o histórico consultam, para que os três nunca divirjam. */
+let CFP_POS={k:"",v:null};
+function cfChaveDados(){
+  return [ (typeof ASSETS!=="undefined"?ASSETS:[]).length,
+           (typeof DEBTS!=="undefined"?DEBTS:[]).length,
+           (typeof EX!=="undefined"?EX:[]).length,
+           (typeof INCOME!=="undefined"?INCOME:[]).length,
+           JSON.stringify((typeof DEBTS!=="undefined"?DEBTS:[]).map(d=>[d.balance,d.fgts?1:0,d.indexador,d.seguro,d.taxaAdm])),
+           JSON.stringify((typeof ASSETS!=="undefined"?ASSETS:[]).map(a=>[a.balance,a.lastUpdate])),
+           MARKET.ts ].join("|");
+}
+function cfPosicaoYM(ymStr){
+  const alvo=ymStr||ymNow();
+  const chave=cfChaveDados();
+  if(CFP_POS.k!==chave){ CFP_POS={k:chave,v:{}}; }
+  if(CFP_POS.v[alvo]) return CFP_POS.v[alvo];
+  const hoje=ymNow();
+  let off=0; { const a=alvo.split("-").map(Number), b=hoje.split("-").map(Number);
+    off=(a[0]-b[0])*12+(a[1]-b[1]); }
+  let m;
+  if(off<=0){ m=cfMes(alvo,off,null); }
+  else{
+    /* precisa percorrer os meses para evoluir as aplicações */
+    const st=cfEstadoAplic();
+    for(let k=1;k<=off;k++) m=cfMes(ymAdd(hoje,k),k,st);
+  }
+  CFP_POS.v[alvo]=m;
+  return m;
+}
+
 /* Consolida um conjunto de meses num único demonstrativo */
 function cfConsolida(ms){
   const z={ym:"",k:0,proj:ms.some(m=>m.proj),
     tipos:[],bruto:0,inss:0,irrf:0,outrasDed:0,deducoes:0,impostos:0,
     entLiquidas:0,fgts:0,despesas:0,despItens:[],
+    patrimonio:0,dividaSaldo:0,pl:0,
     divida:{juros:0,amort:0,parcela:0,fgtsAbat:0,encargos:0,itens:[]},
     aplic:{bruto:0,ir:0,comeCotas:0,liquido:0,aportes:0,itens:[]},
     saidas:0,caixaOper:0,caixaTotal:0};
@@ -16264,6 +16337,9 @@ function cfConsolida(ms){
     m.aplic.itens.forEach(o=>somaEm(z.aplic.itens,"nome",o,["bruto","ir"]));
     m.despItens.forEach(o=>somaEm(z.despItens,"nome",o,["valor"]));
   });
+  /* posição é estoque, não fluxo: vale a do último mês do período */
+  if(ms.length){ const u=ms[ms.length-1];
+    z.patrimonio=u.patrimonio; z.dividaSaldo=u.dividaSaldo; z.pl=u.pl; z.ym=u.ym; }
   z.tipos.sort((a,b)=>b.bruto-a.bruto);
   z.despItens.sort((a,b)=>b.valor-a.valor);
   z.divida.itens.sort((a,b)=>b.pago-a.pago);
@@ -16558,6 +16634,227 @@ function renderCfPainel(){
 }
 function cfSetAno(a){ CFP.ano=a; renderCfPainel(); }
 
+
+/* ═══ 11.10 IMPACTOS DE UM ITEM ═══════════════════════════════════════
+   Todo lançamento do app desdobra em receita, despesa, patrimônio e dívida.
+   Esta ficha abre esses desdobramentos item a item, do mês corrente até o
+   fim do horizonte, para que o usuário possa auditar e corrigir efeitos. */
+
+let IMP_TIPO=null, IMP_ID=null, IMP_N=12;
+
+function openImpactos(tipo,id){
+  IMP_TIPO=tipo; IMP_ID=String(id); IMP_N=12;
+  let ov=document.getElementById("modal-impactos");
+  if(!ov){
+    ov=document.createElement("div");
+    ov.className="overlay"; ov.id="modal-impactos";
+    ov.style.cssText="align-items:flex-end;z-index:230";
+    ov.innerHTML='<div class="sheet" style="max-height:92dvh"><div class="sheet-handle"></div>'
+      +'<button class="sheet-close" onclick="this.closest(\'.overlay\').remove()">✕</button>'
+      +'<div id="imp-body"></div></div>';
+    document.body.appendChild(ov);
+    ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  }
+  ov.classList.add("open");
+  renderImpactos();
+}
+function impHoriz(n){ IMP_N=n; renderImpactos(); }
+
+/* Série do item, mês a mês, na mesma base do fluxo de caixa consolidado */
+function impSerie(){
+  const hoje=ymNow(), out=[];
+  if(IMP_TIPO==="debt"){
+    const d=(typeof DEBTS!=="undefined"?DEBTS:[]).find(x=>String(x.id)===IMP_ID);
+    if(!d) return null;
+    const sch=fgtsCronograma(d)||debtScheduleFGTS(d,{on:false});
+    if(!sch) return null;
+    for(let k=0;k<IMP_N;k++){
+      const r=sch.rows[k];
+      out.push({ym:ymAdd(hoje,k),
+        juros:r?r.juros:0, amort:r?r.amort:0, encargos:r?(r.encargos||0):0,
+        correcao:r?(r.correcao||0):0, fgts:r?r.fgts:0,
+        saida:r?r.desembolso:0, saldo:r?r.saldo:0});
+    }
+    return {tipo:"debt",obj:d,linhas:out,sch};
+  }
+  if(IMP_TIPO==="asset"){
+    const a=(typeof ASSETS!=="undefined"?ASSETS:[]).find(x=>String(x.id)===IMP_ID);
+    if(!a) return null;
+    const p=astPro(a);
+    let saldo=astValorAtual(a), custo=+p.custo||0;
+    const rate=astLiquidoAM(a)/100, aporte=+p.aporte||0, d0=dias(p.aplic);
+    for(let k=0;k<IMP_N;k++){
+      const ym=ymAdd(hoje,k);
+      const rb=saldo*rate;
+      let aliq=0; try{ aliq=astAliqIR(a,d0+30*k); }catch(e){}
+      if(p.trib==="isento"||p.trib==="fii") aliq=0;
+      const ir=Math.max(0,rb)*aliq/100;
+      saldo=R2(saldo+rb);
+      if(aporte>0){ saldo=R2(saldo+aporte); custo=R2(custo+aporte); }
+      let cc=0;
+      if(p.comeCotas&&FISCAL.comeCotasMeses.indexOf(ymMonth(ym))>=0){
+        const g=Math.max(0,saldo-custo);
+        cc=g*(p.trib==="fundoCP"?FISCAL.irFundoCP:FISCAL.irFundoLP)/100;
+        saldo=R2(saldo-cc); custo=saldo;
+      }
+      out.push({ym,bruto:R2(rb),ir:R2(ir),comeCotas:R2(cc),
+        liquido:R2(rb-ir-cc),aporte:R2(aporte),saldo:R2(saldo),aliq:R2(aliq)});
+    }
+    return {tipo:"asset",obj:a,linhas:out};
+  }
+  if(IMP_TIPO==="income"){
+    const inc=(typeof INCOME!=="undefined"?INCOME:[]).find(x=>String(x.id)===IMP_ID);
+    if(!inc) return null;
+    for(let k=0;k<IMP_N;k++){
+      const ym=ymAdd(hoje,k);
+      const tot=incomeTotalsForYM(ym);
+      const evs=(tot.eventos||[]).filter(e=>e.inc&&String(e.inc.id)===IMP_ID);
+      const z={ym,bruto:0,inss:0,ir:0,ded:0,liquido:0,fgts:0};
+      evs.forEach(e=>{ z.bruto+=e.bruto; z.inss+=e.inss; z.ir+=e.ir;
+        z.ded+=(e.deducoes||0); z.liquido+=e.liquido; z.fgts+=(e.fgts||0); });
+      ["bruto","inss","ir","ded","liquido","fgts"].forEach(c=>z[c]=R2(z[c]));
+      out.push(z);
+    }
+    return {tipo:"income",obj:inc,linhas:out};
+  }
+  if(IMP_TIPO==="expense"){
+    const ex=(typeof EX!=="undefined"?EX:[]).find(x=>String(x.id)===IMP_ID);
+    if(!ex) return null;
+    for(let k=0;k<IMP_N;k++){
+      const ym=ymAdd(hoje,k);
+      const its=getExpensesForYM(ym).filter(e=>String(e._parentId||e.id).split("_r")[0]===IMP_ID);
+      const meu=R2(its.reduce((a,e)=>a+myAmount(e),0));
+      const tot=R2(its.reduce((a,e)=>a+(+e.amount||0),0));
+      out.push({ym,total:tot,meu,terceiros:R2(tot-meu),n:its.length});
+    }
+    return {tipo:"expense",obj:ex,linhas:out};
+  }
+  return null;
+}
+
+function renderImpactos(){
+  const el=$("imp-body"); if(!el) return;
+  ensureStyles(); ensureCfStyles();
+  const S=impSerie();
+  if(!S){ el.innerHTML=H`<div class="pro-note">Item não encontrado.</div>`; return; }
+  const GRN="#5A8A4A", RED="#B85A6A", BLU="#1A3A5C", WIN="#6E2B3A";
+  const V=v=>fmt(v||0);
+  const R=(l,v,c,col)=>`<div class="cfp-row ${c||""}"><span>${l}</span><span style="color:${col||"var(--body)"}">${v}</span></div>`;
+  const hz=n=>`<button type="button" class="${IMP_N===n?"on":""}" onclick="PRO.impHoriz(${n})">${n}m</button>`;
+  const L=S.linhas, soma=c=>R2(L.reduce((a,x)=>a+(x[c]||0),0));
+  const mesLbl=k=>{try{return monthFullLabel(k).slice(0,3)+"/"+k.slice(2,4);}catch(e){return k;}};
+
+  let titulo="", sub="", emoji="📌", fluxo="", patr="", div="", tabela="";
+
+  if(S.tipo==="income"){
+    const T=gIncomeType(S.obj.type||"other_in");
+    emoji=T.emoji; titulo=S.obj.desc||catLabel(T); sub=catLabel(T);
+    fluxo=R("(+) Receita bruta",V(soma("bruto")),"tot",BLU)
+      +(soma("inss")>0?R("(−) INSS","−"+V(soma("inss")),"","#8A857D"):"")
+      +(soma("ded")>0?R("(−) Outras deduções da base","−"+V(soma("ded")),"","#8A857D"):"")
+      +(soma("ir")>0?R("(−) Imposto de renda","−"+V(soma("ir")),"",RED):"")
+      +R("(=) Entrada líquida no caixa",V(soma("liquido")),"grand",GRN);
+    patr=soma("fgts")>0
+      ? R("FGTS depositado (não caixa)","+"+V(soma("fgts")),"sub",GRN)
+      : `<div class="cfp-row sub"><span>Este item não altera o patrimônio diretamente</span><span>—</span></div>`;
+    div=`<div class="cfp-row sub"><span>Nenhum efeito sobre dívidas</span><span>—</span></div>`;
+    tabela=`<tr><th style="text-align:left">Mês</th><th>Bruto</th><th>INSS</th><th>IR</th><th>Líquido</th></tr>`
+      +L.map(x=>`<tr class="lin"><td>${mesLbl(x.ym)}</td><td>${V(x.bruto)}</td>
+        <td style="color:#8A857D">${x.inss>0?V(x.inss):"—"}</td>
+        <td style="color:${RED}">${x.ir>0?V(x.ir):"—"}</td>
+        <td style="color:${GRN};font-weight:600">${V(x.liquido)}</td></tr>`).join("");
+  }
+  else if(S.tipo==="expense"){
+    const c=(typeof gc==="function"?gc(S.obj.category||S.obj.cat):null)||{};
+    emoji=c.emoji||"🧾"; titulo=S.obj.desc||"—";
+    sub=(c.label?catLabel(c):"")+(S.obj.recurrence&&S.obj.recurrence!=="none"?" · recorrente":" · único");
+    fluxo=R("(−) Despesa total do período","−"+V(soma("total")),"",RED)
+      +(soma("terceiros")>0?R("(+) Parte rateada com terceiros","+"+V(soma("terceiros")),"sub","#8A857D"):"")
+      +R("(=) Saída do seu caixa","−"+V(soma("meu")),"grand",RED);
+    patr=`<div class="cfp-row sub"><span>Reduz o caixa disponível para aportes</span><span>−${V(soma("meu"))}</span></div>`;
+    div=`<div class="cfp-row sub"><span>Nenhum efeito sobre dívidas</span><span>—</span></div>`;
+    tabela=`<tr><th style="text-align:left">Mês</th><th>Total</th><th>Terceiros</th><th>Sua parte</th></tr>`
+      +L.map(x=>`<tr class="lin"><td>${mesLbl(x.ym)}</td><td>${x.total>0?V(x.total):"—"}</td>
+        <td style="color:#8A857D">${x.terceiros>0?V(x.terceiros):"—"}</td>
+        <td style="color:${RED};font-weight:600">${x.meu>0?V(x.meu):"—"}</td></tr>`).join("");
+  }
+  else if(S.tipo==="asset"){
+    const cls=(typeof gAssetClass==="function"?gAssetClass(S.obj.class):null)||{};
+    emoji=cls.emoji||"💎"; titulo=S.obj.name||"—";
+    sub=(cls.label?catLabel(cls):"")+" · "+String(R2(astLiquidoAM(S.obj))).replace(".",",")+"% a.m.";
+    const fim=L.length?L[L.length-1].saldo:0, ini=astValorAtual(S.obj);
+    fluxo=R("(+) Receita financeira bruta","+"+V(soma("bruto")),"",GRN)
+      +(soma("ir")>0?R("(−) Provisão de IRRF","−"+V(soma("ir")),"",RED):"")
+      +(soma("comeCotas")>0?R("(−) Come-cotas","−"+V(soma("comeCotas")),"sub",RED):"")
+      +(soma("aporte")>0?R("(−) Aportes programados (saem do caixa)","−"+V(soma("aporte")),"","#8A857D"):"")
+      +R("(=) Rendimento líquido",V(soma("liquido")),"grand",GRN);
+    patr=R("Saldo hoje",V(ini),"","#8A857D")
+      +R("Saldo projetado em "+IMP_N+" meses",V(fim),"tot",BLU)
+      +R("(=) Variação","+"+V(R2(fim-ini)),"sub",GRN);
+    div=`<div class="cfp-row sub"><span>Nenhum efeito sobre dívidas</span><span>—</span></div>`;
+    tabela=`<tr><th style="text-align:left">Mês</th><th>Rend.</th><th>IR</th><th>Aporte</th><th>Saldo</th></tr>`
+      +L.map(x=>`<tr class="lin"><td>${mesLbl(x.ym)}</td>
+        <td style="color:${GRN}">${V(x.bruto)}</td>
+        <td style="color:${RED}">${(x.ir+x.comeCotas)>0?V(x.ir+x.comeCotas):"—"}</td>
+        <td style="color:#8A857D">${x.aporte>0?V(x.aporte):"—"}</td>
+        <td style="font-weight:600">${V(x.saldo)}</td></tr>`).join("");
+  }
+  else{
+    const dt=gDebtType(S.obj.type); emoji=dt.emoji; titulo=S.obj.name||"—";
+    sub=catLabel(dt)+(S.obj.indexador?" · "+debtIndexLbl(S.obj):"");
+    const fim=L.length?L[L.length-1].saldo:0, ini=debtBalance(S.obj);
+    fluxo=R("(−) Juros do período","−"+V(soma("juros")),"",RED)
+      +R("(−) Amortização","−"+V(soma("amort")),"","#8A857D")
+      +(soma("encargos")>0?R("(−) Seguros e taxa de administração","−"+V(soma("encargos")),"",RED):"")
+      +(soma("fgts")>0?R("(+) Coberto pelo FGTS","+"+V(soma("fgts")),"",GRN):"")
+      +R("(=) Saída do seu caixa","−"+V(soma("saida")),"grand",RED);
+    patr=soma("fgts")>0
+      ? R("FGTS consumido do patrimônio","−"+V(soma("fgts")),"sub","#8A857D")
+      : `<div class="cfp-row sub"><span>Este item não altera o patrimônio</span><span>—</span></div>`;
+    div=R("Saldo devedor hoje",V(ini),"","#8A857D")
+      +(soma("correcao")>0?R("(+) Correção pelo indexador","+"+V(soma("correcao")),"",RED):"")
+      +R("(−) Amortizado no período","−"+V(soma("amort")),"","#8A857D")
+      +R("(=) Saldo projetado em "+IMP_N+" meses",V(fim),"grand",WIN)
+      +R("Quitação estimada",S.sch.meses+" meses","sub","#8A857D");
+    tabela=`<tr><th style="text-align:left">Mês</th><th>Juros</th><th>Amort.</th><th>FGTS</th><th>Você paga</th><th>Saldo</th></tr>`
+      +L.map(x=>`<tr class="lin"><td>${mesLbl(x.ym)}</td>
+        <td style="color:${RED}">${V(x.juros)}</td>
+        <td style="color:#8A857D">${V(x.amort)}</td>
+        <td style="color:${GRN}">${x.fgts>0?V(x.fgts):"—"}</td>
+        <td style="color:${WIN};font-weight:600">${V(x.saida)}</td>
+        <td style="color:#8A857D">${V(x.saldo)}</td></tr>`).join("");
+  }
+
+  el.innerHTML=H`
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px">
+      <div style="width:42px;height:42px;border-radius:12px;background:rgba(26,58,92,.09);display:flex;align-items:center;justify-content:center;font-size:20px">${emoji}</div>
+      <div style="min-width:0"><div style="font-family:var(--serif);font-size:19px;color:var(--body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${raw(titulo)}</div>
+      <div style="font-size:11px;color:#6B6760">${raw(sub)}</div></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px">
+      <span style="font-size:10.5px;color:#8A857D">Horizonte da projeção</span>
+      <div class="pro-scale">${hz(6)}${hz(12)}${hz(24)}${hz(60)}</div>
+    </div>
+
+    <div class="sec-label">Impacto no fluxo de caixa</div>
+    <div class="cfp-card">${fluxo}</div>
+
+    <div class="sec-label">Impacto no patrimônio</div>
+    <div class="cfp-card">${patr}</div>
+
+    <div class="sec-label">Impacto nas dívidas</div>
+    <div class="cfp-card">${div}</div>
+
+    <div class="sec-label">Projeção mês a mês</div>
+    <div class="cfp-card" style="padding:4px 12px 10px">
+      <table><thead>${tabela.split("</tr>")[0]}</tr></thead>
+      <tbody>${tabela.split("</tr>").slice(1).join("</tr>")}</tbody></table>
+    </div>
+    <div style="font-size:10px;color:#8A857D;line-height:1.55;padding-bottom:6px">
+      Os números vêm da mesma projeção do painel de fluxo de caixa: recorrências se repetem, variáveis entram pela média dos últimos três meses, dívidas seguem o cronograma com indexador e FGTS, e as aplicações rendem pelo indexador de cada uma.
+    </div>`;
+}
+
 /* API pública usada pelos onclick inline */
 window.PRO={
   setIncRegime,toggle13,toggleFer,astPreview,setAstIdx,setAstTrib,setAstLiq,toggleCC,
@@ -16565,7 +16862,8 @@ window.PRO={
   fgtsSaldoPatrimonio,fgtsFonte,getFgtsTmp:()=>FGTS_TMP,maskDec,valDec,setDec,incTouched,
   cashflowForYM,sugestaoPoupanca,renderCashFlow,
   renderCfPainel,cfSetEscala,cfNav,cfHoje,cfToggle,cfFoco,cfSetAno,
-  cfMes,cfSerie,cfConsolida,cfDias,
+  cfMes,cfSerie,cfConsolida,cfDias,cfPosicaoYM,cfLimparCache,
+  openImpactos,impHoriz,impSerie,
 
   openRendimento,renderRendimentos,setRendHoriz,exportRendimento,
   aplicarProduto,sincronizarFgtsPatrimonio,PRODUTOS,
