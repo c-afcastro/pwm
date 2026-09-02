@@ -1656,6 +1656,9 @@
           style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#A8A49B;font-size:16px;cursor:pointer">×</button>
       </div>
       <div style="display:flex;gap:5px;margin-bottom:8px">
+        <select id="ast-inst-filter" class="sel-sm" onchange="renderAssets()" style="flex:2;min-width:0;background:rgba(15,36,64,.08);border:1px solid rgba(15,36,64,.2);color:var(--body);border-radius:10px;padding:5px 8px;font-size:11px;cursor:pointer">
+          <option value="all">🏛️ Instituição</option>
+        </select>
         <select id="ast-class-filter" class="sel-sm" onchange="renderAssetList()" style="flex:2;min-width:0;background:rgba(15,36,64,.08);border:1px solid rgba(15,36,64,.2);color:var(--body);border-radius:10px;padding:5px 8px;font-size:11px;cursor:pointer">
           <option value="all">🏦 Classe</option>
         </select>
@@ -1772,6 +1775,9 @@
           style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#A8A49B;font-size:16px;cursor:pointer">×</button>
       </div>
       <div style="display:flex;gap:5px;margin-bottom:8px">
+        <select id="debt-inst-filter" class="sel-sm" onchange="renderDebts()" style="flex:2;min-width:0;background:rgba(110,43,58,.08);border:1px solid rgba(110,43,58,.2);color:var(--body);border-radius:10px;padding:5px 8px;font-size:11px;cursor:pointer">
+          <option value="all">🏛️ Instituição</option>
+        </select>
         <select id="debt-type-filter" class="sel-sm" onchange="renderDebtList()" style="flex:2;min-width:0;background:rgba(110,43,58,.08);border:1px solid rgba(110,43,58,.2);color:var(--body);border-radius:10px;padding:5px 8px;font-size:11px;cursor:pointer">
           <option value="all" data-i18n="all_types">Todos</option>
         </select>
@@ -1836,6 +1842,30 @@
 </div><!-- end screen-vidafinanceira -->
 
 <!-- retorno ao início ao alcance do polegar (telas internas) -->
+<!-- Principais instituições do país, como sugestão. O campo aceita
+     qualquer texto: a lista só poupa digitação. -->
+<datalist id="lista-instituicoes">
+  <option value="Banco do Brasil"></option><option value="Caixa Econômica Federal"></option>
+  <option value="Itaú Unibanco"></option><option value="Bradesco"></option>
+  <option value="Santander"></option><option value="Nubank"></option>
+  <option value="Banco Inter"></option><option value="BTG Pactual"></option>
+  <option value="XP Investimentos"></option><option value="Rico"></option>
+  <option value="Clear"></option><option value="Banco Safra"></option>
+  <option value="Sicoob"></option><option value="Sicredi"></option>
+  <option value="Banrisul"></option><option value="Banco Original"></option>
+  <option value="C6 Bank"></option><option value="PicPay"></option>
+  <option value="Mercado Pago"></option><option value="PagBank"></option>
+  <option value="Neon"></option><option value="Will Bank"></option>
+  <option value="Banco Pan"></option><option value="BV"></option>
+  <option value="Banco Votorantim"></option><option value="Modalmais"></option>
+  <option value="Genial Investimentos"></option><option value="Avenue"></option>
+  <option value="Nomad"></option><option value="Warren"></option>
+  <option value="Órama"></option><option value="Easynvest"></option>
+  <option value="Tesouro Direto"></option><option value="Banco Daycoval"></option>
+  <option value="Banco ABC Brasil"></option><option value="Banco Master"></option>
+  <option value="Sofisa Direto"></option><option value="Banco Agibank"></option>
+  <option value="Banco BMG"></option><option value="Banco Digio"></option>
+</datalist>
 <button class="fab-home" id="fab-home" onclick="fabAcao()" aria-label="Início" title="Início">⌂</button>
 
 <!-- diálogo de confirmação: precisa viver fora das telas,
@@ -2145,6 +2175,9 @@
 
     <label class="f-label" data-i18n="name_institution">Nome / Instituição</label>
     <input id="ast-name" class="f-input" placeholder="Ex: CDB Banco X, HGLG11, Tesouro IPCA…" data-i18n="ast_name_ph"/>
+
+    <label class="f-label" data-i18n="institution">Instituição financeira</label>
+    <input id="ast-inst" class="f-input" list="lista-instituicoes" placeholder="Ex: Itaú, Nubank, XP…" data-i18n="inst_ph"/>
 
     <label class="f-label" data-i18n="balance_position">Saldo / Posição atual</label>
     <input id="ast-balance" class="f-amount" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this)"/>
@@ -6954,14 +6987,16 @@ function initAstHeroScroll(){
 /* ── RENDER ASSETS (main, called on section enter) ── */
 function renderAssets(){
   updateMonthNavAst();
-  const total=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
-  const monthYield=ASSETS.reduce((s,a)=>s+((astValorAtual(a))*(parseFloat(a.yieldPct)||0)/100),0);
+  popularFiltroInst("ast-inst-filter",ASSETS);
+  const FA=assetsFiltrados();
+  const total=FA.reduce((s,a)=>s+(astValorAtual(a)),0);
+  const monthYield=FA.reduce((s,a)=>s+((astValorAtual(a))*(parseFloat(a.yieldPct)||0)/100),0);
   const heroEl=document.getElementById("assets-hero");
   if(heroEl) heroEl.innerHTML=`
         <div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,38px);line-height:1;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" data-total="${fmt(total)}">${fmt(total)}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">📈 ${t("monthly_yield")} ${fmt(monthYield)}</div>
-      <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">${ASSETS.length} ${t("w_holdings")}</div>
+      <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">${FA.length} ${t("w_holdings")}</div>
     </div>`;
   if(AST_V==="dashboard") renderAssetsDash();
   if(AST_V==="list") renderAssetList();
@@ -7032,7 +7067,7 @@ function populateAstClassFilter(){
 }
 
 function renderAssetList(){
-  let items=[...ASSETS];
+  let items=[...assetsFiltrados()];
   const q=(document.getElementById("ast-list-search")?.value||"").toLowerCase().trim();
   const classF=document.getElementById("ast-class-filter")?.value||"all";
   const sortV=document.getElementById("ast-sort")?.value||"bal-desc";
@@ -7299,6 +7334,7 @@ function openAsset(){
   document.getElementById("ast-save").textContent=t("add");
   document.getElementById("ast-destroy").style.display="none";
   document.getElementById("ast-name").value="";
+  document.getElementById("ast-inst").value="";
   setCurrencyInput(document.getElementById("ast-balance"),"");
   document.getElementById("ast-yield").value="";
   document.getElementById("ast-date").value=today();
@@ -7314,6 +7350,7 @@ function openAssetEdit(id){
   document.getElementById("ast-save").textContent=t("save");
   document.getElementById("ast-destroy").style.display="block";
   document.getElementById("ast-name").value=a.name||"";
+  document.getElementById("ast-inst").value=a.instituicao||"";
   setCurrencyInput(document.getElementById("ast-balance"),a.balance);
   document.getElementById("ast-yield").value=a.yieldPct||"";
   document.getElementById("ast-date").value=a.lastUpdate||today();
@@ -7327,12 +7364,13 @@ function saveAsset(){
   const balance=unmaskCurrency(document.getElementById("ast-balance"))||0;
   const yieldPct=parseFloat(document.getElementById("ast-yield").value)||0;
   const lastUpdate=document.getElementById("ast-date").value||today();
+  const instituicao=document.getElementById("ast-inst").value.trim();
 
   if(AST_EID){
     const idx=ASSETS.findIndex(x=>x.id===AST_EID);
-    if(idx>=0) ASSETS[idx]={...ASSETS[idx],class:AST_CLASS,name,balance,yieldPct,lastUpdate};
+    if(idx>=0) ASSETS[idx]={...ASSETS[idx],class:AST_CLASS,name,instituicao,balance,yieldPct,lastUpdate};
   } else {
-    ASSETS.push({id:Date.now(),class:AST_CLASS,name,balance,yieldPct,lastUpdate});
+    ASSETS.push({id:Date.now(),class:AST_CLASS,name,instituicao,balance,yieldPct,lastUpdate});
   }
   persist();
   document.getElementById("modal-asset").classList.remove("open");
@@ -10344,6 +10382,31 @@ const totalMonthly=ymStr=>totalMonthlyEfetivo(ymStr);
 /* Seguros e taxa de administração: entram no boleto, mas não amortizam a
    dívida nem entram na base coberta pelo FGTS. */
 const R2c=v=>Math.round((v||0)*100)/100;
+/* Filtro por instituição: vale para a lista e para os totais, para que o
+   número do topo sempre corresponda ao que está sendo exibido. */
+function instFiltroAtivo(id){
+  const el=document.getElementById(id);
+  const v=el?el.value:"all";
+  return (!v||v==="all")?null:v;
+}
+function instDe(x){ return (x&&(x.instituicao||x.creditor||""))||""; }
+function popularFiltroInst(id,lista){
+  const sel=document.getElementById(id); if(!sel) return;
+  const atual=sel.value;
+  const nomes=[...new Set(lista.map(instDe).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  sel.innerHTML='<option value="all">🏛️ '+t("institution")+'</option>'
+    +nomes.map(n=>'<option value="'+n.replace(/"/g,"&quot;")+'">'+n+"</option>").join("");
+  if(nomes.indexOf(atual)>=0) sel.value=atual;
+}
+function assetsFiltrados(){
+  const f=instFiltroAtivo("ast-inst-filter");
+  return f?ASSETS.filter(a=>instDe(a)===f):ASSETS;
+}
+function debtsFiltrados(){
+  const f=instFiltroAtivo("debt-inst-filter");
+  return f?DEBTS.filter(d=>instDe(d)===f):DEBTS;
+}
+
 function debtEncargos(d){
   return R2c((parseFloat(d&&d.seguro)||0)+(parseFloat(d&&d.taxaAdm)||0));
 }
@@ -10407,11 +10470,13 @@ function showDebt(v){
 
 function renderDebts(){
   // hero
-  const total=totalDebt();
+  popularFiltroInst("debt-inst-filter",DEBTS);
+  const FD=debtsFiltrados();
+  const total=FD.reduce((x,d)=>x+debtBalance(d),0);
   const heroEl=document.getElementById("debt-hero");
-  const monthly=totalMonthlyEfetivo(todayYM());
-  const fgtsMes=totalFgtsMes(todayYM());
-  const activeCount=DEBTS.length;
+  const monthly=FD.reduce((x,d)=>x+debtPagamentoMes(d,todayYM()).pago,0);
+  const fgtsMes=FD.reduce((x,d)=>x+debtPagamentoMes(d,todayYM()).fgts,0);
+  const activeCount=FD.length;
   if(heroEl) heroEl.innerHTML=`
     <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:6px">${t("total_owed")}</div>
     <div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,38px);line-height:1;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fmt(total)}</div>
@@ -10438,9 +10503,10 @@ function renderDebts(){
 }
 
 function renderDebtDash(){
-  const total=totalDebt();
-  const monthly=totalMonthlyEfetivo(todayYM());
-  const fgtsMes=totalFgtsMes(todayYM());
+  const FD=debtsFiltrados();
+  const total=FD.reduce((x,d)=>x+debtBalance(d),0);
+  const monthly=FD.reduce((x,d)=>x+debtPagamentoMes(d,todayYM()).pago,0);
+  const fgtsMes=FD.reduce((x,d)=>x+debtPagamentoMes(d,todayYM()).fgts,0);
   const monthlyInt=totalMonthlyInterest();
   const origTotal=DEBTS.reduce((s,d)=>s+debtOriginal(d),0);
   // paid off = original − current balance (across debts that have an original value)
@@ -10547,8 +10613,10 @@ function renderDebtList(){
   const q=(document.getElementById("debt-list-search")?.value||"").toLowerCase();
   const tf=document.getElementById("debt-type-filter")?.value||"all";
   const sort=document.getElementById("debt-sort")?.value||"bal-desc";
+  const instF=instFiltroAtivo("debt-inst-filter");
   let list=DEBTS.filter(d=>{
     if(tf!=="all"&&d.type!==tf) return false;
+    if(instF&&instDe(d)!==instF) return false;
     if(q&&!(`${d.name} ${d.creditor||""}`.toLowerCase().includes(q))) return false;
     return true;
   });
@@ -16346,6 +16414,10 @@ function cfMes(ym,k,st){
      Patrimônio: saldo dos ativos evoluídos pelo indexador de cada um. */
   let saldoDivida=0;
   (typeof DEBTS!=="undefined"?DEBTS:[]).forEach(d=>{
+    /* No mês corrente e nos passados vale o saldo devedor de hoje: a linha
+       do cronograma traz o saldo já DEPOIS da parcela do mês, que ainda não
+       foi paga. Só a partir do mês seguinte a projeção assume. */
+    if(k<=0){ saldoDivida+=debtBalance(d); return; }
     const sch=cfDebtSch(d);
     const row=sch&&sch.rows?sch.rows[idx-1]:null;
     if(row) saldoDivida+=row.saldo;
