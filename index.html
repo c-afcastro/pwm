@@ -99,6 +99,16 @@
     .screen.slide-back {
       animation: screenSlideBack .3s cubic-bezier(.22,.9,.32,1) forwards;
     }
+    /* Ir para uma seção empurra a tela atual para a esquerda; voltar a
+       devolve para a direita. Antes as duas saíam para o mesmo lado, e o
+       gesto de voltar era indistinguível do de avançar. */
+    @keyframes screenSlideOutBack {
+      from { opacity: 1; transform: translateX(0); }
+      to   { opacity: 0; transform: translateX(24px); }
+    }
+    .screen.slide-out-back {
+      animation: screenSlideOutBack .3s cubic-bezier(.22,.9,.32,1) forwards;
+    }
     input, select, button { font-family: var(--sans); outline: none; color: inherit; }
     input[type="text"], input[type="number"], input[type="date"], input[type="month"], select {
       color: var(--body);
@@ -556,6 +566,48 @@
     }
     .overlay.open .sheet { transform: translateY(0); }
     .sheet-handle { width: 36px; height: 4px; background: var(--line); border-radius: 2px; margin: 10px auto clamp(12px, 2dvh, 20px); }
+
+    /* ── ENTRADA E SAÍDA DE OVERLAYS ──
+       Vários overlays nascem já com a classe .open, e nesse caso a
+       transição de CSS não tem estado inicial para partir: a folha
+       simplesmente aparecia. Uma animação com fill "backwards" resolve —
+       ela roda na inserção do elemento, seja ele estático ou criado na
+       hora, e não deixa estado preso no fim, para que a saída volte a ser
+       feita pela transição. */
+    @keyframes ovFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes sheetRise {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+    @keyframes dialogPop {
+      from { opacity: 0; transform: scale(.94); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .overlay.open { animation: ovFadeIn .22s ease backwards; }
+    .overlay.open > .sheet { animation: sheetRise .34s cubic-bezier(.22,.9,.32,1) backwards; }
+    /* Confirmações e avisos são caixas centradas, sem a classe .sheet:
+       para elas subir do rodapé seria errado — crescem no lugar. */
+    .overlay.open > *:not(.sheet) { animation: dialogPop .24s cubic-bezier(.22,.9,.32,1) backwards; }
+    .overlay.closing { opacity: 0 !important; pointer-events: none; }
+    .overlay.closing > *:not(.sheet) {
+      opacity: 0; transform: scale(.96);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+
+    /* ── FEEDBACK DE TOQUE ──
+       O botão afunda um fio ao ser pressionado. Sem isso, num toque que
+       abre uma folha com meio segundo de animação, a tela parece não ter
+       registrado o toque. Despesas fica de fora, por acordo. */
+    :is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,
+        #screen-vidafinanceira,.overlay) button:active:not(:disabled),
+    .pro-pill:active, .liq-card:active {
+      transform: scale(.977);
+    }
+    :is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,
+        #screen-vidafinanceira,.overlay) button,
+    .pro-pill, .liq-card {
+      -webkit-tap-highlight-color: transparent;
+    }
     .sheet-title { font-family: var(--serif); font-size: clamp(18px, 3dvh, 24px); font-style: italic; margin-bottom: clamp(12px, 2dvh, 20px); }
     .sheet-close { float: right; background: none; border: none; color: #7A766D; font-size: 18px; cursor: pointer; margin-top: -2px; }
     .exp-block-title { font-size: 12px; font-weight: 700; color: var(--body); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px; }
@@ -633,11 +685,12 @@
       background: var(--body); color: var(--bg);
       padding: 10px 18px; border-radius: 20px;
       font-size: 12px; font-weight: 500;
-      transition: transform .3s ease; z-index: 999;
+      opacity: 0;
+      transition: transform .3s cubic-bezier(.22,.9,.32,1), opacity .22s ease; z-index: 999;
       white-space: nowrap;
       box-shadow: 0 4px 20px rgba(0,0,0,.15);
     }
-    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
     /* ── GOALS INFO ── */
     .info-card {
@@ -1107,7 +1160,7 @@
 
     <!-- versão, canto superior esquerdo -->
     <div style="position:absolute;top:18px;left:18px;font-size:10px;letter-spacing:1.2px;
-                font-weight:600;color:rgba(255,255,255,.45)">v10.03</div>
+                font-weight:600;color:rgba(255,255,255,.45)">v10.04</div>
 
     <!-- language switch top-right -->
     <div style="position:absolute;top:18px;right:18px;display:flex;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:2px">
@@ -1225,7 +1278,7 @@
     <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:20px">
 
       <!-- DESPESAS -->
-      <button onclick="enterSection('despesas')" style="width:100%;text-align:left;cursor:pointer;background:var(--green);border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s;display:flex;align-items:center;gap:14px">
+      <button onclick="enterSection('despesas')" style="width:100%;text-align:left;cursor:pointer;background:var(--green);border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px">
         <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">💸</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px" data-i18n="nav_expenses">Despesas</div>
@@ -1239,7 +1292,7 @@
       </button>
 
       <!-- DÍVIDAS -->
-      <button onclick="enterSection('dividas')" style="width:100%;text-align:left;cursor:pointer;background:#6E2B3A;border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden">
+      <button onclick="enterSection('dividas')" style="width:100%;text-align:left;cursor:pointer;background:#6E2B3A;border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px;position:relative;overflow:hidden">
         <div style="position:absolute;top:-25px;right:-25px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
         <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;position:relative">🏦</div>
         <div style="flex:1;min-width:0;position:relative">
@@ -1254,7 +1307,7 @@
       </button>
 
       <!-- RECEITAS -->
-      <button onclick="enterSection('entradas')" style="width:100%;text-align:left;cursor:pointer;background:#1A3A5C;border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s;display:flex;align-items:center;gap:14px">
+      <button onclick="enterSection('entradas')" style="width:100%;text-align:left;cursor:pointer;background:#1A3A5C;border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px">
         <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">💰</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px" data-i18n="nav_income">Entradas</div>
@@ -1268,7 +1321,7 @@
       </button>
 
       <!-- PATRIMÔNIO -->
-      <button onclick="enterSection('patrimonio')" style="width:100%;text-align:left;cursor:pointer;background:#0F2440;border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s;display:flex;align-items:center;gap:14px">
+      <button onclick="enterSection('patrimonio')" style="width:100%;text-align:left;cursor:pointer;background:#0F2440;border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px">
         <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📊</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px" data-i18n="nav_assets">Patrimônio</div>
@@ -5080,7 +5133,7 @@ function confirmAuthLogout(){
     </div>
   </div>`;
   document.body.appendChild(ov);
-  const close=()=>ov.remove();
+  const close=()=>closeOverlay(ov);
   ov.querySelector("#auth-lock-cancel").onclick=close;
   ov.onclick=e=>{ if(e.target===ov) close(); };
   ov.querySelector("#auth-lock-confirm").onclick=()=>{ close(); authLogout(); };
@@ -5307,6 +5360,31 @@ const TM=()=>getExpensesForYM(activeYM());
 const TMexp=()=>TM().filter(e=>!isNeutral(e));
 
 let TT;
+/* Fecha um overlay deixando a animação de saída acontecer. Antes o
+   elemento era removido do DOM no mesmo quadro do clique: a folha sumia
+   em vez de descer, e o contraste com a entrada suave era o que dava a
+   sensação de app inacabado. Aceita o próprio overlay, um id ou qualquer
+   elemento dentro dele. */
+function closeOverlay(ref){
+  let ov=null;
+  if(typeof ref==="string") ov=document.getElementById(ref);
+  else if(ref&&ref.classList&&ref.classList.contains("overlay")) ov=ref;
+  else if(ref&&ref.closest) ov=ref.closest(".overlay");
+  if(!ov||ov.dataset.fechando==="1") return;
+  ov.dataset.fechando="1";
+  ov.classList.remove("open");
+  ov.classList.add("closing");
+  const folha=ov.querySelector(".sheet");
+  let feito=false;
+  const fim=()=>{
+    if(feito) return; feito=true;
+    if(ov.parentNode) ov.remove();
+  };
+  if(folha) folha.addEventListener("transitionend",fim,{once:true});
+  setTimeout(fim,420);
+}
+window.closeOverlay=closeOverlay;
+
 function toast(msg){
   const t=document.getElementById("toast");
   t.textContent=msg;t.classList.add("show");
@@ -5401,24 +5479,31 @@ function shiftMonth(delta){
     else{renderDash();if(V==="list"){renderFilters();renderList();}if(V==="goals")renderGoals();}
   };
 
-  if(content){
-    content.style.transition="opacity .14s ease, transform .14s ease";
-    content.style.opacity="0";
-    content.style.transform=`translateX(${dir*20}px)`;
-    setTimeout(()=>{
-      doUpdate();
-      content.style.transition="none";
-      content.style.transform=`translateX(${-dir*20}px)`;
-      requestAnimationFrame(()=>requestAnimationFrame(()=>{
-        content.style.transition="opacity .18s ease, transform .18s ease";
-        content.style.opacity="1";
-        content.style.transform="translateX(0)";
-      }));
-    },140);
-  } else {
-    doUpdate();
-  }
+  deslizarConteudo(content,delta,doUpdate);
 }
+
+/* O mês antigo sai pelo lado para onde se navegou e o novo entra pelo lado
+   oposto. Sem esse par, trocar de mês é um piscar de números e o usuário
+   perde a noção de direção. Estava só em três telas; agora é uma função,
+   e qualquer navegação temporal pode chamar. */
+function deslizarConteudo(el,delta,atualizar){
+  if(!el){ atualizar(); return; }
+  const dir=delta>0?1:-1;
+  el.style.transition="opacity .14s ease, transform .14s ease";
+  el.style.opacity="0";
+  el.style.transform=`translateX(${dir*20}px)`;
+  setTimeout(()=>{
+    atualizar();
+    el.style.transition="none";
+    el.style.transform=`translateX(${-dir*20}px)`;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      el.style.transition="opacity .18s ease, transform .18s ease";
+      el.style.opacity="1";
+      el.style.transform="translateX(0)";
+    }));
+  },140);
+}
+window.deslizarConteudo=deslizarConteudo;
 
 function goToday(){
   const n=new Date();activeYear=n.getFullYear();activeMonth=n.getMonth();
@@ -7017,8 +7102,10 @@ function shiftMonthAst(delta){
   activeMonthAst+=delta;
   if(activeMonthAst>11){activeMonthAst=0;activeYearAst++;}
   if(activeMonthAst<0){activeMonthAst=11;activeYearAst--;}
-  updateMonthNavAst();
-  renderAssetsHistory();
+  deslizarConteudo(document.querySelector("#screen-patrimonio .content"),delta,()=>{
+    updateMonthNavAst();
+    renderAssetsHistory();
+  });
 }
 
 /* ── ASSET TAB NAVIGATION ── */
@@ -7500,7 +7587,7 @@ function showScreen(name){
     const el=document.getElementById("screen-"+s);
     if(!el) return;
     el.style.display="";
-    el.classList.remove("active","slide-in","slide-out","slide-back");
+    el.classList.remove("active","slide-in","slide-out","slide-out-back","slide-back");
     if(s===name){
       el.classList.add("active");
     }
@@ -7544,9 +7631,9 @@ function goHome(){
 
   // slide current out to the right, home slides back in from left
   if(home){ home.style.display=""; home.classList.add("active","slide-back"); }
-  if(currentEl) currentEl.classList.add("slide-out");
+  if(currentEl) currentEl.classList.add("slide-out-back");
   setTimeout(()=>{
-    if(currentEl){ currentEl.classList.remove("active","slide-out"); }
+    if(currentEl){ currentEl.classList.remove("active","slide-out-back"); }
     if(home) home.classList.remove("slide-back");
   },300);
 
@@ -8101,7 +8188,7 @@ function confirmRestore(obj){
       '<button id="restore-confirm" style="flex:2;padding:12px;border-radius:12px;border:none;background:#B85A3C;color:#fff;font-size:13px;font-weight:600;cursor:pointer">'+t("restore_confirm_btn")+'</button>'+
     '</div></div>';
   document.body.appendChild(ov);
-  const close=()=>ov.remove();
+  const close=()=>closeOverlay(ov);
   ov.querySelector("#restore-cancel").onclick=close;
   ov.onclick=e=>{ if(e.target===ov) close(); };
   ov.querySelector("#restore-confirm").onclick=()=>{ close(); doRestore(obj); };
@@ -8132,7 +8219,7 @@ function openBackupSheet(){
   ov.className="overlay open"; ov.style.zIndex="200";
   ov.innerHTML='<div class="sheet">'+
     '<div class="sheet-handle"></div>'+
-    '<button class="sheet-close" onclick="this.closest(\'.overlay\').remove()">✕</button>'+
+    '<button class="sheet-close" onclick="closeOverlay(this)">✕</button>'+
     '<div style="font-family:var(--serif);font-size:20px;color:var(--body);margin-bottom:4px">'+t("backup_title")+'</div>'+
     '<div id="backup-last" style="font-size:11px;color:#9A958C;margin-bottom:16px"></div>'+
     '<div class="exp-block-desc" style="margin-bottom:14px;line-height:1.55">'+t("backup_intro")+'</div>'+
@@ -8141,7 +8228,7 @@ function openBackupSheet(){
     '<div style="background:rgba(46,90,62,.07);border-radius:12px;padding:12px 14px;font-size:11.5px;color:#3A5A44;line-height:1.6">💡 '+t("backup_pwa_tip")+'</div>'+
     '</div>';
   document.body.appendChild(ov);
-  ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+  ov.onclick=e=>{ if(e.target===ov) closeOverlay(ov); };
   refreshBackupStatus();
 }
 
@@ -8150,15 +8237,15 @@ function openIRPFReport(){
   const ov=document.createElement("div");
   ov.className="overlay open"; ov.style.zIndex="200";
   ov.innerHTML='<div class="sheet"><div class="sheet-handle"></div>'+
-    '<button class="sheet-close" onclick="this.closest(\'.overlay\').remove()">✕</button>'+
+    '<button class="sheet-close" onclick="closeOverlay(this)">✕</button>'+
     '<div style="font-family:var(--serif);font-size:20px;color:var(--body);margin-bottom:4px">'+t("irpf_title")+'</div>'+
     '<div style="font-size:12px;color:#6B6760;margin-bottom:16px;line-height:1.5">'+t("irpf_desc")+'</div>'+
     '<label class="f-label">'+t("irpf_year")+'</label>'+
     '<select id="irpf-year-sel" class="f-input" style="margin-bottom:8px">'+years.map(y=>'<option value="'+y+'">'+y+'</option>').join("")+'</select>'+
     '<div style="font-size:11px;color:#9A958C;line-height:1.5;margin-bottom:16px">'+t("irpf_note")+'</div>'+
-    '<button onclick="generateIRPFReport(document.getElementById(\'irpf-year-sel\').value);this.closest(\'.overlay\').remove()" style="width:100%;background:#2E5A3E;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:600;cursor:pointer">📄 '+t("irpf_generate")+'</button></div>';
+    '<button onclick="generateIRPFReport(document.getElementById(\'irpf-year-sel\').value);closeOverlay(this)" style="width:100%;background:#2E5A3E;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:600;cursor:pointer">📄 '+t("irpf_generate")+'</button></div>';
   document.body.appendChild(ov);
-  ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+  ov.onclick=e=>{ if(e.target===ov) closeOverlay(ov); };
 }
 function generateIRPFReport(year){
   const fmtBR=v=>new Intl.NumberFormat("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}).format(v||0);
@@ -11207,7 +11294,7 @@ function promptCsvName(defaultName, csv){
     </div>
   </div>`;
   document.body.appendChild(ov);
-  const close=()=>ov.remove();
+  const close=()=>closeOverlay(ov);
   // sanitize invalid filename characters as the user types (done in JS, not inline HTML)
   const nameInput=ov.querySelector("#csv-name-input");
   nameInput.addEventListener("input",function(){
@@ -11280,7 +11367,7 @@ function showCsvFallback(csv,blob,filename){
     <textarea id="csv-fb-text" readonly style="width:100%;height:160px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:11px;font-family:monospace;color:var(--body);box-sizing:border-box;resize:none">${csv.replace(/</g,"&lt;")}</textarea>
   </div>`;
   document.body.appendChild(ov);
-  const close=()=>{ ov.remove(); setTimeout(()=>URL.revokeObjectURL(url),500); };
+  const close=()=>{ closeOverlay(ov); setTimeout(()=>URL.revokeObjectURL(url),500); };
   ov.querySelector("#csv-fb-close").onclick=close;
   ov.onclick=e=>{ if(e.target===ov) close(); };
   ov.querySelector("#csv-fb-copy").onclick=()=>{
@@ -11316,7 +11403,7 @@ function applySimAmortization(){
     </div>
   </div>`;
   document.body.appendChild(ov);
-  const close=()=>ov.remove();
+  const close=()=>closeOverlay(ov);
   ov.querySelector("#amort-cancel").onclick=close;
   ov.onclick=e=>{ if(e.target===ov) close(); };
   ov.querySelector("#amort-confirm").onclick=()=>{
@@ -12222,9 +12309,9 @@ function importViaDownloadSheet(downloadUrl,filename){
         <label style="display:block;padding:12px;border-radius:12px;background:var(--green);color:#fff;font-size:13px;font-weight:600;cursor:pointer;text-align:center;position:relative">
           📂 ${t("select_downloaded")}
           <input type="file" accept=".csv,.xlsx,.xls" style="position:absolute;inset:0;opacity:0;cursor:pointer"
-            onchange="(async()=>{const f=this.files[0];if(!f)return;this.closest('.overlay').remove();switchImpTab('local');toast(t('toast_reading_file'));await processImportFile(f);})()"/>
+            onchange="(async()=>{const f=this.files[0];if(!f)return;closeOverlay(this);switchImpTab('local');toast(t('toast_reading_file'));await processImportFile(f);})()"/>
         </label>
-        <button onclick="this.closest('.overlay').remove()"
+        <button onclick="closeOverlay(this)"
           style="padding:10px;border-radius:12px;border:1.5px solid var(--line);background:none;color:#6B6760;font-size:12px;cursor:pointer">
           ${t("cancel")}
         </button>
@@ -13797,9 +13884,11 @@ function fatorIndice(idx,ini,fim,transf){
        feriados. É essa fração que faz o saldo bater com o extrato. A
        poupança segue proporcional a dias corridos, pois credita por
        aniversário mensal. */
-    const idxN=astIdxNorm(p.idx);
+    /* Aqui o índice é o próprio parâmetro da função — não há produto no
+       escopo. A referência a "p.idx", herdada de serieFatores por cópia,
+       fazia esta função lançar em toda chamada. */
     let parte;
-    if(idxN!=="poupanca"){
+    if(idx!=="poupanca"){
       const duMes=diasUteis(ini1,prox);
       parte=duMes>0?Math.max(0,diasUteis(de,ate))/duMes:0;
     }else{
@@ -15841,7 +15930,7 @@ function openFiscal(){
   ov.className="overlay open";ov.style.zIndex="220";ov.style.alignItems="flex-end";
   ov.innerHTML=H`<div class="sheet" style="max-height:92dvh">
     <div class="sheet-handle"></div>
-    <button class="sheet-close" onclick="this.closest('.overlay').remove()">✕</button>
+    <button class="sheet-close" onclick="closeOverlay(this)">✕</button>
     <div style="font-family:var(--serif);font-size:20px;color:var(--body);margin-bottom:4px">Parâmetros fiscais</div>
     <div style="font-size:11.5px;color:#6B6760;margin-bottom:16px;line-height:1.5">As tabelas mudam a cada ano. Ajuste aqui quando a Receita publicar novos valores — todo o app recalcula na hora.</div>
 
@@ -15910,7 +15999,7 @@ function openFiscal(){
     <button class="pro-btn-lg" onclick="PRO.resetFiscal(this)" style="background:none;color:#6B6760;border:1.5px solid var(--line);cursor:pointer;margin-top:8px">Restaurar valores padrão</button>
   </div>`;
   document.body.appendChild(ov);
-  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.onclick=e=>{if(e.target===ov)closeOverlay(ov);};
   const upd=()=>{ov.querySelector("#fi-chip-isen").innerHTML=TR(chip(FISCAL.isencaoNova.on,FISCAL.isencaoNova.on?"Ativa":"Desligada","PRO.toggleIsen(this)"));};
   window.__proUpdIsen=upd; upd();
 }
@@ -15928,12 +16017,12 @@ function saveFiscalForm(btn){
   FISCAL.isencaoNova.limite=g("fi-lim");FISCAL.isencaoNova.fim=g("fi-fim");
   FISCAL.irFundoLP=g("fi-flp");FISCAL.irFundoCP=g("fi-fcp");FISCAL.irAcoes=g("fi-ac");FISCAL.irCripto=g("fi-cr");
   saveFiscal();
-  btn.closest(".overlay").remove();
+  closeOverlay(btn);
   toast(TR("✓ Parâmetros salvos"));refreshPro();
 }
 function resetFiscal(btn){
   FISCAL=JSON.parse(JSON.stringify(FISCAL_DEF));saveFiscal();
-  btn.closest(".overlay").remove();toast(TR("✓ Tabelas restauradas"));refreshPro();openFiscal();
+  closeOverlay(btn);toast(TR("✓ Tabelas restauradas"));refreshPro();openFiscal();
 }
 
 /* ═══ 11. RESGATE — simulador por aplicação ═══ */
@@ -15944,7 +16033,7 @@ function openResgate(id){
   ov.className="overlay open";ov.style.zIndex="210";ov.style.alignItems="flex-end";
   ov.innerHTML=H`<div class="sheet">
     <div class="sheet-handle"></div>
-    <button class="sheet-close" onclick="this.closest('.overlay').remove()">✕</button>
+    <button class="sheet-close" onclick="closeOverlay(this)">✕</button>
     <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px">
       <div style="width:42px;height:42px;border-radius:12px;background:${c.color}18;display:flex;align-items:center;justify-content:center;font-size:20px">${c.emoji}</div>
       <div><div style="font-family:var(--serif);font-size:19px;color:var(--body)">${a.name}</div>
@@ -15958,7 +16047,7 @@ function openResgate(id){
     <div id="res-out"></div>
   </div>`;
   document.body.appendChild(ov);
-  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.onclick=e=>{if(e.target===ov)closeOverlay(ov);};
   setCurrencyInput($("res-val"),saldo);calcResgate(id);
 }
 function setResgatePct(id,p){
@@ -16186,11 +16275,11 @@ function openRendimento(id){
   ov.id="modal-rend";
   ov.innerHTML=H`<div class="sheet">
     <div class="sheet-handle"></div>
-    <button class="sheet-close" onclick="this.closest('.overlay').remove()">✕</button>
+    <button class="sheet-close" onclick="closeOverlay(this)">✕</button>
     <div id="rend-body"></div>
   </div>`;
   document.body.appendChild(ov);
-  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.onclick=e=>{if(e.target===ov)closeOverlay(ov);};
   renderRendimento();
 }
 function renderRendimento(){
@@ -16383,11 +16472,11 @@ function openFgts(id){
   ov.id="modal-fgts";
   ov.innerHTML=H`<div class="sheet">
     <div class="sheet-handle"></div>
-    <button class="sheet-close" onclick="this.closest('.overlay').remove()">✕</button>
+    <button class="sheet-close" onclick="closeOverlay(this)">✕</button>
     <div id="fgts-body"></div>
   </div>`;
   document.body.appendChild(ov);
-  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.onclick=e=>{if(e.target===ov)closeOverlay(ov);};
   renderFgts();
 }
 
@@ -17243,13 +17332,21 @@ function cfDias(ym){
 }
 
 /* ── Interface do painel ─────────────────────────────────────────── */
-function cfSetEscala(e){ CFP.escala=e; renderCfPainel(); }
-function cfNav(n){
-  if(CFP.escala==="ano"){ CFP.ano=(CFP.ano||new Date().getFullYear())+n; }
-  else { CFP.ym=ymAdd(CFP.ym||ymNow(),n); }
-  renderCfPainel();
+function cfEntra(){
+  const el=$("cfp-body"); if(!el) return;
+  el.classList.remove("tab-enter"); void el.offsetWidth; el.classList.add("tab-enter");
 }
-function cfHoje(){ CFP.ym=ymNow(); CFP.ano=new Date().getFullYear(); renderCfPainel(); }
+function cfSetEscala(e){ CFP.escala=e; renderCfPainel(); cfEntra(); }
+function cfNav(n){
+  const el=$("cfp-body");
+  const avanca=()=>{
+    if(CFP.escala==="ano"){ CFP.ano=(CFP.ano||new Date().getFullYear())+n; }
+    else { CFP.ym=ymAdd(CFP.ym||ymNow(),n); }
+    renderCfPainel();
+  };
+  if(el&&window.deslizarConteudo) deslizarConteudo(el,n,avanca); else avanca();
+}
+function cfHoje(){ CFP.ym=ymNow(); CFP.ano=new Date().getFullYear(); renderCfPainel(); cfEntra(); }
 function cfToggle(id){ CFP.aberto[id]=!CFP.aberto[id]; renderCfPainel(); }
 function cfFoco(ym){ CFP.ym=ym; CFP.escala="mes"; renderCfPainel(); }
 
@@ -17653,7 +17750,11 @@ function astLiqSerie(lista,meses){
 }
 
 let LIQ_H=12, LIQ_ABERTO={};
-function liqSetH(n){ LIQ_H=n; renderAstLiquidez(); }
+function liqSetH(n){
+  LIQ_H=n; renderAstLiquidez();
+  const el=$("liq-ladder");
+  if(el){ el.classList.remove("tab-enter"); void el.offsetWidth; el.classList.add("tab-enter"); }
+}
 function liqToggle(id){ LIQ_ABERTO[id]=!LIQ_ABERTO[id]; renderAstLiquidez(); }
 
 function renderAstLiquidez(){
@@ -17806,10 +17907,10 @@ function openParams(){
     ov.className="overlay"; ov.id="modal-params";
     ov.style.cssText="align-items:flex-end;z-index:235";
     ov.innerHTML='<div class="sheet" style="max-height:92dvh"><div class="sheet-handle"></div>'
-      +'<button class="sheet-close" onclick="this.closest(\'.overlay\').remove()">✕</button>'
+      +'<button class="sheet-close" onclick="closeOverlay(this)">✕</button>'
       +'<div id="par-body"></div></div>';
     document.body.appendChild(ov);
-    ov.onclick=e=>{if(e.target===ov)ov.remove();};
+    ov.onclick=e=>{if(e.target===ov)closeOverlay(ov);};
   }
   ov.classList.add("open");
   renderParams();
@@ -17892,7 +17993,12 @@ function parMarcarAno(el){ el.dataset.dirty="1"; }
 
 function parSelIdx(id){ parLerCurva(); PAR_IDX_SEL=id; renderParams(); }
 function parSetVista(v){ parLerCurva(); PAR_VISTA=v; renderParams(); }
-function parSetAba(v){ if(PAR_ABA==="macro") parLerCurva(); else parLerFiscal(); PAR_ABA=v; renderParams(); }
+function parSetAba(v){
+  if(PAR_ABA==="macro") parLerCurva(); else parLerFiscal();
+  PAR_ABA=v; renderParams();
+  const el=$("par-body");
+  if(el){ el.classList.remove("tab-enter"); void el.offsetWidth; el.classList.add("tab-enter"); }
+}
 function parSalvar(){
   if(PAR_ABA==="macro") parLerCurva(); else parLerFiscal();
   saveParams(); saveFiscal();
@@ -18329,7 +18435,7 @@ function renderParams(){
         <div style="font-size:10.5px;color:#8A857D;margin-top:3px;line-height:1.4">${PL("p_sub")}</div>
       </div>
       <div style="margin-left:auto;font-size:10px;letter-spacing:.4px;
-        color:#A8A49B;font-weight:700;flex-shrink:0">v10.03</div>
+        color:#A8A49B;font-weight:700;flex-shrink:0">v10.04</div>
     </div>
 
     <div class="pro-scale" style="margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch">
@@ -18496,10 +18602,10 @@ function openImpactos(tipo,id){
     ov.className="overlay"; ov.id="modal-impactos";
     ov.style.cssText="align-items:flex-end;z-index:230";
     ov.innerHTML='<div class="sheet" style="max-height:92dvh"><div class="sheet-handle"></div>'
-      +'<button class="sheet-close" onclick="this.closest(\'.overlay\').remove()">✕</button>'
+      +'<button class="sheet-close" onclick="closeOverlay(this)">✕</button>'
       +'<div id="imp-body"></div></div>';
     document.body.appendChild(ov);
-    ov.onclick=e=>{if(e.target===ov)ov.remove();};
+    ov.onclick=e=>{if(e.target===ov)closeOverlay(ov);};
   }
   ov.classList.add("open");
   renderImpactos();
@@ -18809,7 +18915,7 @@ window.PRO={
   toggleFgts,toggleSplit,setIncScale,setFinScale,toggleFinDetail,syncFab,
   fgtsSaldoPatrimonio,fgtsFonte,getFgtsTmp:()=>FGTS_TMP,maskDec,valDec,setDec,incTouched,
   cashflowForYM,sugestaoPoupanca,renderCashFlow,
-  renderCfPainel,cfSetEscala,cfNav,cfHoje,cfToggle,cfFoco,cfSetAno,
+  renderCfPainel,cfSetEscala,cfNav,cfHoje,cfToggle,cfFoco,cfSetAno,cfEntra,
   cfMes,cfSerie,cfConsolida,cfDias,cfPosicaoYM,cfLimparCache,
   openImpactos,impHoriz,impSerie,
   renderAstLiquidez,astLiquidezProjetada,astEscadaLiquidez,LIQ_FAIXAS,
