@@ -17921,6 +17921,137 @@ input[type=month]::-webkit-datetime-edit-fields-wrapper{ padding:0; }
   font-size:9.5px!important; letter-spacing:-.1px!important;
   word-break:normal!important; overflow-wrap:break-word!important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   REFINAMENTO — acabamento no espírito das diretrizes da Apple
+   Nada de cor nova nem de layout novo: só o acabamento que separa uma
+   interface funcional de uma interface confortável. Clareza (hierarquia
+   tipográfica e numerais tabulares), deferência (fios finos no lugar de
+   bordas grossas, superfícies neutras) e profundidade (curvas de animação
+   e estados de toque que respondem ao dedo).
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Curva de animação padrão ──
+   A curva do iOS: arranca rápido e assenta devagar. Uma só, em tudo. */
+:root{
+  --ease-ios: cubic-bezier(.32,.72,0,1);
+  --dur-fast: .18s;
+  --dur-base: .32s;
+}
+.overlay, .sheet, .screen, .modal { transition-timing-function: var(--ease-ios)!important; }
+button, .cat-btn, .pro-pill, .rate-type-btn, .nav-btn, .stat, .fg-card{
+  transition: background-color var(--dur-fast) var(--ease-ios),
+              border-color var(--dur-fast) var(--ease-ios),
+              transform .1s var(--ease-ios),
+              opacity var(--dur-fast) var(--ease-ios);
+}
+
+/* ── 2. Estado de toque ──
+   Todo alvo tocável responde: encolhe de leve e volta. É o retorno que
+   avisa o dedo de que o toque foi registrado. */
+button:active, [onclick]:active, .cat-btn:active, .pro-pill:active,
+.rate-type-btn:active, .stat:active{ transform: scale(.975); }
+button, [onclick]{ -webkit-tap-highlight-color: transparent; }
+
+/* ── 3. Alvo de toque mínimo ──
+   Botões pequenos mantêm o tamanho visual, mas ganham área de toque de
+   44px por fora. Ninguém erra o alvo por causa da estética. */
+.month-nav-inline .month-nav-btn,
+#hero-splits-chip,
+.sheet-close{ position:relative; }
+.month-nav-inline .month-nav-btn::after,
+#hero-splits-chip::after,
+.sheet-close::after{
+  content:""; position:absolute; top:50%; left:50%;
+  width:44px; height:44px; transform:translate(-50%,-50%);
+}
+
+/* Botões pequenos identificados na auditoria: idioma, moeda, ações de
+   linha, seletores compactos e as pílulas de revisão. Todos passam a ter
+   44px de área de toque sem mudar de tamanho na tela. */
+[data-lang], .cur-btn, .sel-sm, .review-qbtn, .pro-pill,
+.month-today-btn, .exp-row button, #assets-list button,
+#screen-entradas .inc-row button, #debt-list button,
+.pd-row button, .sheet-close{ position:relative; }
+[data-lang]::after, .cur-btn::after, .review-qbtn::after,
+.month-today-btn::after, .exp-row button::after, #assets-list button::after,
+#screen-entradas .inc-row button::after, #debt-list button::after,
+.pd-row button::after{
+  content:""; position:absolute; top:50%; left:50%;
+  min-width:44px; min-height:44px; width:100%; height:100%;
+  transform:translate(-50%,-50%);
+}
+
+/* ── 4. Fios de cabelo ──
+   Separadores de 1px viram meio pixel em telas retina, como no iOS. */
+@media (min-resolution:2dppx){
+  .cfp-row.tot, .cfp-row.grand, tr.lin, .exp-row, .pd-row{
+    border-top-width:.5px!important;
+  }
+  .cfp-card, .fg-card, .stat{ border-width:.5px; }
+}
+
+/* ── 5. Numerais tabulares e ajuste ótico ──
+   Números alinham em coluna e não dançam ao trocar de valor. Os grandes
+   ganham tracking negativo, que é o que dá o ar de acabamento. */
+.hero-value, .stat-val, .mini-val,
+[class*="-val"], td, .cfp-row > span:last-child{
+  font-variant-numeric: tabular-nums;
+  font-feature-settings:"tnum" 1;
+}
+.hero-value{ letter-spacing:-.015em; }
+
+/* ── 6. Rótulos de seção ──
+   Caixa alta espaçada é o padrão do app; aqui ela ganha peso e cor
+   consistentes em todas as telas. */
+.sec-label, .cfp-h, .pro-cfh{
+  font-weight:700!important;
+  color:#A8A49B!important;
+  letter-spacing:1.4px!important;
+}
+
+/* ── 7. Linhas de lista ──
+   Altura confortável e a seta de revelação sempre no mesmo lugar. */
+.exp-row, .pd-row, .cfp-row.clic{ min-height:34px; }
+.cfp-row.clic > span:last-child{ display:inline-flex; align-items:center; gap:4px; }
+
+/* ── 8. Folhas modais ──
+   Curva maior no topo, alça discreta e desfoque atrás, como as sheets
+   nativas. O conteúdo rola com inércia. */
+.sheet{
+  border-radius:22px 22px 0 0!important;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.sheet-handle{
+  width:36px!important; height:5px!important;
+  border-radius:3px!important; opacity:.28;
+}
+.overlay{ backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); }
+
+/* ── 9. Rolagem ──
+   Inércia em tudo e sem “vazar” o scroll para a tela de trás. */
+.content, .sheet, .cfp-scroll{
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
+}
+
+/* ── 10. Foco visível sem anel duro ──
+   Quem navega por teclado enxerga; quem toca não vê contorno azul. */
+:focus{ outline:none; }
+:focus-visible{
+  outline:2px solid rgba(26,58,92,.5); outline-offset:2px; border-radius:8px;
+}
+
+/* ── 11. Movimento reduzido ──
+   Quem pede menos animação no sistema recebe menos animação aqui. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:.01ms!important; animation-iteration-count:1!important;
+    transition-duration:.01ms!important; scroll-behavior:auto!important;
+  }
+}
+
 </style>
 </body>
 </html>
