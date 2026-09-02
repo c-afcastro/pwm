@@ -1160,7 +1160,7 @@
 
     <!-- versão, canto superior esquerdo -->
     <div style="position:absolute;top:18px;left:18px;font-size:10px;letter-spacing:1.2px;
-                font-weight:600;color:rgba(255,255,255,.45)">v10.07</div>
+                font-weight:600;color:rgba(255,255,255,.45)">v10.08</div>
 
     <!-- language switch top-right -->
     <div style="position:absolute;top:18px;right:18px;display:flex;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:2px">
@@ -5265,7 +5265,7 @@ const AST_VAL_CACHE={};
 function astValorAtual(a){
   const base=parseFloat(a&&a.balance)||0;
   if(!a||!(base>0)) return base;
-  const hoje=new Date().toISOString().split("T")[0];
+  const hoje=today();
   const d0=String((a.lastUpdate||(a.pro&&a.pro.aplic)||"")).slice(0,10);
   if(!d0||d0>=hoje) return base;
   /* as taxas de mercado chegam depois do primeiro render: sem elas na
@@ -5390,7 +5390,46 @@ function unmaskDecimal(el){
   const n=parseFloat((el.value||"").replace(",","."));
   return isNaN(n)?0:n;
 }
-const today=()=>new Date().toISOString().split("T")[0];
+/* ── DIAGNÓSTICO ──────────────────────────────────────────────────────
+   Um erro de JavaScript no celular é invisível: a tela simplesmente para de
+   responder e não há console à mão. Todo erro passa a ser gravado com hora
+   e origem, e pode ser lido e copiado dentro do próprio app, no rodapé da
+   ficha de Parâmetros. Sem isto, "não funciona no Safari" é indepurável. */
+const DIAG_KEY="gastos_v2_diag";
+let DIAG=(()=>{try{return JSON.parse(localStorage.getItem(DIAG_KEY)||"[]");}catch(e){return[];}})();
+function logErro(origem,err){
+  try{
+    const d=new Date();
+    const hh=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")+":"+String(d.getSeconds()).padStart(2,"0");
+    DIAG.unshift({t:hh,o:String(origem||""),
+      m:String((err&&err.message)||err||"").slice(0,220),
+      s:String((err&&err.stack)||"").slice(0,320)});
+    DIAG=DIAG.slice(0,40);
+    try{ localStorage.setItem(DIAG_KEY,JSON.stringify(DIAG)); }catch(x){}
+  }catch(x){}
+  try{ console.error("["+origem+"]",err); }catch(x){}
+}
+function diagLimpar(){ DIAG=[]; try{ localStorage.removeItem(DIAG_KEY); }catch(e){} }
+/* Cada etapa de uma atualização roda isolada: uma tela auxiliar que falhe
+   não pode impedir a tela principal de se redesenhar. Era assim que um erro
+   em updateHero() deixava a inicial congelada no mês anterior. */
+function passoSeguro(nome,fn){ try{ fn(); }catch(err){ logErro(nome,err); } }
+function diagTexto(){
+  const ua=(navigator&&navigator.userAgent)||"";
+  return "v10.08 · "+ua+"\n"+DIAG.map(e=>e.t+" ["+e.o+"] "+e.m).join("\n");
+}
+window.addEventListener("error",ev=>{ logErro("window",(ev&&ev.error)||(ev&&ev.message)); });
+window.addEventListener("unhandledrejection",ev=>{ logErro("promise",ev&&ev.reason); });
+window.logErro=logErro; window.diagLimpar=diagLimpar; window.diagTexto=diagTexto;
+window.diagLista=()=>DIAG;
+
+/* HORA LOCAL, não UTC. toISOString() devolve a data em UTC: no Brasil, das
+   21h à meia-noite o app achava que já era o dia seguinte — e, na virada do
+   mês, que já era o mês seguinte. Como ymNow() sempre usou hora local, as
+   duas referências discordavam por um mês inteiro e o motor de projeção
+   passava a tratar o mês corrente como passado. */
+const today=()=>{const d=new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
 const gc=id=>CATS.find(c=>c.id===id)||CATS[6];
 const ym=d=>d?d.slice(0,7):"";
 const cym=()=>today().slice(0,7);
@@ -5517,11 +5556,15 @@ function shiftMonth(delta){
     : null;
 
   const doUpdate=()=>{
-    expandHero();
-    updateHeader();updateMonthNav();updateHero();
-    if(SCREEN==="home"){renderHome();}
-    else if(SCREEN==="entradas"){updateMonthNavInc();renderIncome();}
-    else{renderDash();if(V==="list"){renderFilters();renderList();}if(V==="goals")renderGoals();}
+    passoSeguro("expandHero",expandHero);
+    passoSeguro("updateHeader",updateHeader);
+    passoSeguro("updateMonthNav",updateMonthNav);
+    passoSeguro("updateHero",updateHero);
+    if(SCREEN==="home"){ passoSeguro("renderHome",renderHome); }
+    else if(SCREEN==="entradas"){ passoSeguro("updateMonthNavInc",updateMonthNavInc); passoSeguro("renderIncome",renderIncome); }
+    else{ passoSeguro("renderDash",renderDash);
+      if(V==="list"){ passoSeguro("renderFilters",renderFilters); passoSeguro("renderList",renderList); }
+      if(V==="goals") passoSeguro("renderGoals",renderGoals); }
   };
 
   deslizarConteudo(content,delta,doUpdate);
@@ -5571,11 +5614,15 @@ function goToday(){
     : null;
 
   const doUpdate=()=>{
-    expandHero();
-    updateHeader();updateMonthNav();updateHero();
-    if(SCREEN==="home") renderHome();
-    else if(SCREEN==="entradas"){updateMonthNavInc();renderIncome();}
-    else{renderDash();if(V==="list"){renderFilters();renderList();}if(V==="goals")renderGoals();}
+    passoSeguro("expandHero",expandHero);
+    passoSeguro("updateHeader",updateHeader);
+    passoSeguro("updateMonthNav",updateMonthNav);
+    passoSeguro("updateHero",updateHero);
+    if(SCREEN==="home"){ passoSeguro("renderHome",renderHome); }
+    else if(SCREEN==="entradas"){ passoSeguro("updateMonthNavInc",updateMonthNavInc); passoSeguro("renderIncome",renderIncome); }
+    else{ passoSeguro("renderDash",renderDash);
+      if(V==="list"){ passoSeguro("renderFilters",renderFilters); passoSeguro("renderList",renderList); }
+      if(V==="goals") passoSeguro("renderGoals",renderGoals); }
   };
 
   if(content){
@@ -7746,6 +7793,38 @@ function updateMonthNavInc(){
   setMonthDelta("month-delta-inc",monthIncTotal(ymS),monthIncTotal(prevYMStr(ymS)),false);
 }
 
+/* ── PATRIMÔNIO E RENDIMENTO DE UM MÊS QUALQUER ───────────────────────
+   Caminho independente do motor de fluxo de caixa. O cartão de Patrimônio
+   da tela inicial PRECISA acompanhar o mês navegado; se o motor falhar ou
+   demorar, o app não pode cair de volta no saldo de hoje e fingir que a
+   projeção não existe. Aqui cada aplicação é corrigida da data de hoje até
+   o fim do mês pedido, pela mesma curva declarada nos Parâmetros. */
+function homeFimDoMes(ymStr){
+  const [y,m]=String(ymStr||"").split("-").map(Number);
+  if(!y||!m) return today();
+  return ymStr+"-"+String(new Date(y,m,0).getDate()).padStart(2,"0");
+}
+function homePatrimonioYM(ymStr){
+  const hj=today(), fim=homeFimDoMes(ymStr);
+  let tot=0, rend=0;
+  ASSETS.forEach(a=>{
+    let v=0;
+    try{ v=astValorAtual(a); }catch(e){ v=parseFloat(a&&a.balance)||0; }
+    if(fim>hj){
+      try{
+        if(window.PRO&&PRO.fatorProduto){
+          const r=PRO.fatorProduto(a,hj,fim);
+          if(r&&isFinite(r.fator)&&r.fator>0) v=v*r.fator;
+        }
+      }catch(e){}
+    }
+    let tx=parseFloat(a.yieldPct)||0;
+    try{ if(window.PRO&&PRO.astLiquidoAM) tx=PRO.astLiquidoAM(a,ymStr); }catch(e){}
+    tot+=v; rend+=v*tx/100;
+  });
+  return {total:Math.round(tot*100)/100, rend:Math.round(rend*100)/100};
+}
+
 /* ── HOME RENDER ── */
 function renderHome(){
   const ymStr=activeYM();
@@ -7766,14 +7845,23 @@ function renderHome(){
   /* Posição do mês navegado, pela mesma projeção do fluxo de caixa: dívida
      amortizada e corrigida, patrimônio rendendo com o indexador de cada
      aplicação, variáveis pela média dos últimos três meses. */
-  const POS=(window.PRO&&PRO.cfPosicaoYM)?PRO.cfPosicaoYM(ymStr):null;
+  let POS=null;
+  try{ if(window.PRO&&PRO.cfPosicaoYM) POS=PRO.cfPosicaoYM(ymStr); }
+  catch(err){ POS=null; logErro("cfPosicaoYM "+ymStr,err); }
   const futuro=ymStr>cym();
-  const totalExp=POS?POS.despesas:expItems.reduce((s,e)=>s+myAmount(e),0);
+  const totalExp=(POS&&isFinite(POS.despesas))?POS.despesas:expItems.reduce((s,e)=>s+myAmount(e),0);
   const totalInc=incItems.reduce((s,i)=>s+i.amount,0);
   const balance=totalInc-totalExp;
-  const totalAssets=POS?POS.patrimonio:ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
-  const monthYield=POS?POS.aplic.bruto
-    :ASSETS.reduce((s,a)=>s+((astValorAtual(a))*(parseFloat(a.yieldPct)||0)/100),0);
+  /* O motor de fluxo é a fonte preferida; o caminho direto é a rede de
+     segurança. O cartão de Patrimônio não pode voltar a exibir o saldo de
+     HOJE num mês futuro só porque o motor tropeçou — era esse o sintoma de
+     "navego para meses posteriores e nada muda". */
+  let PAT={total:0,rend:0};
+  try{ PAT=homePatrimonioYM(ymStr); }catch(err){ logErro("homePatrimonioYM",err); }
+  const posOk=!!(POS&&isFinite(POS.patrimonio)&&(POS.patrimonio>0||!ASSETS.length));
+  const totalAssets=posOk?POS.patrimonio:PAT.total;
+  const monthYield=(POS&&POS.aplic&&isFinite(POS.aplic.bruto)&&POS.aplic.bruto>0)
+    ?POS.aplic.bruto:PAT.rend;
 
   // home summary cards
   const fixedExp=POS?R2c(POS.despItens.filter(x=>x.fixa).reduce((s,x)=>s+x.valor,0))
@@ -7833,18 +7921,21 @@ function computeFinMetrics(){
      Parâmetros. Antes esta função lia o saldo de HOJE, e o cartão de saúde
      ficava parado enquanto os quatro cartões ao lado já mostravam o mês
      projetado — duas metades da mesma tela contando histórias diferentes. */
-  const POS=(window.PRO&&PRO.cfPosicaoYM)?PRO.cfPosicaoYM(ymStr):null;
-  const totalExp=POS?POS.despesas
+  let POS=null;
+  try{ if(window.PRO&&PRO.cfPosicaoYM) POS=PRO.cfPosicaoYM(ymStr); }
+  catch(err){ POS=null; logErro("cfPosicaoYM/fin "+ymStr,err); }
+  const totalExp=(POS&&isFinite(POS.despesas))?POS.despesas
     :getExpensesForYM(ymStr).filter(e=>!isNeutral(e)).reduce((s,e)=>s+myAmount(e),0);
   const totalInc=incomeForYM(ymStr).reduce((s,i)=>s+i.amount,0);
   const ativosHoje=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
   const dividaHoje=totalDebt();
-  const totalAssets=POS?POS.patrimonio:ativosHoje;
-  const monthYield=POS?POS.aplic.bruto:ASSETS.reduce((s,a)=>{
-    let tx=parseFloat(a.yieldPct)||0;
-    try{ if(window.PRO&&PRO.astLiquidoAM) tx=PRO.astLiquidoAM(a); }catch(e){}
-    return s+((astValorAtual(a))*tx/100);},0);
-  const totDebt=POS?POS.dividaSaldo:dividaHoje;
+  let PATf={total:ativosHoje,rend:0};
+  try{ PATf=homePatrimonioYM(ymStr); }catch(err){ logErro("homePatrimonioYM/fin",err); }
+  const posOkF=!!(POS&&isFinite(POS.patrimonio)&&(POS.patrimonio>0||!ASSETS.length));
+  const totalAssets=posOkF?POS.patrimonio:PATf.total;
+  const monthYield=(POS&&POS.aplic&&isFinite(POS.aplic.bruto)&&POS.aplic.bruto>0)
+    ?POS.aplic.bruto:PATf.rend;
+  const totDebt=(POS&&isFinite(POS.dividaSaldo)&&POS.dividaSaldo>=0)?POS.dividaSaldo:dividaHoje;
   const futuroFM=ymStr>cym();
   const totMonthly=(futuroFM&&POS&&POS.divida&&POS.divida.parcela>0)
     ?POS.divida.parcela:totalMonthly(ymStr);
@@ -13286,6 +13377,14 @@ const PDIC={
   p_leg_inherit:["herda a anterior","inherits the previous","übernimmt den vorigen"],
   p_leg_real:["fechado pelo BCB","closed by the central bank","von der Zentralbank"],
   p_leg_deriv:["derivada da Selic","derived from Selic","aus Selic abgeleitet"],
+  p_diag:["Diagnóstico","Diagnostics","Diagnose"],
+  p_diag_ok:["sem erros registrados","no errors recorded","keine Fehler erfasst"],
+  p_diag_n:["erro(s)","error(s)","Fehler"],
+  p_diag_copy:["Copiar registro","Copy log","Protokoll kopieren"],
+  p_diag_clear:["Limpar registro","Clear log","Protokoll leeren"],
+  p_live:["A curva vale assim que é digitada; Salvar apenas confirma.",
+    "The curve applies as you type; Save only confirms.",
+    "Die Kurve gilt sofort beim Tippen; Speichern bestätigt nur."],
   p_spread:["Spread Selic−CDI","Selic−CDI spread","Selic−CDI-Spread"],
   p_note_link:["CDI, TR e poupança saem da Selic do mesmo mês: o CDI pelo spread ao lado, a TR e a poupança pela regra do Banco Central. Digitar um número em qualquer um deles desliga a derivação daquele mês em diante.",
     "CDI, TR and savings come from the same month's Selic: CDI through the spread beside it, TR and savings through the central bank rule. Typing a number into any of them switches the derivation off from that month on.",
@@ -18529,10 +18628,50 @@ function parLerCurva(){
    aparecer no ato: redesenhar a folha inteira roubaria o foco de quem está
    preenchendo, então só os marcadores, os placeholders e os acumulados são
    reescritos no lugar. */
+let PAR_SAVE_T=null;
 function parCurvaMudou(){
-  parLerCurva();
-  parAtualizarLinhas();
+  try{ parLerCurva(); parAtualizarLinhas(); }
+  catch(err){ try{ logErro("parCurvaMudou",err); }catch(e){} }
+  /* A curva passa a valer assim que é digitada. Antes, "impactar a
+     projeção" dependia de lembrar de tocar em Salvar — e de o navegador
+     disparar o evento change, que no Safari do iPhone nem sempre chega
+     antes de a folha ser fechada. Grava com folga de 700 ms para não
+     limpar os caches a cada tecla. */
+  if(PAR_SAVE_T) clearTimeout(PAR_SAVE_T);
+  PAR_SAVE_T=setTimeout(()=>{
+    PAR_SAVE_T=null;
+    try{ saveParams(); refreshPro(); }
+    catch(err){ try{ logErro("parCurvaMudou/salvar",err); }catch(e){} }
+  },700);
 }
+/* Mudar o horizonte muda o tamanho da grade: aí é preciso redesenhar */
+function parHorizMudou(){
+  try{ parLerCurva(); }catch(err){ try{ logErro("parHorizMudou",err); }catch(e){} }
+  renderParams();
+  if(PAR_SAVE_T) clearTimeout(PAR_SAVE_T);
+  PAR_SAVE_T=setTimeout(()=>{ PAR_SAVE_T=null;
+    try{ saveParams(); refreshPro(); }catch(err){} },400);
+}
+/* ── registro de diagnóstico, legível dentro do app ── */
+function diagCopiar(){
+  const txt=(window.diagTexto?window.diagTexto():"");
+  const ok=()=>toast("✓ "+PX("p_diag_copy"));
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(ok,()=>diagFallback(txt)); return; }
+  }catch(e){}
+  diagFallback(txt);
+}
+function diagFallback(txt){
+  try{
+    const ta=document.createElement("textarea");
+    ta.value=txt; ta.style.cssText="position:fixed;left:8px;right:8px;bottom:8px;height:120px;z-index:400;font-size:11px";
+    document.body.appendChild(ta); ta.focus(); ta.setSelectionRange(0,txt.length);
+    document.execCommand&&document.execCommand("copy");
+    setTimeout(()=>{ try{ ta.remove(); }catch(e){} },60);
+    toast("✓ "+PX("p_diag_copy"));
+  }catch(e){}
+}
+function diagZerar(){ try{ window.diagLimpar&&window.diagLimpar(); }catch(e){} renderParams(); }
 function parAtualizarLinhas(){
   const el=$("par-body"); if(!el) return;
   const c=PARAMS.curva[PAR_IDX_SEL]||{};
@@ -18760,7 +18899,8 @@ function renderParams(){
         <span class="par-per" style="color:${real?"#A8A49B":"var(--body)"}">
           <i class="par-mk"></i>${cfMesLabel(ym).slice(0,3)}/${ym.slice(2,4)}</span>
         <div class="par-inp"><input type="text" inputmode="decimal" data-ym="${ym}" value="${v}"
-          placeholder="${estTxt}" oninput="PRO.parMask(this)" onchange="PRO.parCurvaMudou()"
+          placeholder="${estTxt}" oninput="PRO.parMask(this);PRO.parCurvaMudou()"
+          onchange="PRO.parCurvaMudou()" onblur="PRO.parCurvaMudou()"
           ${real?'title="'+PX("p_realized")+'"':""}/><span class="par-un">${meta.unid}</span></div>
       </div>`);
     }
@@ -18787,7 +18927,8 @@ function renderParams(){
         <span class="par-per" style="color:${real===12?"#A8A49B":"var(--body)"};font-weight:700">${y}</span>
         <div class="par-inp"${real===12?' style="background:rgba(0,0,0,.03)"':""}>
           <input type="text" inputmode="decimal" data-yr="${y}"
-            oninput="PRO.parMask(this);PRO.parMarcarAno(this)" onchange="PRO.parCurvaMudou()"
+            oninput="PRO.parMask(this);PRO.parMarcarAno(this);PRO.parCurvaMudou()"
+            onchange="PRO.parCurvaMudou()" onblur="PRO.parCurvaMudou()"
             value="${uni!==null?String(uni).replace(".",","):""}" placeholder="${String(ref).replace(".",",")}"
             ${real===12?"disabled":""}/><span class="par-un">${meta.unid}</span></div>
       </div>`;
@@ -18842,17 +18983,18 @@ function renderParams(){
     <div class="pro-grid" style="margin-bottom:12px">
       <div class="pro-f"><label>${PL("p_long")}</label>
         <div class="par-inp"><input id="par-longo" type="text" inputmode="decimal" placeholder="—"
-          oninput="PRO.parMask(this)"
+          oninput="PRO.parMask(this);PRO.parCurvaMudou()" onblur="PRO.parCurvaMudou()"
           value="${PARAMS.longo[PAR_IDX_SEL]!==null&&PARAMS.longo[PAR_IDX_SEL]!==undefined?String(PARAMS.longo[PAR_IDX_SEL]).replace(".",","):""}"/><span class="par-un">${meta.unid}</span></div></div>
       <div class="pro-f"><label>${PL("p_horizon_s")}</label>
-        <div class="par-inp"><input id="par-horiz" type="text" inputmode="numeric" value="${n}"/><span class="par-un">${PX("p_months").toLowerCase()}</span></div></div>
+        <div class="par-inp"><input id="par-horiz" type="text" inputmode="numeric" value="${n}"
+          onchange="PRO.parHorizMudou()" onblur="PRO.parHorizMudou()"/><span class="par-un">${PX("p_months").toLowerCase()}</span></div></div>
     </div>
 
     ${(PAR_IDX_SEL==="selic"||PARAM_DERIVADOS.indexOf(PAR_IDX_SEL)>=0)?`
     <div class="pro-grid" style="margin-bottom:6px">
       <div class="pro-f"><label>${PL("p_spread")}</label>
         <div class="par-inp"><input id="par-spread" type="text" inputmode="decimal"
-          oninput="PRO.parMask(this)" onchange="PRO.parCurvaMudou()"
+          oninput="PRO.parMask(this);PRO.parCurvaMudou()" onblur="PRO.parCurvaMudou()"
           value="${String(paramSpread()).replace(".",",")}"/><span class="par-un">p.p.</span></div></div>
       <div></div>
     </div>
@@ -19060,7 +19202,7 @@ function renderParams(){
         <div style="font-size:10.5px;color:#8A857D;margin-top:3px;line-height:1.4">${PL("p_sub")}</div>
       </div>
       <div style="margin-left:auto;font-size:10px;letter-spacing:.4px;
-        color:#A8A49B;font-weight:700;flex-shrink:0">v10.07</div>
+        color:#A8A49B;font-weight:700;flex-shrink:0">v10.08</div>
     </div>
 
     <div class="pro-scale" style="margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch">
@@ -19069,8 +19211,26 @@ function renderParams(){
 
     ${corpo}
 
+    ${(()=>{ const L=(window.diagLista?window.diagLista():[])||[];
+      return `<div style="margin-top:20px;border-top:1px solid var(--line);padding-top:12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:#8A857D;font-weight:700">${PL("p_diag")}</span>
+          <span style="margin-left:auto;font-size:10px;font-weight:700;color:${L.length?"#B85A6A":"#8A857D"}">${
+            L.length?(L.length+" "+PX("p_diag_n")):PX("p_diag_ok")}</span>
+        </div>
+        ${L.length?`<div style="max-height:130px;overflow-y:auto;background:var(--surface);border-radius:12px;
+            padding:9px 11px;margin-top:8px;font-size:10px;line-height:1.55;color:#6B6760;
+            font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-word">${
+            L.slice(0,14).map(e=>raw(e.t+" ["+e.o+"] "+e.m)).join("<br>")}</div>
+          <div style="display:flex;gap:7px;margin-top:9px">
+            <span class="pro-pill" onclick="PRO.diagCopiar()">${PX("p_diag_copy")}</span>
+            <span class="pro-pill" onclick="PRO.diagZerar()">${PX("p_diag_clear")}</span>
+          </div>`:""}
+      </div>`;})()}
+
+    <div class="pro-note" style="margin:12px 0 0">${PL("p_live")}</div>
     <button class="pro-btn-lg" onclick="PRO.parSalvar()" style="width:100%;background:#1A3A5C;color:#fff;
-      border:none;font-weight:600;cursor:pointer;margin:16px 0 6px">${PL("p_save")}</button>`;
+      border:none;font-weight:600;cursor:pointer;margin:10px 0 6px">${PL("p_save")}</button>`;
 }
 
 /* ═══ 11.11 HISTÓRICO DE POSIÇÕES ════════════════════════════════════
@@ -19573,7 +19733,7 @@ window.PRO={
   openLotes,renderLotes,loteToggle,loteConfirmarExclusao,loteApagar,loteReimportar,loteTrocar,
   openParams,renderParams,parSelIdx,parLerCurva,parLerFiscal,parSalvar,parBacen,parLimpar,parSetAba,
   parSetVista,parMarcarAno,parAplicarAno,parRecalcIRRF,parToggle,parRestaurar,parNum,parMask,parMoney,parTabela,
-  parCurvaMudou,parAtualizarLinhas,
+  parCurvaMudou,parAtualizarLinhas,parHorizMudou,diagCopiar,diagZerar,
   liqSetH,liqToggle,astLiqSerie,astComeCotasAte,irPrevidencia,irGanhoCapital,faixaAliq,
   PX,PL,px:PX,proTabsI18n,refreshPro,idxTaxaMes
 };
