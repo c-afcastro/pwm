@@ -1160,7 +1160,7 @@
 
     <!-- versão, canto superior esquerdo -->
     <div style="position:absolute;top:18px;left:18px;font-size:10px;letter-spacing:1.2px;
-                font-weight:600;color:rgba(255,255,255,.45)">v10.05</div>
+                font-weight:600;color:rgba(255,255,255,.45)">v10.06</div>
 
     <!-- language switch top-right -->
     <div style="position:absolute;top:18px;right:18px;display:flex;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:2px">
@@ -2117,6 +2117,19 @@
         <span data-i18n="import_remote_tab">🔗 Remoto</span>
       </button>
     </div>
+
+    <!-- histórico de lotes: o rastro de cada importação já feita -->
+    <button id="btn-lotes" onclick="PRO.openLotes()"
+      style="width:100%;display:flex;align-items:center;gap:10px;text-align:left;cursor:pointer;
+             border:1.5px solid var(--line);border-radius:13px;padding:10px 13px;margin-bottom:14px;
+             background:var(--surface)">
+      <span style="font-size:17px">📦</span>
+      <span style="flex:1;min-width:0">
+        <span id="lotes-titulo" style="display:block;font-size:12.5px;font-weight:600;color:var(--body)">Importações</span>
+        <span id="lotes-sub" style="display:block;font-size:10.5px;color:#8A857D"></span>
+      </span>
+      <span style="color:#B8B3AA;font-size:14px">›</span>
+    </button>
 
     <!-- PASTE TEXT TAB -->
     <div id="imp-paste" style="display:none">
@@ -5158,6 +5171,38 @@ function authDisable(){
 
 
 let EX=JSON.parse(localStorage.getItem("gastos_v2_expenses")||"[]");
+
+/* ── LOTES DE IMPORTAÇÃO ───────────────────────────────────────────────
+   Uma fatura importada errado — mês trocado, coluna mapeada torto, arquivo
+   duplicado — espalha dezenas de lançamentos pelo app sem deixar rastro de
+   onde vieram. Cada importação passa a gravar um lote, e cada lançamento
+   nascido dela carrega o id desse lote. Com isso dá para revisar, desfazer
+   por inteiro e reimportar uma fatura atualizada sem caçar linha a linha. */
+const LOTE_KEY="gastos_v2_lotes";
+let LOTES=(()=>{try{return JSON.parse(localStorage.getItem(LOTE_KEY)||"[]");}catch(e){return [];}})();
+function persistLotes(){ try{ localStorage.setItem(LOTE_KEY,JSON.stringify(LOTES)); }catch(e){} }
+/* De onde veio a importação em curso. Preenchido no ponto de entrada e
+   consumido quando a revisão é confirmada. */
+let IMPORT_ORIGEM={tipo:"arquivo",nome:""};
+function setImportOrigem(tipo,nome){ IMPORT_ORIGEM={tipo:tipo||"arquivo",nome:nome||""}; }
+/* Lançamentos de um lote que ainda estão no app */
+function loteItens(id){ return EX.filter(e=>e&&e.importId===id); }
+function loteResumo(l){
+  const its=loteItens(l.id);
+  const total=its.reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const ds=its.map(e=>e.date).filter(Boolean).sort();
+  return {vivos:its.length, total:Math.round(total*100)/100,
+          de:ds[0]||l.ymIni||"", ate:ds[ds.length-1]||l.ymFim||""};
+}
+/* Desfaz a importação: apaga os lançamentos que ainda restam e o registro */
+function loteExcluir(id){
+  const antes=EX.length;
+  for(let i=EX.length-1;i>=0;i--) if(EX[i]&&EX[i].importId===id) EX.splice(i,1);
+  const n=antes-EX.length;
+  LOTES=LOTES.filter(l=>l.id!==id);
+  persist(); persistLotes();
+  return n;
+}
 let GL=JSON.parse(localStorage.getItem("gastos_v2_goals")   ||"{}");
 let SETTLED=JSON.parse(localStorage.getItem("gastos_v2_settled")||"{}"); // {expId_personIdx: true}
 let INCOME=JSON.parse(localStorage.getItem("gastos_v2_income")||"[]"); // [{id,desc,amount,date,type,recurrence,recurUntil}]
@@ -9291,8 +9336,9 @@ function handleFileInput(ev){
   if(f) processImportFile(f);
 }
 
-function processImportFile(file){
+function processImportFile(file,origem){
   toast("Lendo arquivo…");
+  setImportOrigem(origem||"arquivo",file&&file.name?file.name:"");
   const ext=file.name.split(".").pop().toLowerCase();
 
   if(ext==="csv"||ext==="txt"){
@@ -9840,6 +9886,7 @@ function importPastedText(){
   if(!txt.trim()){ toast(t("paste_empty")); return; }
   const parsed=parseInvoiceText(txt);
   if(!parsed.length){ toast(t("paste_none")); return; }
+  setImportOrigem("texto","");
   // dedupe against existing expenses
   const existing=new Set(EX.map(e=>`${e.date}|${e.desc}|${e.amount}`));
   let skipped=0;
@@ -9944,6 +9991,7 @@ function applyDateChoice(mode){
   _pendingImport=null;
   document.getElementById("modal-date-choice")?.remove();
 
+  IMPORT_ORIGEM.modo=mode;
   if(mode==="month"){
     const monthDate=activeYM()+"-01";
     parsed=parsed.map(e=>({...e,date:monthDate}));
@@ -10089,9 +10137,22 @@ function reviewSkipNeutral(){
 
 function commitReview(){
   let added=0;
+  /* O lote nasce antes dos lançamentos, para que todos possam apontar
+     para ele — inclusive os que forem editados depois. */
+  const lote={
+    id:"L"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    ts:new Date().toISOString(),
+    origem:(IMPORT_ORIGEM&&IMPORT_ORIGEM.tipo)||"arquivo",
+    nome:(IMPORT_ORIGEM&&IMPORT_ORIGEM.nome)||"",
+    modo:(IMPORT_ORIGEM&&IMPORT_ORIGEM.modo)||"file",
+    n:0,total:0,ymIni:"",ymFim:""
+  };
+  const datas=[];
   reviewEntries.forEach(r=>{
     if(!r.selected)return;
-    const entry={...r.entry,category:r.catId,type:r.typeId};
+    const entry={...r.entry,category:r.catId,type:r.typeId,importId:lote.id};
+    lote.total+=parseFloat(entry.amount)||0;
+    if(entry.date) datas.push(entry.date);
     // handle native settled splits
     if(entry._settled&&entry.split?.rows){
       entry.split.rows.forEach((row,i)=>{
@@ -10102,6 +10163,14 @@ function commitReview(){
     delete entry._settled;
     EX.push(entry);added++;
   });
+  if(added>0){
+    datas.sort();
+    lote.n=added; lote.total=Math.round(lote.total*100)/100;
+    lote.ymIni=datas[0]||""; lote.ymFim=datas[datas.length-1]||"";
+    LOTES.unshift(lote);
+    if(LOTES.length>200) LOTES.length=200;
+    persistLotes();
+  }
   persist();updateHero();
   closeReview();
   if(V==="dashboard")renderDash();
@@ -10137,7 +10206,15 @@ document.querySelectorAll(".nav-btn").forEach(b=>b.addEventListener("click",()=>
 document.getElementById("btn-open-export").addEventListener("click",()=>{populateExp();document.getElementById("modal-export").classList.add("open");});
 document.getElementById("modal-close").addEventListener("click",()=>document.getElementById("modal-export").classList.remove("open"));
 document.getElementById("modal-export").addEventListener("click",e=>{if(e.target===document.getElementById("modal-export"))document.getElementById("modal-export").classList.remove("open");});
+function atualizarBotaoLotes(){
+  const tt=document.getElementById("lotes-titulo"), sb=document.getElementById("lotes-sub");
+  if(!tt||!sb) return;
+  const P=(window.PRO&&PRO.PX)?PRO.PX:(k=>k);
+  tt.textContent=P("i_title");
+  sb.textContent=LOTES.length?(LOTES.length+" "+P(LOTES.length===1?"i_one":"i_many")):P("i_none");
+}
 document.getElementById("btn-open-import").addEventListener("click",()=>{
+  atualizarBotaoLotes();
   cancelImport();
   document.getElementById("modal-import").classList.add("open");
 });
@@ -12277,7 +12354,7 @@ async function importDriveApiFile(fileId,filename){
     const file=new File([blob],filename,{type:blob.type});
     document.getElementById("modal-import")?.classList.add("open");
     switchImpTab("local");
-    await processImportFile(file);
+    await processImportFile(file,"link");
   }catch(err){
     toast(`⚠ ${t("drive_dl_err")}`);
     importViaDownloadSheet(gdriveDownloadUrl(fileId),filename);
@@ -12358,7 +12435,7 @@ document.getElementById("btn-today-ast").addEventListener("click",()=>{
 
 // Entradas import/export
 document.getElementById("btn-open-import-inc")?.addEventListener("click",()=>{
-  cancelImport();document.getElementById("modal-import").classList.add("open");
+  cancelImport();atualizarBotaoLotes();document.getElementById("modal-import").classList.add("open");
 });
 document.getElementById("btn-open-export-inc")?.addEventListener("click",()=>{
   // Export only income data
@@ -12380,7 +12457,7 @@ document.getElementById("btn-open-export-inc")?.addEventListener("click",()=>{
 
 // Patrimônio import/export
 document.getElementById("btn-open-import-ast")?.addEventListener("click",()=>{
-  cancelImport();document.getElementById("modal-import").classList.add("open");
+  cancelImport();atualizarBotaoLotes();document.getElementById("modal-import").classList.add("open");
 });
 document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
   if(!ASSETS.length){toast(t("toast_no_ast_export"));return;}
@@ -13227,6 +13304,41 @@ const PDIC={
   tab_rend:["Rendimento","Returns","Erträge"],
   tab_liq:["Liquidez","Liquidity","Liquidität"],
   tab_proj:["Projeção","Projection","Projektion"],
+
+  /* — lotes de importação — */
+  i_title:["Importações","Imports","Importe"],
+  i_one:["lote registrado","batch on record","erfasster Stapel"],
+  i_many:["lotes registrados","batches on record","erfasste Stapel"],
+  i_none:["nenhuma importação ainda","no imports yet","noch keine Importe"],
+  i_sub:["Cada importação vira um lote. Reveja, desfaça por inteiro ou reimporte uma fatura atualizada sem caçar lançamento a lançamento.",
+    "Every import becomes a batch. Review it, undo the whole thing, or re-import an updated statement without hunting entry by entry.",
+    "Jeder Import wird zu einem Stapel. Prüfen, komplett rückgängig machen oder eine aktualisierte Abrechnung neu importieren, ohne Posten für Posten zu suchen."],
+  i_empty:["Nenhuma importação registrada. Os lotes aparecem aqui a partir da próxima que você fizer.",
+    "No imports on record. Batches show up here from your next one onward.",
+    "Keine Importe erfasst. Stapel erscheinen ab dem nächsten Import hier."],
+  i_file:["Arquivo","File","Datei"],
+  i_text:["Texto colado","Pasted text","Eingefügter Text"],
+  i_link:["Link remoto","Remote link","Externer Link"],
+  i_entries:["lançamentos","entries","Posten"],
+  i_entry:["lançamento","entry","Posten"],
+  i_alive:["ainda no app","still in the app","noch in der App"],
+  i_of:["de","of","von"],
+  i_gone:["Todos os lançamentos deste lote já foram removidos.","Every entry from this batch is already gone.","Alle Posten dieses Stapels wurden bereits entfernt."],
+  i_bymonth:["datado no mês selecionado","dated to the selected month","auf den gewählten Monat datiert"],
+  i_byfile:["datado pelo arquivo","dated from the file","nach Datei datiert"],
+  i_view:["Ver lançamentos","View entries","Posten ansehen"],
+  i_hide:["Ocultar","Hide","Ausblenden"],
+  i_redo:["Reimportar atualizada","Re-import updated","Aktualisiert neu importieren"],
+  i_del:["Excluir lote","Delete batch","Stapel löschen"],
+  i_del_q:["Excluir este lote?","Delete this batch?","Diesen Stapel löschen?"],
+  i_del_d:["Os lançamentos que vieram desta importação saem do app, inclusive os que você editou depois. A ação não pode ser desfeita.",
+    "The entries that came from this import leave the app, including any you edited afterwards. This cannot be undone.",
+    "Die aus diesem Import stammenden Posten werden entfernt, auch nachträglich bearbeitete. Das lässt sich nicht rückgängig machen."],
+  i_redo_d:["O lote antigo sai primeiro e a tela de importação abre em seguida. Sem isso a fatura nova cairia inteira na checagem de duplicados.",
+    "The old batch is removed first and the import screen opens next. Without that, the new statement would be caught entirely by the duplicate check.",
+    "Der alte Stapel wird zuerst entfernt, danach öffnet sich der Import. Sonst würde die neue Abrechnung vollständig als Duplikat erkannt."],
+  i_deleted:["lançamentos removidos","entries removed","Posten entfernt"],
+  i_cancel:["Cancelar","Cancel","Abbrechen"],
 
   /* — liquidez — */
   l_title:["Liquidez no tempo","Liquidity over time","Liquidität im Zeitverlauf"],
@@ -17953,6 +18065,189 @@ function drawLiqChart(rows){
       Math.min(W-14,Math.max(14,pad.l+i*step)),H-5); });
 }
 
+/* ═══ 5.10.5 LOTES DE IMPORTAÇÃO ══════════════════════════════════════
+   O rastro de cada fatura que entrou no app: quando, de onde, quantos
+   lançamentos, quanto somam e quanto ainda resta. Daqui se desfaz uma
+   importação inteira ou se troca uma fatura por sua versão atualizada. */
+
+let LOTE_ABERTO=null;
+
+function openLotes(){
+  let ov=document.getElementById("modal-lotes");
+  if(!ov){
+    ov=document.createElement("div");
+    ov.className="overlay"; ov.id="modal-lotes";
+    ov.style.cssText="align-items:flex-end;z-index:240";
+    ov.innerHTML='<div class="sheet" style="max-height:92dvh"><div class="sheet-handle"></div>'
+      +'<button class="sheet-close" onclick="closeOverlay(this)">✕</button>'
+      +'<div id="lote-body"></div></div>';
+    document.body.appendChild(ov);
+    ov.onclick=e=>{ if(e.target===ov) closeOverlay(ov); };
+  }
+  ov.classList.add("open");
+  renderLotes();
+}
+function loteToggle(id){ LOTE_ABERTO=(LOTE_ABERTO===id?null:id); renderLotes(); }
+
+const loteIcone=o=>o==="texto"?"📋":o==="link"?"🔗":"📂";
+const loteFonte=o=>PX(o==="texto"?"i_text":o==="link"?"i_link":"i_file");
+
+function renderLotes(){
+  const el=$("lote-body"); if(!el) return;
+  ensureStyles();
+  const V=v=>fmt(v||0);
+  const dt=iso=>{ try{
+    return new Date(iso).toLocaleString(LANG==="pt"?"pt-BR":LANG==="de"?"de-DE":"en-US",
+      {day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"});
+  }catch(e){ return ""; } };
+
+  const cartao=l=>{
+    const r=loteResumo(l);
+    const ab=LOTE_ABERTO===l.id;
+    const itens=ab?loteItens(l.id).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))):[];
+    const periodo=(r.de&&r.ate)?(r.de===r.ate?brDate(r.de):brDate(r.de)+" → "+brDate(r.ate)):"";
+    return `<div class="lote-card">
+      <div style="display:flex;align-items:flex-start;gap:11px;cursor:pointer"
+           onclick="PRO.loteToggle('${l.id}')">
+        <span style="font-size:19px;line-height:1.2;flex-shrink:0">${loteIcone(l.origem)}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--body);overflow:hidden;
+            text-overflow:ellipsis;white-space:nowrap">${raw(l.nome||loteFonte(l.origem))}</div>
+          <div style="font-size:10.5px;color:#8A857D;margin-top:2px">${raw(dt(l.ts))}${
+            periodo?" · "+raw(periodo):""}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:13px;font-weight:700;color:${r.vivos?"var(--body)":"#B0ABA2"}">${V(r.total)}</div>
+          <div style="font-size:9.5px;color:#8A857D">${r.vivos===l.n
+            ? l.n+" "+PX(l.n===1?"i_entry":"i_entries")
+            : r.vivos+" "+PX("i_of")+" "+l.n+" "+PX("i_alive")}</div>
+        </div>
+        <span style="color:#B8B3AA;font-size:13px;flex-shrink:0">${ab?"▾":"▸"}</span>
+      </div>
+      ${ab?`<div style="margin-top:11px;border-top:1px solid var(--line);padding-top:10px">
+        <div style="font-size:10px;color:#8A857D;margin-bottom:8px">
+          ${PL(l.modo==="month"?"i_bymonth":"i_byfile")} · ${loteFonte(l.origem)}</div>
+        ${r.vivos?`<div class="lote-itens">
+          ${itens.map(e=>`<div class="lote-it">
+            <span>${raw(brDate(e.date))}</span>
+            <span class="nm">${raw(e.desc||"—")}</span>
+            <span class="vl">${V(parseFloat(e.amount)||0)}</span>
+          </div>`).join("")}
+        </div>`:`<div class="pro-note" style="margin:0 0 10px">${PL("i_gone")}</div>`}
+        <div style="display:flex;gap:7px;margin-top:11px">
+          <button class="pro-btn-lg" onclick="event.stopPropagation();PRO.loteReimportar('${l.id}')"
+            style="flex:1;background:rgba(26,58,92,.08);color:#1A3A5C;border:none;font-weight:600;
+                   cursor:pointer;font-size:12px">↻ ${PL("i_redo")}</button>
+          <button class="pro-btn-lg" onclick="event.stopPropagation();PRO.loteConfirmarExclusao('${l.id}')"
+            style="flex:1;background:none;border:1.5px solid rgba(184,90,106,.35);color:#B85A6A;
+                   font-weight:600;cursor:pointer;font-size:12px">${PL("i_del")}</button>
+        </div>
+      </div>`:""}
+    </div>`;
+  };
+
+  el.innerHTML=H`
+    <style>
+      .lote-card{background:var(--surface);border-radius:15px;padding:13px 14px;margin-bottom:9px;
+        border-left:3px solid #1A3A5C;box-sizing:border-box}
+      .lote-itens{max-height:38dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+      .lote-it{display:grid;grid-template-columns:62px 1fr auto;gap:8px;align-items:baseline;
+        padding:5px 0;border-top:1px solid var(--line);font-size:11.5px;color:#6B6760}
+      .lote-it:first-child{border-top:none}
+      .lote-it .nm{color:var(--body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .lote-it .vl{font-variant-numeric:tabular-nums;font-weight:600;color:var(--body)}
+    </style>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <div style="width:44px;height:44px;border-radius:13px;background:var(--surface);display:flex;
+        align-items:center;justify-content:center;font-size:21px;flex-shrink:0">📦</div>
+      <div style="min-width:0">
+        <div style="font-family:var(--serif);font-size:19px;color:var(--body);line-height:1.15">${PL("i_title")}</div>
+        <div style="font-size:10.5px;color:#8A857D;margin-top:2px">${LOTES.length} ${
+          PL(LOTES.length===1?"i_one":"i_many")}</div>
+      </div>
+    </div>
+    <div class="pro-note" style="margin:0 0 14px">${PL("i_sub")}</div>
+    ${LOTES.length?LOTES.map(cartao).join("")
+      :`<div class="pro-note">${PL("i_empty")}</div>`}
+    <div style="height:8px"></div>`;
+}
+
+/* Confirmação em diálogo próprio: o confirm() nativo não aparece no app
+   instalado em tela cheia no iOS. */
+function loteConfirmarExclusao(id){
+  const l=LOTES.find(x=>x.id===id); if(!l) return;
+  const r=loteResumo(l);
+  const ov=document.createElement("div");
+  ov.className="overlay open no-backdrop-close";
+  ov.style.cssText="align-items:center;z-index:320";
+  ov.innerHTML=H`<div style="background:var(--bg);border-radius:20px;padding:26px 22px;
+      width:calc(100% - 48px);max-width:360px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.2)">
+    <div style="font-size:27px;margin-bottom:10px">🗑</div>
+    <div style="font-family:var(--serif);font-size:19px;color:var(--body);margin-bottom:7px">${PL("i_del_q")}</div>
+    <div style="font-size:12.5px;color:var(--body);margin-bottom:6px">
+      ${raw(l.nome||loteFonte(l.origem))} · ${r.vivos} ${PL(r.vivos===1?"i_entry":"i_entries")}</div>
+    <div style="font-size:12px;color:#6B6760;line-height:1.6;margin-bottom:20px">${PL("i_del_d")}</div>
+    <div style="display:flex;gap:8px">
+      <button onclick="closeOverlay(this)" style="flex:1;padding:12px;border-radius:12px;
+        border:1.5px solid var(--line);background:none;color:#6B6760;font-size:13px;
+        font-weight:600;cursor:pointer">${PL("i_cancel")}</button>
+      <button onclick="PRO.loteApagar('${id}',this)" style="flex:1;padding:12px;border-radius:12px;
+        border:none;background:#B85A6A;color:#fff;font-size:13px;font-weight:600;
+        cursor:pointer">${PL("i_del")}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+}
+function loteApagar(id,btn){
+  const n=loteExcluir(id);
+  if(btn) closeOverlay(btn);
+  LOTE_ABERTO=null;
+  try{ updateHero(); if(V==="dashboard")renderDash(); if(V==="list")renderList(); }catch(e){}
+  try{ cfLimparCache(); renderHome(); }catch(e){}
+  renderLotes();
+  try{ atualizarBotaoLotes(); }catch(e){}
+  toast("✓ "+n+" "+PX("i_deleted"));
+}
+/* Reimportar: o lote antigo sai antes, senão a fatura nova é inteira
+   barrada pela checagem de duplicados. */
+function loteReimportar(id){
+  const l=LOTES.find(x=>x.id===id); if(!l) return;
+  const r=loteResumo(l);
+  const ov=document.createElement("div");
+  ov.className="overlay open no-backdrop-close";
+  ov.style.cssText="align-items:center;z-index:320";
+  ov.innerHTML=H`<div style="background:var(--bg);border-radius:20px;padding:26px 22px;
+      width:calc(100% - 48px);max-width:360px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.2)">
+    <div style="font-size:27px;margin-bottom:10px">↻</div>
+    <div style="font-family:var(--serif);font-size:19px;color:var(--body);margin-bottom:7px">${PL("i_redo")}</div>
+    <div style="font-size:12.5px;color:var(--body);margin-bottom:6px">
+      ${raw(l.nome||loteFonte(l.origem))} · ${r.vivos} ${PL(r.vivos===1?"i_entry":"i_entries")}</div>
+    <div style="font-size:12px;color:#6B6760;line-height:1.6;margin-bottom:20px">${PL("i_redo_d")}</div>
+    <div style="display:flex;gap:8px">
+      <button onclick="closeOverlay(this)" style="flex:1;padding:12px;border-radius:12px;
+        border:1.5px solid var(--line);background:none;color:#6B6760;font-size:13px;
+        font-weight:600;cursor:pointer">${PL("i_cancel")}</button>
+      <button onclick="PRO.loteTrocar('${id}',this)" style="flex:1;padding:12px;border-radius:12px;
+        border:none;background:#1A3A5C;color:#fff;font-size:13px;font-weight:600;
+        cursor:pointer">${PL("i_redo")}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+}
+function loteTrocar(id,btn){
+  const n=loteExcluir(id);
+  if(btn) closeOverlay(btn);
+  closeOverlay("modal-lotes");
+  try{ updateHero(); if(V==="dashboard")renderDash(); if(V==="list")renderList(); }catch(e){}
+  try{ cfLimparCache(); renderHome(); }catch(e){}
+  toast("✓ "+n+" "+PX("i_deleted"));
+  setTimeout(()=>{
+    try{ cancelImport(); atualizarBotaoLotes(); }catch(e){}
+    const m=document.getElementById("modal-import");
+    if(m) m.classList.add("open");
+  },380);
+}
+
 /* ═══ 5.11 FICHA DE PARÂMETROS ════════════════════════════════════════
    Um só lugar onde se declara o cenário: a curva de cada índice, mês a mês
    ou ano a ano, e a abertura completa de tributos e encargos. Nada aqui é
@@ -18520,7 +18815,7 @@ function renderParams(){
         <div style="font-size:10.5px;color:#8A857D;margin-top:3px;line-height:1.4">${PL("p_sub")}</div>
       </div>
       <div style="margin-left:auto;font-size:10px;letter-spacing:.4px;
-        color:#A8A49B;font-weight:700;flex-shrink:0">v10.05</div>
+        color:#A8A49B;font-weight:700;flex-shrink:0">v10.06</div>
     </div>
 
     <div class="pro-scale" style="margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch">
@@ -19029,6 +19324,7 @@ window.PRO={
   astBrutoAM,astIdxNorm,astFatorPeriodo,diasUteis,ehDiaUtil,feriadosDoAno,mesesCompletos,
   params:()=>PARAMS,saveParams,paramTaxa,paramMensal,paramsDoBacen,paramsLimpar,PARAM_IDX,
   paramAncoras,paramAncoraDe,paramHerdado,paramFimHorizonte,
+  openLotes,renderLotes,loteToggle,loteConfirmarExclusao,loteApagar,loteReimportar,loteTrocar,
   openParams,renderParams,parSelIdx,parLerCurva,parLerFiscal,parSalvar,parBacen,parLimpar,parSetAba,
   parSetVista,parMarcarAno,parAplicarAno,parRecalcIRRF,parToggle,parRestaurar,parNum,parMask,parMoney,parTabela,
   liqSetH,liqToggle,astLiqSerie,astComeCotasAte,irPrevidencia,irGanhoCapital,faixaAliq,
