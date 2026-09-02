@@ -14971,80 +14971,23 @@ function mediaVariaveis(){
   }
   return n?tot/n:0;
 }
+/* A projeção não é um segundo motor: é uma leitura da mesma série mensal
+   que alimenta o painel de fluxo de caixa e a tela inicial. Enquanto
+   existiram dois laços — um aqui, outro no cfMes — as duas telas mostravam
+   rendimentos diferentes para os mesmos dados. Agora há um só. */
 function projetar(n){
-  n=n||PROJ.meses;
-  const base=activeYM();
-  const mediaVar=PROJ.mediaVar?mediaVariaveis():0;
-  const st=ASSETS.map(a=>{
-    const p=astPro(a);
-    return {a,p,saldo:astValorAtual(a),custo:+p.custo||0,aporte:+p.aporte||0};
-  });
-  /* o cronograma do FGTS, quando existe, manda na dívida: saldo, juros e
-     desembolso já saem dele mês a mês */
-  const dv=DEBTS.map(d=>({d,saldo:debtBalance(d),r:debtRateMonthly(d),
-    pmt:parseFloat(d.monthlyPayment)||0,
-    sch:fgtsCronograma(d)||debtScheduleFGTS(d,{on:false})}));
-  /* o mês exibido pode não ser o mês corrente; o cronograma começa em hoje */
-  const offFg=(()=>{const h=new Date(),q=base.split("-").map(Number);
-    return (q[0]-h.getFullYear())*12+(q[1]-1-h.getMonth());})();
-  const rows=[];
-  for(let i=0;i<n;i++){
-    const ym=i===0?base:ymAdd(base,i);
-    const inc=incomeTotalsForYM(ym);
-    /* despesas: recorrentes reais + média de variáveis corrigida pela inflação */
-    const fixas=getExpensesForYM(ym).filter(e=>!isNeutral(e)&&e.recurrence&&e.recurrence!=="none")
-      .reduce((s,e)=>s+myAmount(e),0);
-    /* a correção da despesa acompanha a curva de IPCA, mês a mês */
-    let fInfl=1;
-    if(PROJ.corrigirDesp) for(let q=0;q<i;q++) fInfl*=(1+idxTaxaMes("ipca",ymAdd(base,q))/100);
-    const pontuais=i===0?getExpensesForYM(ym).filter(e=>!isNeutral(e)&&(!e.recurrence||e.recurrence==="none"))
-      .reduce((s,e)=>s+myAmount(e),0):mediaVar*fInfl;
-    const desp=fixas+pontuais;
-    /* dívidas */
-    let parcela=0,juros=0,fgtsDiv=0;
-    dv.forEach(x=>{
-      if(x.sch){
-        const k=i+offFg;
-        const row=(k>=0&&k<x.sch.rows.length)?x.sch.rows[k]:null;
-        if(!row){ x.saldo=0; return; }
-        x.saldo=row.saldo; juros+=row.juros;
-        parcela+=row.desembolso; fgtsDiv+=row.fgts;
-        return;
-      }
-      if(x.saldo<=0||x.pmt<=0) return;
-      const j=x.saldo*x.r, amort=Math.min(Math.max(0,x.pmt-j),x.saldo);
-      x.saldo=Math.max(0,x.saldo-amort);
-      parcela+=Math.min(x.pmt,amort+j); juros+=j;
-    });
-    /* aplicações */
-    let rend=0,aportes=0,comeCotas=0;
-    const mes=ymMonth(ym);
-    st.forEach(x=>{
-      /* a taxa é a do mês projetado, colhida da curva de parâmetros */
-      let tx=0; try{ const t=astLiquidoAM(x.a,ym)/100; if(isFinite(t)) tx=t; }catch(e){}
-      x.rate=tx;
-      const r=x.saldo*tx;
-      x.saldo+=r; rend+=r;
-      if(x.aporte>0){x.saldo+=x.aporte;x.custo+=x.aporte;aportes+=x.aporte;}
-      if(FISCAL.comeCotasOn!==false&&x.p.comeCotas&&FISCAL.comeCotasMeses.indexOf(mes)>=0){
-        const ganho=Math.max(0,x.saldo-x.custo);
-        const aliq=x.p.trib==="fundoCP"?FISCAL.irFundoCP:FISCAL.irFundoLP;
-        const imp=ganho*aliq/100;
-        x.saldo-=imp; x.custo=x.saldo; comeCotas+=imp;
-      }
-    });
-    const sobra=inc.liquido-desp-parcela-aportes;
-    if(PROJ.investir&&sobra>0&&st.length){
-      const alvo=st.reduce((best,x)=>((x.rate||0)>(best.rate||0)?x:best),st[0]);
-      alvo.saldo+=sobra; alvo.custo+=sobra;
-    }
-    const patr=st.reduce((s,x)=>s+x.saldo,0);
-    const div=dv.reduce((s,x)=>s+x.saldo,0);
-    rows.push({ym,bruto:inc.bruto,imposto:inc.imposto,liquido:inc.liquido,desp:R2(desp),
-      parcela:R2(parcela),jurosDiv:R2(juros),fgtsDiv:R2(fgtsDiv),aportes:R2(aportes),rend:R2(rend),
-      comeCotas:R2(comeCotas),sobra:R2(sobra),patr:R2(patr),div:R2(div),pl:R2(patr-div)});
-  }
-  return rows;
+  n=Math.max(1,n||PROJ.meses);
+  const serie=cfSerie(0,n-1);
+  return serie.map(m=>({
+    ym:m.ym,
+    bruto:R2(m.bruto), imposto:R2(m.impostos), liquido:R2(m.entLiquidas),
+    desp:R2(m.despesas),
+    parcela:R2(m.divida.parcela), jurosDiv:R2(m.divida.juros), fgtsDiv:R2(m.divida.fgtsAbat),
+    aportes:R2(m.aplic.aportes), rend:R2(m.aplic.bruto), rendIr:R2(m.aplic.ir),
+    comeCotas:R2(m.aplic.comeCotas),
+    sobra:R2(m.caixaOper-m.aplic.aportes),
+    patr:R2(m.patrimonio), div:R2(m.dividaSaldo), pl:R2(m.pl)
+  }));
 }
 
 /* ═══ 7. UI — FORMULÁRIO DE RENDA (auto-configurado pelo tipo) ═══ */
@@ -15098,32 +15041,51 @@ function ensureStyles(){
     color:#6B6760;white-space:nowrap;display:inline-block}
   .liq-card{background:var(--surface);border-radius:16px;padding:13px 15px;margin-bottom:9px;
     cursor:pointer;border-left:3px solid var(--green);box-sizing:border-box}
-  /* Ficha de parâmetros: campo com contorno visível sobre o cartão claro,
-     rótulo que quebra em duas linhas em vez de sumir em reticências, e
-     número alinhado à direita com dígitos de largura fixa. */
-  #par-body .pro-f>label{white-space:normal;overflow:visible;line-height:1.25;
-    font-size:8.5px;letter-spacing:.8px;min-height:21px;display:flex;align-items:flex-end}
-  #par-body .par-inp{display:flex;align-items:center;gap:7px;background:#fff;
-    border:1.5px solid var(--line);border-radius:11px;height:42px;padding:0 11px;
+  /* Ficha de parâmetros. É uma planilha, não um formulário de cadastro: o
+     que importa é comparar dezenas de números de relance, então a escala
+     encolhe em relação ao resto do app e a densidade sobe. Campo 38px,
+     número 13px, rótulo 8px em duas linhas quando precisa, unidade
+     impressa dentro do campo à direita. */
+  #par-body .pro-grid{gap:8px}
+  #par-body .pro-f{gap:4px}
+  #par-body .pro-f>label{white-space:normal;overflow:visible;line-height:1.2;
+    font-size:8px;letter-spacing:.6px;min-height:19px;display:flex;align-items:flex-end;
+    color:#8A857D;font-weight:700}
+  #par-body .par-inp{display:flex;align-items:center;gap:6px;background:#fff;
+    border:1.5px solid var(--line);border-radius:10px;height:38px;padding:0 10px;
     box-sizing:border-box;min-width:0;transition:border-color .15s}
   #par-body .par-inp:focus-within{border-color:#1A3A5C}
+  /* O app trava a fonte de todo input em 16px para o Safari não dar zoom ao
+     focar. Aqui o viewport já bloqueia o zoom (maximum-scale=1), e a ficha
+     precisa caber dezenas de números por tela — então a regra cede, e só
+     dentro dela. */
   #par-body .par-inp input{flex:1;min-width:0;width:100%;background:none;border:none;
-    height:100%;padding:0;font-size:14px;text-align:right;color:var(--body);
-    font-variant-numeric:tabular-nums;outline:none;box-sizing:border-box}
-  #par-body .par-un{font-size:10.5px;color:#A8A49B;font-weight:600;white-space:nowrap;
+    height:100%;padding:0;font-size:13px!important;text-align:right;color:var(--body);
+    font-variant-numeric:tabular-nums;letter-spacing:-.1px;outline:none;box-sizing:border-box}
+  #par-body .par-un{font-size:9px;color:#B0ABA2;font-weight:700;white-space:nowrap;
     flex-shrink:0;letter-spacing:.2px}
-  #par-body .pro-f>input{background:#fff;border:1.5px solid var(--line);border-radius:11px;
-    height:42px;padding:0 11px;font-size:14px;text-align:right;
+  #par-body .pro-f>input{background:#fff;border:1.5px solid var(--line);border-radius:10px;
+    height:38px;padding:0 10px;font-size:13px!important;text-align:right;
     font-variant-numeric:tabular-nums;box-sizing:border-box}
   #par-body .pro-f>input:focus{border-color:#1A3A5C;background:#fff}
-  #par-body input:disabled{background:rgba(0,0,0,.03);color:#A8A49B}
-  #par-body .par-row{display:grid;grid-template-columns:56px 1fr;gap:9px;align-items:center;
-    padding:5px 0;border-top:1px solid var(--line)}
-  #par-body .par-row .par-inp{height:38px}
-  #par-body .par-per{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  #par-body input:disabled{background:rgba(0,0,0,.03);color:#B0ABA2}
+  #par-body .par-row{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:center;
+    padding:4px 0;border-top:1px solid var(--line)}
+  #par-body .par-row .par-inp{height:34px}
+  #par-body .par-row .par-inp input{font-size:12.5px!important}
+  #par-body .par-per{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     font-variant-numeric:tabular-nums}
-  #par-body .sec-label{margin-top:20px}
-  #par-body .pro-pill{cursor:pointer}`;
+  #par-body .par-fx{padding:5px 0;border-top:1px solid var(--line)}
+  #par-body .par-hd{display:grid;gap:8px;padding:2px 0 5px}
+  #par-body .par-hd span{font-size:8px;letter-spacing:.6px;text-transform:uppercase;
+    color:#8A857D;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #par-body .par-fx:first-child{border-top:none}
+  #par-body .sec-label{margin-top:18px;margin-bottom:7px}
+  #par-body .stat{padding:9px 11px}
+  #par-body .stat-label{font-size:8px;letter-spacing:.7px}
+  #par-body .stat-val{font-size:14px}
+  #par-body .pro-note{font-size:10px;line-height:1.45}
+  #par-body .pro-pill{cursor:pointer;font-size:11px}`;
   document.head.appendChild(s);
 }
 
@@ -17092,6 +17054,7 @@ function cfMes(ym,k,st){
       /* a taxa é a do mês projetado, colhida da curva de parâmetros */
       let tx=x.rate;
       try{ const t2=astLiquidoAM(x.a,ym)/100; if(isFinite(t2)) tx=t2; }catch(e){}
+      x.rate=tx;
       const rb=x.saldo*tx;
       let aliq=0;
       try{ aliq=astAliqIR(x.a,x.dias0+30*k); }catch(err){ aliq=0; }
@@ -17099,13 +17062,25 @@ function cfMes(ym,k,st){
       const vIr=Math.max(0,rb)*aliq/100;
       x.saldo=R2(x.saldo+rb); apBruto+=rb; apIr+=vIr;
       if(x.aporte>0){ x.saldo=R2(x.saldo+x.aporte); x.custo=R2(x.custo+x.aporte); apAportes+=x.aporte; }
-      if(x.p.comeCotas&&FISCAL.comeCotasMeses.indexOf(mes)>=0){
+      if(FISCAL.comeCotasOn!==false&&x.p.comeCotas&&FISCAL.comeCotasMeses.indexOf(mes)>=0){
         const ganho=Math.max(0,x.saldo-x.custo);
         const imp=ganho*(x.p.trib==="fundoCP"?FISCAL.irFundoCP:FISCAL.irFundoLP)/100;
         x.saldo=R2(x.saldo-imp); x.custo=x.saldo; apCc+=imp;
       }
       if(rb>0) apItens.push({id:x.a.id,tipo:"asset",nome:x.nome,bruto:R2(rb),ir:R2(vIr),aliq:R2(aliq)});
     });
+    /* A sobra do mês não evapora: vira aplicação, na de melhor taxa. Sem
+       isto o patrimônio projetado aqui e o da aba Projeção divergiriam —
+       e é a mesma premissa, declarada num único lugar. */
+    try{
+      if(typeof PROJ!=="undefined"&&PROJ.investir&&st.length){
+        const sobraMes=R2(R2(inc.liquido)-despesas-dPago-apAportes);
+        if(sobraMes>0){
+          const alvo=st.reduce((b,x)=>((x.rate||0)>(b.rate||0)?x:b),st[0]);
+          alvo.saldo=R2(alvo.saldo+sobraMes); alvo.custo=R2(alvo.custo+sobraMes);
+        }
+      }
+    }catch(e){}
   }
   apItens.sort((a,b)=>b.bruto-a.bruto);
   const apLiq=R2(apBruto-apIr);
@@ -18016,26 +17991,41 @@ function parF(path,lbl,val,inf){
   const m=String(lbl).match(/^(.*?)\s*\(([^)]{1,12})\)\s*$/);
   if(m){ lbl=m[1]; u=[m[2],u[1]]; }
   const money=u[1]==="m";
-  const vazio=inf&&(val===undefined||val===null||val>=1e11);
+  const vazio=inf&&(val===undefined||val===null||val>=1e8);
   const txt=vazio?"":(money?parMoney(val):parDec(val));
   return `<div class="pro-f"><label>${lbl}</label>
     <div class="par-inp"><input data-fk="${path}"${inf?' data-inf="1"':""}${money?' data-mask="m"':""}
       type="text" inputmode="decimal" value="${txt}" placeholder="${inf?PX("p_above"):"0"}"
       oninput="PRO.parMask(this)"/><span class="par-un">${u[0]}</span></div></div>`;
 }
-const parBox=inner=>`<div style="background:var(--surface);border-radius:16px;padding:14px 15px;margin-bottom:12px">${inner}</div>`;
+const parBox=inner=>`<div style="background:var(--surface);border-radius:15px;padding:12px 14px;margin-bottom:11px">${inner}</div>`;
 const parSw=(k,on)=>`<span class="pro-pill ${on?"on":""}" onclick="PRO.parToggle('${k}')"
   style="cursor:pointer">${on?"● "+PX("p_exempt_on"):"○ "+PX("p_exempt_off")}</span>`;
 /* Linha de tabela editável: colunas com min-width 0, para que nada
    transborde nem se sobreponha em tela estreita. */
-const parLinha=(cells,cols)=>`<div style="display:grid;grid-template-columns:${cols};
-  gap:8px;align-items:end;padding:7px 0;border-top:1px solid var(--line)">${cells.join("")}</div>`;
-/* Uma faixa de tabela progressiva: teto da faixa + alíquota (+ dedução) */
-const parFaixa=(key,i,f,tetoLbl,comDed)=>parLinha(
-  [parF(key+"."+i+".ate",f.ate>=1e8?PX("p_above"):tetoLbl,f.ate,true),
-   parF(key+"."+i+".aliq",PX("p_rate"),f.aliq)]
-  .concat(comDed?[parF(key+"."+i+".ded",PX("p_ded"),f.ded)]:[]),
-  comDed?"1.25fr .85fr 1.1fr":"1.5fr 1fr");
+const parLinha=(cells,cols)=>`<div class="par-fx" style="display:grid;
+  grid-template-columns:${cols};gap:8px;align-items:end">${cells.join("")}</div>`;
+/* Campo sem rótulo, para as tabelas: numa tabela o rótulo é o cabeçalho da
+   coluna, e repeti-lo em cada linha só gasta altura de tela. */
+function parC(path,val,inf){
+  const u=parUnit(path), money=u[1]==="m";
+  const vazio=inf&&(val===undefined||val===null||val>=1e8);
+  const txt=vazio?"":(money?parMoney(val):parDec(val));
+  return `<div class="par-inp"><input data-fk="${path}"${inf?' data-inf="1"':""}${money?' data-mask="m"':""}
+    type="text" inputmode="decimal" value="${txt}" placeholder="${inf?"—":"0"}"
+    oninput="PRO.parMask(this)"/><span class="par-un">${u[0]}</span></div>`;
+}
+/* Tabela progressiva completa: cabeçalho + uma linha por faixa */
+function parTabela(key,arr,tetoLbl,comDed){
+  const cols=comDed?"1.25fr .85fr 1.1fr":"1.5fr 1fr";
+  const heads=[tetoLbl,PX("p_rate")].concat(comDed?[PX("p_ded")]:[]);
+  return `<div class="par-hd" style="grid-template-columns:${cols}">
+      ${heads.map((h,i)=>`<span${i?' style="text-align:right"':""}>${h}</span>`).join("")}
+    </div>`
+    +arr.map((f,i)=>`<div class="par-fx" style="display:grid;grid-template-columns:${cols};gap:8px">
+      ${parC(key+"."+i+".ate",f.ate,true)}${parC(key+"."+i+".aliq",f.aliq)}
+      ${comDed?parC(key+"."+i+".ded",f.ded):""}</div>`).join("");
+}
 
 function renderParams(){
   const el=$("par-body"); if(!el) return;
@@ -18146,13 +18136,13 @@ function renderParams(){
 
     <div class="sec-label">${PL("p_curve_of")} ${meta.lbl}</div>
     ${PAR_VISTA==="ano"?`<div class="pro-note" style="margin:0 0 8px">${PL("p_note_year")}</div>`:""}
-    <div style="background:var(--surface);border-radius:16px;padding:4px 15px 12px;
-      max-height:330px;overflow-y:auto;-webkit-overflow-scrolling:touch">${curvaHTML}</div>
+    <div style="background:var(--surface);border-radius:15px;padding:2px 14px 10px;
+      max-height:320px;overflow-y:auto;-webkit-overflow-scrolling:touch">${curvaHTML}</div>
     ${resumo}`;
 
   /* ═══ RENDA ═══ */
-  const inssRows=FISCAL.inss.map((f,i)=>parFaixa("inss",i,f,PX("p_upto"),false)).join("");
-  const irrfRows=FISCAL.irrf.map((f,i)=>parFaixa("irrf",i,f,PX("p_upto"),true)).join("");
+  const inssRows=parTabela("inss",FISCAL.inss,PX("p_upto"),false);
+  const irrfRows=parTabela("irrf",FISCAL.irrf,PX("p_upto"),true);
 
   const renda=`
     <div class="sec-label">${PL("p_inss")}</div>
@@ -18227,9 +18217,8 @@ function renderParams(){
       </div>`)}`;
 
   /* ═══ APLICAÇÕES ═══ */
-  const tabRows=(arr,key,unidLbl)=>arr.map((f,i)=>
-    parFaixa(key,i,f,PX("p_upto")+" · "+unidLbl,false)).join("");
-  const gcRows=FISCAL.ganhoCap.map((f,i)=>parFaixa("ganhoCap",i,f,PX("p_upto"),false)).join("");
+  const tabRows=(arr,key,unidLbl)=>parTabela(key,arr,PX("p_upto")+" · "+unidLbl,false);
+  const gcRows=parTabela("ganhoCap",FISCAL.ganhoCap,PX("p_upto"),false);
 
   const inv=`
     <div class="sec-label">${PL("p_rf")}</div>
@@ -18843,12 +18832,13 @@ window.PRO={
   refreshHistorico:()=>fetchHistorico(false),
   getHist:()=>HIST,
   fatorIndice,fatorProduto,serieFatores,indiceMes,histCobertura,mesesEntre,
-  cfg:()=>PROJ,setProj:(k,v)=>{PROJ[k]=v;saveProj();renderProj();},
+  cfg:()=>PROJ,setProj:(k,v)=>{PROJ[k]=v;saveProj();try{cfLimparCache();}catch(e){}
+    renderProj();try{renderHome();}catch(e){}},
   market:()=>MARKET,fiscal:()=>FISCAL,projetar,incomeTotalsForYM,astResgate,astLiquidoAM,
   astBrutoAM,astIdxNorm,astFatorPeriodo,diasUteis,ehDiaUtil,feriadosDoAno,mesesCompletos,
   params:()=>PARAMS,saveParams,paramTaxa,paramMensal,paramsDoBacen,paramsLimpar,PARAM_IDX,
   openParams,renderParams,parSelIdx,parLerCurva,parLerFiscal,parSalvar,parBacen,parLimpar,parSetAba,
-  parSetVista,parMarcarAno,parAplicarAno,parRecalcIRRF,parToggle,parRestaurar,parNum,parMask,parMoney,
+  parSetVista,parMarcarAno,parAplicarAno,parRecalcIRRF,parToggle,parRestaurar,parNum,parMask,parMoney,parTabela,
   liqSetH,liqToggle,astLiqSerie,astComeCotasAte,irPrevidencia,irGanhoCapital,faixaAliq,
   PX,PL,px:PX,proTabsI18n,refreshPro,idxTaxaMes
 };
