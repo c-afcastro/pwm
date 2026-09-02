@@ -5531,7 +5531,13 @@ function setMonthDelta(elId,cur,prev,lowerIsGood){
   el.textContent=`${up?"▲":"▼"} ${Math.abs(pct).toFixed(0)}% ${t("w_vs_prev")}`;
 }
 function monthExpTotal(ym){ return getExpensesForYM(ym).filter(e=>!isNeutral(e)).reduce((s,e)=>s+myAmount(e),0); }
-function monthIncTotal(ym){ return incomeForYM(ym).reduce((s,i)=>s+i.amount,0); }
+/* Total bruto de entradas de um mês, pelo MESMO motor que a tela de
+   Entradas e o fluxo de caixa usam — com 13º, terço de férias e reajuste.
+   Ficou para trás na virada anterior e deixou o cartão da tela inicial, o
+   delta do mês e o cartão de saúde congelados no valor de cadastro. */
+function monthIncTotal(ym){
+  return incomeItensYM(ym).reduce((s,i)=>s+i.amount,0);
+}
 
 function updateMonthNav(){
   document.getElementById("month-nav-label").textContent=rotuloMes(activeYear,activeMonth);
@@ -7186,9 +7192,9 @@ function renderIncChart(){
   const listEl=document.getElementById("inc-type-history");
   if(!listEl) return;
   listEl.innerHTML=[...months].reverse().slice(0,6).map(({m,y,ymStr})=>{
-    const v=incomeForYM(ymStr).reduce((s,i)=>s+i.amount,0);
+    const v=incomeItensYM(ymStr).reduce((s,i)=>s+i.amount,0);
     const idx=months.findIndex(mx=>mx.ymStr===ymStr);
-    const prevV=idx>0?incomeForYM(months[idx-1].ymStr).reduce((s,i)=>s+i.amount,0):null;
+    const prevV=idx>0?incomeItensYM(months[idx-1].ymStr).reduce((s,i)=>s+i.amount,0):null;
     const diff=prevV!==null?v-prevV:null;
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)">
       <div style="font-size:13px;color:var(--body)">${MPT[m]} ${y}</div>
@@ -7200,7 +7206,7 @@ function renderIncChart(){
 
 function renderIncGoals(){
   const ymStr=activeYM();
-  const items=incomeForYM(ymStr);
+  const items=incomeItensYM(ymStr);
   const totalInc=items.reduce((s,i)=>s+i.amount,0);
   const goalTotal=Object.values(incGoals).reduce((s,v)=>s+(parseFloat(v)||0),0);
   const monthLabel=MPT[activeMonth]+" "+activeYear;
@@ -8000,7 +8006,7 @@ function renderHome(){
 
   // totals for the month
   const expItems=TMexp();
-  const incItems=incomeForYM(ymStr);
+  const incItems=incomeItensYM(ymStr);
   /* Posição do mês navegado, pela mesma projeção do fluxo de caixa: dívida
      amortizada e corrigida, patrimônio rendendo com o indexador de cada
      aplicação, variáveis pela média dos últimos três meses. */
@@ -8085,7 +8091,8 @@ function computeFinMetrics(){
   catch(err){ POS=null; logErro("cfPosicaoYM/fin "+ymStr,err); }
   const totalExp=(POS&&isFinite(POS.despesas))?POS.despesas
     :getExpensesForYM(ymStr).filter(e=>!isNeutral(e)).reduce((s,e)=>s+myAmount(e),0);
-  const totalInc=incomeForYM(ymStr).reduce((s,i)=>s+i.amount,0);
+  const totalInc=(POS&&isFinite(POS.bruto)&&POS.bruto>0)
+    ?POS.bruto:incomeItensYM(ymStr).reduce((s,i)=>s+i.amount,0);
   const ativosHoje=ASSETS.reduce((s,a)=>{
     try{ return s+(window.astValorYM?window.astValorYM(a,ymStr):astValorAtual(a)); }
     catch(e){ return s+astValorAtual(a); } },0);
@@ -8983,7 +8990,7 @@ function drawHomeBalanceChart(){
     months.push({m,y,ym:`${y}-${String(m+1).padStart(2,"0")}`});
   }
 
-  const incData=months.map(({ym:ymStr})=>incomeForYM(ymStr).reduce((s,i)=>s+i.amount,0));
+  const incData=months.map(({ym:ymStr})=>incomeItensYM(ymStr).reduce((s,i)=>s+i.amount,0));
   const expData=months.map(({ym:ymStr})=>getExpensesForYM(ymStr).filter(e=>!isNeutral(e)).reduce((s,e)=>s+myAmount(e),0));
   const labels=months.map(({m})=>MS[m].slice(0,3));
 
@@ -12817,7 +12824,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.11";
+const APP_VERSION="10.12";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
