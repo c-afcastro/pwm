@@ -1105,6 +1105,10 @@
 <div id="screen-auth" class="screen" style="background:linear-gradient(160deg, #3D5A3E 0%, #1A3A5C 55%, #0F2440 100%)">
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:48px 30px;color:#fff;text-align:center;overflow-y:auto;position:relative">
 
+    <!-- versão, canto superior esquerdo -->
+    <div style="position:absolute;top:18px;left:18px;font-size:10px;letter-spacing:1.2px;
+                font-weight:600;color:rgba(255,255,255,.45)">v10.01</div>
+
     <!-- language switch top-right -->
     <div style="position:absolute;top:18px;right:18px;display:flex;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:2px">
       <button onclick="setLang('pt')" data-lang="pt" style="border:none;border-radius:16px;padding:4px 9px;font-size:10px;font-weight:600;cursor:pointer;letter-spacing:.5px;background:none;color:rgba(255,255,255,.6)">PT</button>
@@ -1201,6 +1205,18 @@
   <div class="content" style="padding-bottom:40px">
 
     <!-- BALANÇO CARD -->
+    <!-- Parâmetros: curvas de índice e tributação que governam a projeção -->
+    <button onclick="PRO.openParams()" style="width:100%;display:flex;align-items:center;gap:11px;
+      text-align:left;cursor:pointer;border:1.5px solid var(--line);border-radius:16px;
+      padding:12px 15px;margin-bottom:12px;background:var(--surface)">
+      <span style="font-size:19px">⚙️</span>
+      <span style="flex:1;min-width:0">
+        <span style="display:block;font-size:13px;font-weight:600;color:var(--body)" data-i18n="params_title">Parâmetros</span>
+        <span style="display:block;font-size:10.5px;color:#8A857D" data-i18n="params_sub">Curvas de índice e tributação que regem a projeção</span>
+      </span>
+      <span style="color:#B8B3AA;font-size:15px">›</span>
+    </button>
+
     <button onclick="enterSection('vidafinanceira')" style="width:100%;text-align:left;cursor:pointer;border:none;border-radius:20px;padding:0;margin-bottom:16px;background:none">
       <div id="home-health-card"></div>
     </button>
@@ -1659,7 +1675,7 @@
         <select id="ast-inst-filter" class="sel-sm" onchange="renderAssets()" style="flex:2;min-width:0;background:rgba(15,36,64,.08);border:1px solid rgba(15,36,64,.2);color:var(--body);border-radius:10px;padding:5px 8px;font-size:11px;cursor:pointer">
           <option value="all">🏛️ Instituição</option>
         </select>
-        <select id="ast-class-filter" class="sel-sm" onchange="renderAssetList()" style="flex:2;min-width:0;background:rgba(15,36,64,.08);border:1px solid rgba(15,36,64,.2);color:var(--body);border-radius:10px;padding:5px 8px;font-size:11px;cursor:pointer">
+        <select id="ast-class-filter" class="sel-sm" onchange="renderAssets()" style="flex:2;min-width:0;background:rgba(15,36,64,.08);border:1px solid rgba(15,36,64,.2);color:var(--body);border-radius:10px;padding:5px 8px;font-size:11px;cursor:pointer">
           <option value="all">🏦 Classe</option>
         </select>
         <select id="ast-sort" class="sel-sm" onchange="renderAssetList()" style="flex:1;min-width:0;background:rgba(15,36,64,.08);border:1px solid rgba(15,36,64,.2);color:var(--body);border-radius:10px;padding:5px 8px;font-size:11px;cursor:pointer">
@@ -3009,6 +3025,10 @@ const I18N={
     debt_tab_sim:"Simulador",
     debt_by_type:"Por tipo de dívida",
     next_payments:"Próximos pagamentos",
+    params_title:"Parâmetros",
+    params_sub:"Curvas de índice e tributação que regem a projeção",
+    w_filtered:"filtrado",
+    ast_tab_liq:"Liquidez",
     since_position:"desde a última posição",
     impacts:"Impactos",
     w_projected_lc:"projetado",
@@ -3716,6 +3736,10 @@ const I18N={
     debt_tab_sim:"Simulator",
     debt_by_type:"By debt type",
     next_payments:"Upcoming payments",
+    params_title:"Parameters",
+    params_sub:"Index curves and taxation that drive the projection",
+    w_filtered:"filtered",
+    ast_tab_liq:"Liquidity",
     since_position:"since last position",
     impacts:"Impacts",
     w_projected_lc:"projected",
@@ -4423,6 +4447,10 @@ const I18N={
     debt_tab_sim:"Simulator",
     debt_by_type:"Nach Schuldenart",
     next_payments:"Nächste Zahlungen",
+    params_title:"Parameter",
+    params_sub:"Indexkurven und Besteuerung, die die Prognose steuern",
+    w_filtered:"gefiltert",
+    ast_tab_liq:"Liquidität",
     since_position:"seit dem letzten Stand",
     impacts:"Auswirkungen",
     w_projected_lc:"projiziert",
@@ -7036,6 +7064,7 @@ function renderAssets(){
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">📈 ${t("monthly_yield")} ${fmt(monthYield)}</div>
       ${rendAcum>0?`<div style="background:rgba(127,228,160,.18);border-radius:20px;padding:3px 10px;font-size:11px;color:#CFF3DA">⏱ +${fmt(rendAcum)} ${t("since_position")}</div>`:""}
+      ${(FA.length<ASSETS.length)?`<div style="background:rgba(255,255,255,.18);border-radius:20px;padding:3px 10px;font-size:11px">🔍 ${t("w_filtered")}</div>`:""}
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">${FA.length} ${t("w_holdings")}</div>
     </div>`;
   if(AST_V==="dashboard") renderAssetsDash();
@@ -7071,7 +7100,7 @@ function renderAssetsDash(){
   if(byClassEl) byClassEl.innerHTML=classes.length?classes.map(c=>{
     const pct=total>0?(c.total/total*100):0;
     return `<div style="margin-bottom:14px;cursor:pointer;padding:6px 8px;border-radius:8px;transition:background .15s"
-      onclick="showAst('list');setTimeout(()=>{const s=document.getElementById('ast-class-filter');if(s){s.value='${c.id}';renderAssetList();}},80)"
+      onclick="showAst('list');setTimeout(()=>{const s=document.getElementById('ast-class-filter');if(s){s.value='${c.id}';renderAssets();}},80)"
       onmouseover="this.style.background='rgba(15,36,64,.06)'" onmouseout="this.style.background='transparent'">
       <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--body);margin-bottom:5px">
         <span>${c.emoji} ${catLabel(c)} <span style="font-size:9px;color:#A8A49B">›</span></span>
@@ -10446,8 +10475,13 @@ function popularFiltroInst(id,lista){
   if(nomes.indexOf(atual)>=0) sel.value=atual;
 }
 function assetsFiltrados(){
-  const f=instFiltroAtivo("ast-inst-filter");
-  return f?ASSETS.filter(a=>instDe(a)===f):ASSETS;
+  const inst=instFiltroAtivo("ast-inst-filter");
+  const cl=instFiltroAtivo("ast-class-filter");
+  return ASSETS.filter(a=>{
+    if(inst&&instDe(a)!==inst) return false;
+    if(cl&&a.class!==cl) return false;
+    return true;
+  });
 }
 function debtsFiltrados(){
   const f=instFiltroAtivo("debt-inst-filter");
@@ -12454,6 +12488,9 @@ const TXD={
 "Posição salva no histórico":["Position saved to history","Position im Verlauf gespeichert"],
 "Posição removida":["Position removed","Position entfernt"],
 "Projetado × realizado":["Projected vs actual","Prognose vs. Ist"],
+"Parâmetros salvos":["Parameters saved","Parameter gespeichert"],
+"Curva atualizada pelo Banco Central":["Curve updated from the Central Bank","Kurve von der Zentralbank aktualisiert"],
+"Curva removida":["Curve cleared","Kurve gelöscht"],
 "Saldo de FGTS hoje (R$)":["FGTS balance today (R$)","FGTS-Guthaben heute (R$)"],
 "Abater 12 parcelas":["Cover 12 instalments","12 Raten decken"],
 "Reduzir a parcela":["Lower the instalment","Rate senken"],
@@ -13302,6 +13339,99 @@ function selicMetaEm(iso){
 const IPCA_ANO={2018:3.75,2019:4.31,2020:4.52,2021:10.06,2022:5.79,2023:4.62,2024:4.83,2025:4.50};
 
 /* Taxa mensal estimada de um índice, quando não há série do BCB */
+
+/* ═══ 5.10 PARÂMETROS — CURVAS DE ÍNDICE E TRIBUTAÇÃO ══════════════════
+   A projeção do app deixa de assumir taxa constante. O titular monta uma
+   curva mês a mês para cada índice, como se faz num cenário de mercado, e
+   toda a máquina — correção de aplicações, TR do financiamento, projeção
+   de fluxo de caixa — passa a ler dessa curva. Onde a curva não alcança,
+   vale a taxa de longo prazo declarada; onde nem ela existe, o app volta
+   à estimativa a partir da Selic. */
+
+const PARAM_KEY="gastos_v2_params";
+const PARAM_IDX=[
+  {id:"selic",   lbl:"Selic",    unid:"% a.a."},
+  {id:"cdi",     lbl:"CDI",      unid:"% a.a."},
+  {id:"ipca",    lbl:"IPCA",     unid:"% a.a."},
+  {id:"igpm",    lbl:"IGP-M",    unid:"% a.a."},
+  {id:"tr",      lbl:"TR",       unid:"% a.m."},
+  {id:"poupanca",lbl:"Poupança", unid:"% a.m."}
+];
+const PARAM_DEF={
+  /* curva[idx][AAAA-MM] = taxa; vazio significa "use o padrão" */
+  curva:{selic:{},cdi:{},ipca:{},igpm:{},tr:{},poupanca:{}},
+  /* taxa de longo prazo, aplicada depois do fim da curva */
+  longo:{selic:null,cdi:null,ipca:null,igpm:null,tr:null,poupanca:null},
+  horizonte:24,
+  fonte:"",           // de onde vieram os números da última atualização
+  ts:0
+};
+let PARAMS=(()=>{try{
+  const raw=JSON.parse(localStorage.getItem(PARAM_KEY)||"{}");
+  const p=Object.assign({},PARAM_DEF,raw);
+  p.curva=Object.assign({},PARAM_DEF.curva,raw.curva||{});
+  p.longo=Object.assign({},PARAM_DEF.longo,raw.longo||{});
+  return p;
+}catch(e){return JSON.parse(JSON.stringify(PARAM_DEF));}})();
+function saveParams(){
+  try{ localStorage.setItem(PARAM_KEY,JSON.stringify(PARAMS)); }catch(e){}
+  PARAMS.ts=Date.now();
+  try{ AST_CACHE&&Object.keys(AST_CACHE).forEach(k=>delete AST_CACHE[k]); }catch(e){}
+  try{ Object.keys(FGTS_SCH_CACHE).forEach(k=>delete FGTS_SCH_CACHE[k]); }catch(e){}
+  try{ cfLimparCache(); }catch(e){}
+  try{ Object.keys(AST_VAL_CACHE).forEach(k=>delete AST_VAL_CACHE[k]); }catch(e){}
+}
+
+/* Taxa anual de um índice num mês, segundo a curva do titular.
+   Devolve null quando o titular não parametrizou aquele mês. */
+function paramTaxa(idx,ym){
+  const c=PARAMS.curva[idx]||{};
+  if(typeof c[ym]==="number"&&isFinite(c[ym])) return c[ym];
+  const L=PARAMS.longo[idx];
+  if(typeof L==="number"&&isFinite(L)){
+    /* a taxa de longo prazo só vale a partir do fim da curva */
+    const ks=Object.keys(c).filter(k=>typeof c[k]==="number").sort();
+    if(!ks.length||ym>ks[ks.length-1]) return L;
+  }
+  return null;
+}
+/* Converte a taxa parametrizada para variação MENSAL, que é a unidade
+   que o motor de fatores consome. TR e poupança já vêm ao mês. */
+function paramMensal(idx,ym){
+  const v=paramTaxa(idx,ym);
+  if(v===null) return null;
+  if(idx==="tr"||idx==="poupanca") return v;
+  return (Math.pow(1+v/100,1/12)-1)*100;
+}
+
+/* Preenche a curva com a projeção corrente do Banco Central: a Selic da
+   trajetória do Copom, o CDI logo abaixo dela, e o IPCA do mercado. */
+function paramsDoBacen(){
+  const hoje=ymNow();
+  const n=Math.max(12,Math.min(120,+PARAMS.horizonte||24));
+  PARAM_IDX.forEach(x=>{ PARAMS.curva[x.id]=PARAMS.curva[x.id]||{}; });
+  for(let k=0;k<n;k++){
+    const ym=ymAdd(hoje,k), meio=ym+"-15";
+    const sel=selicMetaEm(meio);
+    PARAMS.curva.selic[ym]=R2(sel);
+    PARAMS.curva.cdi[ym]=R2(Math.max(0,sel-0.10));
+    PARAMS.curva.ipca[ym]=R2(IPCA_ANO[+ym.slice(0,4)]||MARKET.ipca||4.5);
+    PARAMS.curva.igpm[ym]=R2(MARKET.igpm||MARKET.ipca||4.5);
+    PARAMS.curva.tr[ym]=sel<=TR_SELIC_PISO?0:Math.round((sel-TR_SELIC_PISO)*0.016*10000)/10000;
+    PARAMS.curva.poupanca[ym]=sel>8.5?0.5:R2(0.7*sel/12);
+  }
+  PARAMS.longo.selic=R2(selicMetaEm(ymAdd(hoje,n)+"-15"));
+  PARAMS.longo.cdi=R2(Math.max(0,PARAMS.longo.selic-0.10));
+  PARAMS.longo.ipca=R2(MARKET.ipca||4.5);
+  PARAMS.fonte="Banco Central · Selic "+R2(MARKET.selic)+"% · CDI "+R2(MARKET.cdi)+"% · IPCA "+R2(MARKET.ipca)+"%";
+  saveParams();
+}
+function paramsLimpar(){
+  PARAM_IDX.forEach(x=>{PARAMS.curva[x.id]={};PARAMS.longo[x.id]=null;});
+  PARAMS.fonte="";
+  saveParams();
+}
+
 function indiceEstimado(idx,ym){
   const meio=ym+"-15";
   if(idx==="selic") return (Math.pow(1+selicMetaEm(meio)/100,1/12)-1)*100;
@@ -13319,7 +13449,11 @@ function indiceEstimado(idx,ym){
 /* Taxa mensal do índice: série do BCB quando existe, estimativa quando não */
 function indiceMes(idx,ym){
   const s=HIST.series[idx];
+  /* dado realizado do BCB manda em meses passados */
   if(s&&typeof s[ym]==="number") return s[ym];
+  /* daí para frente vale a curva parametrizada pelo titular */
+  const p=paramMensal(idx,ym);
+  if(p!==null) return p;
   return indiceEstimado(idx,ym);
 }
 function indiceMesEhReal(idx,ym){
@@ -13587,8 +13721,17 @@ function astIdxNorm(idx){
   return AST_IDX_ALIAS[k]||"";
 }
 /* Rentabilidade bruta ao mês (%) */
-function astBrutoAM(a){
+function astBrutoAM(a,ym){
   const p=astPro(a), v=+p.idxVal||0;
+  /* com um mês em mãos, a taxa vem da curva parametrizada daquele mês */
+  if(ym){
+    const idxN=astIdxNorm(p.idx);
+    const cdiM=paramMensal("cdi",ym), ipcaM=paramMensal("ipca",ym), poupM=paramMensal("poupanca",ym);
+    if(idxN==="cdi_pct"&&cdiM!==null) return cdiM*v/100;
+    if(idxN==="cdi_spread"&&cdiM!==null) return ((1+cdiM/100)*(1+aaToMm(v)/100)-1)*100;
+    if(idxN==="ipca_spread"&&ipcaM!==null) return ((1+ipcaM/100)*(1+aaToMm(v)/100)-1)*100;
+    if(idxN==="poupanca"&&poupM!==null) return poupM;
+  }
   switch(astIdxNorm(p.idx)){
     case "cdi_pct":    return aaToMm(MARKET.cdi*v/100);
     case "cdi_spread": return aaToMm(((1+MARKET.cdi/100)*(1+v/100)-1)*100);
@@ -13608,9 +13751,9 @@ function astManualAM(a,pro){
   return v;
 }
 /* Rentabilidade líquida de taxas ao mês (%) — antes de IR */
-function astLiquidoAM(a){
+function astLiquidoAM(a,ym){
   const p=astPro(a);
-  let r=astBrutoAM(a)-aaToMm(+p.taxaAdm||0);
+  let r=astBrutoAM(a,ym)-aaToMm(+p.taxaAdm||0);
   if(+p.taxaPerf>0){
     const bench=p.benchPerf==="ipca"?aaToMm(MARKET.ipca):aaToMm(MARKET.cdi);
     const exc=Math.max(0,r-bench);
@@ -14014,9 +14157,11 @@ function fgtsFonte(){
    ou abaixo; acima disso ela volta a ser positiva e cresce junto com a Selic.
    Sem a série 226 do BCB em mãos, o app estima a partir da Selic vigente. */
 const TR_SELIC_PISO=8.5;
-function trAM(){
-  if(+MARKET.tr>0) return +MARKET.tr;          // série 226, quando disponível
-  const sel=+MARKET.selic||0;
+function trAM(ym){
+  /* curva do titular primeiro; depois a série 226; por fim a regra da Selic */
+  if(ym){ const p=paramTaxa("tr",ym); if(p!==null) return p; }
+  if(+MARKET.tr>0) return +MARKET.tr;
+  const sel=ym?(paramTaxa("selic",ym)!==null?paramTaxa("selic",ym):(+MARKET.selic||0)):(+MARKET.selic||0);
   if(sel<=TR_SELIC_PISO) return 0;             // TR zerada por regra
   return Math.round((sel-TR_SELIC_PISO)*0.016*10000)/10000;
 }
@@ -14027,11 +14172,11 @@ const DEBT_INDEX=[
   {id:"pre",     lbl:"Prefixado", hint:"Taxa única do começo ao fim. Previsível, mas mais cara na largada."}
 ];
 /* Correção monetária do saldo devedor, em % ao mês */
-function debtIndexAM(d){
+function debtIndexAM(d,ym){
   switch(d&&d.indexador){
-    case "tr":       return trAM();
-    case "ipca":     return aaToMm(MARKET.ipca);
-    case "poupanca": return poupancaAM();
+    case "tr":       return trAM(ym);
+    case "ipca":     {const p=paramMensal("ipca",ym); return p!==null?p:aaToMm(MARKET.ipca);}
+    case "poupanca": {const p=paramMensal("poupanca",ym); return p!==null?p:poupancaAM();}
     case "pre":      return 0;
     default:         return 0;   /* contrato sem indexador declarado */
   }
@@ -14059,7 +14204,7 @@ function debtScheduleFGTS(d,plano){
   const modo=P.modo;
   const renova=fgtsModo(modo).ren;
 
-  const ci=debtIndexAM(d)/100;   // correção monetária do saldo, ao mês
+  const ciFixo=debtIndexAM(d)/100;   // correção do mês corrente, como referência
   /* encargos acessórios: entram no boleto, mas fora da base do FGTS */
   const enc=R2((parseFloat(d&&d.seguro)||0)+(parseFloat(d&&d.taxaAdm)||0));
   let bal=bal0;
@@ -14112,7 +14257,9 @@ function debtScheduleFGTS(d,plano){
 
     let usoMes=0, evento="", corrMes=0;
 
-    /* ── correção monetária: incide sobre o saldo antes de tudo ── */
+    /* ── correção monetária: incide sobre o saldo antes de tudo ──
+       a taxa é a do mês, colhida da curva parametrizada */
+    const ci=(d&&d.indexador)?(debtIndexAM(d,ymAdd(ymNow(),i-1))/100):0;
     if(ci>0){
       corrMes=R2(bal*ci);
       bal=R2(bal+corrMes);
@@ -14196,7 +14343,7 @@ function debtScheduleFGTS(d,plano){
     : 0;
   return {
     rows, meses:rows.length, juros:R2(juros), desembolso:R2(desembolso),
-    correcao:R2(rows.reduce((x,y)=>x+(y.correcao||0),0)), indexAM:Math.round(ci*1000000)/10000,
+    correcao:R2(rows.reduce((x,y)=>x+(y.correcao||0),0)), indexAM:Math.round(ciFixo*1000000)/10000,
     encargos:R2(encargos), encargoMes:enc,
     fgtsUsado:R2(fgtsUsado), saldoFgtsFinal:R2(saldoPat), aplicado:R2(aplicado),
     modo, parcelasCobertas, pctMedio,
@@ -15152,6 +15299,10 @@ function injectTabs(){
   if(navAst&&!navAst.querySelector('[data-astview="rend"]')){
     navAst.insertAdjacentHTML("beforeend",H`<button class="nav-btn" data-astview="rend" onclick="showAst('rend')" style="color:#6B6760">Rendimento</button>`);
     $("ast-content").insertAdjacentHTML("beforeend",H`<div id="ast-view-rend" style="display:none"></div>`);
+  }
+  if(navAst&&!navAst.querySelector('[data-astview="liq"]')){
+    navAst.insertAdjacentHTML("beforeend",H`<button class="nav-btn" data-astview="liq" onclick="showAst('liq')" style="color:#6B6760">Liquidez</button>`);
+    $("ast-content").insertAdjacentHTML("beforeend",H`<div id="ast-view-liq" style="display:none"></div>`);
   }
   if(navAst&&!navAst.querySelector('[data-astview="proj"]')){
     navAst.insertAdjacentHTML("beforeend",H`<button class="nav-btn" data-astview="proj" onclick="showAst('proj')" style="color:#6B6760">Projeção</button>`);
@@ -16242,7 +16393,7 @@ window.showInc=function(v){
   _showInc(v);
 };
 const _showAst=window.showAst;
-const AST_EXTRA={proj:renderProj, rend:renderRendimentos};
+const AST_EXTRA={proj:renderProj, rend:renderRendimentos, liq:renderAstLiquidez};
 window.showAst=function(v){
   if(AST_EXTRA[v]){
     ["dashboard","list","history","goals"].forEach(id=>{const e=$("ast-view-"+id);if(e)e.style.display="none";});
@@ -16564,7 +16715,10 @@ function cfMes(ym,k,st){
     ap.itens.forEach(x=>apItens.push({id:x.id,tipo:"asset",nome:x.nome,bruto:x.bruto,ir:x.ir,aliq:x.aliq}));
   }else{
     st.forEach(x=>{
-      const rb=x.saldo*x.rate;
+      /* a taxa é a do mês projetado, colhida da curva de parâmetros */
+      let tx=x.rate;
+      try{ const t2=astLiquidoAM(x.a,ym)/100; if(isFinite(t2)) tx=t2; }catch(e){}
+      const rb=x.saldo*tx;
       let aliq=0;
       try{ aliq=astAliqIR(x.a,x.dias0+30*k); }catch(err){ aliq=0; }
       if(x.p.trib==="isento"||x.p.trib==="fii") aliq=0;
@@ -17029,6 +17183,258 @@ function renderCfPainel(){
 }
 function cfSetAno(a){ CFP.ano=a; renderCfPainel(); }
 
+
+/* ═══ 5.9 LIQUIDEZ NO TEMPO ═══════════════════════════════════════════
+   Saber quanto se tem não basta: importa quando se pode usar. Cada
+   aplicação libera numa data — D+0, D+1, D+30, carência ou vencimento — e
+   até lá continua rendendo. O que chega na conta é o valor corrigido até
+   aquela data, menos IOF e menos o IR da faixa correspondente ao prazo
+   total, que é mais baixa justamente por esperar mais. */
+
+const LIQ_FAIXAS=[
+  {id:"f0", lbl:"Imediata · D+0 e D+1", max:1},
+  {id:"f1", lbl:"Até 30 dias",          max:30},
+  {id:"f2", lbl:"31 a 180 dias",        max:180},
+  {id:"f3", lbl:"181 a 360 dias",       max:360},
+  {id:"f4", lbl:"1 a 2 anos",           max:720},
+  {id:"f5", lbl:"Acima de 2 anos",      max:1e9}
+];
+
+function astLiquidezProjetada(a){
+  const p=astPro(a), hj=today();
+  let dt=astLiquidezData(a)||hj;
+  if(dt<hj) dt=hj;                       // já liberado
+  const saldo=astValorAtual(a);
+  let f=1;
+  try{ const x=astFatorPeriodo(a,hj,dt); if(isFinite(x)&&x>0) f=x; }catch(e){}
+  const bruto=R2(saldo*f);
+  const custo=Math.min(+p.custo||0,bruto);
+  const ganho=Math.max(0,R2(bruto-custo));
+  const prazo=dias(p.aplic,dt);          // prazo total, que define a faixa de IR
+  const aliq=astAliqIR(a,prazo);
+  const iof=(p.trib==="rf"||String(p.trib).indexOf("fundo")===0)?iofPct(prazo):0;
+  const vIof=R2(ganho*iof/100);
+  const vIr=R2(Math.max(0,ganho-vIof)*aliq/100);
+  return {a, data:dt, espera:Math.max(0,dias(hj,dt)),
+    hoje:R2(saldo), bruto, rendimento:R2(bruto-saldo), ganho,
+    prazo, aliq, iofPct:iof, iof:vIof, ir:vIr,
+    liquido:R2(bruto-vIof-vIr), label:astLiquidezLabel(a)};
+}
+
+/* Escada acumulada: quanto estará disponível até cada janela de tempo */
+function astEscadaLiquidez(lista){
+  const its=(lista||ASSETS).map(astLiquidezProjetada);
+  const fx=LIQ_FAIXAS.map(f=>({...f,itens:[],liquido:0,bruto:0,ir:0}));
+  its.forEach(x=>{
+    const b=fx.find(f=>x.espera<=f.max)||fx[fx.length-1];
+    b.itens.push(x); b.liquido=R2(b.liquido+x.liquido);
+    b.bruto=R2(b.bruto+x.bruto); b.ir=R2(b.ir+x.ir+x.iof);
+  });
+  let ac=0;
+  fx.forEach(f=>{ ac=R2(ac+f.liquido); f.acumulado=ac; });
+  return {faixas:fx.filter(f=>f.itens.length), itens:its,
+    total:R2(its.reduce((s,x)=>s+x.liquido,0)),
+    totalHoje:R2(its.reduce((s,x)=>s+x.hoje,0)),
+    totalIr:R2(its.reduce((s,x)=>s+x.ir+x.iof,0)),
+    totalRend:R2(its.reduce((s,x)=>s+x.rendimento,0))};
+}
+
+function renderAstLiquidez(){
+  const el=$("ast-view-liq"); if(!el) return;
+  ensureStyles(); ensureCfStyles();
+  const lista=(typeof assetsFiltrados==="function")?assetsFiltrados():ASSETS;
+  const E=astEscadaLiquidez(lista);
+  const GRN="#5A8A4A", RED="#B85A6A", BLU="#0F2440";
+  const V=v=>fmt(v||0);
+  if(!E.itens.length){ el.innerHTML=H`<div class="pro-note">Nenhuma aplicação para analisar.</div>`; return; }
+  const R=(l,v,c,col)=>`<div class="cfp-row ${c||""}"><span>${l}</span><span style="color:${col||"var(--body)"}">${v}</span></div>`;
+  const imediato=E.faixas.length&&E.faixas[0].max<=1?E.faixas[0].liquido:0;
+
+  el.innerHTML=H`
+    <div style="border:1.5px solid var(--line);border-radius:16px;padding:15px 17px;margin-bottom:12px">
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#A8A49B;font-weight:700">Disponível imediatamente</div>
+      <div style="font-family:var(--serif);font-style:italic;font-size:30px;line-height:1.1;margin:4px 0 12px;color:${GRN}">${V(imediato)}</div>
+      <div style="display:flex;gap:6px">
+        <div style="flex:1;background:var(--surface);border-radius:12px;padding:9px 11px">
+          <div style="font-size:8.5px;letter-spacing:1.2px;text-transform:uppercase;color:#A8A49B;font-weight:700">Posição hoje</div>
+          <div style="font-size:12px;font-weight:700;color:${BLU};margin-top:2px">${V(E.totalHoje)}</div></div>
+        <div style="flex:1;background:var(--surface);border-radius:12px;padding:9px 11px">
+          <div style="font-size:8.5px;letter-spacing:1.2px;text-transform:uppercase;color:#A8A49B;font-weight:700">Rende até liberar</div>
+          <div style="font-size:12px;font-weight:700;color:${GRN};margin-top:2px">+${V(E.totalRend)}</div></div>
+        <div style="flex:1;background:var(--surface);border-radius:12px;padding:9px 11px">
+          <div style="font-size:8.5px;letter-spacing:1.2px;text-transform:uppercase;color:#A8A49B;font-weight:700">IR e IOF</div>
+          <div style="font-size:12px;font-weight:700;color:${RED};margin-top:2px">−${V(E.totalIr)}</div></div>
+      </div>
+    </div>
+
+    <div class="sec-label">Escada de liquidez</div>
+    <div class="cfp-card">
+      ${E.faixas.map((f,i)=>{
+        const ab=CFP.aberto["liq"+f.id];
+        return `<div class="cfp-row clic${i?" tot":""}" onclick="PRO.cfToggle('liq${f.id}')">
+          <span><span class="cfp-caret">${ab?"▾":"▸"}</span>${f.lbl}</span>
+          <span style="color:${GRN}">${V(f.liquido)}</span></div>`
+        +(ab?f.itens.map(x=>
+            R("↳ "+raw(x.a.name||"—")+" · "+raw(x.label)
+              +(x.espera>0?" · "+x.espera+"d":""),
+              V(x.liquido),"sub","#8A857D")
+           +R("&nbsp;&nbsp;&nbsp;bruto na data · IR "+String(x.aliq).replace(".",",")+"%",
+              V(x.bruto)+" − "+V(x.ir+x.iof),"sub","#A8A49B")
+          ).join(""):"")
+        +R("acumulado até aqui",V(f.acumulado),"sub","#A8A49B");
+      }).join("")}
+      ${R("(=) Total líquido de resgate",V(E.total),"grand",BLU)}
+    </div>
+
+    <div class="sec-label">Por aplicação</div>
+    <div class="cfp-card" style="padding:4px 12px 10px">
+      <div class="cfp-scroll larga">
+        <table><thead><tr>
+          <th style="text-align:left">Aplicação</th><th>Libera</th><th>Espera</th>
+          <th>Bruto</th><th>IR</th><th>Líquido</th>
+        </tr></thead><tbody>
+        ${E.itens.slice().sort((x,y)=>x.espera-y.espera).map(x=>`<tr class="lin" onclick="PRO.openImpactos('asset','${x.a.id}')">
+          <td>${raw(x.a.name||"—")}</td>
+          <td style="color:#8A857D">${raw(x.label)}</td>
+          <td style="color:#8A857D">${x.espera>0?x.espera+"d":"agora"}</td>
+          <td>${V(x.bruto)}</td>
+          <td style="color:${RED}">${(x.ir+x.iof)>0?V(x.ir+x.iof):"—"}</td>
+          <td style="font-weight:600;color:${GRN}">${V(x.liquido)}</td></tr>`).join("")}
+        </tbody></table>
+      </div>
+      <div style="font-size:9.5px;color:#8A857D;margin-top:6px;line-height:1.5">O valor bruto é a posição corrigida até a data de liberação. A alíquota de IR é a da faixa correspondente ao prazo total até lá, e o IOF só incide em resgates com menos de 30 dias. Toque numa linha para abrir os impactos da aplicação.</div>
+    </div>`;
+}
+
+/* ── Ficha de parâmetros: curvas de índice e tributação ── */
+let PAR_IDX_SEL="selic";
+function openParams(){
+  let ov=document.getElementById("modal-params");
+  if(!ov){
+    ov=document.createElement("div");
+    ov.className="overlay"; ov.id="modal-params";
+    ov.style.cssText="align-items:flex-end;z-index:235";
+    ov.innerHTML='<div class="sheet" style="max-height:92dvh"><div class="sheet-handle"></div>'
+      +'<button class="sheet-close" onclick="this.closest(\'.overlay\').remove()">✕</button>'
+      +'<div id="par-body"></div></div>';
+    document.body.appendChild(ov);
+    ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  }
+  ov.classList.add("open");
+  renderParams();
+}
+function parSelIdx(id){ parLerCurva(); PAR_IDX_SEL=id; renderParams(); }
+function parLerCurva(){
+  const c=PARAMS.curva[PAR_IDX_SEL]||(PARAMS.curva[PAR_IDX_SEL]={});
+  document.querySelectorAll("#par-body input[data-ym]").forEach(el=>{
+    const ym=el.dataset.ym, v=el.value.trim().replace(",",".");
+    if(v==="") delete c[ym]; else { const n=parseFloat(v); if(isFinite(n)) c[ym]=n; }
+  });
+  const lg=document.getElementById("par-longo");
+  if(lg){ const v=lg.value.trim().replace(",","."); PARAMS.longo[PAR_IDX_SEL]=v===""?null:(parseFloat(v)||0); }
+  const hz=document.getElementById("par-horiz");
+  if(hz){ const n=parseInt(hz.value,10); if(n>0) PARAMS.horizonte=Math.min(120,n); }
+}
+function parSalvar(){ parLerCurva(); parLerFiscal(); saveParams(); saveFiscal();
+  try{ renderHome(); }catch(e){} try{ refreshPro(); }catch(e){}
+  toast("✓ "+TR("Parâmetros salvos")); renderParams(); }
+function parBacen(){ parLerCurva(); paramsDoBacen(); renderParams(); toast("✓ "+TR("Curva atualizada pelo Banco Central")); }
+function parLimpar(){ paramsLimpar(); renderParams(); toast("✓ "+TR("Curva removida")); }
+function parLerFiscal(){
+  const g=(id,def)=>{const e=document.getElementById(id);if(!e)return def;
+    const v=parseFloat(String(e.value).replace(",","."));return isFinite(v)?v:def;};
+  FISCAL.irFundoCP=g("par-ircp",FISCAL.irFundoCP);
+  FISCAL.irFundoLP=g("par-irlp",FISCAL.irFundoLP);
+  FISCAL.irAcoes=g("par-iracoes",FISCAL.irAcoes);
+  FISCAL.irFII=g("par-irfii",FISCAL.irFII);
+  FISCAL.depDed=g("par-dep",FISCAL.depDed);
+  FISCAL.simplificado=g("par-simpl",FISCAL.simplificado);
+  FISCAL.fgtsPct=g("par-fgts",FISCAL.fgtsPct);
+}
+
+function renderParams(){
+  const el=$("par-body"); if(!el) return;
+  ensureStyles(); ensureCfStyles();
+  const hoje=ymNow(), n=Math.max(6,Math.min(120,+PARAMS.horizonte||24));
+  const c=PARAMS.curva[PAR_IDX_SEL]||{};
+  const meta=PARAM_IDX.find(x=>x.id===PAR_IDX_SEL)||PARAM_IDX[0];
+  const BLU="#1A3A5C", GRN="#5A8A4A";
+  const linhas=[];
+  for(let k=0;k<n;k++){
+    const ym=ymAdd(hoje,k);
+    const v=(typeof c[ym]==="number")?String(c[ym]).replace(".",","):"";
+    const est=paramTaxa(PAR_IDX_SEL,ym);
+    linhas.push(`<tr class="lin">
+      <td style="width:34%">${cfMesLabel(ym).slice(0,3)}/${ym.slice(2,4)}</td>
+      <td style="width:40%"><input type="text" inputmode="decimal" data-ym="${ym}" value="${v}"
+        placeholder="${est!==null?String(R2(est)).replace(".",","):"—"}"
+        oninput="PRO.parLerCurva()"
+        style="width:100%;height:26px;border:1px solid var(--line);border-radius:8px;
+               background:var(--surface);padding:0 8px;font-size:11.5px;text-align:right;
+               font-variant-numeric:tabular-nums;color:var(--body)"/></td>
+      <td style="width:26%;color:#A8A49B;font-size:10px">${meta.unid}</td></tr>`);
+  }
+  el.innerHTML=H`
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px">
+      <div style="width:44px;height:44px;border-radius:13px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:21px">⚙️</div>
+      <div style="min-width:0">
+        <div style="font-family:var(--serif);font-size:19px;color:var(--body);line-height:1.15">Parâmetros</div>
+        <div style="font-size:10.5px;letter-spacing:.4px;text-transform:uppercase;color:#A8A49B;font-weight:600;margin-top:2px">Curvas de índice e tributação</div>
+      </div>
+    </div>
+
+    <div class="pro-note">A projeção do app segue esta curva. Onde o mês estiver em branco, vale a taxa de longo prazo; sem ela, o app estima a partir da trajetória da Selic. Meses já realizados usam sempre o dado do Banco Central.</div>
+
+    <div class="sec-label">Índice</div>
+    <div class="pro-chips" style="margin-bottom:10px">
+      ${PARAM_IDX.map(x=>`<span class="pro-pill ${x.id===PAR_IDX_SEL?"on":""}" onclick="PRO.parSelIdx('${x.id}')">${x.lbl}</span>`).join("")}
+    </div>
+
+    <div class="pro-grid" style="margin-bottom:10px">
+      <div class="pro-f"><label>Longo prazo (${meta.unid})</label>
+        <input id="par-longo" type="text" inputmode="decimal"
+          value="${PARAMS.longo[PAR_IDX_SEL]!==null&&PARAMS.longo[PAR_IDX_SEL]!==undefined?String(PARAMS.longo[PAR_IDX_SEL]).replace(".",","):""}"
+          placeholder="—" oninput="PRO.parLerCurva()"/></div>
+      <div class="pro-f"><label>Horizonte da curva (meses)</label>
+        <input id="par-horiz" type="text" inputmode="numeric" value="${n}" oninput="PRO.parLerCurva()"/></div>
+    </div>
+
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <button class="pro-btn-lg" onclick="PRO.parBacen()" style="flex:2;background:${BLU};color:#fff;border:none;font-weight:600;cursor:pointer">🏛️ Atualizar pelo Banco Central</button>
+      <button class="pro-btn-lg" onclick="PRO.parLimpar()" style="flex:1;background:none;border:1.5px solid var(--line);color:#6B6760;font-weight:600;cursor:pointer">Limpar</button>
+    </div>
+    ${PARAMS.fonte?`<div style="font-size:10px;color:#8A857D;margin:-6px 0 12px;line-height:1.5">${raw(PARAMS.fonte)}</div>`:""}
+
+    <div class="sec-label">Curva de ${meta.lbl}</div>
+    <div class="cfp-card" style="padding:4px 12px 10px;margin-bottom:12px">
+      <div class="cfp-scroll" style="max-height:300px;overflow-y:auto">
+        <table><tbody>${linhas.join("")}</tbody></table>
+      </div>
+    </div>
+
+    <div class="sec-label">Tributação</div>
+    <div class="cfp-card">
+      <div class="pro-grid">
+        <div class="pro-f"><label>IR fundo curto prazo (%)</label><input id="par-ircp" type="text" inputmode="decimal" value="${String(FISCAL.irFundoCP).replace(".",",")}"/></div>
+        <div class="pro-f"><label>IR fundo longo prazo (%)</label><input id="par-irlp" type="text" inputmode="decimal" value="${String(FISCAL.irFundoLP).replace(".",",")}"/></div>
+      </div>
+      <div class="pro-grid" style="margin-top:7px">
+        <div class="pro-f"><label>IR ações (%)</label><input id="par-iracoes" type="text" inputmode="decimal" value="${String(FISCAL.irAcoes).replace(".",",")}"/></div>
+        <div class="pro-f"><label>IR fundos imobiliários (%)</label><input id="par-irfii" type="text" inputmode="decimal" value="${String(FISCAL.irFII).replace(".",",")}"/></div>
+      </div>
+      <div class="pro-grid" style="margin-top:7px">
+        <div class="pro-f"><label>Dedução por dependente (R$)</label><input id="par-dep" type="text" inputmode="decimal" value="${String(FISCAL.depDed).replace(".",",")}"/></div>
+        <div class="pro-f"><label>Desconto simplificado (R$)</label><input id="par-simpl" type="text" inputmode="decimal" value="${String(FISCAL.simplificado).replace(".",",")}"/></div>
+      </div>
+      <div class="pro-grid" style="margin-top:7px">
+        <div class="pro-f"><label>FGTS sobre o salário (%)</label><input id="par-fgts" type="text" inputmode="decimal" value="${String(FISCAL.fgtsPct).replace(".",",")}"/></div>
+        <div></div>
+      </div>
+      <div style="font-size:10px;color:#8A857D;line-height:1.55;margin-top:8px">As faixas de INSS e de IRRF vêm da tabela vigente e são atualizadas junto com o app. Estes campos cobrem o que costuma variar por perfil.</div>
+    </div>
+
+    <button class="pro-btn-lg" onclick="PRO.parSalvar()" style="width:100%;background:#1A3A5C;color:#fff;border:none;font-weight:600;cursor:pointer;margin:12px 0">Salvar parâmetros</button>`;
+}
 
 /* ═══ 11.11 HISTÓRICO DE POSIÇÕES ════════════════════════════════════
    Uma fotografia do momento: demonstrativo aberto, posição de patrimônio e
@@ -17500,6 +17906,7 @@ window.PRO={
   renderCfPainel,cfSetEscala,cfNav,cfHoje,cfToggle,cfFoco,cfSetAno,
   cfMes,cfSerie,cfConsolida,cfDias,cfPosicaoYM,cfLimparCache,
   openImpactos,impHoriz,impSerie,
+  renderAstLiquidez,astLiquidezProjetada,astEscadaLiquidez,LIQ_FAIXAS,
   cfSalvarPosicao,cfAbrirSnap,cfExcluirSnap,cfRelatorio,cfComparaSnap,snaps:()=>SNAPS,
 
   openRendimento,renderRendimentos,setRendHoriz,exportRendimento,
@@ -17521,7 +17928,9 @@ window.PRO={
   fatorIndice,fatorProduto,serieFatores,indiceMes,histCobertura,mesesEntre,
   cfg:()=>PROJ,setProj:(k,v)=>{PROJ[k]=v;saveProj();renderProj();},
   market:()=>MARKET,fiscal:()=>FISCAL,projetar,incomeTotalsForYM,astResgate,astLiquidoAM,
-  astBrutoAM,astIdxNorm,astFatorPeriodo,diasUteis,ehDiaUtil,feriadosDoAno,mesesCompletos
+  astBrutoAM,astIdxNorm,astFatorPeriodo,diasUteis,ehDiaUtil,feriadosDoAno,mesesCompletos,
+  params:()=>PARAMS,saveParams,paramTaxa,paramMensal,paramsDoBacen,paramsLimpar,PARAM_IDX,
+  openParams,renderParams,parSelIdx,parLerCurva,parSalvar,parBacen,parLimpar
 };
 })();
 
