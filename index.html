@@ -5532,13 +5532,19 @@ function shiftMonth(delta){
    perde a noção de direção. Estava só em três telas; agora é uma função,
    e qualquer navegação temporal pode chamar. */
 function deslizarConteudo(el,delta,atualizar){
-  if(!el){ atualizar(); return; }
+  if(!el){ try{ atualizar(); }catch(err){ console.error("deslizarConteudo:",err); } return; }
   const dir=delta>0?1:-1;
   el.style.transition="opacity .14s ease, transform .14s ease";
   el.style.opacity="0";
   el.style.transform=`translateX(${dir*20}px)`;
   setTimeout(()=>{
-    atualizar();
+    /* A tela sai de cena ANTES da atualização e só volta depois dela. Sem
+       proteção, uma exceção em renderHome deixava o conteúdo em opacity 0
+       e deslocado — a tela ficava em branco e sem reagir a nada, de forma
+       permanente. O erro agora é registrado e a tela volta de qualquer
+       jeito, mostrando o último estado válido. */
+    try{ atualizar(); }
+    catch(err){ console.error("deslizarConteudo:",err); try{ toast(t("err_open")+": "+err.message); }catch(e){} }
     el.style.transition="none";
     el.style.transform=`translateX(${-dir*20}px)`;
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
@@ -5576,7 +5582,8 @@ function goToday(){
     content.style.transition="opacity .14s ease";
     content.style.opacity="0";
     setTimeout(()=>{
-      doUpdate();
+      try{ doUpdate(); }
+      catch(err){ console.error("goToday:",err); }
       content.style.transition="none";
       content.style.opacity="0";
       requestAnimationFrame(()=>requestAnimationFrame(()=>{
@@ -7639,8 +7646,40 @@ function showScreen(name){
   });
 }
 
+/* ── Contador de navegação ────────────────────────────────────────────
+   A troca de tela esconde a anterior num setTimeout de 300 ms. Entrar numa
+   seção e voltar ANTES desses 300 ms fazia o timeout da primeira transição
+   rodar DEPOIS da segunda e arrancar o "active" da tela inicial: nenhuma
+   tela ficava visível, e o app travava em branco sem reagir a mais nada —
+   era preciso recarregar. Cada navegação agora recebe um número e o timeout
+   só age se ainda for a navegação corrente. Ao final, uma rede de segurança
+   garante que sempre exista uma tela ativa. */
+let NAV_SEQ=0;
+/* Fecha a conta no fim da ÚLTIMA navegação: exatamente uma tela ativa, a
+   de SCREEN, e nenhuma classe de animação sobrando. Toques encadeados
+   deixavam três ou quatro telas com "active" ao mesmo tempo, empilhadas —
+   a de baixo continuava rolando por trás e a de cima não pertencia a
+   lugar nenhum. */
+function navGarantirTela(){
+  if(typeof AUTH_OK!=="undefined"&&!AUTH_OK) return;   // tela de acesso manda
+  const alvo="screen-"+(SCREEN||"home");
+  let achou=false;
+  ["home","despesas","entradas","patrimonio","dividas","vidafinanceira"].forEach(k=>{
+    const el=document.getElementById("screen-"+k);
+    if(!el) return;
+    el.classList.remove("slide-in","slide-out","slide-back","slide-out-back");
+    if(("screen-"+k)===alvo){ el.style.display=""; el.classList.add("active"); achou=true; }
+    else el.classList.remove("active");
+  });
+  if(!achou){
+    const h=document.getElementById("screen-home");
+    if(h){ h.style.display=""; h.classList.add("active"); }
+  }
+}
+
 function enterSection(s){
   SCREEN=s;
+  const seq=++NAV_SEQ;
   const home=document.getElementById("screen-home");
   const target=document.getElementById("screen-"+s);
   if(!target) return;
@@ -7648,10 +7687,15 @@ function enterSection(s){
   // slide home out to the left, new screen in from the right
   if(home) home.classList.add("slide-out");
   target.style.display="";
+  target.classList.remove("slide-out","slide-out-back","slide-back");
   target.classList.add("active","slide-in");
   setTimeout(()=>{
+    /* outra navegação assumiu no meio do caminho: quem arruma a casa é o
+       timeout dela, não este — que já está desatualizado */
+    if(seq!==NAV_SEQ) return;
     if(home){ home.classList.remove("active","slide-out"); home.style.display=""; }
     target.classList.remove("slide-in");
+    navGarantirTela();
   },300);
 
   try{
@@ -7669,20 +7713,28 @@ function enterSection(s){
 
 function goHome(){
   SCREEN="home";
+  const seq=++NAV_SEQ;
   const home=document.getElementById("screen-home");
   const screens=["despesas","entradas","patrimonio","dividas","vidafinanceira"];
   const current=screens.find(s=>document.getElementById("screen-"+s)?.classList.contains("active"));
   const currentEl=current?document.getElementById("screen-"+current):null;
 
   // slide current out to the right, home slides back in from left
-  if(home){ home.style.display=""; home.classList.add("active","slide-back"); }
+  if(home){
+    home.style.display="";
+    /* limpa resíduo de uma transição anterior interrompida */
+    home.classList.remove("slide-out","slide-out-back","slide-in");
+    home.classList.add("active","slide-back");
+  }
   if(currentEl) currentEl.classList.add("slide-out-back");
   setTimeout(()=>{
+    if(seq!==NAV_SEQ) return;
     if(currentEl){ currentEl.classList.remove("active","slide-out-back"); }
     if(home) home.classList.remove("slide-back");
+    navGarantirTela();
   },300);
 
-  renderHome();
+  try{ renderHome(); }catch(err){ console.error("goHome/renderHome:",err); }
 }
 
 function updateMonthNavInc(){
@@ -7749,7 +7801,11 @@ function renderHome(){
   const totDebt=POS?POS.dividaSaldo:totalDebt();
   /* o cartão acompanha o mês em que o usuário está navegando */
   const ymHome=ymStr;
-  const totMonthly=totalMonthly(ymHome);
+  /* No mês corrente e nos passados vale a parcela CONTRATADA — é fato, não
+     projeção. Nos meses futuros vale a parcela do cronograma: já corrigida
+     pelo indexador do contrato e líquida do abatimento por FGTS. */
+  const totMonthly=(futuro&&POS&&POS.divida&&POS.divida.parcela>0)
+    ?POS.divida.parcela:totalMonthly(ymHome);
   const hdv=document.getElementById("home-debt-val");
   if(hdv) hdv.textContent=fmt(totDebt);
   const hds=document.getElementById("home-debt-sub");
@@ -7771,15 +7827,31 @@ function renderHome(){
 /* Shared computation of all financial-life metrics across the 4 modules */
 function computeFinMetrics(){
   const ymStr=activeYM();
-  const totalExp=getExpensesForYM(ymStr).filter(e=>!isNeutral(e)).reduce((s,e)=>s+myAmount(e),0);
+  /* A posição do mês navegado sai do MESMO motor que alimenta os cartões
+     da tela inicial e o painel de fluxo de caixa: dívida amortizada e
+     corrigida pelo indexador, patrimônio rendendo pela curva declarada nos
+     Parâmetros. Antes esta função lia o saldo de HOJE, e o cartão de saúde
+     ficava parado enquanto os quatro cartões ao lado já mostravam o mês
+     projetado — duas metades da mesma tela contando histórias diferentes. */
+  const POS=(window.PRO&&PRO.cfPosicaoYM)?PRO.cfPosicaoYM(ymStr):null;
+  const totalExp=POS?POS.despesas
+    :getExpensesForYM(ymStr).filter(e=>!isNeutral(e)).reduce((s,e)=>s+myAmount(e),0);
   const totalInc=incomeForYM(ymStr).reduce((s,i)=>s+i.amount,0);
-  const totalAssets=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
-  const monthYield=ASSETS.reduce((s,a)=>{
+  const ativosHoje=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
+  const dividaHoje=totalDebt();
+  const totalAssets=POS?POS.patrimonio:ativosHoje;
+  const monthYield=POS?POS.aplic.bruto:ASSETS.reduce((s,a)=>{
     let tx=parseFloat(a.yieldPct)||0;
     try{ if(window.PRO&&PRO.astLiquidoAM) tx=PRO.astLiquidoAM(a); }catch(e){}
     return s+((astValorAtual(a))*tx/100);},0);
-  const totDebt=totalDebt();
-  const totMonthly=totalMonthly(ymStr);
+  const totDebt=POS?POS.dividaSaldo:dividaHoje;
+  const futuroFM=ymStr>cym();
+  const totMonthly=(futuroFM&&POS&&POS.divida&&POS.divida.parcela>0)
+    ?POS.divida.parcela:totalMonthly(ymStr);
+  /* a COMPOSIÇÃO da carteira e do passivo é a de hoje; o NÍVEL é o do mês
+     projetado. Sem a proporção, a soma das barras não fecharia com o total */
+  const kAtivo=ativosHoje>0?totalAssets/ativosHoje:1;
+  const kPassivo=dividaHoje>0?totDebt/dividaHoje:1;
   let monthlyDebtInterest=0;
   DEBTS.forEach(x=>{ monthlyDebtInterest+=debtBalance(x)*debtRateMonthly(x); });
 
@@ -7812,12 +7884,14 @@ function computeFinMetrics(){
   // Ativo (assets) grouped by class
   const assetByClass={};
   ASSETS.forEach(a=>{ assetByClass[a.class]=(assetByClass[a.class]||0)+(astValorAtual(a)); });
-  const ativo=ASSET_CLASSES.map(c=>({id:c.id,emoji:c.emoji,color:c.color,label:catLabel(c),val:assetByClass[c.id]||0}))
+  const ativo=ASSET_CLASSES.map(c=>({id:c.id,emoji:c.emoji,color:c.color,label:catLabel(c),
+      val:R2c((assetByClass[c.id]||0)*kAtivo)}))
     .filter(x=>x.val>0).sort((a,b)=>b.val-a.val);
   // Passivo (liabilities) grouped by debt type
   const debtByType={};
   DEBTS.forEach(x=>{ debtByType[x.type]=(debtByType[x.type]||0)+debtBalance(x); });
-  const passivo=DEBT_TYPES.map(dt=>({id:dt.id,emoji:dt.emoji,color:dt.color,label:catLabel(dt),val:debtByType[dt.id]||0}))
+  const passivo=DEBT_TYPES.map(dt=>({id:dt.id,emoji:dt.emoji,color:dt.color,label:catLabel(dt),
+      val:R2c((debtByType[dt.id]||0)*kPassivo)}))
     .filter(x=>x.val>0).sort((a,b)=>b.val-a.val);
 
   return {totalInc,totalExp,totalAssets,monthYield,totDebt,totMonthly,monthlyDebtInterest,
@@ -13211,6 +13285,11 @@ const PDIC={
   p_leg_anchor:["taxa declarada","declared rate","erklärter Satz"],
   p_leg_inherit:["herda a anterior","inherits the previous","übernimmt den vorigen"],
   p_leg_real:["fechado pelo BCB","closed by the central bank","von der Zentralbank"],
+  p_leg_deriv:["derivada da Selic","derived from Selic","aus Selic abgeleitet"],
+  p_spread:["Spread Selic−CDI","Selic−CDI spread","Selic−CDI-Spread"],
+  p_note_link:["CDI, TR e poupança saem da Selic do mesmo mês: o CDI pelo spread ao lado, a TR e a poupança pela regra do Banco Central. Digitar um número em qualquer um deles desliga a derivação daquele mês em diante.",
+    "CDI, TR and savings come from the same month's Selic: CDI through the spread beside it, TR and savings through the central bank rule. Typing a number into any of them switches the derivation off from that month on.",
+    "CDI, TR und Sparbuch stammen aus der Selic desselben Monats: CDI über den nebenstehenden Spread, TR und Sparbuch über die Zentralbankregel. Eine eingegebene Zahl schaltet die Ableitung ab diesem Monat ab."],
   p_note_year:["O valor anual entra como uma única declaração, no primeiro mês aberto do ano, e vale daí em diante — inclusive nos anos seguintes que ficarem em branco. Anos já fechados ficam bloqueados nos dados do Banco Central.",
     "The annual figure is stored as a single declaration, in the first open month of the year, and holds from there on — including any later years left blank. Closed years stay locked to Central Bank data.",
     "Der Jahreswert wird als einzelne Erklärung im ersten offenen Monat des Jahres gespeichert und gilt ab da — auch für spätere leere Jahre. Abgeschlossene Jahre bleiben auf Zentralbankdaten festgelegt."],
@@ -13462,6 +13541,7 @@ let FISCAL=(()=>{
    limpar os caches, a tela continuaria mostrando o número antigo — foi
    exatamente assim que os parâmetros pareceram não surtir efeito. */
 const saveFiscal=()=>{
+  FISCAL.ts=Date.now();
   try{ localStorage.setItem(FISCAL_KEY,JSON.stringify(FISCAL)); }catch(e){}
   try{ AST_CACHE&&Object.keys(AST_CACHE).forEach(k=>delete AST_CACHE[k]); }catch(e){}
   try{ Object.keys(AST_VAL_CACHE).forEach(k=>delete AST_VAL_CACHE[k]); }catch(e){}
@@ -13873,6 +13953,10 @@ const PARAM_DEF={
   /* taxa de longo prazo, aplicada depois do fim da curva */
   longo:{selic:null,cdi:null,ipca:null,igpm:null,tr:null,poupanca:null},
   horizonte:24,
+  /* Diferença entre a meta Selic e o CDI observado, em pontos percentuais.
+     É o parafuso que amarra as duas curvas: mexer na Selic move o CDI por
+     aqui, e o titular pode apertar ou afrouxar a relação. */
+  spread:0.10,
   fonte:"",           // de onde vieram os números da última atualização
   ts:0
 };
@@ -13884,8 +13968,9 @@ let PARAMS=(()=>{try{
   return p;
 }catch(e){return JSON.parse(JSON.stringify(PARAM_DEF));}})();
 function saveParams(){
-  try{ localStorage.setItem(PARAM_KEY,JSON.stringify(PARAMS)); }catch(e){}
+  /* o carimbo entrava depois do JSON.stringify e nunca era persistido */
   PARAMS.ts=Date.now();
+  try{ localStorage.setItem(PARAM_KEY,JSON.stringify(PARAMS)); }catch(e){}
   try{ AST_CACHE&&Object.keys(AST_CACHE).forEach(k=>delete AST_CACHE[k]); }catch(e){}
   try{ Object.keys(FGTS_SCH_CACHE).forEach(k=>delete FGTS_SCH_CACHE[k]); }catch(e){}
   try{ cfLimparCache(); }catch(e){}
@@ -13897,7 +13982,7 @@ function saveParams(){
 /* Último mês coberto pela parametrização. Além dele manda a taxa de longo
    prazo, quando declarada. */
 function paramFimHorizonte(){
-  return ymAdd(ymNow(),Math.max(1,Math.min(120,+PARAMS.horizonte||24))-1);
+  return ymAdd(ymNow(),Math.max(6,Math.min(120,+PARAMS.horizonte||24))-1);
 }
 /* Meses declarados de um índice, em ordem */
 function paramAncoras(idx){
@@ -13926,24 +14011,87 @@ function paramAncoraDe(idx,ym){
 function paramTaxa(idx,ym){
   const c=PARAMS.curva[idx]||{};
   if(typeof c[ym]==="number"&&isFinite(c[ym])) return c[ym];
+  const anc=paramAncoraDe(idx,ym);
   const L=PARAMS.longo[idx];
   const temL=typeof L==="number"&&isFinite(L);
-  if(temL&&ym>paramFimHorizonte()) return L;
-  const anc=paramAncoraDe(idx,ym);
+  /* CONTINUIDADE. Declarar CDI de 12% em jun/27 vale para jul/27, ago/27 e
+     todos os meses seguintes, até que outro mês receba número diferente.
+     A taxa de longo prazo é o degrau final, não um atalho: ela só assume
+     DEPOIS do horizonte parametrizado, e ainda assim cede para uma âncora
+     declarada além dele. Antes a ordem era inversa e qualquer declaração
+     era descartada fora do horizonte — a curva quebrava justamente onde a
+     projeção é mais longa. */
+  const fim=paramFimHorizonte();
+  if(anc!==null&&(ym<=fim||anc>fim)) return c[anc];
+  if(temL) return L;
   if(anc!==null) return c[anc];
-  return temL?L:null;
+  return null;
+}
+
+/* ── RELAÇÃO ENTRE OS ÍNDICES ─────────────────────────────────────────
+   Selic e CDI não são curvas independentes. O CDI corre logo abaixo da
+   meta Selic e a distância entre os dois é estável — é o spread. A TR e a
+   poupança, por sua vez, são FUNÇÃO da Selic: estão em lei e em regulamento,
+   não na opinião de quem projeta.
+
+   Antes as seis curvas viviam soltas: mexer na Selic não movia nada, porque
+   o CDI tinha âncoras próprias gravadas pelo botão do Banco Central. Agora
+   CDI, TR e poupança são DERIVADOS da Selic do mês sempre que não houver
+   declaração explícita. Quem digita um número manda; quem não digita segue
+   a Selic — e a projeção inteira responde a uma única alavanca. */
+function paramSpread(){
+  const s=+PARAMS.spread;
+  if(isFinite(s)&&s>=0&&s<5) return s;
+  const m=(+MARKET.selic||0)-(+MARKET.cdi||0);
+  return (m>0&&m<5)?R2(m):0.10;
+}
+function paramDerivada(idx,ym){
+  if(idx==="cdi"){
+    const sel=paramTaxa("selic",ym);
+    return sel===null?null:R2(Math.max(0,sel-paramSpread()));
+  }
+  if(idx==="selic"){
+    const cdi=paramTaxa("cdi",ym);
+    return cdi===null?null:R2(Math.max(0,cdi+paramSpread()));
+  }
+  if(idx==="tr"){
+    const sel=paramTaxa("selic",ym);
+    if(sel===null) return null;
+    return sel<=TR_SELIC_PISO?0:Math.round((sel-TR_SELIC_PISO)*0.016*10000)/10000;
+  }
+  if(idx==="poupanca"){
+    const sel=paramTaxa("selic",ym);
+    if(sel===null) return null;
+    return sel>8.5?0.5:R2(0.7*sel/12);
+  }
+  return null;
+}
+/* Taxa EFETIVA do mês: a declarada, se houver; senão a derivada da Selic.
+   É esta que todo o app consome — nenhuma superfície lê paramTaxa direto. */
+function paramTaxaEf(idx,ym){
+  const v=paramTaxa(idx,ym);
+  if(v!==null) return v;
+  return paramDerivada(idx,ym);
+}
+/* Como o mês chegou ao seu número: declarado, herdado do mês anterior,
+   derivado da Selic ou nada. Serve para a tela mostrar onde estão os
+   degraus e o que é consequência do quê. */
+function paramOrigem(idx,ym){
+  const c=PARAMS.curva[idx]||{};
+  if(typeof c[ym]==="number"&&isFinite(c[ym])) return "ancora";
+  if(paramAncoraDe(idx,ym)!==null&&paramTaxa(idx,ym)!==null) return "herda";
+  if(paramTaxa(idx,ym)!==null) return "longo";
+  return paramDerivada(idx,ym)!==null?"deriva":"";
 }
 /* O mês herdou a taxa de um mês anterior? Serve para a tela mostrar onde
    estão as âncoras e onde há continuidade. */
 function paramHerdado(idx,ym){
-  const c=PARAMS.curva[idx]||{};
-  if(typeof c[ym]==="number") return false;
-  return paramAncoraDe(idx,ym)!==null;
+  return paramOrigem(idx,ym)==="herda";
 }
 /* Converte a taxa parametrizada para variação MENSAL, que é a unidade
    que o motor de fatores consome. TR e poupança já vêm ao mês. */
 function paramMensal(idx,ym){
-  const v=paramTaxa(idx,ym);
+  const v=paramTaxaEf(idx,ym);
   if(v===null) return null;
   if(idx==="tr"||idx==="poupanca") return v;
   return (Math.pow(1+v/100,1/12)-1)*100;
@@ -13959,7 +14107,8 @@ function paramsDoBacen(){
      dela. Em vez de chutar 0,10 p.p., o app mede o spread real de hoje e
      ancora o primeiro mês nas taxas efetivamente divulgadas. */
   const selHoje=+MARKET.selic||0, cdiHoje=+MARKET.cdi||0;
-  const spread=(selHoje>0&&cdiHoje>0)?R2(selHoje-cdiHoje):0.10;
+  const spread=(selHoje>0&&cdiHoje>0&&selHoje>cdiHoje)?R2(selHoje-cdiHoje):0.10;
+  PARAMS.spread=spread;
   const metaHoje=selicMetaEm(hoje+"-15");
   const ajuste=(selHoje>0)?R2(selHoje-metaHoje):0;   // meta × efetiva
   /* A curva é uma escada: gravar os doze ou sessenta meses transformaria
@@ -13973,19 +14122,21 @@ function paramsDoBacen(){
       PARAMS.curva[idx][ym]=x; ant[idx]=x;
     }
   };
+  /* Só as curvas INDEPENDENTES são gravadas. CDI, TR e poupança saem da
+     Selic do mês por derivação — gravá-las aqui criava âncoras que depois
+     ignoravam qualquer mudança na Selic, que era exatamente a queixa: a
+     alavanca existia e não movia nada. */
+  ["cdi","tr","poupanca"].forEach(k=>{ PARAMS.curva[k]={}; PARAMS.longo[k]=null; });
   for(let k=0;k<n;k++){
     const ym=ymAdd(hoje,k), meio=ym+"-15";
     const sel=R2(Math.max(0,selicMetaEm(meio)+ajuste));
     poe("selic",ym,k===0&&selHoje>0?R2(selHoje):sel);
-    poe("cdi",  ym,k===0&&cdiHoje>0?R2(cdiHoje):R2(Math.max(0,sel-spread)));
     poe("ipca", ym,R2(IPCA_ANO[+ym.slice(0,4)]||MARKET.ipca||4.5));
     poe("igpm", ym,R2(MARKET.igpm||MARKET.ipca||4.5));
-    poe("tr",   ym,sel<=TR_SELIC_PISO?0:Math.round((sel-TR_SELIC_PISO)*0.016*10000)/10000);
-    poe("poupanca",ym,sel>8.5?0.5:R2(0.7*sel/12));
   }
   PARAMS.longo.selic=R2(Math.max(0,selicMetaEm(ymAdd(hoje,n)+"-15")+ajuste));
-  PARAMS.longo.cdi=R2(Math.max(0,PARAMS.longo.selic-spread));
   PARAMS.longo.ipca=R2(MARKET.ipca||4.5);
+  PARAMS.longo.igpm=R2(MARKET.igpm||MARKET.ipca||4.5);
   PARAMS.fonte="Banco Central · Selic "+R2(selHoje)+"% a.a. · CDI "+R2(cdiHoje)
     +"% a.a. · IPCA "+R2(MARKET.ipca)+"% · spread Selic−CDI "+R2(spread)+" p.p.";
   saveParams();
@@ -13995,11 +14146,13 @@ function paramsLimpar(){
   PARAMS.fonte="";
   saveParams();
 }
+/* Índices que o app calcula a partir da Selic quando ficam em branco */
+const PARAM_DERIVADOS=["cdi","tr","poupanca"];
 
 function indiceEstimado(idx,ym){
   const meio=ym+"-15";
   if(idx==="selic") return (Math.pow(1+selicMetaEm(meio)/100,1/12)-1)*100;
-  if(idx==="cdi")   return (Math.pow(1+Math.max(0,selicMetaEm(meio)-0.10)/100,1/12)-1)*100;
+  if(idx==="cdi")   return (Math.pow(1+Math.max(0,selicMetaEm(meio)-paramSpread())/100,1/12)-1)*100;
   if(idx==="poupanca"){
     const sel=selicMetaEm(meio);
     return sel>8.5?0.5:(0.7*sel)/12;
@@ -14743,10 +14896,12 @@ function fgtsFonte(){
    Sem a série 226 do BCB em mãos, o app estima a partir da Selic vigente. */
 const TR_SELIC_PISO=8.5;
 function trAM(ym){
-  /* curva do titular primeiro; depois a série 226; por fim a regra da Selic */
-  if(ym){ const p=paramTaxa("tr",ym); if(p!==null) return p; }
+  /* Sem mês declarado vale o mês CORRENTE, não a taxa de mercado avulsa:
+     a ficha de parâmetros governa também o presente. */
+  const M=ym||ymNow();
+  const p=paramTaxaEf("tr",M); if(p!==null) return p;
   if(+MARKET.tr>0) return +MARKET.tr;
-  const sel=ym?(paramTaxa("selic",ym)!==null?paramTaxa("selic",ym):(+MARKET.selic||0)):(+MARKET.selic||0);
+  const sel=+MARKET.selic||0;
   if(sel<=TR_SELIC_PISO) return 0;             // TR zerada por regra
   return Math.round((sel-TR_SELIC_PISO)*0.016*10000)/10000;
 }
@@ -14758,10 +14913,11 @@ const DEBT_INDEX=[
 ];
 /* Correção monetária do saldo devedor, em % ao mês */
 function debtIndexAM(d,ym){
+  const M=ym||ymNow();          /* o presente também obedece à ficha */
   switch(d&&d.indexador){
-    case "tr":       return trAM(ym);
-    case "ipca":     {const p=paramMensal("ipca",ym); return p!==null?p:aaToMm(MARKET.ipca);}
-    case "poupanca": {const p=paramMensal("poupanca",ym); return p!==null?p:poupancaAM();}
+    case "tr":       return trAM(M);
+    case "ipca":     {const p=paramMensal("ipca",M); return p!==null?p:aaToMm(MARKET.ipca);}
+    case "poupanca": {const p=paramMensal("poupanca",M); return p!==null?p:poupancaAM();}
     case "pre":      return 0;
     default:         return 0;   /* contrato sem indexador declarado */
   }
@@ -15267,6 +15423,17 @@ function ensureStyles(){
   .pro-pick .tt{font-size:13px;font-weight:600;color:var(--body)}
   .pro-pick .ss{font-size:10.5px;color:#8A857D;margin-top:2px;line-height:1.4}
   .pro-chips{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  /* Pílula de seleção. Não havia regra nenhuma para .pro-pill nem para o
+     estado .on: a lista de índices saía como texto solto e o titular não
+     tinha como saber qual estava editando. Selecionado leva a borda e o
+     fundo do azul do app; os demais ficam em superfície neutra. */
+  .pro-pill{display:inline-flex;align-items:center;justify-content:center;gap:5px;
+    border:1.5px solid var(--line);background:var(--surface);color:#6B6760;
+    font-size:11.5px;font-weight:500;letter-spacing:.1px;white-space:nowrap;
+    border-radius:20px;padding:0 13px;min-height:32px;cursor:pointer;line-height:1;
+    transition:border-color .15s,background .15s,color .15s}
+  .pro-pill.on{border-color:#1A3A5C;background:rgba(26,58,92,.10);color:#1A3A5C;
+    font-weight:700;box-shadow:inset 0 0 0 1px rgba(26,58,92,.16)}
   .pro-note{font-size:10.5px;color:#8A857D;line-height:1.5;margin-top:8px}
   .pro-prev{border-radius:14px;padding:13px 15px;margin-top:16px}
   .pro-cf{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;font-size:12.5px;gap:10px}
@@ -15334,6 +15501,11 @@ function ensureStyles(){
   #par-body .par-row.herda .par-mk{background:rgba(26,58,92,.18)}
   #par-body .par-row.herda .par-inp input::placeholder{color:#8FA3B8;opacity:1}
   #par-body .par-row.herda .par-inp{border-style:dashed}
+  /* mês derivado da Selic: traço verde e campo pontilhado, para separar
+     "veio de outro índice" de "veio do mês anterior" */
+  #par-body .par-row.deriva .par-mk{background:rgba(61,90,62,.45)}
+  #par-body .par-row.deriva .par-inp{border-style:dotted}
+  #par-body .par-row.deriva .par-inp input::placeholder{color:#7E9A80;opacity:1}
   #par-body .par-leg{display:flex;gap:13px;flex-wrap:wrap;margin:8px 2px 0}
   #par-body .par-leg span{display:flex;align-items:center;gap:5px;font-size:9.5px;color:#8A857D}
   #par-body .par-leg i{width:2px;height:11px;border-radius:1px;display:inline-block}
@@ -17231,7 +17403,12 @@ function cfDebtSch(d){
   CFP_SCH[d.id]={k,v};
   return v;
 }
-function cfLimparCache(){ Object.keys(CFP_SCH).forEach(k=>delete CFP_SCH[k]); }
+function cfLimparCache(){
+  Object.keys(CFP_SCH).forEach(k=>delete CFP_SCH[k]);
+  /* a posição por mês também é cache: sem zerá-la, salvar a ficha não
+     mudava um único número na tela */
+  try{ CFP_POS={k:"",v:{}}; }catch(e){}
+}
 
 /* Estado inicial das aplicações, que evolui ao longo da projeção */
 function cfEstadoAplic(){
@@ -17401,13 +17578,23 @@ function cfSerie(atras,frente){
    o painel e o histórico consultam, para que os três nunca divirjam. */
 let CFP_POS={k:"",v:null};
 function cfChaveDados(){
+  /* AQUI ESTAVA O BURACO. A posição projetada de cada mês é memorizada, e a
+     chave só olhava para lançamentos e para a data das taxas de mercado —
+     não para a ficha de parâmetros. Mudar a curva de juros, o horizonte ou
+     a tabela fiscal não invalidava nada: a tela inicial, o cartão de saúde
+     e o painel de fluxo continuavam devolvendo a projeção do cenário
+     anterior. A ficha entra na chave, e a projeção passa a obedecê-la. */
   return [ (typeof ASSETS!=="undefined"?ASSETS:[]).length,
            (typeof DEBTS!=="undefined"?DEBTS:[]).length,
            (typeof EX!=="undefined"?EX:[]).length,
            (typeof INCOME!=="undefined"?INCOME:[]).length,
            JSON.stringify((typeof DEBTS!=="undefined"?DEBTS:[]).map(d=>[d.balance,d.fgts?1:0,d.indexador,d.seguro,d.taxaAdm])),
            JSON.stringify((typeof ASSETS!=="undefined"?ASSETS:[]).map(a=>[a.balance,a.lastUpdate])),
-           MARKET.ts ].join("|");
+           MARKET.ts,
+           PARAMS.ts, PARAMS.horizonte, PARAMS.spread,
+           JSON.stringify(PARAMS.curva), JSON.stringify(PARAMS.longo),
+           (FISCAL&&FISCAL.ts)||0,
+           JSON.stringify(PROJ||{}) ].join("|");
 }
 function cfPosicaoYM(ymStr){
   const alvo=ymStr||ymNow();
@@ -18333,6 +18520,47 @@ function parLerCurva(){
   if(lg){ const v=parNum(lg.value); PARAMS.longo[PAR_IDX_SEL]=(v===null?null:v); }
   const hz=document.getElementById("par-horiz");
   if(hz){ const n=parseInt(hz.value,10); if(n>0) PARAMS.horizonte=Math.min(120,Math.max(6,n)); }
+  const sp=document.getElementById("par-spread");
+  if(sp){ const v=parNum(sp.value); if(v!==null&&v>=0&&v<5) PARAMS.spread=v; }
+}
+
+/* Um número digitado na curva repercute nos meses seguintes — e, quando o
+   índice é a Selic, nos índices que dela derivam. A repercussão precisa
+   aparecer no ato: redesenhar a folha inteira roubaria o foco de quem está
+   preenchendo, então só os marcadores, os placeholders e os acumulados são
+   reescritos no lugar. */
+function parCurvaMudou(){
+  parLerCurva();
+  parAtualizarLinhas();
+}
+function parAtualizarLinhas(){
+  const el=$("par-body"); if(!el) return;
+  const c=PARAMS.curva[PAR_IDX_SEL]||{};
+  const casas=(PAR_IDX_SEL==="tr")?4:2;
+  const pot=Math.pow(10,casas);
+  el.querySelectorAll(".par-row input[data-ym]").forEach(inp=>{
+    const ym=inp.dataset.ym, row=inp.closest(".par-row");
+    const real=indiceMesEhReal(PAR_IDX_SEL,ym);
+    let est=paramTaxaEf(PAR_IDX_SEL,ym);
+    if(est===null){
+      const mm=indiceMes(PAR_IDX_SEL,ym);
+      est=(PAR_IDX_SEL==="tr"||PAR_IDX_SEL==="poupanca")?mm:(Math.pow(1+mm/100,12)-1)*100;
+    }
+    inp.placeholder=String(Math.round(est*pot)/pot).replace(".",",");
+    if(!row) return;
+    const ancora=typeof c[ym]==="number"&&isFinite(c[ym]);
+    const org=real?"":paramOrigem(PAR_IDX_SEL,ym);
+    row.classList.toggle("ancora",ancora);
+    row.classList.toggle("herda",!ancora&&org==="herda");
+    row.classList.toggle("deriva",!ancora&&org==="deriva");
+  });
+  const hoje=ymNow(), n=Math.max(6,Math.min(120,+PARAMS.horizonte||24));
+  let a12=1,ah=1;
+  for(let k=0;k<12;k++) a12*=(1+indiceMes(PAR_IDX_SEL,ymAdd(hoje,k))/100);
+  for(let k=0;k<n;k++)  ah *=(1+indiceMes(PAR_IDX_SEL,ymAdd(hoje,k))/100);
+  const f=v=>String(R2(v)).replace(".",",")+"%";
+  const e12=$("par-acc12"); if(e12) e12.textContent=f((a12-1)*100);
+  const eh =$("par-acch");  if(eh)  eh.textContent =f((ah-1)*100);
 }
 /* O valor anual vira UMA âncora, no primeiro mês aberto do ano, e a
    continuidade cuida dos onze restantes. Gravar os doze faria de cada mês
@@ -18513,7 +18741,7 @@ function renderParams(){
       /* O campo em branco não mostra um travessão: mostra a taxa que o app
          vai usar de fato naquele mês — herdada, de longo prazo ou estimada.
          Deixar em branco passa a ser uma escolha informada. */
-      let est=paramTaxa(PAR_IDX_SEL,ym);
+      let est=paramTaxaEf(PAR_IDX_SEL,ym);
       if(est===null){
         const mm=indiceMes(PAR_IDX_SEL,ym);
         est=(PAR_IDX_SEL==="tr"||PAR_IDX_SEL==="poupanca")?mm:(Math.pow(1+mm/100,12)-1)*100;
@@ -18522,12 +18750,17 @@ function renderParams(){
       const casas=(PAR_IDX_SEL==="tr")?4:2;
       const estTxt=String(Math.round(est*Math.pow(10,casas))/Math.pow(10,casas)).replace(".",",");
       const ancora=typeof c[ym]==="number";
-      const herda=!ancora&&!real&&paramHerdado(PAR_IDX_SEL,ym);
-      linhas.push(`<div class="par-row${herda?" herda":""}${ancora?" ancora":""}">
+      const org=real?"":paramOrigem(PAR_IDX_SEL,ym);
+      const herda=!ancora&&org==="herda";
+      const deriva=!ancora&&org==="deriva";
+      /* onchange recarrega a curva e redesenha: a propagação do degrau
+         para os meses seguintes precisa aparecer no ato da digitação, não
+         só depois de salvar. */
+      linhas.push(`<div class="par-row${herda?" herda":""}${deriva?" deriva":""}${ancora?" ancora":""}">
         <span class="par-per" style="color:${real?"#A8A49B":"var(--body)"}">
           <i class="par-mk"></i>${cfMesLabel(ym).slice(0,3)}/${ym.slice(2,4)}</span>
         <div class="par-inp"><input type="text" inputmode="decimal" data-ym="${ym}" value="${v}"
-          placeholder="${estTxt}" oninput="PRO.parMask(this)"
+          placeholder="${estTxt}" oninput="PRO.parMask(this)" onchange="PRO.parCurvaMudou()"
           ${real?'title="'+PX("p_realized")+'"':""}/><span class="par-un">${meta.unid}</span></div>
       </div>`);
     }
@@ -18554,7 +18787,7 @@ function renderParams(){
         <span class="par-per" style="color:${real===12?"#A8A49B":"var(--body)"};font-weight:700">${y}</span>
         <div class="par-inp"${real===12?' style="background:rgba(0,0,0,.03)"':""}>
           <input type="text" inputmode="decimal" data-yr="${y}"
-            oninput="PRO.parMask(this);PRO.parMarcarAno(this)"
+            oninput="PRO.parMask(this);PRO.parMarcarAno(this)" onchange="PRO.parCurvaMudou()"
             value="${uni!==null?String(uni).replace(".",","):""}" placeholder="${String(ref).replace(".",",")}"
             ${real===12?"disabled":""}/><span class="par-un">${meta.unid}</span></div>
       </div>`;
@@ -18566,9 +18799,9 @@ function renderParams(){
   for(let k=0;k<n;k++)  ah *=(1+indiceMes(PAR_IDX_SEL,ymAdd(hoje,k))/100);
   resumo=`<div class="stats" style="margin:10px 0 4px">
     <div class="stat"><div class="stat-label">${PL("p_accum")} ${PL("p_in12")}</div>
-      <div class="stat-val" style="color:#0F2440">${P((a12-1)*100)}%</div></div>
+      <div class="stat-val" id="par-acc12" style="color:#0F2440">${P((a12-1)*100)}%</div></div>
     <div class="stat"><div class="stat-label">${PL("p_accum")} ${PL("p_in_h")} · ${n}m</div>
-      <div class="stat-val" style="color:#0F2440">${P((ah-1)*100)}%</div></div>
+      <div class="stat-val" id="par-acch" style="color:#0F2440">${P((ah-1)*100)}%</div></div>
   </div>`;
 
   const macro=`
@@ -18615,6 +18848,16 @@ function renderParams(){
         <div class="par-inp"><input id="par-horiz" type="text" inputmode="numeric" value="${n}"/><span class="par-un">${PX("p_months").toLowerCase()}</span></div></div>
     </div>
 
+    ${(PAR_IDX_SEL==="selic"||PARAM_DERIVADOS.indexOf(PAR_IDX_SEL)>=0)?`
+    <div class="pro-grid" style="margin-bottom:6px">
+      <div class="pro-f"><label>${PL("p_spread")}</label>
+        <div class="par-inp"><input id="par-spread" type="text" inputmode="decimal"
+          oninput="PRO.parMask(this)" onchange="PRO.parCurvaMudou()"
+          value="${String(paramSpread()).replace(".",",")}"/><span class="par-un">p.p.</span></div></div>
+      <div></div>
+    </div>
+    <div class="pro-note" style="margin:0 0 12px">${PL("p_note_link")}</div>`:""}
+
     <div class="sec-label">${PL("p_curve_of")} ${meta.lbl}</div>
     ${PAR_VISTA==="ano"?`<div class="pro-note" style="margin:0 0 8px">${PL("p_note_year")}</div>`:""}
     <div style="background:var(--surface);border-radius:15px;padding:2px 14px 10px;
@@ -18622,6 +18865,8 @@ function renderParams(){
     ${PAR_VISTA==="mes"?`<div class="par-leg">
       <span><i style="background:#1A3A5C"></i>${PL("p_leg_anchor")}</span>
       <span><i style="background:rgba(26,58,92,.18)"></i>${PL("p_leg_inherit")}</span>
+      ${PARAM_DERIVADOS.indexOf(PAR_IDX_SEL)>=0
+        ?`<span><i style="background:rgba(61,90,62,.45)"></i>${PL("p_leg_deriv")}</span>`:""}
       <span><i style="background:#D8D4CB"></i>${PL("p_leg_real")}</span>
     </div>`:""}
     ${resumo}`;
@@ -19324,9 +19569,11 @@ window.PRO={
   astBrutoAM,astIdxNorm,astFatorPeriodo,diasUteis,ehDiaUtil,feriadosDoAno,mesesCompletos,
   params:()=>PARAMS,saveParams,paramTaxa,paramMensal,paramsDoBacen,paramsLimpar,PARAM_IDX,
   paramAncoras,paramAncoraDe,paramHerdado,paramFimHorizonte,
+  paramTaxaEf,paramDerivada,paramOrigem,paramSpread,PARAM_DERIVADOS,
   openLotes,renderLotes,loteToggle,loteConfirmarExclusao,loteApagar,loteReimportar,loteTrocar,
   openParams,renderParams,parSelIdx,parLerCurva,parLerFiscal,parSalvar,parBacen,parLimpar,parSetAba,
   parSetVista,parMarcarAno,parAplicarAno,parRecalcIRRF,parToggle,parRestaurar,parNum,parMask,parMoney,parTabela,
+  parCurvaMudou,parAtualizarLinhas,
   liqSetH,liqToggle,astLiqSerie,astComeCotasAte,irPrevidencia,irGanhoCapital,faixaAliq,
   PX,PL,px:PX,proTabsI18n,refreshPro,idxTaxaMes
 };
