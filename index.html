@@ -5107,17 +5107,21 @@ function astValorAtual(a){
   const hoje=new Date().toISOString().split("T")[0];
   const d0=String((a.lastUpdate||(a.pro&&a.pro.aplic)||"")).slice(0,10);
   if(!d0||d0>=hoje) return base;
-  const ck=[a.id,base,d0,hoje].join("|");
+  /* as taxas de mercado chegam depois do primeiro render: sem elas na
+     chave, o valor calculado com a taxa provisória ficava congelado */
+  let mk=0;
+  try{ if(window.PRO&&PRO.market){ const m=PRO.market(); mk=[m.cdi,m.selic,m.ipca,m.ts].join(","); } }catch(e){}
+  if(!mk) return base;
+  const ck=[a.id,base,d0,hoje,mk].join("|");
   const c=AST_VAL_CACHE[a.id];
   if(c&&c.k===ck) return c.v;
   let v=base;
   try{
-    /* taxa bruta ao mês do próprio ativo; o IR é provisionado à parte */
-    const am=(window.PRO&&PRO.astBrutoAM)?PRO.astBrutoAM(a)/100:0;
-    if(am>0){
-      const d1=new Date(d0+"T12:00:00"), d2=new Date(hoje+"T12:00:00");
-      const nd=Math.max(0,Math.round((d2-d1)/864e5));
-      if(nd>0) v=Math.round(base*Math.pow(1+am,nd/30)*100)/100;
+    /* dias úteis, base 252, com o calendário de feriados — é assim que o
+       banco corrige o saldo, então é assim que o app precisa corrigir */
+    if(window.PRO&&PRO.astFatorPeriodo){
+      const f=PRO.astFatorPeriodo(a,d0,hoje);
+      if(isFinite(f)&&f>0) v=Math.round(base*f*100)/100;
     }
   }catch(e){ v=base; }
   AST_VAL_CACHE[a.id]={k:ck,v};
@@ -12256,6 +12260,107 @@ const mmToAa=mm=>(Math.pow(1+(mm||0)/100,12)-1)*100;        // % a.m. → % a.a.
 const ymAdd=(s,k)=>{let[y,m]=s.split("-").map(Number);m+=k;y+=Math.floor((m-1)/12);m=((m-1)%12+12)%12+1;return y+"-"+String(m).padStart(2,"0");};
 const ymMonth=s=>parseInt(s.split("-")[1],10);
 const dias=(a,b)=>{if(!a)return 0;const d1=new Date(a+"T12:00:00"),d2=b?new Date(b+"T12:00:00"):new Date();return Math.max(0,Math.round((d2-d1)/864e5));};
+/* ═══ 0.2 CALENDÁRIO DE DIAS ÚTEIS (ANBIMA / B3) ═══════════════════════
+   O CDI e os títulos prefixados capitalizam em dias úteis, base 252. Para
+   o saldo bater com o extrato do banco não basta contar dias corridos: é
+   preciso o calendário de feriados bancários. A tabela é gerada por ano,
+   com os feriados de data fixa e os móveis derivados da Páscoa, de modo
+   que nunca fica desatualizada. */
+
+/* Domingo de Páscoa pelo algoritmo de Meeus/Butcher */
+function pascoaUTC(y){
+  const a=y%19, b=Math.floor(y/100), c=y%100,
+        d=Math.floor(b/4), e=b%4,
+        f=Math.floor((b+8)/25), g=Math.floor((b-f+1)/3),
+        h=(19*a+b-d-g+15)%30, i=Math.floor(c/4), k=c%4,
+        l=(32+2*e+2*i-h-k)%7, m=Math.floor((a+11*h+22*l)/451),
+        mes=Math.floor((h+l-7*m+114)/31), dia=((h+l-7*m+114)%31)+1;
+  return Date.UTC(y,mes-1,dia);
+}
+const DIA_MS=864e5;
+const isoUTC=ms=>new Date(ms).toISOString().split("T")[0];
+const FERIADOS_ANO={};
+/* Feriados bancários nacionais. 24/12 e 31/12 entram porque não há sessão
+   na B3 nem divulgação de DI nesses dias. */
+function feriadosDoAno(y){
+  if(FERIADOS_ANO[y]) return FERIADOS_ANO[y];
+  const S=new Set();
+  const fix=[[1,1],[4,21],[5,1],[9,7],[10,12],[11,2],[11,15],[12,24],[12,25],[12,31]];
+  fix.forEach(p=>S.add(y+"-"+String(p[0]).padStart(2,"0")+"-"+String(p[1]).padStart(2,"0")));
+  /* Consciência Negra: feriado nacional a partir de 2024 (Lei 14.759/2023) */
+  if(y>=2024) S.add(y+"-11-20");
+  const P=pascoaUTC(y);
+  [-48,-47,-2,60].forEach(off=>S.add(isoUTC(P+off*DIA_MS)));  // carnaval, sexta santa, corpus christi
+  FERIADOS_ANO[y]=S;
+  return S;
+}
+function ehDiaUtil(iso){
+  if(!iso) return false;
+  const d=new Date(iso+"T12:00:00Z"), wd=d.getUTCDay();
+  if(wd===0||wd===6) return false;
+  return !feriadosDoAno(d.getUTCFullYear()).has(iso);
+}
+/* Dias úteis decorridos entre duas datas (exclui a inicial, inclui a final) */
+const DU_CACHE={};
+function diasUteis(de,ate){
+  if(!de||!ate||de>=ate) return 0;
+  const ck=de+"|"+ate;
+  if(DU_CACHE[ck]!==undefined) return DU_CACHE[ck];
+  let n=0, ms=new Date(de+"T12:00:00Z").getTime();
+  const fim=new Date(ate+"T12:00:00Z").getTime();
+  let guarda=0;
+  while(ms<fim&&guarda++<40000){
+    ms+=DIA_MS;
+    if(ehDiaUtil(isoUTC(ms))) n++;
+  }
+  DU_CACHE[ck]=n;
+  return n;
+}
+/* Meses completos decorridos — a poupança só credita no aniversário */
+function mesesCompletos(de,ate){
+  if(!de||!ate||de>=ate) return 0;
+  const a=de.split("-").map(Number), b=ate.split("-").map(Number);
+  let m=(b[0]-a[0])*12+(b[1]-a[1]);
+  if(b[2]<a[2]) m--;
+  return Math.max(0,m);
+}
+
+/* Fator de correção de uma aplicação entre duas datas.
+   CDI e prefixado capitalizam em dias úteis (base 252), como o banco faz;
+   a poupança credita só no aniversário mensal; rendimento informado à mão
+   é convertido de "% ao mês" para a mesma base. */
+function astFatorPeriodo(a,de,ate){
+  const p=astPro(a), v=+p.idxVal||0;
+  const idx=astIdxNorm(p.idx);
+  const dia252=aa=>Math.pow(1+(aa||0)/100,1/252);
+  if(idx==="poupanca"){
+    const m=mesesCompletos(de,ate);
+    return m>0?Math.pow(1+poupancaAM()/100,m):1;
+  }
+  const du=diasUteis(de,ate);
+  if(du<=0) return 1;
+  let fatorDia;
+  switch(idx){
+    case "cdi_pct":
+      /* o percentual incide sobre a taxa DI do dia, não sobre o ano */
+      fatorDia=1+(dia252(MARKET.cdi)-1)*(v/100); break;
+    case "cdi_spread":
+      fatorDia=dia252(MARKET.cdi)*dia252(v); break;
+    case "ipca_spread":
+      fatorDia=dia252(MARKET.ipca)*dia252(v); break;
+    case "pre":
+      fatorDia=dia252(v); break;
+    default:{
+      /* informado em % ao mês: vira taxa anual e depois diária */
+      const am=astManualAM(a,p)/100;
+      if(!(am>0)) return 1;
+      fatorDia=Math.pow(1+am,12/252);
+    }
+  }
+  if(!isFinite(fatorDia)||fatorDia<=0) return 1;
+  return Math.pow(fatorDia,du);
+}
+
 const addDays=(d,n)=>{const x=new Date((d||new Date().toISOString().split("T")[0])+"T12:00:00");x.setDate(x.getDate()+n);return x.toISOString().split("T")[0];};
 const brDate=s=>{if(!s)return"—";const p=String(s).split("-");return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:s;};
 const pct=v=>(v>=0?"":"−")+Math.abs(v||0).toFixed(2).replace(".",",")+"%";
@@ -13237,7 +13342,19 @@ function fatorIndice(idx,ini,fim,transf){
     const prox=new Date(y,m,1).toISOString().split("T")[0];   // dia 1 do mês seguinte
     const de=(ini>ini1)?ini:ini1;
     const ate=(fim<prox)?fim:prox;
-    const parte=Math.max(0,dias(de,ate))/ultimo;
+    /* A ponta do mês entra proporcional aos DIAS ÚTEIS, não aos corridos:
+       CDI, prefixado e IPCA+ capitalizam em base 252, com o calendário de
+       feriados. É essa fração que faz o saldo bater com o extrato. A
+       poupança segue proporcional a dias corridos, pois credita por
+       aniversário mensal. */
+    const idxN=astIdxNorm(p.idx);
+    let parte;
+    if(idxN!=="poupanca"){
+      const duMes=diasUteis(ini1,prox);
+      parte=duMes>0?Math.max(0,diasUteis(de,ate))/duMes:0;
+    }else{
+      parte=Math.max(0,dias(de,ate))/ultimo;
+    }
     if(parte>0){
       const taxa=f(indiceMes(idx,cur),cur)/100;
       fator*=Math.pow(1+taxa,parte);
@@ -13360,7 +13477,19 @@ function serieFatores(a,ini,fim,pro){
     const prox=new Date(y,m,1).toISOString().split("T")[0];   // dia 1 do mês seguinte
     const de=(ini>ini1)?ini:ini1;
     const ate=(fim<prox)?fim:prox;
-    const parte=Math.max(0,dias(de,ate))/ultimo;
+    /* A ponta do mês entra proporcional aos DIAS ÚTEIS, não aos corridos:
+       CDI, prefixado e IPCA+ capitalizam em base 252, com o calendário de
+       feriados. É essa fração que faz o saldo bater com o extrato. A
+       poupança segue proporcional a dias corridos, pois credita por
+       aniversário mensal. */
+    const idxN=astIdxNorm(p.idx);
+    let parte;
+    if(idxN!=="poupanca"){
+      const duMes=diasUteis(ini1,prox);
+      parte=duMes>0?Math.max(0,diasUteis(de,ate))/duMes:0;
+    }else{
+      parte=Math.max(0,dias(de,ate))/ultimo;
+    }
     if(parte>0){
       let base=1, real=true, idxUsado="";
       switch(astIdxNorm(p.idx)){
@@ -14186,7 +14315,8 @@ function astAtualizacao(a){
   const p=astPro(a);
   const de=a.lastUpdate||p.aplic||today();
   const hj=today();
-  const chave=[a.id,bal,de,hj,p.idx,p.idxVal,p.aporte,p.taxaAdm,HIST.ts].join("|");
+  const chave=[a.id,bal,de,hj,p.idx,p.idxVal,p.aporte,p.taxaAdm,HIST.ts,
+    MARKET.cdi,MARKET.selic,MARKET.ipca,MARKET.ts].join("|");
   if(AST_CACHE[chave]) return AST_CACHE[chave];
 
   const base={informado:bal,desde:de,dias:Math.max(0,dias(de,hj)),
@@ -17391,7 +17521,7 @@ window.PRO={
   fatorIndice,fatorProduto,serieFatores,indiceMes,histCobertura,mesesEntre,
   cfg:()=>PROJ,setProj:(k,v)=>{PROJ[k]=v;saveProj();renderProj();},
   market:()=>MARKET,fiscal:()=>FISCAL,projetar,incomeTotalsForYM,astResgate,astLiquidoAM,
-  astBrutoAM,astIdxNorm
+  astBrutoAM,astIdxNorm,astFatorPeriodo,diasUteis,ehDiaUtil,feriadosDoAno,mesesCompletos
 };
 })();
 
