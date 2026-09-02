@@ -3009,6 +3009,7 @@ const I18N={
     debt_tab_sim:"Simulador",
     debt_by_type:"Por tipo de dívida",
     next_payments:"Próximos pagamentos",
+    since_position:"desde a última posição",
     impacts:"Impactos",
     w_projected_lc:"projetado",
     debt_charges:"Encargos mensais do contrato",
@@ -3715,6 +3716,7 @@ const I18N={
     debt_tab_sim:"Simulator",
     debt_by_type:"By debt type",
     next_payments:"Upcoming payments",
+    since_position:"since last position",
     impacts:"Impacts",
     w_projected_lc:"projected",
     debt_charges:"Monthly contract charges",
@@ -4421,6 +4423,7 @@ const I18N={
     debt_tab_sim:"Simulator",
     debt_by_type:"Nach Schuldenart",
     next_payments:"Nächste Zahlungen",
+    since_position:"seit dem letzten Stand",
     impacts:"Auswirkungen",
     w_projected_lc:"projiziert",
     debt_charges:"Monatliche Vertragsgebühren",
@@ -5092,7 +5095,36 @@ const ASSET_CLASSES=[
 const gAssetClass=id=>ASSET_CLASSES.find(c=>c.id===id)||ASSET_CLASSES[ASSET_CLASSES.length-1];
 /* Valor de uma aplicação hoje. O módulo fiscal sobrescreve isto para
    corrigir a posição pelo histórico do indexador desde a data informada. */
-function astValorAtual(a){ return parseFloat(a&&a.balance)||0; }
+/* Posição de HOJE de uma aplicação.
+   O saldo guardado é a foto do dia em que o titular o informou. Entre uma
+   atualização e outra o dinheiro continua rendendo, e o app mostrava o
+   patrimônio congelado. Aqui a posição é corrigida pro rata die, pelo
+   indexador do próprio ativo, da data informada até hoje. */
+const AST_VAL_CACHE={};
+function astValorAtual(a){
+  const base=parseFloat(a&&a.balance)||0;
+  if(!a||!(base>0)) return base;
+  const hoje=new Date().toISOString().split("T")[0];
+  const d0=String((a.lastUpdate||(a.pro&&a.pro.aplic)||"")).slice(0,10);
+  if(!d0||d0>=hoje) return base;
+  const ck=[a.id,base,d0,hoje].join("|");
+  const c=AST_VAL_CACHE[a.id];
+  if(c&&c.k===ck) return c.v;
+  let v=base;
+  try{
+    /* taxa bruta ao mês do próprio ativo; o IR é provisionado à parte */
+    const am=(window.PRO&&PRO.astBrutoAM)?PRO.astBrutoAM(a)/100:0;
+    if(am>0){
+      const d1=new Date(d0+"T12:00:00"), d2=new Date(hoje+"T12:00:00");
+      const nd=Math.max(0,Math.round((d2-d1)/864e5));
+      if(nd>0) v=Math.round(base*Math.pow(1+am,nd/30)*100)/100;
+    }
+  }catch(e){ v=base; }
+  AST_VAL_CACHE[a.id]={k:ck,v};
+  return v;
+}
+/* Quanto rendeu desde a última posição informada */
+function astRendAcum(a){ return Math.round((astValorAtual(a)-(parseFloat(a&&a.balance)||0))*100)/100; }
 
 const DEBT_TYPES=[
   {id:"mortgage",   label:"Financiamento Imob.", emoji:"🏠", color:"#6E2B3A", fields:["creditor","principal","rate","term","dueDay","amort"]},
@@ -6990,12 +7022,16 @@ function renderAssets(){
   popularFiltroInst("ast-inst-filter",ASSETS);
   const FA=assetsFiltrados();
   const total=FA.reduce((s,a)=>s+(astValorAtual(a)),0);
-  const monthYield=FA.reduce((s,a)=>s+((astValorAtual(a))*(parseFloat(a.yieldPct)||0)/100),0);
+  /* a taxa é a do indexador do ativo; o campo antigo só entra como reserva */
+  const taxaMes=a=>{ try{ if(window.PRO&&PRO.astLiquidoAM) return PRO.astLiquidoAM(a); }catch(e){} return parseFloat(a.yieldPct)||0; };
+  const monthYield=FA.reduce((s,a)=>s+((astValorAtual(a))*taxaMes(a)/100),0);
+  const rendAcum=FA.reduce((s,a)=>s+astRendAcum(a),0);
   const heroEl=document.getElementById("assets-hero");
   if(heroEl) heroEl.innerHTML=`
         <div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,38px);line-height:1;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" data-total="${fmt(total)}">${fmt(total)}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">📈 ${t("monthly_yield")} ${fmt(monthYield)}</div>
+      ${rendAcum>0?`<div style="background:rgba(127,228,160,.18);border-radius:20px;padding:3px 10px;font-size:11px;color:#CFF3DA">⏱ +${fmt(rendAcum)} ${t("since_position")}</div>`:""}
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">${FA.length} ${t("w_holdings")}</div>
     </div>`;
   if(AST_V==="dashboard") renderAssetsDash();
@@ -7007,7 +7043,10 @@ function renderAssets(){
 /* ── RESUMO TAB ── */
 function renderAssetsDash(){
   const total=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
-  const monthYield=ASSETS.reduce((s,a)=>s+((astValorAtual(a))*(parseFloat(a.yieldPct)||0)/100),0);
+  const monthYield=ASSETS.reduce((s,a)=>{
+    let tx=parseFloat(a.yieldPct)||0;
+    try{ if(window.PRO&&PRO.astLiquidoAM) tx=PRO.astLiquidoAM(a); }catch(e){}
+    return s+((astValorAtual(a))*tx/100);},0);
   const goalTotal=Object.values(astGoals).reduce((s,v)=>s+(parseFloat(v)||0),0);
   const avgYield=total>0?(monthYield/total*100):0;
 
@@ -7365,6 +7404,7 @@ function saveAsset(){
   const yieldPct=parseFloat(document.getElementById("ast-yield").value)||0;
   const lastUpdate=document.getElementById("ast-date").value||today();
   const instituicao=document.getElementById("ast-inst").value.trim();
+  Object.keys(AST_VAL_CACHE).forEach(k=>delete AST_VAL_CACHE[k]);
 
   if(AST_EID){
     const idx=ASSETS.findIndex(x=>x.id===AST_EID);
@@ -7534,7 +7574,10 @@ function computeFinMetrics(){
   const totalExp=getExpensesForYM(ymStr).filter(e=>!isNeutral(e)).reduce((s,e)=>s+myAmount(e),0);
   const totalInc=incomeForYM(ymStr).reduce((s,i)=>s+i.amount,0);
   const totalAssets=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
-  const monthYield=ASSETS.reduce((s,a)=>s+((astValorAtual(a))*(parseFloat(a.yieldPct)||0)/100),0);
+  const monthYield=ASSETS.reduce((s,a)=>{
+    let tx=parseFloat(a.yieldPct)||0;
+    try{ if(window.PRO&&PRO.astLiquidoAM) tx=PRO.astLiquidoAM(a); }catch(e){}
+    return s+((astValorAtual(a))*tx/100);},0);
   const totDebt=totalDebt();
   const totMonthly=totalMonthly(ymStr);
   let monthlyDebtInterest=0;
@@ -17347,7 +17390,8 @@ window.PRO={
   getHist:()=>HIST,
   fatorIndice,fatorProduto,serieFatores,indiceMes,histCobertura,mesesEntre,
   cfg:()=>PROJ,setProj:(k,v)=>{PROJ[k]=v;saveProj();renderProj();},
-  market:()=>MARKET,fiscal:()=>FISCAL,projetar,incomeTotalsForYM,astResgate,astLiquidoAM
+  market:()=>MARKET,fiscal:()=>FISCAL,projetar,incomeTotalsForYM,astResgate,astLiquidoAM,
+  astBrutoAM,astIdxNorm
 };
 })();
 
