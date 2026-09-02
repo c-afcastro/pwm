@@ -1158,9 +1158,12 @@
 <div id="screen-auth" class="screen" style="background:linear-gradient(160deg, #3D5A3E 0%, #1A3A5C 55%, #0F2440 100%)">
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:48px 30px;color:#fff;text-align:center;overflow-y:auto;position:relative">
 
-    <!-- versão, canto superior esquerdo -->
-    <div style="position:absolute;top:18px;left:18px;font-size:10px;letter-spacing:1.2px;
-                font-weight:600;color:rgba(255,255,255,.45)">v10.08</div>
+    <!-- Versão do aplicativo. Fica só aqui, na tela de acesso, e é escrita
+         em tempo de execução a partir de APP_VERSION: cravada no HTML ela
+         envelhecia sozinha e passou várias entregas mostrando um número
+         que já não era o da build instalada. -->
+    <div id="auth-version" style="position:absolute;top:18px;left:18px;font-size:10px;letter-spacing:1.2px;
+                font-weight:600;color:rgba(255,255,255,.45)"></div>
 
     <!-- language switch top-right -->
     <div style="position:absolute;top:18px;right:18px;display:flex;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:2px">
@@ -3108,6 +3111,11 @@ const I18N={
     ast_tab_liq:"Liquidez",
     since_position:"desde a última posição",
     institution:"Instituição",
+    ast_contrib:"Aporte/mês",
+    inc_annual:"Anuais",
+    inc_ev_13:"13º",
+    inc_ev_13a:"13º adiant.",
+    inc_ev_fer:"Férias",
     ast_month_proj:"projetado para",
     ast_month_past:"posição em",
     impacts:"Impactos",
@@ -3833,6 +3841,11 @@ const I18N={
     ast_tab_liq:"Liquidity",
     since_position:"since last position",
     institution:"Institution",
+    ast_contrib:"Contrib./mo.",
+    inc_annual:"Annual",
+    inc_ev_13:"13th",
+    inc_ev_13a:"13th adv.",
+    inc_ev_fer:"Holiday",
     ast_month_proj:"projected to",
     ast_month_past:"position at",
     impacts:"Impacts",
@@ -4558,6 +4571,11 @@ const I18N={
     ast_tab_liq:"Liquidität",
     since_position:"seit dem letzten Stand",
     institution:"Institut",
+    ast_contrib:"Einzahl./Mon.",
+    inc_annual:"Jährlich",
+    inc_ev_13:"13.",
+    inc_ev_13a:"13. Vorsch.",
+    inc_ev_fer:"Urlaub",
     ast_month_proj:"projiziert auf",
     ast_month_past:"Stand per",
     impacts:"Auswirkungen",
@@ -5431,7 +5449,10 @@ function diagLimpar(){ DIAG=[]; try{ localStorage.removeItem(DIAG_KEY); }catch(e
 function passoSeguro(nome,fn){ try{ fn(); }catch(err){ logErro(nome,err); } }
 function diagTexto(){
   const ua=(navigator&&navigator.userAgent)||"";
-  return "v10.08 · "+ua+"\n"+DIAG.map(e=>e.t+" ["+e.o+"] "+e.m).join("\n");
+  /* o registro de diagnóstico carrega a versão para que um relatório
+     copiado diga a que build ele pertence */
+  const vv=(typeof window!=="undefined"&&window.APP_VERSION)?window.APP_VERSION:"?";
+  return "v"+vv+" · "+ua+"\n"+DIAG.map(e=>e.t+" ["+e.o+"] "+e.m).join("\n");
 }
 window.addEventListener("error",ev=>{ logErro("window",(ev&&ev.error)||(ev&&ev.message)); });
 window.addEventListener("unhandledrejection",ev=>{ logErro("promise",ev&&ev.reason); });
@@ -6980,20 +7001,64 @@ function incomeForYM(ymStr){
   return result;
 }
 
+/* ══ ENTRADAS DO MÊS, PELO MESMO MOTOR DO FLUXO DE CAIXA ═══════════
+   incomeForYM() devolve só os lançamentos cadastrados, com o valor de
+   cadastro. Não conhece 13º, não conhece o terço de férias e — antes do
+   módulo PRO — nem o reajuste. Resultado: a tela de Entradas mostrava o
+   mesmo número em todo mês do ano enquanto o painel de fluxo de caixa,
+   que usa incomeTotalsForYM(), mostrava dezembro com 13º e o mês de férias
+   com o adicional. Duas telas do mesmo app contando histórias diferentes.
+
+   Aqui a lista passa a sair dos EVENTOS: lançamento normal, adiantamento
+   do 13º, 2ª parcela do 13º e terço de férias, cada um com o bruto e o
+   líquido do mês. Os eventos automáticos vêm marcados com _auto para que a
+   lista não ofereça editar ou apagar o que não é um cadastro. */
+function incomeItensYM(ymStr){
+  try{
+    if(window.PRO&&PRO.incomeTotalsForYM){
+      const s=PRO.incomeTotalsForYM(ymStr);
+      if(s&&Array.isArray(s.eventos)&&s.eventos.length){
+        return s.eventos.map(e=>{
+          const src=e.inc||{};
+          const dia=String(src.date||"").slice(8,10)||"01";
+          return Object.assign({},src,{
+            amount:e.bruto, desc:e.label||src.desc,
+            date:(e.tipo==="normal"&&String(src.date||"").slice(0,7)===ymStr)?src.date:(ymStr+"-"+dia),
+            _ev:e.tipo, _auto:e.tipo!=="normal",
+            _parentId:src.id, _liq:e.liquido, _inss:e.inss, _ir:e.ir});
+        });
+      }
+    }
+  }catch(err){ try{ logErro("incomeItensYM "+ymStr,err); }catch(e){} }
+  return incomeForYM(ymStr);
+}
+/* Etiqueta curta do evento automático */
+function incEvLabel(tp){
+  if(tp==="13")  return t("inc_ev_13");
+  if(tp==="13a") return t("inc_ev_13a");
+  if(tp==="ferias") return t("inc_ev_fer");
+  return "";
+}
+
 function renderIncome(){
   updateMonthNavInc();
   const ymStr=activeYM();
-  const items=incomeForYM(ymStr);
+  const items=incomeItensYM(ymStr);
   const total=items.reduce((s,i)=>s+i.amount,0);
   const monthLabel=MPT[activeMonth]+" "+activeYear;
-  const recurringTotal=items.filter(i=>gIncomeType(i.type).recurring).reduce((s,i)=>s+i.amount,0);
+  /* 13º e férias não são renda fixa: são eventos do ano. Somá-los às fixas
+     fazia o chip de "fixas" saltar em dezembro sem explicação. */
+  const recurringTotal=items.filter(i=>!i._auto&&gIncomeType(i.type).recurring)
+    .reduce((s,i)=>s+i.amount,0);
+  const anuais=items.filter(i=>i._auto).reduce((s,i)=>s+i.amount,0);
   const heroEl=document.getElementById("income-hero");
   if(heroEl) heroEl.innerHTML=`
     
     <div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,38px);line-height:1;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" data-total="${fmt(total)}">${fmt(total)}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">${t("stat_fixed")} ${fmt(recurringTotal)}</div>
-      <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">${t("stat_var")} ${fmt(total-recurringTotal)}</div>
+      <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">${t("stat_var")} ${fmt(total-recurringTotal-anuais)}</div>
+      ${anuais>0?`<div style="background:rgba(212,160,90,.22);border-radius:20px;padding:3px 10px;font-size:11px;color:#F3DFC0">🎯 ${t("inc_annual")} ${fmt(anuais)}</div>`:""}
     </div>`;
   if(INC_V==="dashboard") renderIncomeDash();
   if(INC_V==="list") renderIncomeList();
@@ -7002,9 +7067,10 @@ function renderIncome(){
 
 function renderIncomeDash(){
   const ymStr=activeYM();
-  const items=incomeForYM(ymStr);
+  const items=incomeItensYM(ymStr);
   const total=items.reduce((s,i)=>s+i.amount,0);
-  const recurTotal=items.filter(i=>gIncomeType(i.type).recurring).reduce((s,i)=>s+i.amount,0);
+  const recurTotal=items.filter(i=>!i._auto&&gIncomeType(i.type).recurring)
+    .reduce((s,i)=>s+i.amount,0);
   const goalTotal=Object.values(incGoals).reduce((s,v)=>s+(parseFloat(v)||0),0);
   const monthLabel=MPT[activeMonth]+" "+activeYear;
   const statsEl=document.getElementById("inc-stats");
@@ -7051,7 +7117,7 @@ function populateIncTypeFilter(){
 
 function renderIncomeList(){
   const ymStr=activeYM();
-  let items=incomeForYM(ymStr);
+  let items=incomeItensYM(ymStr);
   const q=(document.getElementById("inc-list-search")?.value||"").toLowerCase().trim();
   const typeF=document.getElementById("inc-type-filter")?.value||"all";
   const recurF=document.getElementById("inc-recur-filter")?.value||"all";
@@ -7075,14 +7141,14 @@ function renderIncomeList(){
       <div style="display:flex;gap:10px;align-items:center;min-width:0">
         <div style="width:38px;height:38px;border-radius:12px;background:#1A3A5C18;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${ty.emoji}</div>
         <div style="min-width:0"><div style="font-size:14px;font-weight:500;color:var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.desc||catLabel(ty)}</div>
-          <div style="font-size:11px;color:#6B6760;margin-top:2px">${catLabel(ty)} · ${i.date}${i._recurInstance||i.recurrence?"  🔁":""}</div></div>
+          <div style="font-size:11px;color:#6B6760;margin-top:2px">${catLabel(ty)} · ${i.date}${i._recurInstance||i.recurrence?"  🔁":""}${i._auto?`  <span style="background:rgba(212,160,90,.18);border-radius:6px;padding:1px 6px;color:#8A6A2A">${incEvLabel(i._ev)}</span>`:""}</div></div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;margin-left:8px">
         <div style="font-family:var(--serif);font-style:italic;font-size:17px;color:#1A3A5C">${fmt(i.amount)}</div>
         <div style="display:flex;gap:6px">
           <button style="background:none;border:none;color:#1A3A5C;font-size:12px;font-weight:600;cursor:pointer" onclick="event.stopPropagation();PRO.openImpactos('income','${i._parentId||i.id}')">🔎 ${t("impacts")}</button>
-          <button style="background:none;border:none;color:#6B6760;font-size:12px;cursor:pointer" onclick="openIncomeEdit(${i._parentId||i.id})">✏️</button>
-          <button style="background:none;border:none;color:#C47A5C;font-size:12px;cursor:pointer" onclick="confirmDelIncome(${i._parentId||i.id})">🗑️</button>
+          ${i._auto?"":`<button style="background:none;border:none;color:#6B6760;font-size:12px;cursor:pointer" onclick="openIncomeEdit(${i._parentId||i.id})">✏️</button>
+          <button style="background:none;border:none;color:#C47A5C;font-size:12px;cursor:pointer" onclick="confirmDelIncome(${i._parentId||i.id})">🗑️</button>`}
         </div>
       </div>
     </div>`;}).join(""):`<div style="color:#6B6760;font-size:12px;padding:16px 0;text-align:center">${t("no_inc_found")}</div>`;
@@ -7097,7 +7163,7 @@ function renderIncChart(){
   ctx.clearRect(0,0,W,150);
   const months=[];
   for(let i=11;i>=0;i--){ let m=activeMonth-i,y=activeYear; if(m<0){m+=12;y--;} months.push({m,y,ymStr:`${y}-${String(m+1).padStart(2,"0")}`}); }
-  const vals=months.map(({ymStr})=>incomeForYM(ymStr).reduce((s,i)=>s+i.amount,0));
+  const vals=months.map(({ymStr})=>incomeItensYM(ymStr).reduce((s,i)=>s+i.amount,0));
   const labels=months.map(({m})=>MS[m].slice(0,3));
   const maxV=Math.max(...vals,1);
   const pad={t:20,b:28,l:8,r:8};
@@ -7355,12 +7421,25 @@ function renderAssets(){
   const monthYield=FA.reduce((s,a)=>s+(astValAst(a)*astTaxaAst(a)/100),0);
   const rendAcum=FA.reduce((s,a)=>s+astRendAcum(a),0);
   const noMes=activeYMAst()===cym();
+  /* A variação do mês é rendimento MAIS a sobra reinvestida. Antes só o
+     rendimento aparecia, e a diferença entre um mês e o outro não fechava
+     com chip nenhum. Agora o aporte projetado é declarado. */
+  let aporteProj=0;
+  if(!noMes){
+    try{
+      if(window.PRO&&PRO.cfPosicaoYM){
+        const P=PRO.cfPosicaoYM(activeYMAst());
+        if(P&&P.aplic) aporteProj=(+P.aplic.sobra||0)+(+P.aplic.aportes||0);
+      }
+    }catch(e){}
+  }
   const heroEl=document.getElementById("assets-hero");
   if(heroEl) heroEl.innerHTML=`
         <div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,38px);line-height:1;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" data-total="${fmt(total)}">${fmt(total)}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">📈 ${t("monthly_yield")} ${fmt(monthYield)}</div>
       ${astChipMesAst()}
+      ${aporteProj>0?`<div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">💰 ${t("ast_contrib")} ${fmt(aporteProj)}</div>`:""}
       ${(noMes&&rendAcum>0)?`<div style="background:rgba(127,228,160,.18);border-radius:20px;padding:3px 10px;font-size:11px;color:#CFF3DA">⏱ +${fmt(rendAcum)} ${t("since_position")}</div>`:""}
       ${(FA.length<ASSETS.length)?`<div style="background:rgba(255,255,255,.18);border-radius:20px;padding:3px 10px;font-size:11px">🔍 ${t("w_filtered")}</div>`:""}
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">${FA.length} ${t("w_holdings")}</div>
@@ -12738,8 +12817,12 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.09";
+const APP_VERSION="10.11";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
+try{
+  const _v=document.getElementById("auth-version");
+  if(_v) _v.textContent="v"+APP_VERSION;
+}catch(e){}
 const $=id=>document.getElementById(id);
 const R2=v=>Math.round((v||0)*100)/100;
 const aaToMm=aa=>(Math.pow(1+(aa||0)/100,1/12)-1)*100;      // % a.a. → % a.m.
@@ -12871,6 +12954,16 @@ const TXD={
 ": o app regride até a aplicação para achar o valor aplicado.":[": the app regresses back to the investment date to find the amount invested.",": Die App rechnet bis zum Anlagedatum zurück, um den Anlagebetrag zu finden."],
 "Posição e aplicação na mesma data: o saldo informado é o próprio valor aplicado, e o app o corrige até hoje. Para deduzir o valor aplicado a partir do saldo de hoje, deixe a data da posição em ":["Position and investment on the same date: the reported balance is the amount invested, and the app carries it forward to today. To derive the amount invested from today's balance, leave the position date at ","Position und Anlage am selben Datum: Der gemeldete Saldo ist der Anlagebetrag und wird bis heute fortgeschrieben. Für die Ableitung aus dem heutigen Saldo das Positionsdatum auf "],
 "1º uso no mês":["1st use in month","1. Nutzung im Monat"],
+"13º adiantamento":["13th salary advance","Vorschuss 13. Gehalt"],
+"13º 2ª parcela":["13th salary, 2nd instalment","13. Gehalt, 2. Rate"],
+"Reajuste por":["Raise driven by","Erhöhung nach"],
+"Percentual declarado":["Declared percentage","Erklärter Prozentsatz"],
+"IGP-M (12 meses)":["IGP-M (12 months)","IGP-M (12 Monate)"],
+"IPCA (12 meses)":["IPCA (12 months)","IPCA (12 Monate)"],
+"Selic (12 meses)":["Selic (12 months)","Selic (12 Monate)"],
+"Mês do reajuste":["Raise month","Monat der Erhöhung"],
+"Ratear proporcional":["Spread proportionally","Anteilig verteilen"],
+"A data acima é o início desta renda. Sem data de fim, a vigência é indefinida. Escolhido um índice, ele manda: o reajuste passa a ser o acumulado de doze meses fechado no mês anterior ao aniversário, colhido da curva dos Parâmetros — e o percentual ao lado é ignorado.":["The date above starts this income. With no end date the term is open-ended. Once an index is chosen it prevails: the raise becomes the twelve-month accumulation closed in the month before the anniversary, taken from the Parameters curve, and the percentage beside it is ignored.","Das Datum oben ist der Beginn dieser Einnahme. Ohne Enddatum läuft sie unbefristet. Ist ein Index gewählt, gilt dieser: Die Erhöhung ist die Zwölfmonatssumme bis zum Vormonat des Jahrestags aus der Parameterkurve, und der Prozentsatz daneben bleibt unbeachtet."],
 "Amortiza a cada 24 meses mantendo o prazo: cada parcela fica menor":["Amortises every 24 months keeping the term: each instalment gets smaller","Tilgt alle 24 Monate bei gleicher Laufzeit: jede Rate wird kleiner"],
 "Amortiza a cada 24 meses mantendo a parcela: o financiamento acaba antes":["Amortises every 24 months keeping the instalment: the loan ends sooner","Tilgt alle 24 Monate bei gleicher Rate: der Kredit endet früher"],
 "Cobre até 80% de 12 prestações seguidas, juros e amortização":["Covers up to 80% of 12 consecutive instalments, interest and principal","Deckt bis zu 80% von 12 Raten in Folge, Zins und Tilgung"],
@@ -13507,6 +13600,12 @@ const PDIC={
   p_fgts_r:["FGTS rende","Severance fund yield","Verzinsung des Fonds"],
   p_fgts_m:["Multa rescisória","Termination penalty","Kündigungsstrafe"],
   p_pgbl:["Dedução PGBL","Pension deduction (% of income)","Vorsorgeabzug (% des Einkommens)"],
+  p_13:["Adiantamento do 13º","13th salary advance","Vorschuss 13. Gehalt"],
+  p_13_pct:["% do bruto na 1ª","% of gross in 1st","% brutto in 1. Rate"],
+  p_13_mes:["Mês da 1ª parcela","Month of 1st instalment","Monat der 1. Rate"],
+  p_13_hint:["A 1ª parcela é adiantamento sobre o bruto, sem INSS nem IRRF. Na 2ª parcela incidem INSS e IRRF sobre o 13º inteiro, e o adiantamento é descontado.",
+             "The 1st instalment is an advance on gross pay, free of social security and withholding tax. The 2nd instalment carries both charges on the whole bonus, less the advance already paid.",
+             "Die 1. Rate ist ein Vorschuss auf das Bruttogehalt, ohne Sozialabgaben und Lohnsteuer. Die 2. Rate trägt beide Abgaben auf das gesamte 13. Gehalt, abzüglich des Vorschusses."],
   p_inss_ai:["INSS autônomo","Self-employed rate","Selbstständigensatz"],
   p_inss_si:["INSS simplificado","Simplified rate","Vereinfachter Satz"],
   p_inss_pat:["INSS patronal","Employer rate","Arbeitgebersatz"],
@@ -13676,6 +13775,11 @@ const FISCAL_DEF={
   maior65:1903.98,        // parcela isenta adicional para 65 anos ou mais
   fgtsPct:8, fgtsTaxa:3, fgtsMulta:40,
   pgblDedPct:12,          // teto de dedução PGBL sobre a renda bruta
+  /* 13º salário em duas parcelas (Lei 4.749/65). A 1ª é adiantamento sobre
+     o bruto, sem INSS nem IRRF, paga até 30 de novembro; a 2ª, até 20 de
+     dezembro, carrega os descontos do 13º inteiro. Quem não recebe
+     adiantamento desliga aqui e volta a ver os 100% em dezembro. */
+  dec13Adiant:true, dec13AdiantMes:11, dec13AdiantPct:50,
 
   /* ── Aplicações ──────────────────────────────────────────── */
   /* IR regressivo — renda fixa e fundos de longo prazo (dias, alíquota) */
@@ -13812,7 +13916,7 @@ function incPro(inc){
     regime:regimeDefault(inc.type), dep:0, prevPriv:0, pensao:0, outrosDesc:0,
     pjAliq:6, exclAliq:15,
     alugIptu:0, alugCond:0, alugAdm:0,
-    dissPct:0, dissMes:1, decimo:false, ferias:false, feriasMes:1,
+    dissPct:0, dissMes:1, dissIdx:"", decimo:false, ferias:false, feriasMes:1,
     fgts:incCaps(inc.type).fgts, fgtsPct:FISCAL.fgtsPct||8,
     fgtsSaldo:0, fgtsTaxa:3,
     split:false, splitPct:40, splitDia1:20, splitDia2:5,
@@ -13836,18 +13940,40 @@ function parcelasDe(p,liq,bruto){
           {dia:Math.min(31,Math.max(1,+p.splitDia2||5)),pct:R2(100-pct),valor:p2,lbl:"Saldo"}];
 }
 /* Fator acumulado de dissídio até o mês de referência */
+/* Fator acumulado de reajuste até o mês de referência.
+
+   Contrato de locação não reajusta por um percentual que alguém adivinha:
+   reajusta pelo ACUMULADO DE DOZE MESES de um índice, encerrado no mês
+   anterior ao aniversário. Antes só existia o percentual fixo, e o aluguel
+   projetado ficava plano ou errado por anos seguidos. Agora o titular
+   escolhe: índice (IGP-M, IPCA, INPC via IPCA, ou o próprio CDI/Selic) ou
+   percentual declarado. O índice sai da MESMA curva dos Parâmetros que rege
+   o resto do app — mexer na inflação lá move o aluguel aqui. */
 function dissidioFator(inc,ymStr){
-  const p=incPro(inc); if(!p.dissPct||!incCaps(inc.type).diss) return 1;
+  const p=incPro(inc);
+  if(!incCaps(inc.type).diss) return 1;
+  const idx=String(p.dissIdx||"").trim();
+  if(!idx&&!p.dissPct) return 1;
   const [sy,sm]=inc.date.slice(0,7).split("-").map(Number);
   const [cy,cm]=ymStr.split("-").map(Number);
-  let n=0;
-  for(let y=sy;y<=cy;y++){
-    const rm=p.dissMes||1;
+  const rm=Math.min(12,Math.max(1,+p.dissMes||1));
+  let f=1, guarda=0;
+  for(let y=sy;y<=cy&&guarda++<200;y++){
     const depoisInicio=(y>sy)||(y===sy&&rm>sm);
     const ateAgora=(y<cy)||(y===cy&&rm<=cm);
-    if(depoisInicio&&ateAgora) n++;
+    if(!depoisInicio||!ateAgora) continue;
+    if(idx){
+      const fim=y+"-"+String(rm).padStart(2,"0");
+      let a=1;
+      for(let k=1;k<=12;k++) a*=(1+indiceMes(idx,ymAdd(fim,-k))/100);
+      /* deflação acumulada não derruba o aluguel a zero: o piso é a
+         manutenção do valor, que é a prática contratual corrente */
+      f*=Math.max(1,a);
+    }else{
+      f*=(1+p.dissPct/100);
+    }
   }
-  return Math.pow(1+p.dissPct/100,n);
+  return f;
 }
 function incAtivaEm(inc,ymStr){
   const ini=inc.date.slice(0,7);
@@ -13927,11 +14053,38 @@ function incomeEventsForYM(ymStr){
     ev.fgts=fgtsDe(p,bruto,inc.type);
     ev.parcelas=cap.split?parcelasDe(p,ev.liquido,bruto):[];
     out.push(ev);
-    if(cap.decimo&&p.regime==="clt"&&p.decimo&&ymMonth(ymStr)===12){
-      const t13=tributar(bruto,p,{decimo:true});
-      const e13={inc,p,tipo:"13",label:(inc.desc||"Salário")+" · 13º",...t13};
-      e13.fgts=fgtsDe(p,bruto,inc.type); e13.parcelas=[];
-      out.push(e13);
+    /* ── 13º SALÁRIO, EM DUAS PARCELAS ──────────────────────────────
+       A lei manda pagar a 1ª parcela até 30 de novembro: é adiantamento
+       sobre o bruto, SEM INSS e SEM IRRF. A 2ª parcela, até 20 de
+       dezembro, é onde incidem INSS e IRRF — sobre o 13º INTEIRO — e de
+       onde se desconta o que já foi adiantado.
+
+       O app jogava os 100% em dezembro, sem descontar nada em novembro.
+       Quem recebe adiantamento via novembro plano e dezembro inflado, e a
+       projeção de caixa errava os dois meses. Se há ou não adiantamento é
+       premissa do titular, declarada nos Parâmetros. */
+    if(cap.decimo&&p.regime==="clt"&&p.decimo){
+      const mesRef=ymMonth(ymStr);
+      const adiOn=(FISCAL.dec13Adiant!==false);
+      const mAdi=Math.min(12,Math.max(1,+FISCAL.dec13AdiantMes||11));
+      const pAdi=Math.min(90,Math.max(0,FISCAL.dec13AdiantPct===undefined?50:+FISCAL.dec13AdiantPct));
+      const jaPago=adiOn?R2(bruto*pAdi/100):0;
+      if(adiOn&&jaPago>0&&mesRef===mAdi){
+        out.push({inc,p,tipo:"13a",
+          label:(inc.desc||"Salário")+" · "+TR("13º adiantamento"),
+          bruto:jaPago,inss:0,ir:0,deducoes:0,liquido:jaPago,regime:p.regime,
+          fgts:fgtsDe(p,jaPago,inc.type),parcelas:[]});
+      }
+      if(mesRef===12){
+        const t13=tributar(bruto,p,{decimo:true});
+        const resto=R2(bruto-jaPago);
+        const e13={inc,p,tipo:"13",
+          label:(inc.desc||"Salário")+" · "+(jaPago>0?TR("13º 2ª parcela"):"13º"),
+          bruto:resto, inss:t13.inss, ir:t13.ir, deducoes:t13.deducoes,
+          liquido:R2(t13.liquido-jaPago), regime:p.regime};
+        e13.fgts=fgtsDe(p,resto,inc.type); e13.parcelas=[];
+        out.push(e13);
+      }
     }
     if(cap.ferias&&p.regime==="clt"&&p.ferias&&ymMonth(ymStr)===(+p.feriasMes||1)){
       const tf=tributar(bruto/3,p,{semINSS:false});
@@ -15636,7 +15789,12 @@ const DECIN=(id,extra)=>`<input id="${id}" type="text" inputmode="decimal" class
   +`oninput="PRO.maskDec(this)${extra||""}"/>`;
 /* ═══ 6. PROJEÇÃO ═══ */
 const PROJ_KEY="gastos_v2_proj_cfg";
-let PROJ=(()=>{try{return Object.assign({meses:24,investir:true,mediaVar:true,corrigirDesp:true},
+let PROJ=(()=>{try{return Object.assign({meses:24,investir:true,mediaVar:true,corrigirDesp:true,
+  /* Onde a sobra do mês é aplicada. "melhor" concentrava TODA a sobra na
+     aplicação de maior taxa: em poucos meses uma classe inteira inchava e a
+     alocação da carteira virava ficção. O rateio proporcional preserva a
+     composição, e é o padrão. */
+  sobraDestino:"proporcional"},
   JSON.parse(localStorage.getItem(PROJ_KEY)||"{}"));}catch(e){return{meses:24,investir:true,mediaVar:true,corrigirDesp:true};}})();
 const saveProj=()=>localStorage.setItem(PROJ_KEY,JSON.stringify(PROJ));
 
@@ -15867,12 +16025,20 @@ function incomeProHTML(){
     </div>
 
     <div class="pro-h"><b>Vigência e reajuste</b><i></i></div>
-    <div class="pro-grid3">
+    <div class="pro-grid">
       ${FT("inc-fim","Fim (opcional)","month")}
-      ${F("inc-diss","Reajuste %","0.1")}
-      <div class="pro-f"><label>Mês</label><select id="inc-diss-mes"></select></div>
+      <div class="pro-f"><label>Reajuste por</label><select id="inc-diss-idx" onchange="PRO.incTouched()">
+        <option value="">Percentual declarado</option>
+        <option value="igpm">IGP-M (12 meses)</option>
+        <option value="ipca">IPCA (12 meses)</option>
+        <option value="selic">Selic (12 meses)</option>
+      </select></div>
     </div>
-    <div class="pro-note">A data acima é o início desta renda. Sem data de fim, a vigência é indefinida.</div>
+    <div class="pro-grid" style="margin-top:9px">
+      ${F("inc-diss","Reajuste %","0.1")}
+      <div class="pro-f"><label>Mês do reajuste</label><select id="inc-diss-mes"></select></div>
+    </div>
+    <div class="pro-note">A data acima é o início desta renda. Sem data de fim, a vigência é indefinida. Escolhido um índice, ele manda: o reajuste passa a ser o acumulado de doze meses fechado no mês anterior ao aniversário, colhido da curva dos Parâmetros — e o percentual ao lado é ignorado.</div>
 
     <div class="pro-h" style="margin-top:20px"><b>Fluxo de caixa desta entrada</b><i></i></div>
     <div class="pro-chips" style="margin-top:0;margin-bottom:10px">
@@ -15988,6 +16154,7 @@ function collectIncPro(){
     exclAliq:valDec("inc-excl"), alugIptu:valDec("inc-iptu"),
     alugCond:valDec("inc-cond"), alugAdm:valDec("inc-adm"),
     dissPct:valDec("inc-diss"), dissMes:+($("inc-diss-mes")?.value||1),
+    dissIdx:$("inc-diss-idx")?.value||"",
     decimo:INC_13, ferias:INC_FER, feriasMes:+($("inc-fer-mes")?.value||1),
     fgts:INC_FGTS&&incCaps(INC_TYPE_CUR()).fgts,
     fgtsPct:valDec("inc-fgts-pct")||FISCAL.fgtsPct||8,
@@ -16000,7 +16167,7 @@ function collectIncPro(){
 function fillIncPro(inc){
   const rg=inc?incPro(inc).regime:regimeDefault(INC_TYPE_CUR());
   const p=inc?incPro(inc):{regime:rg,dep:0,prevPriv:0,pensao:0,outrosDesc:0,
-    pjAliq:6,exclAliq:15,alugIptu:0,alugCond:0,alugAdm:0,dissPct:0,dissMes:1,
+    pjAliq:6,exclAliq:15,alugIptu:0,alugCond:0,alugAdm:0,dissPct:0,dissMes:1,dissIdx:"",
     decimo:INC_TYPE_CUR()==="salary",ferias:INC_TYPE_CUR()==="salary",feriasMes:1,
     fgts:rg==="clt",fgtsPct:FISCAL.fgtsPct||8,split:false,splitPct:40,splitDia1:20,splitDia2:5,fimMes:""};
   INC_REGIME=p.regime; INC_13=!!p.decimo; INC_FER=!!p.ferias; INC_REG_OPEN=false;
@@ -16011,6 +16178,7 @@ function fillIncPro(inc){
   set("inc-outros",p.outrosDesc);set("inc-pjaliq",p.pjAliq);set("inc-excl",p.exclAliq);
   set("inc-iptu",p.alugIptu);set("inc-cond",p.alugCond);set("inc-adm",p.alugAdm);
   set("inc-diss",p.dissPct);set("inc-diss-mes",p.dissMes);set("inc-fer-mes",p.feriasMes);
+    if($("inc-diss-idx")) $("inc-diss-idx").value=p.dissIdx||"";
   set("inc-fgts-pct",p.fgtsPct||FISCAL.fgtsPct||8);
   set("inc-fgts-taxa",p.fgtsTaxa||3);
   setCurrencyInput($("inc-fgts-saldo"),p.fgtsSaldo||0);
@@ -16441,6 +16609,8 @@ function renderProj(){
     </div>
     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px">
       ${chip(PROJ.investir,"Investir a sobra","PRO.setProj('investir',!PRO.cfg().investir)","#0F2440")}
+      ${PROJ.investir?chip(PROJ.sobraDestino!=="melhor","Ratear proporcional",
+        "PRO.setProj('sobraDestino',PRO.cfg().sobraDestino===\'melhor\'?\'proporcional\':\'melhor\')","#0F2440"):""}
       ${chip(PROJ.mediaVar,"Média de variáveis","PRO.setProj('mediaVar',!PRO.cfg().mediaVar)","#0F2440")}
       ${chip(PROJ.corrigirDesp,"Corrigir pela inflação","PRO.setProj('corrigirDesp',!PRO.cfg().corrigirDesp)","#0F2440")}
     </div>
@@ -17746,7 +17916,7 @@ function cfMes(ym,k,st){
   dItens.sort((a,b)=>b.pago-a.pago);
 
   /* ── aplicações ── */
-  let apBruto=0,apIr=0,apAportes=0,apCc=0; const apItens=[];
+  let apBruto=0,apIr=0,apAportes=0,apCc=0,apSobra=0; const apItens=[];
   const mes=ymMonth(ym);
   if(!proj||!st){
     const ap=assetFlowForYM(ym);
@@ -17772,15 +17942,39 @@ function cfMes(ym,k,st){
       }
       if(rb>0) apItens.push({id:x.a.id,tipo:"asset",nome:x.nome,bruto:R2(rb),ir:R2(vIr),aliq:R2(aliq)});
     });
-    /* A sobra do mês não evapora: vira aplicação, na de melhor taxa. Sem
-       isto o patrimônio projetado aqui e o da aba Projeção divergiriam —
-       e é a mesma premissa, declarada num único lugar. */
+    /* A SOBRA DO MÊS NÃO EVAPORA: vira aplicação. Mas ela é APORTE, não
+       rendimento — e era exatamente aí que a conta deixava de fechar na
+       tela. A posição saltava rendimento + sobra enquanto o chip mostrava
+       só o rendimento, e a diferença não aparecia em lugar nenhum. Agora a
+       sobra é contabilizada à parte (aplic.sobra) e a tela a exibe.
+
+       O destino também mudou. Despejar tudo na aplicação de melhor taxa
+       inflava uma classe sozinha — em cinco meses um fundo saía de 60 mil
+       para 111 mil e a alocação da carteira virava ficção. O padrão passa a
+       ser rateio proporcional ao saldo, que preserva a composição. Quem
+       preferir a concentração declara isso nos Parâmetros. */
     try{
       if(typeof PROJ!=="undefined"&&PROJ.investir&&st.length){
         const sobraMes=R2(R2(inc.liquido)-despesas-dPago-apAportes);
         if(sobraMes>0){
-          const alvo=st.reduce((b,x)=>((x.rate||0)>(b.rate||0)?x:b),st[0]);
-          alvo.saldo=R2(alvo.saldo+sobraMes); alvo.custo=R2(alvo.custo+sobraMes);
+          apSobra=R2(sobraMes);
+          if(PROJ.sobraDestino==="melhor"){
+            const alvo=st.reduce((b,x)=>((x.rate||0)>(b.rate||0)?x:b),st[0]);
+            alvo.saldo=R2(alvo.saldo+sobraMes); alvo.custo=R2(alvo.custo+sobraMes);
+          }else{
+            const base=st.reduce((t,x)=>t+Math.max(0,x.saldo||0),0);
+            if(base>0){
+              let dist=0;
+              st.forEach((x,i)=>{
+                const q=(i===st.length-1)?R2(sobraMes-dist)
+                                         :R2(sobraMes*Math.max(0,x.saldo||0)/base);
+                dist=R2(dist+q);
+                x.saldo=R2(x.saldo+q); x.custo=R2(x.custo+q);
+              });
+            }else{
+              st[0].saldo=R2(st[0].saldo+sobraMes); st[0].custo=R2(st[0].custo+sobraMes);
+            }
+          }
         }
       }
     }catch(e){}
@@ -17832,7 +18026,7 @@ function cfMes(ym,k,st){
     divida:{juros:R2(dJuros),amort:R2(dAmort),parcela:R2(dPago),
             fgtsAbat:R2(dFgts),encargos:R2(dEnc),itens:dItens},
     aplic:{bruto:R2(apBruto),ir:R2(apIr),comeCotas:R2(apCc),
-           liquido:apLiq,aportes:R2(apAportes),itens:apItens},
+           liquido:apLiq,aportes:R2(apAportes),sobra:R2(apSobra),itens:apItens},
     saidas, caixaOper, caixaTotal:R2(caixaOper+apLiq)
   };
 }
@@ -17899,7 +18093,7 @@ function cfConsolida(ms){
     entLiquidas:0,fgts:0,despesas:0,despItens:[],
     patrimonio:0,dividaSaldo:0,pl:0,
     divida:{juros:0,amort:0,parcela:0,fgtsAbat:0,encargos:0,itens:[]},
-    aplic:{bruto:0,ir:0,comeCotas:0,liquido:0,aportes:0,itens:[]},
+    aplic:{bruto:0,ir:0,comeCotas:0,liquido:0,aportes:0,sobra:0,itens:[]},
     saidas:0,caixaOper:0,caixaTotal:0};
   const somaEm=(arr,chave,obj,campos)=>{
     let a=arr.find(x=>x[chave]===obj[chave]);
@@ -17912,7 +18106,7 @@ function cfConsolida(ms){
     ["bruto","inss","irrf","outrasDed","deducoes","impostos","entLiquidas",
      "fgts","despesas","saidas","caixaOper","caixaTotal"].forEach(c=>z[c]=R2(z[c]+m[c]));
     ["juros","amort","parcela","fgtsAbat","encargos"].forEach(c=>z.divida[c]=R2(z.divida[c]+(m.divida[c]||0)));
-    ["bruto","ir","comeCotas","liquido","aportes"].forEach(c=>z.aplic[c]=R2(z.aplic[c]+m.aplic[c]));
+    ["bruto","ir","comeCotas","liquido","aportes","sobra"].forEach(c=>z.aplic[c]=R2(z.aplic[c]+(m.aplic[c]||0)));
     m.tipos.forEach(o=>somaEm(z.tipos,"id",o,["bruto","inss","ir","ded","liq","fgts","base"]));
     m.divida.itens.forEach(o=>somaEm(z.divida.itens,"nome",o,["juros","amort","pago","fgts","encargos"]));
     m.aplic.itens.forEach(o=>somaEm(z.aplic.itens,"nome",o,["bruto","ir"]));
@@ -18776,6 +18970,10 @@ function parLerFiscal(){
     if(v===null){ if(inf) parSetPath(el.dataset.fk,1e12); return; }
     parSetPath(el.dataset.fk,v);
   });
+  document.querySelectorAll("#par-body select[data-fkm]").forEach(el=>{
+    const v=parseInt(el.value,10);
+    if(v>0) parSetPath(el.dataset.fkm,v);
+  });
   const cc=document.getElementById("par-cc-meses");
   if(cc){
     const ms=String(cc.value).split(/[^0-9]+/).map(x=>parseInt(x,10))
@@ -18940,6 +19138,9 @@ function parToggle(k){
   let o=FISCAL; for(let i=0;i<ks.length-1;i++) o=o[ks[i]];
   o[ks[ks.length-1]]=!o[ks[ks.length-1]];
   saveFiscal(); renderParams();
+  try{ cfLimparCache(); }catch(e){}
+  try{ refreshPro(); }catch(e){}
+  try{ renderHome(); }catch(e){}
 }
 
 /* ── blocos de interface ──────────────────────────────────────────────
@@ -19243,7 +19444,16 @@ function renderParams(){
       <div class="pro-grid" style="margin-top:9px">
         ${parF("inssPatronal",PX("p_inss_pat"),FISCAL.inssPatronal)}
         <div></div>
-      </div>`)}
+      </div>
+      <div class="pro-h" style="margin:14px 0 8px"><b>${PX("p_13")}</b><i></i></div>
+      <div class="pro-chips" style="margin:0 0 10px">${parSw("dec13Adiant",FISCAL.dec13Adiant!==false)}</div>
+      ${FISCAL.dec13Adiant!==false?`<div class="pro-grid">
+        ${parF("dec13AdiantPct",PX("p_13_pct"),FISCAL.dec13AdiantPct)}
+        <div class="pro-f"><label>${PX("p_13_mes")}</label>
+          <select data-fkm="dec13AdiantMes">${[...Array(12)].map((_,i)=>
+            `<option value="${i+1}"${(+FISCAL.dec13AdiantMes||11)===i+1?" selected":""}>${MS[i]}</option>`).join("")}</select></div>
+      </div>`:""}
+      <div class="pro-note">${PX("p_13_hint")}</div>`)}
 
     <div class="sec-label">${PL("p_rent")}</div>
     ${parBox(`<div class="pro-grid">
@@ -19380,8 +19590,6 @@ function renderParams(){
         <div style="font-family:var(--serif);font-size:19px;color:var(--body);line-height:1.15">${PL("p_title")}</div>
         <div style="font-size:10.5px;color:#8A857D;margin-top:3px;line-height:1.4">${PL("p_sub")}</div>
       </div>
-      <div style="margin-left:auto;font-size:10px;letter-spacing:.4px;
-        color:#A8A49B;font-weight:700;flex-shrink:0">v${APP_VERSION}</div>
     </div>
 
     <div class="pro-scale" style="margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch">
