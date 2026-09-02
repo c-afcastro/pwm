@@ -3107,6 +3107,9 @@ const I18N={
     w_filtered:"filtrado",
     ast_tab_liq:"Liquidez",
     since_position:"desde a última posição",
+    institution:"Instituição",
+    ast_month_proj:"projetado para",
+    ast_month_past:"posição em",
     impacts:"Impactos",
     w_projected_lc:"projetado",
     debt_charges:"Encargos mensais do contrato",
@@ -3829,6 +3832,9 @@ const I18N={
     w_filtered:"filtered",
     ast_tab_liq:"Liquidity",
     since_position:"since last position",
+    institution:"Institution",
+    ast_month_proj:"projected to",
+    ast_month_past:"position at",
     impacts:"Impacts",
     w_projected_lc:"projected",
     debt_charges:"Monthly contract charges",
@@ -4551,6 +4557,9 @@ const I18N={
     w_filtered:"gefiltert",
     ast_tab_liq:"Liquidität",
     since_position:"seit dem letzten Stand",
+    institution:"Institut",
+    ast_month_proj:"projiziert auf",
+    ast_month_past:"Stand per",
     impacts:"Auswirkungen",
     w_projected_lc:"projiziert",
     debt_charges:"Monatliche Vertragsgebühren",
@@ -5272,8 +5281,14 @@ function astValorAtual(a){
      chave, o valor calculado com a taxa provisória ficava congelado */
   let mk=0;
   try{ if(window.PRO&&PRO.market){ const m=PRO.market(); mk=[m.cdi,m.selic,m.ipca,m.ts].join(","); } }catch(e){}
-  if(!mk) return base;
-  const ck=[a.id,base,d0,hoje,mk].join("|");
+  /* Antes o app devolvia o saldo congelado enquanto as taxas de mercado
+     não chegassem. No Safari sem rede — ou com a API do Banco Central
+     bloqueada — elas nunca chegam, e a carteira ficava parada para sempre.
+     A curva declarada nos Parâmetros basta para corrigir; o mercado entra
+     só na chave do cache. */
+  let pts=0;
+  try{ if(window.PRO&&PRO.params) pts=PRO.params().ts||0; }catch(e){}
+  const ck=[a.id,base,d0,hoje,mk,pts].join("|");
   const c=AST_VAL_CACHE[a.id];
   if(c&&c.k===ck) return c.v;
   let v=base;
@@ -7185,6 +7200,60 @@ function persistAstGoals(){ localStorage.setItem("gastos_v2_ast_goals",JSON.stri
 
 function activeYMAst(){ return activeYearAst+"-"+String(activeMonthAst+1).padStart(2,"0"); }
 
+/* ══ AVALIAÇÃO DA CARTEIRA NO MÊS NAVEGADO ══════════════════════════
+   A tela de Patrimônio tem seletor de mês, mas todos os números saíam de
+   astValorAtual() — a posição de HOJE. Trocar o mês mudava o rótulo e mais
+   nada: cabeçalho, resumo, aba de Aplicações e metas ficavam congelados.
+
+   Agora a fonte é o motor de fluxo de caixa, o MESMO que alimenta o cartão
+   da tela inicial: ele devolve a posição de cada aplicação no fim do mês,
+   já com a taxa daquele mês colhida da curva dos Parâmetros. Só se o motor
+   não responder é que o app cai no cálculo direto por aplicação. Nunca
+   volta para o saldo de hoje sem avisar. */
+window.AST_POS_CACHE=null;
+function astPosMapAst(){
+  const ymS=activeYMAst();
+  if(ymS===cym()) return null;
+  let k="";
+  try{ if(window.PRO&&PRO.cfChaveDados) k=PRO.cfChaveDados(); }catch(e){}
+  const C=window.AST_POS_CACHE;
+  if(C&&C.ym===ymS&&C.k===k) return C.map;
+  let map=null;
+  try{
+    if(window.PRO&&PRO.cfPosicaoYM){
+      const P=PRO.cfPosicaoYM(ymS);
+      if(P&&P.saldos&&Object.keys(P.saldos).length) map=P.saldos;
+    }
+  }catch(err){ try{ logErro("astPosMapAst "+ymS,err); }catch(e){} }
+  window.AST_POS_CACHE={ym:ymS,k,map};
+  return map;
+}
+/* Valor de uma aplicação no mês que a tela está exibindo */
+function astValAst(a){
+  if(!a) return 0;
+  const ymS=activeYMAst();
+  if(ymS===cym()) return astValorAtual(a);
+  const map=astPosMapAst();
+  if(map&&isFinite(map[a.id])) return map[a.id];
+  try{ if(window.astValorYM) return window.astValorYM(a,ymS); }catch(e){}
+  return astValorAtual(a);
+}
+/* Taxa líquida ao mês da aplicação, no mês exibido */
+function astTaxaAst(a){
+  const ymS=activeYMAst();
+  try{ if(window.PRO&&PRO.astLiquidoAM){ const v=PRO.astLiquidoAM(a,ymS); if(isFinite(v)) return v; } }catch(e){}
+  return parseFloat(a&&a.yieldPct)||0;
+}
+/* Etiqueta do mês exibido, quando não for o mês corrente */
+function astChipMesAst(){
+  const ymS=activeYMAst();
+  if(ymS===cym()) return "";
+  const futuro=ymS>cym();
+  const rot=(MPT[activeMonthAst]||"").slice(0,3)+"/"+String(activeYearAst).slice(2);
+  return `<div style="background:rgba(255,255,255,.18);border-radius:20px;padding:3px 10px;font-size:11px;white-space:nowrap">`
+    +(futuro?"🔮 "+t("ast_month_proj"):"🕘 "+t("ast_month_past"))+" "+rot+`</div>`;
+}
+
 function updateMonthNavAst(){
   const lbl=document.getElementById("month-nav-label-ast");
   if(lbl) lbl.textContent=rotuloMes(activeYearAst,activeMonthAst);
@@ -7203,7 +7272,14 @@ function shiftMonthAst(delta){
   if(activeMonthAst<0){activeMonthAst=11;activeYearAst--;}
   deslizarConteudo(document.querySelector("#screen-patrimonio .content"),delta,()=>{
     updateMonthNavAst();
-    renderAssetsHistory();
+    /* Trocar de mês tem de REPRECIFICAR a carteira inteira: cabeçalho,
+       resumo, aba de Aplicações, metas, projeção e liquidez. Antes só o
+       rótulo e o gráfico de histórico eram redesenhados — era exatamente
+       este o sintoma de "mudo o mês e as aplicações não atualizam". */
+    window.AST_POS_CACHE=null;
+    let feito=false;
+    try{ if(window.PRO&&PRO.refreshPro){ PRO.refreshPro(); feito=true; } }catch(err){}
+    if(!feito){ try{ renderAssets(); }catch(err){ logErro("shiftMonthAst/renderAssets",err); } }
   });
 }
 
@@ -7274,17 +7350,18 @@ function renderAssets(){
   updateMonthNavAst();
   popularFiltroInst("ast-inst-filter",ASSETS);
   const FA=assetsFiltrados();
-  const total=FA.reduce((s,a)=>s+(astValorAtual(a)),0);
-  /* a taxa é a do indexador do ativo; o campo antigo só entra como reserva */
-  const taxaMes=a=>{ try{ if(window.PRO&&PRO.astLiquidoAM) return PRO.astLiquidoAM(a); }catch(e){} return parseFloat(a.yieldPct)||0; };
-  const monthYield=FA.reduce((s,a)=>s+((astValorAtual(a))*taxaMes(a)/100),0);
+  /* Tudo aqui é a posição do MÊS EXIBIDO, não a de hoje */
+  const total=FA.reduce((s,a)=>s+astValAst(a),0);
+  const monthYield=FA.reduce((s,a)=>s+(astValAst(a)*astTaxaAst(a)/100),0);
   const rendAcum=FA.reduce((s,a)=>s+astRendAcum(a),0);
+  const noMes=activeYMAst()===cym();
   const heroEl=document.getElementById("assets-hero");
   if(heroEl) heroEl.innerHTML=`
         <div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,38px);line-height:1;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" data-total="${fmt(total)}">${fmt(total)}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">📈 ${t("monthly_yield")} ${fmt(monthYield)}</div>
-      ${rendAcum>0?`<div style="background:rgba(127,228,160,.18);border-radius:20px;padding:3px 10px;font-size:11px;color:#CFF3DA">⏱ +${fmt(rendAcum)} ${t("since_position")}</div>`:""}
+      ${astChipMesAst()}
+      ${(noMes&&rendAcum>0)?`<div style="background:rgba(127,228,160,.18);border-radius:20px;padding:3px 10px;font-size:11px;color:#CFF3DA">⏱ +${fmt(rendAcum)} ${t("since_position")}</div>`:""}
       ${(FA.length<ASSETS.length)?`<div style="background:rgba(255,255,255,.18);border-radius:20px;padding:3px 10px;font-size:11px">🔍 ${t("w_filtered")}</div>`:""}
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">${FA.length} ${t("w_holdings")}</div>
     </div>`;
@@ -7296,11 +7373,8 @@ function renderAssets(){
 
 /* ── RESUMO TAB ── */
 function renderAssetsDash(){
-  const total=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
-  const monthYield=ASSETS.reduce((s,a)=>{
-    let tx=parseFloat(a.yieldPct)||0;
-    try{ if(window.PRO&&PRO.astLiquidoAM) tx=PRO.astLiquidoAM(a); }catch(e){}
-    return s+((astValorAtual(a))*tx/100);},0);
+  const total=ASSETS.reduce((s,a)=>s+astValAst(a),0);
+  const monthYield=ASSETS.reduce((s,a)=>s+(astValAst(a)*astTaxaAst(a)/100),0);
   const goalTotal=Object.values(astGoals).reduce((s,v)=>s+(parseFloat(v)||0),0);
   const avgYield=total>0?(monthYield/total*100):0;
 
@@ -7314,7 +7388,7 @@ function renderAssetsDash(){
 
   // allocation bars — clickable to filter list
   const byClass={};
-  ASSETS.forEach(a=>{byClass[a.class]=(byClass[a.class]||0)+(astValorAtual(a));});
+  ASSETS.forEach(a=>{byClass[a.class]=(byClass[a.class]||0)+astValAst(a);});
   const classes=ASSET_CLASSES.map(c=>({...c,total:byClass[c.id]||0})).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
   const mx=Math.max(...classes.map(c=>c.total),1);
   const byClassEl=document.getElementById("assets-by-class");
@@ -7335,10 +7409,10 @@ function renderAssetsDash(){
   // top positions
   const topEl=document.getElementById("ast-top-list");
   if(!topEl) return;
-  const top=[...ASSETS].sort((a,b)=>(astValorAtual(b))-(astValorAtual(a))).slice(0,5);
+  const top=[...ASSETS].sort((a,b)=>astValAst(b)-astValAst(a)).slice(0,5);
   topEl.innerHTML=top.length?top.map(a=>{
     const c=gAssetClass(a.class);
-    const bal=astValorAtual(a);
+    const bal=astValAst(a);
     const pct=total>0?(bal/total*100):0;
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.1)">
       <div style="display:flex;gap:10px;align-items:center;min-width:0">
@@ -7348,7 +7422,7 @@ function renderAssetsDash(){
       </div>
       <div style="text-align:right;flex-shrink:0;margin-left:8px">
         <div style="font-family:var(--serif);font-style:italic;font-size:16px;color:#fff">${fmt(bal)}</div>
-        ${parseFloat(a.yieldPct)?`<div style="font-size:10px;color:rgba(100,255,160,.8)">${a.yieldPct}%${t("w_per_month")}</div>`:""}
+        ${(()=>{const y=R2c(astTaxaAst(a));return y?`<div style="font-size:10px;color:rgba(100,255,160,.8)">${String(y).replace(".",",")}%${t("w_per_month")}</div>`:"";})()}
       </div></div>`;}).join(""):`<div style="color:rgba(255,255,255,.4);font-size:12px;padding:12px 0;text-align:center">${t("no_assets")}</div>`;
 }
 
@@ -7367,16 +7441,24 @@ function renderAssetList(){
   if(q) items=items.filter(a=>(a.name||"").toLowerCase().includes(q));
   if(classF!=="all") items=items.filter(a=>a.class===classF);
   items.sort((a,b)=>{
-    if(sortV==="bal-asc") return (astValorAtual(a))-(astValorAtual(b));
-    if(sortV==="yield-desc") return (parseFloat(b.yieldPct)||0)-(parseFloat(a.yieldPct)||0);
+    if(sortV==="bal-asc") return astValAst(a)-astValAst(b);
+    if(sortV==="yield-desc") return astTaxaAst(b)-astTaxaAst(a);
     if(sortV==="az") return (a.name||"").localeCompare(b.name||"","pt-BR");
-    return (astValorAtual(b))-(astValorAtual(a));
+    return astValAst(b)-astValAst(a);
   });
   const el=document.getElementById("assets-list");
   if(!el) return;
+  /* A lista enriquecida do módulo PRO (liquidez, IR, resgate) casa cartão a
+     cartão com esta ordem. Recalculá-la lá desalinhava as etiquetas quando o
+     filtro por instituição ou a ordenação por valor do mês mudavam: cada
+     cartão recebia os dados da aplicação errada. A ordem passa a ser
+     publicada aqui, e o PRO apenas a consome. */
+  window.AST_LIST_ORDER=items;
   el.innerHTML=items.length?items.map(a=>{
     const c=gAssetClass(a.class);
-    const bal=astValorAtual(a),y=parseFloat(a.yieldPct)||0,monthRend=bal*y/100;
+    /* posição do mês exibido e a taxa que vale NAQUELE mês */
+    const bal=astValAst(a),y=R2c(astTaxaAst(a)),monthRend=bal*y/100;
+    const noMesLista=activeYMAst()===cym();
     return `<div style="background:var(--surface);border-radius:14px;padding:12px;margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
         <div style="display:flex;gap:10px;align-items:center;min-width:0">
@@ -7388,11 +7470,12 @@ function renderAssetList(){
         </div>
         <div style="text-align:right;flex-shrink:0;margin-left:8px">
           <div style="font-family:var(--serif);font-style:italic;font-size:17px;color:var(--body)">${fmt(bal)}</div>
-          ${(()=>{const z=(typeof PRO!=="undefined"&&PRO.astAtualizacao)?PRO.astAtualizacao(a):null;
+          ${(()=>{if(!noMesLista) return y?`<div style="font-size:10px;color:var(--green)">+${String(y).replace(".",",")}% · ${fmt(monthRend)}${t("w_per_month")}</div>`:"";
+            const z=(typeof PRO!=="undefined"&&PRO.astAtualizacao)?PRO.astAtualizacao(a):null;
             return (z&&z.corrigido)
               ?`<div style="font-size:9.5px;color:var(--green)">${t("ast_updated")} · +${fmt(z.correcao+z.aportes-z.comeCotas)}</div>`
               +`<div style="font-size:9.5px;color:#9A958C">${t("ast_informed")} ${fmt(z.informado)}</div>`
-              :(y?`<div style="font-size:10px;color:var(--green)">+${y}% · ${fmt(monthRend)}${t("w_per_month")}</div>`:"");})()}
+              :(y?`<div style="font-size:10px;color:var(--green)">+${String(y).replace(".",",")}% · ${fmt(monthRend)}${t("w_per_month")}</div>`:"");})()}
         </div>
       </div>
       <div style="display:flex;gap:6px;justify-content:flex-end;border-top:1px solid var(--line);padding-top:6px">
@@ -7406,7 +7489,7 @@ function renderAssetList(){
 /* ── HISTÓRICO TAB ── */
 function saveAssetSnapshot(){
   const ymKey=activeYMAst();
-  const total=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
+  const total=ASSETS.reduce((s,a)=>s+astValAst(a),0);
   if(total===0){toast(t("toast_no_asset_balance"));return;}
   ASSET_SNAPSHOTS[ymKey]=parseFloat(total.toFixed(2));
   persist();
@@ -7486,7 +7569,7 @@ function deleteAssetSnapshot(ymKey){
 
 /* ── METAS TAB ── */
 function renderAstGoals(){
-  const total=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
+  const total=ASSETS.reduce((s,a)=>s+astValAst(a),0);
   const goalTotal=Object.values(astGoals).reduce((s,v)=>s+(parseFloat(v)||0),0);
   const over=goalTotal>0&&total>=goalTotal;
   const summEl=document.getElementById("ast-goals-summary");
@@ -7501,7 +7584,7 @@ function renderAstGoals(){
       <div style="font-size:11px;color:${over?"var(--green)":"#6B6760"};margin-top:4px;text-align:right">${over?t("goal_reached"):fmt(goalTotal-total)+" "+t("to_goal")}</div>`:""}
     </div>`;
   const byClass={};
-  ASSETS.forEach(a=>{byClass[a.class]=(byClass[a.class]||0)+(astValorAtual(a));});
+  ASSETS.forEach(a=>{byClass[a.class]=(byClass[a.class]||0)+astValAst(a);});
   const goalsEl=document.getElementById("ast-goals-list");
   if(goalsEl) goalsEl.innerHTML=ASSET_CLASSES.map(c=>{
     const got=byClass[c.id]||0,g=parseFloat(astGoals[c.id])||0,ov=g>0&&got>=g;
@@ -7805,21 +7888,18 @@ function homeFimDoMes(ymStr){
   return ymStr+"-"+String(new Date(y,m,0).getDate()).padStart(2,"0");
 }
 function homePatrimonioYM(ymStr){
-  const hj=today(), fim=homeFimDoMes(ymStr);
+  const alvo=ymStr||cym();
   let tot=0, rend=0;
   ASSETS.forEach(a=>{
+    /* Mesma máquina de avaliação que a tela de Patrimônio usa: para frente
+       evolui pela curva dos Parâmetros mês a mês, para trás regride pelo
+       mesmo fator. Antes o passado devolvia o saldo de HOJE, e navegar
+       para meses anteriores não mudava um número. */
     let v=0;
-    try{ v=astValorAtual(a); }catch(e){ v=parseFloat(a&&a.balance)||0; }
-    if(fim>hj){
-      try{
-        if(window.PRO&&PRO.fatorProduto){
-          const r=PRO.fatorProduto(a,hj,fim);
-          if(r&&isFinite(r.fator)&&r.fator>0) v=v*r.fator;
-        }
-      }catch(e){}
-    }
+    try{ v=window.astValorYM?window.astValorYM(a,alvo):astValorAtual(a); }
+    catch(e){ v=parseFloat(a&&a.balance)||0; }
     let tx=parseFloat(a.yieldPct)||0;
-    try{ if(window.PRO&&PRO.astLiquidoAM) tx=PRO.astLiquidoAM(a,ymStr); }catch(e){}
+    try{ if(window.PRO&&PRO.astLiquidoAM) tx=PRO.astLiquidoAM(a,alvo); }catch(e){}
     tot+=v; rend+=v*tx/100;
   });
   return {total:Math.round(tot*100)/100, rend:Math.round(rend*100)/100};
@@ -7927,7 +8007,9 @@ function computeFinMetrics(){
   const totalExp=(POS&&isFinite(POS.despesas))?POS.despesas
     :getExpensesForYM(ymStr).filter(e=>!isNeutral(e)).reduce((s,e)=>s+myAmount(e),0);
   const totalInc=incomeForYM(ymStr).reduce((s,i)=>s+i.amount,0);
-  const ativosHoje=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
+  const ativosHoje=ASSETS.reduce((s,a)=>{
+    try{ return s+(window.astValorYM?window.astValorYM(a,ymStr):astValorAtual(a)); }
+    catch(e){ return s+astValorAtual(a); } },0);
   const dividaHoje=totalDebt();
   let PATf={total:ativosHoje,rend:0};
   try{ PATf=homePatrimonioYM(ymStr); }catch(err){ logErro("homePatrimonioYM/fin",err); }
@@ -7974,7 +8056,10 @@ function computeFinMetrics(){
   // ── Balance-sheet breakdowns ──
   // Ativo (assets) grouped by class
   const assetByClass={};
-  ASSETS.forEach(a=>{ assetByClass[a.class]=(assetByClass[a.class]||0)+(astValorAtual(a)); });
+  ASSETS.forEach(a=>{
+    let v=0; try{ v=window.astValorYM?window.astValorYM(a,ymStr):astValorAtual(a); }
+    catch(e){ v=astValorAtual(a); }
+    assetByClass[a.class]=(assetByClass[a.class]||0)+v; });
   const ativo=ASSET_CLASSES.map(c=>({id:c.id,emoji:c.emoji,color:c.color,label:catLabel(c),
       val:R2c((assetByClass[c.id]||0)*kAtivo)}))
     .filter(x=>x.val>0).sort((a,b)=>b.val-a.val);
@@ -12651,6 +12736,10 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 "use strict";
 
 /* ═══ 0. HELPERS ═══ */
+/* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
+   exatamente qual build está no telefone. */
+const APP_VERSION="10.09";
+try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 const $=id=>document.getElementById(id);
 const R2=v=>Math.round((v||0)*100)/100;
 const aaToMm=aa=>(Math.pow(1+(aa||0)/100,1/12)-1)*100;      // % a.a. → % a.m.
@@ -13895,9 +13984,13 @@ function assetFlowForYM(ymStr){
   let bruto=0, ir=0, aportes=0, cc=0;
   const mes=ymMonth(ymStr), itens=[];
   (typeof ASSETS!=="undefined"?ASSETS:[]).forEach(a=>{
-    const p=astPro(a), bal=astValorAtual(a);
+    const p=astPro(a);
+    /* A posição E a taxa são as do mês pedido. Antes ambas eram as de hoje:
+       qualquer mês do fluxo rendia igual, e mudar a curva não mudava nada. */
+    let bal=astValorAtual(a);
+    try{ bal=astValorYM(a,ymStr); }catch(e){}
     if(bal<=0) return;
-    const rb=bal*(astLiquidoAM(a)/100);
+    const rb=bal*(astLiquidoAM(a,ymStr)/100);
     let aliq=astAliqIR(a,dias(p.aplic));
     if(p.trib==="isento"||p.trib==="fii") aliq=0;    // rendimento isento
     const vIr=Math.max(0,rb)*aliq/100;
@@ -14074,6 +14167,8 @@ function saveParams(){
   try{ Object.keys(FGTS_SCH_CACHE).forEach(k=>delete FGTS_SCH_CACHE[k]); }catch(e){}
   try{ cfLimparCache(); }catch(e){}
   try{ Object.keys(AST_VAL_CACHE).forEach(k=>delete AST_VAL_CACHE[k]); }catch(e){}
+  try{ AST_YM_CACHE&&Object.keys(AST_YM_CACHE).forEach(k=>delete AST_YM_CACHE[k]); }catch(e){}
+  try{ window.AST_POS_CACHE=null; }catch(e){}
 }
 
 /* Taxa anual de um índice num mês, segundo a curva do titular.
@@ -14289,7 +14384,11 @@ function fatorIndice(idx,ini,fim,transf){
     const [y,m]=cur.split("-").map(Number);
     const ini1=cur+"-01";
     const ultimo=new Date(y,m,0).getDate();
-    const prox=new Date(y,m,1).toISOString().split("T")[0];   // dia 1 do mês seguinte
+    /* toISOString() converte para UTC. Em fuso positivo (Alemanha, por
+       exemplo) new Date(y,m,1) recuava um dia e o mês seguinte virava o
+       próprio mês: a caminhada travava e a correção parava. Aqui a data é
+       montada por texto, sem passar pelo relógio da máquina. */
+    const prox=ymAdd(cur,1)+"-01";                            // dia 1 do mês seguinte
     const de=(ini>ini1)?ini:ini1;
     const ate=(fim<prox)?fim:prox;
     /* A ponta do mês entra proporcional aos DIAS ÚTEIS, não aos corridos:
@@ -14313,8 +14412,7 @@ function fatorIndice(idx,ini,fim,transf){
       meses+=parte;
       if(indiceMesEhReal(idx,cur)) real+=parte; else est+=parte;
     }
-    const nx=new Date(y,m,1);
-    cur=nx.toISOString().slice(0,7);
+    cur=ymAdd(cur,1);
   }
   return {fator,meses:R2(meses),real:R2(real),estimado:R2(est),
     pct:R2((fator-1)*100)};
@@ -14434,7 +14532,11 @@ function serieFatores(a,ini,fim,pro){
     const [y,m]=cur.split("-").map(Number);
     const ultimo=new Date(y,m,0).getDate();
     const ini1=cur+"-01";
-    const prox=new Date(y,m,1).toISOString().split("T")[0];   // dia 1 do mês seguinte
+    /* toISOString() converte para UTC. Em fuso positivo (Alemanha, por
+       exemplo) new Date(y,m,1) recuava um dia e o mês seguinte virava o
+       próprio mês: a caminhada travava e a correção parava. Aqui a data é
+       montada por texto, sem passar pelo relógio da máquina. */
+    const prox=ymAdd(cur,1)+"-01";                            // dia 1 do mês seguinte
     const de=(ini>ini1)?ini:ini1;
     const ate=(fim<prox)?fim:prox;
     /* A ponta do mês entra proporcional aos DIAS ÚTEIS, não aos corridos:
@@ -14471,7 +14573,7 @@ function serieFatores(a,ini,fim,pro){
       out.push({ym:cur,de,ate,parte:R2(parte),
         tx:R2((base-1)*100),f:Math.pow(base*admM,parte),real,idx:idxUsado});
     }
-    cur=new Date(y,m,1).toISOString().slice(0,7);
+    cur=ymAdd(cur,1);
   }
   return out;
 }
@@ -14809,9 +14911,16 @@ function astEvolucao(a,mesesFuturos){
   for(let m=1;m<=futuros;m++){
     const data=addMonths(hoje,m);
     const d=Math.max(0,dias(inicio,data));
-    const rend=saldo*iAM;
+    /* CADA MÊS COM A SUA TAXA. A projeção repetia a taxa de hoje até o fim
+       do horizonte: declarar CDI de 11% em jun/27 nos Parâmetros não movia
+       um único ponto da curva, e jul, ago e set continuavam na taxa velha.
+       Agora a taxa vem da curva do mês projetado — e o degrau se propaga
+       sozinho, porque a curva é uma função escada. */
+    let iM=iAM;
+    try{ const t2=astLiquidoAM(a,ymOf(data))/100; if(isFinite(t2)) iM=t2; }catch(e){}
+    const rend=saldo*iM;
     saldo=saldo+rend+aporte;
-    modelo=modelo*(1+iAM)+aporte;
+    modelo=modelo*(1+iM)+aporte;
     aportado=aportado+aporte;
     let cc=0;
     if(comeCotas&&FISCAL.comeCotasMeses.indexOf(mesOf(data))>=0){
@@ -15302,8 +15411,11 @@ function astAtualizacao(a){
   const p=astPro(a);
   const de=a.lastUpdate||p.aplic||today();
   const hj=today();
+  /* A curva declarada nos Parâmetros entra na chave: mudar o CDI de um mês
+     tem de invalidar a posição corrigida, ou a tela continua mostrando o
+     cenário anterior. */
   const chave=[a.id,bal,de,hj,p.idx,p.idxVal,p.aporte,p.taxaAdm,HIST.ts,
-    MARKET.cdi,MARKET.selic,MARKET.ipca,MARKET.ts].join("|");
+    MARKET.cdi,MARKET.selic,MARKET.ipca,MARKET.ts,PARAMS.ts].join("|");
   if(AST_CACHE[chave]) return AST_CACHE[chave];
 
   const base={informado:bal,desde:de,dias:Math.max(0,dias(de,hj)),
@@ -15311,12 +15423,37 @@ function astAtualizacao(a){
     corrigido:false,estimado:false,fator:1};
   if(!(bal>0)||de>=hj){ AST_CACHE[chave]=base; return base; }
 
-  const S=serieFatores(a,de,hj,p);
-  if(!S.length){ AST_CACHE[chave]=base; return base; }
-  const aporte=+p.aporte||0;
-  const cc=!!p.comeCotas&&p.trib.indexOf("fundo")===0;
-  const aliqCC=(p.trib==="fundoCP")?FISCAL.irFundoCP:FISCAL.irFundoLP;
+  const E=astEvoluirAte(a,p,de,hj,bal);
+  if(!E.meses){ AST_CACHE[chave]=base; return base; }
+  const out={informado:bal,desde:de,dias:Math.max(0,dias(de,hj)),
+    valor:E.valor,correcao:E.correcao,aportes:E.aportes,comeCotas:E.comeCotas,
+    corrigido:E.valor!==R2(bal),
+    estimado:E.estimado,
+    meses:E.meses,
+    fator:E.fator,
+    pct:bal>0?R2((E.valor/bal-1)*100):0};
+  AST_CACHE[chave]=out;
+  return out;
+}
 
+/* ═══ POSIÇÃO DE UMA APLICAÇÃO EM QUALQUER MÊS ════════════════════════
+   O saldo guardado é a fotografia de UMA data. Daí para frente o dinheiro
+   rende pela curva declarada nos Parâmetros — cada mês com a SUA taxa, e
+   não com a taxa de hoje repetida até o fim do horizonte. Para trás o
+   mesmo fator é dividido, devolvendo a posição que havia naquele mês.
+
+   Esta é a única máquina de avaliação do app. Tela inicial, cabeçalho de
+   Patrimônio, aba de Aplicações, metas e fluxo de caixa passam todos por
+   aqui: se um número divergir do outro, é defeito, não escolha. */
+function astEvoluirAte(a,p,de,ate,bal){
+  const out={valor:R2(bal),correcao:0,aportes:0,comeCotas:0,
+             meses:0,fator:1,estimado:false,serie:[]};
+  if(!(bal>0)||!de||!ate||ate<=de) return out;
+  const S=serieFatores(a,de,ate,p);
+  if(!S.length) return out;
+  const aporte=+p.aporte||0;
+  const cc=!!p.comeCotas&&String(p.trib||"").indexOf("fundo")===0;
+  const aliqCC=(p.trib==="fundoCP")?FISCAL.irFundoCP:FISCAL.irFundoLP;
   let v=bal, rend=0, apo=0, imp=0;
   S.forEach((r,i)=>{
     const antes=v;
@@ -15329,16 +15466,53 @@ function astAtualizacao(a){
       if(d>0){ v-=d; imp=R2(imp+d); }
     }
   });
-  const out={informado:bal,desde:de,dias:Math.max(0,dias(de,hj)),
-    valor:R2(v),correcao:R2(rend),aportes:R2(apo),comeCotas:R2(imp),
-    corrigido:R2(v)!==R2(bal),
-    estimado:S.some(r=>!r.real),
-    meses:R2(S.reduce((x,r)=>x+r.parte,0)),
-    fator:S.reduce((x,r)=>x*r.f,1),
-    pct:bal>0?R2((v/bal-1)*100):0};
-  AST_CACHE[chave]=out;
+  out.valor=R2(v); out.correcao=R2(rend); out.aportes=R2(apo); out.comeCotas=R2(imp);
+  out.meses=R2(S.reduce((x,r)=>x+r.parte,0));
+  out.fator=S.reduce((x,r)=>x*r.f,1);
+  out.estimado=S.some(r=>!r.real);
+  out.serie=S;
   return out;
 }
+/* Último dia do mês, em texto — sem passar pelo fuso da máquina */
+function astFimDoMesYM(ymS){
+  const [y,m]=String(ymS||"").split("-").map(Number);
+  if(!y||!m) return today();
+  return ymS+"-"+String(new Date(y,m,0).getDate()).padStart(2,"0");
+}
+const AST_YM_CACHE={};
+function astValorEm(a,dataAlvo){
+  const bal=parseFloat(a&&a.balance)||0;
+  if(!a||!(bal>0)||!dataAlvo) return bal;
+  const p=astPro(a);
+  const de=a.lastUpdate||p.aplic||today();
+  if(dataAlvo===de) return R2(bal);
+  const ck=[a.id,bal,de,dataAlvo,p.idx,p.idxVal,p.aporte,p.taxaAdm,p.taxaPerf,
+            p.trib,HIST.ts,PARAMS.ts,MARKET.ts].join("|");
+  if(AST_YM_CACHE[ck]!==undefined) return AST_YM_CACHE[ck];
+  let v=R2(bal);
+  try{
+    if(dataAlvo>de){
+      v=astEvoluirAte(a,p,de,dataAlvo,bal).valor;
+    }else{
+      /* regressão: desfaz a correção do período pelo fator do produto */
+      const f=fatorProduto(a,dataAlvo,de,p).fator;
+      v=(isFinite(f)&&f>0)?R2(bal/f):R2(bal);
+    }
+  }catch(e){ v=R2(bal); }
+  AST_YM_CACHE[ck]=v;
+  return v;
+}
+/* Posição no ÚLTIMO dia do mês pedido. No mês corrente vale HOJE: é fato,
+   não projeção — a mesma regra que o app já aplica ao saldo devedor. */
+function astValorYM(a,ymS){
+  if(!a) return 0;
+  const hoje=today(), atual=hoje.slice(0,7);
+  if(!ymS||ymS===atual) return astValorAtual(a);
+  return astValorEm(a,astFimDoMesYM(ymS));
+}
+window.astValorEm=astValorEm;
+window.astValorYM=astValorYM;
+window.astFimDoMesYM=astFimDoMesYM;
 /* Substitui o stub do núcleo: agora todo total do app usa a posição de hoje */
 window.astValorAtual=function(a){
   if(!a) return 0;
@@ -17283,18 +17457,9 @@ window.renderAssetList=function(){
   _renderAssetList();
   const el=$("assets-list");if(!el)return;
   const cards=el.children;
-  let items=[...ASSETS];
-  const q=($("ast-list-search")?.value||"").toLowerCase().trim();
-  const cf=$("ast-class-filter")?.value||"all";
-  const sv=$("ast-sort")?.value||"bal-desc";
-  if(q) items=items.filter(a=>(a.name||"").toLowerCase().includes(q));
-  if(cf!=="all") items=items.filter(a=>a.class===cf);
-  items.sort((a,b)=>{
-    if(sv==="bal-asc")return(astValorAtual(a))-(astValorAtual(b));
-    if(sv==="yield-desc")return(parseFloat(b.yieldPct)||0)-(parseFloat(a.yieldPct)||0);
-    if(sv==="az")return(a.name||"").localeCompare(b.name||"","pt-BR");
-    return(astValorAtual(b))-(astValorAtual(a));
-  });
+  /* a MESMA ordem que o núcleo acabou de desenhar — inclusive o filtro por
+     instituição e a ordenação pelo valor do mês exibido */
+  let items=Array.isArray(window.AST_LIST_ORDER)?window.AST_LIST_ORDER.slice():[...ASSETS];
   items.forEach((a,i)=>{
     const card=cards[i];if(!card)return;
     const p=astPro(a),res=astResgate(a);
@@ -17638,9 +17803,20 @@ function cfMes(ym,k,st){
     else if(sch&&sch.rows&&idx-1>=sch.rows.length) saldoDivida+=0;
     else saldoDivida+=debtBalance(d);
   });
+  /* Posição POR APLICAÇÃO, e não só o total: é o que permite ao cabeçalho
+     de Patrimônio e à aba de Aplicações mostrarem exatamente as parcelas
+     que somam o número da tela inicial. Uma máquina só, um número só. */
+  const apSaldos={};
   let saldoPatr=0;
-  if(proj&&st) st.forEach(x=>{saldoPatr+=x.saldo;});
-  else saldoPatr=(typeof ASSETS!=="undefined"?ASSETS:[]).reduce((a,x)=>a+astValorAtual(x),0);
+  if(proj&&st) st.forEach(x=>{ saldoPatr+=x.saldo; apSaldos[x.a.id]=R2(x.saldo); });
+  else (typeof ASSETS!=="undefined"?ASSETS:[]).forEach(x=>{
+    /* mês corrente: hoje, que é fato. Meses passados: a posição regredida
+       pela curva do próprio produto, e não o saldo de hoje repetido. */
+    let v=0;
+    try{ v=(k<0)?astValorYM(x,ym):astValorAtual(x); }
+    catch(e){ v=parseFloat(x&&x.balance)||0; }
+    apSaldos[x.id]=R2(v); saldoPatr+=v;
+  });
 
   const entLiq=R2(inc.liquido);
   const saidas=R2(despesas+dPago);
@@ -17648,7 +17824,7 @@ function cfMes(ym,k,st){
   return {
     ym, k, proj,
     patrimonio:R2(saldoPatr), dividaSaldo:R2(saldoDivida),
-    pl:R2(saldoPatr-saldoDivida),
+    pl:R2(saldoPatr-saldoDivida), saldos:apSaldos,
     tipos, bruto:R2(inc.bruto), inss:R2(inc.inss), irrf:R2(inc.ir),
     outrasDed:R2(inc.deducoes||0), deducoes:R2(inc.inss+(inc.deducoes||0)),
     impostos:R2(inc.ir), entLiquidas:entLiq, fgts:R2(inc.fgts||0),
@@ -17688,7 +17864,9 @@ function cfChaveDados(){
            (typeof EX!=="undefined"?EX:[]).length,
            (typeof INCOME!=="undefined"?INCOME:[]).length,
            JSON.stringify((typeof DEBTS!=="undefined"?DEBTS:[]).map(d=>[d.balance,d.fgts?1:0,d.indexador,d.seguro,d.taxaAdm])),
-           JSON.stringify((typeof ASSETS!=="undefined"?ASSETS:[]).map(a=>[a.balance,a.lastUpdate])),
+           JSON.stringify((typeof ASSETS!=="undefined"?ASSETS:[]).map(a=>[a.balance,a.lastUpdate,
+             a.class,a.pro&&a.pro.idx,a.pro&&a.pro.idxVal,a.pro&&a.pro.aporte,
+             a.pro&&a.pro.taxaAdm,a.pro&&a.pro.trib])),
            MARKET.ts,
            PARAMS.ts, PARAMS.horizonte, PARAMS.spread,
            JSON.stringify(PARAMS.curva), JSON.stringify(PARAMS.longo),
@@ -17742,7 +17920,8 @@ function cfConsolida(ms){
   });
   /* posição é estoque, não fluxo: vale a do último mês do período */
   if(ms.length){ const u=ms[ms.length-1];
-    z.patrimonio=u.patrimonio; z.dividaSaldo=u.dividaSaldo; z.pl=u.pl; z.ym=u.ym; }
+    z.patrimonio=u.patrimonio; z.dividaSaldo=u.dividaSaldo; z.pl=u.pl; z.ym=u.ym;
+    z.saldos=u.saldos||{}; }
   z.tipos.sort((a,b)=>b.bruto-a.bruto);
   z.despItens.sort((a,b)=>b.valor-a.valor);
   z.divida.itens.sort((a,b)=>b.pago-a.pago);
@@ -19202,7 +19381,7 @@ function renderParams(){
         <div style="font-size:10.5px;color:#8A857D;margin-top:3px;line-height:1.4">${PL("p_sub")}</div>
       </div>
       <div style="margin-left:auto;font-size:10px;letter-spacing:.4px;
-        color:#A8A49B;font-weight:700;flex-shrink:0">v10.08</div>
+        color:#A8A49B;font-weight:700;flex-shrink:0">v${APP_VERSION}</div>
     </div>
 
     <div class="pro-scale" style="margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch">
@@ -19717,6 +19896,7 @@ window.PRO={
   astEvolucao,astRendimentoCarteira,astProvisao,
   astCustoRegressivo,astDisponivel,toggleCustoAuto,custoManual,astRecalc,
   astAtualizacao,astValorAtual,materializarPosicoes,
+  astValorEm,astValorYM,astFimDoMesYM,astEvoluirAte,cfChaveDados,
   toggleRegPick,toggleAstPick,applyIncTypeDefaults,applyAstClassDefaults,
   openFiscal,saveFiscalForm,resetFiscal,toggleIsen,openResgate,calcResgate,setResgatePct,
   exportProj,refreshRates:()=>fetchMarket(false),
