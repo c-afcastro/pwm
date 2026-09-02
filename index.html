@@ -1160,7 +1160,7 @@
 
     <!-- versão, canto superior esquerdo -->
     <div style="position:absolute;top:18px;left:18px;font-size:10px;letter-spacing:1.2px;
-                font-weight:600;color:rgba(255,255,255,.45)">v10.04</div>
+                font-weight:600;color:rgba(255,255,255,.45)">v10.05</div>
 
     <!-- language switch top-right -->
     <div style="position:absolute;top:18px;right:18px;display:flex;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:2px">
@@ -13128,12 +13128,15 @@ const PDIC={
   p_in12:["em 12 meses","over 12 months","in 12 Monaten"],
   p_in_h:["no horizonte","over the horizon","im Horizont"],
   p_equiv_m:["equivale ao mês","monthly equivalent","monatlich entspricht"],
-  p_note_macro:["A projeção do app segue esta curva. Mês em branco herda a taxa de longo prazo; sem ela, o app estima pela trajetória do Copom. Meses já fechados usam sempre o dado do Banco Central.",
-    "Every projection follows this curve. A blank month inherits the long-term rate; without one, the app estimates from the Copom path. Closed months always use Central Bank data.",
-    "Alle Projektionen folgen dieser Kurve. Ein leerer Monat übernimmt den Langfristsatz; fehlt dieser, schätzt die App anhand des Copom-Pfads. Abgeschlossene Monate nutzen stets Zentralbankdaten."],
-  p_note_year:["O valor anual preenche os doze meses do ano. Anos já fechados ficam bloqueados: valem os dados do Banco Central.",
-    "The annual figure fills all twelve months of that year. Closed years are locked to Central Bank data.",
-    "Der Jahreswert füllt alle zwölf Monate. Abgeschlossene Jahre sind auf Zentralbankdaten festgelegt."],
+  p_note_macro:["A curva é uma escada: a taxa declarada num mês vale dele em diante, até que outro mês receba um número diferente. Só é preciso marcar as viradas. Além do horizonte manda a taxa de longo prazo, e meses já fechados usam sempre o dado do Banco Central.",
+    "The curve is a step function: a rate declared in one month holds from there on, until another month gets a different number. Only the turning points need marking. Past the horizon the long-term rate takes over, and closed months always use Central Bank data.",
+    "Die Kurve ist eine Treppenfunktion: ein in einem Monat erklärter Satz gilt ab da, bis ein anderer Monat eine abweichende Zahl erhält. Nur die Wendepunkte müssen gesetzt werden. Jenseits des Horizonts gilt der Langfristsatz, und abgeschlossene Monate nutzen stets Zentralbankdaten."],
+  p_leg_anchor:["taxa declarada","declared rate","erklärter Satz"],
+  p_leg_inherit:["herda a anterior","inherits the previous","übernimmt den vorigen"],
+  p_leg_real:["fechado pelo BCB","closed by the central bank","von der Zentralbank"],
+  p_note_year:["O valor anual entra como uma única declaração, no primeiro mês aberto do ano, e vale daí em diante — inclusive nos anos seguintes que ficarem em branco. Anos já fechados ficam bloqueados nos dados do Banco Central.",
+    "The annual figure is stored as a single declaration, in the first open month of the year, and holds from there on — including any later years left blank. Closed years stay locked to Central Bank data.",
+    "Der Jahreswert wird als einzelne Erklärung im ersten offenen Monat des Jahres gespeichert und gilt ab da — auch für spätere leere Jahre. Abgeschlossene Jahre bleiben auf Zentralbankdaten festgelegt."],
 
   /* — renda — */
   p_inss:["INSS · faixas progressivas","Social security · progressive bands","Sozialabgaben · progressive Stufen"],
@@ -13779,16 +13782,51 @@ function saveParams(){
 
 /* Taxa anual de um índice num mês, segundo a curva do titular.
    Devolve null quando o titular não parametrizou aquele mês. */
+/* Último mês coberto pela parametrização. Além dele manda a taxa de longo
+   prazo, quando declarada. */
+function paramFimHorizonte(){
+  return ymAdd(ymNow(),Math.max(1,Math.min(120,+PARAMS.horizonte||24))-1);
+}
+/* Meses declarados de um índice, em ordem */
+function paramAncoras(idx){
+  const c=PARAMS.curva[idx]||{};
+  return Object.keys(c).filter(k=>typeof c[k]==="number"&&isFinite(c[k])).sort();
+}
+/* Mês em que foi declarada a taxa que vigora num dado mês. Devolve null
+   quando nenhuma declaração alcança aquele mês. */
+function paramAncoraDe(idx,ym){
+  const ks=paramAncoras(idx);
+  let ult=null;
+  for(const k of ks){ if(k<=ym) ult=k; else break; }
+  return ult;
+}
+/* Taxa de um índice num mês, segundo a curva do titular.
+
+   A curva é uma FUNÇÃO ESCADA, não uma lista de pontos isolados: declarar
+   CDI de 12% em jun/27 significa 12% de jun/27 em diante, até que outro
+   mês receba um número diferente. Antes cada mês em branco caía na
+   estimativa, e um cenário só existia se o titular digitasse os doze,
+   vinte e quatro ou sessenta meses um a um.
+
+   Precedência: o valor do próprio mês; depois a última taxa declarada
+   antes dele; e, além do horizonte parametrizado, a taxa de longo prazo.
+   Sem nada disso, devolve null e o app estima. */
 function paramTaxa(idx,ym){
   const c=PARAMS.curva[idx]||{};
   if(typeof c[ym]==="number"&&isFinite(c[ym])) return c[ym];
   const L=PARAMS.longo[idx];
-  if(typeof L==="number"&&isFinite(L)){
-    /* a taxa de longo prazo só vale a partir do fim da curva */
-    const ks=Object.keys(c).filter(k=>typeof c[k]==="number").sort();
-    if(!ks.length||ym>ks[ks.length-1]) return L;
-  }
-  return null;
+  const temL=typeof L==="number"&&isFinite(L);
+  if(temL&&ym>paramFimHorizonte()) return L;
+  const anc=paramAncoraDe(idx,ym);
+  if(anc!==null) return c[anc];
+  return temL?L:null;
+}
+/* O mês herdou a taxa de um mês anterior? Serve para a tela mostrar onde
+   estão as âncoras e onde há continuidade. */
+function paramHerdado(idx,ym){
+  const c=PARAMS.curva[idx]||{};
+  if(typeof c[ym]==="number") return false;
+  return paramAncoraDe(idx,ym)!==null;
 }
 /* Converte a taxa parametrizada para variação MENSAL, que é a unidade
    que o motor de fatores consome. TR e poupança já vêm ao mês. */
@@ -13812,15 +13850,26 @@ function paramsDoBacen(){
   const spread=(selHoje>0&&cdiHoje>0)?R2(selHoje-cdiHoje):0.10;
   const metaHoje=selicMetaEm(hoje+"-15");
   const ajuste=(selHoje>0)?R2(selHoje-metaHoje):0;   // meta × efetiva
+  /* A curva é uma escada: gravar os doze ou sessenta meses transformaria
+     cada mês numa âncora, e mexer num deles não se propagaria para os
+     seguintes. Grava-se só onde a taxa VIRA — que é, de resto, como a
+     Selic de fato se comporta, mudando apenas nas reuniões do Copom. */
+  const ant={};
+  const poe=(idx,ym,v)=>{
+    const x=isFinite(v)?v:0;
+    if(ant[idx]===undefined||Math.abs(ant[idx]-x)>1e-9){
+      PARAMS.curva[idx][ym]=x; ant[idx]=x;
+    }
+  };
   for(let k=0;k<n;k++){
     const ym=ymAdd(hoje,k), meio=ym+"-15";
     const sel=R2(Math.max(0,selicMetaEm(meio)+ajuste));
-    PARAMS.curva.selic[ym]=k===0&&selHoje>0?R2(selHoje):sel;
-    PARAMS.curva.cdi[ym]=k===0&&cdiHoje>0?R2(cdiHoje):R2(Math.max(0,sel-spread));
-    PARAMS.curva.ipca[ym]=R2(IPCA_ANO[+ym.slice(0,4)]||MARKET.ipca||4.5);
-    PARAMS.curva.igpm[ym]=R2(MARKET.igpm||MARKET.ipca||4.5);
-    PARAMS.curva.tr[ym]=sel<=TR_SELIC_PISO?0:Math.round((sel-TR_SELIC_PISO)*0.016*10000)/10000;
-    PARAMS.curva.poupanca[ym]=sel>8.5?0.5:R2(0.7*sel/12);
+    poe("selic",ym,k===0&&selHoje>0?R2(selHoje):sel);
+    poe("cdi",  ym,k===0&&cdiHoje>0?R2(cdiHoje):R2(Math.max(0,sel-spread)));
+    poe("ipca", ym,R2(IPCA_ANO[+ym.slice(0,4)]||MARKET.ipca||4.5));
+    poe("igpm", ym,R2(MARKET.igpm||MARKET.ipca||4.5));
+    poe("tr",   ym,sel<=TR_SELIC_PISO?0:Math.round((sel-TR_SELIC_PISO)*0.016*10000)/10000);
+    poe("poupanca",ym,sel>8.5?0.5:R2(0.7*sel/12));
   }
   PARAMS.longo.selic=R2(Math.max(0,selicMetaEm(ymAdd(hoje,n)+"-15")+ajuste));
   PARAMS.longo.cdi=R2(Math.max(0,PARAMS.longo.selic-spread));
@@ -15163,7 +15212,19 @@ function ensureStyles(){
   #par-body .par-row .par-inp{height:34px}
   #par-body .par-row .par-inp input{font-size:12.5px!important}
   #par-body .par-per{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    font-variant-numeric:tabular-nums}
+    font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:5px}
+  /* Um traço vertical marca o mês em que a taxa foi declarada; os meses
+     seguintes, que a herdam, ficam com o traço apagado. Assim se lê de
+     relance onde estão os degraus da curva. */
+  #par-body .par-mk{width:2px;height:13px;border-radius:1px;background:transparent;
+    flex-shrink:0;transition:background .15s}
+  #par-body .par-row.ancora .par-mk{background:#1A3A5C}
+  #par-body .par-row.herda .par-mk{background:rgba(26,58,92,.18)}
+  #par-body .par-row.herda .par-inp input::placeholder{color:#8FA3B8;opacity:1}
+  #par-body .par-row.herda .par-inp{border-style:dashed}
+  #par-body .par-leg{display:flex;gap:13px;flex-wrap:wrap;margin:8px 2px 0}
+  #par-body .par-leg span{display:flex;align-items:center;gap:5px;font-size:9.5px;color:#8A857D}
+  #par-body .par-leg i{width:2px;height:11px;border-radius:1px;display:inline-block}
   #par-body .par-fx{padding:5px 0;border-top:1px solid var(--line)}
   #par-body .par-hd{display:grid;gap:8px;padding:2px 0 5px}
   #par-body .par-hd span{font-size:8px;letter-spacing:.6px;text-transform:uppercase;
@@ -17978,16 +18039,21 @@ function parLerCurva(){
   const hz=document.getElementById("par-horiz");
   if(hz){ const n=parseInt(hz.value,10); if(n>0) PARAMS.horizonte=Math.min(120,Math.max(6,n)); }
 }
-/* O valor anual desce para os doze meses do ano; meses já fechados pelo
-   Banco Central não são tocados, pois lá manda o dado realizado. */
+/* O valor anual vira UMA âncora, no primeiro mês aberto do ano, e a
+   continuidade cuida dos onze restantes. Gravar os doze faria de cada mês
+   uma âncora e o ano seguinte deixaria de herdar a taxa. Âncoras antigas
+   dentro do mesmo ano são removidas, para não brigarem com a nova. */
 function parAplicarAno(idx,ano,val){
   const c=PARAMS.curva[idx]||(PARAMS.curva[idx]={});
   const hoje=ymNow();
+  let primeiro=null;
   for(let m=1;m<=12;m++){
     const ym=ano+"-"+String(m).padStart(2,"0");
     if(ym<hoje||indiceMesEhReal(idx,ym)) continue;
-    if(val===null) delete c[ym]; else c[ym]=val;
+    if(primeiro===null) primeiro=ym;
+    delete c[ym];
   }
+  if(val!==null&&primeiro!==null) c[primeiro]=val;
 }
 function parMarcarAno(el){ el.dataset.dirty="1"; }
 
@@ -18149,12 +18215,24 @@ function renderParams(){
     for(let k=0;k<n;k++){
       const ym=ymAdd(hoje,k);
       const v=(typeof c[ym]==="number")?String(c[ym]).replace(".",","):"";
-      const est=paramTaxa(PAR_IDX_SEL,ym);
+      /* O campo em branco não mostra um travessão: mostra a taxa que o app
+         vai usar de fato naquele mês — herdada, de longo prazo ou estimada.
+         Deixar em branco passa a ser uma escolha informada. */
+      let est=paramTaxa(PAR_IDX_SEL,ym);
+      if(est===null){
+        const mm=indiceMes(PAR_IDX_SEL,ym);
+        est=(PAR_IDX_SEL==="tr"||PAR_IDX_SEL==="poupanca")?mm:(Math.pow(1+mm/100,12)-1)*100;
+      }
       const real=indiceMesEhReal(PAR_IDX_SEL,ym);
-      linhas.push(`<div class="par-row">
-        <span class="par-per" style="color:${real?"#A8A49B":"var(--body)"}">${cfMesLabel(ym).slice(0,3)}/${ym.slice(2,4)}</span>
+      const casas=(PAR_IDX_SEL==="tr")?4:2;
+      const estTxt=String(Math.round(est*Math.pow(10,casas))/Math.pow(10,casas)).replace(".",",");
+      const ancora=typeof c[ym]==="number";
+      const herda=!ancora&&!real&&paramHerdado(PAR_IDX_SEL,ym);
+      linhas.push(`<div class="par-row${herda?" herda":""}${ancora?" ancora":""}">
+        <span class="par-per" style="color:${real?"#A8A49B":"var(--body)"}">
+          <i class="par-mk"></i>${cfMesLabel(ym).slice(0,3)}/${ym.slice(2,4)}</span>
         <div class="par-inp"><input type="text" inputmode="decimal" data-ym="${ym}" value="${v}"
-          placeholder="${est!==null?String(R2(est)).replace(".",","):"—"}" oninput="PRO.parMask(this)"
+          placeholder="${estTxt}" oninput="PRO.parMask(this)"
           ${real?'title="'+PX("p_realized")+'"':""}/><span class="par-un">${meta.unid}</span></div>
       </div>`);
     }
@@ -18171,7 +18249,9 @@ function renderParams(){
         if(indiceMesEhReal(PAR_IDX_SEL,ym)) real++;
         if(typeof c[ym]==="number") vs.push(c[ym]);
       }
-      const uni=vs.length===12&&vs.every(x=>x===vs[0])?vs[0]:null;
+      /* uma âncora no ano é o caso normal; várias significam que o titular
+         desenhou o ano mês a mês, e aí a vista anual não tem o que mostrar */
+      const uni=vs.length===1?vs[0]:(vs.length>1&&vs.every(x=>x===vs[0])?vs[0]:null);
       let acc=1;
       for(let m=1;m<=12;m++) acc*=(1+indiceMes(PAR_IDX_SEL,y+"-"+String(m).padStart(2,"0"))/100);
       const ref=R2((acc-1)*100);
@@ -18244,6 +18324,11 @@ function renderParams(){
     ${PAR_VISTA==="ano"?`<div class="pro-note" style="margin:0 0 8px">${PL("p_note_year")}</div>`:""}
     <div style="background:var(--surface);border-radius:15px;padding:2px 14px 10px;
       max-height:320px;overflow-y:auto;-webkit-overflow-scrolling:touch">${curvaHTML}</div>
+    ${PAR_VISTA==="mes"?`<div class="par-leg">
+      <span><i style="background:#1A3A5C"></i>${PL("p_leg_anchor")}</span>
+      <span><i style="background:rgba(26,58,92,.18)"></i>${PL("p_leg_inherit")}</span>
+      <span><i style="background:#D8D4CB"></i>${PL("p_leg_real")}</span>
+    </div>`:""}
     ${resumo}`;
 
   /* ═══ RENDA ═══ */
@@ -18435,7 +18520,7 @@ function renderParams(){
         <div style="font-size:10.5px;color:#8A857D;margin-top:3px;line-height:1.4">${PL("p_sub")}</div>
       </div>
       <div style="margin-left:auto;font-size:10px;letter-spacing:.4px;
-        color:#A8A49B;font-weight:700;flex-shrink:0">v10.04</div>
+        color:#A8A49B;font-weight:700;flex-shrink:0">v10.05</div>
     </div>
 
     <div class="pro-scale" style="margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch">
@@ -18943,6 +19028,7 @@ window.PRO={
   market:()=>MARKET,fiscal:()=>FISCAL,projetar,incomeTotalsForYM,astResgate,astLiquidoAM,
   astBrutoAM,astIdxNorm,astFatorPeriodo,diasUteis,ehDiaUtil,feriadosDoAno,mesesCompletos,
   params:()=>PARAMS,saveParams,paramTaxa,paramMensal,paramsDoBacen,paramsLimpar,PARAM_IDX,
+  paramAncoras,paramAncoraDe,paramHerdado,paramFimHorizonte,
   openParams,renderParams,parSelIdx,parLerCurva,parLerFiscal,parSalvar,parBacen,parLimpar,parSetAba,
   parSetVista,parMarcarAno,parAplicarAno,parRecalcIRRF,parToggle,parRestaurar,parNum,parMask,parMoney,parTabela,
   liqSetH,liqToggle,astLiqSerie,astComeCotasAte,irPrevidencia,irGanhoCapital,faixaAliq,
