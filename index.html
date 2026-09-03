@@ -12932,7 +12932,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.21";
+const APP_VERSION="10.22";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -15127,8 +15127,29 @@ function astEvolucao(a,mesesFuturos){
     for(let j=0;j<S.length;j++){
       /* ao alcançar a data da posição, a curva encosta no valor informado
          ANTES de render o mês, e daí em diante é correção monetária */
-      if(!encostou&&S[j].de>=posData&&infor>0){ sal=infor; aportadoAc=infor; encostou=true; }
-      sal=sal*S[j].f;
+      /* A âncora é o balde que CONTÉM a data da posição, não o primeiro
+         que começa depois dela. Encostado o saldo informado, corrige-se
+         apenas a fração do balde que resta da data da posição em diante —
+         senão o mês da posição entraria inteiro e a curva passaria por
+         cima do valor que o titular declarou. */
+      let fj=S[j].f;
+      if(!encostou&&infor>0&&S[j].ate>posData){
+        sal=infor; aportadoAc=infor; encostou=true;
+        if(S[j].de<posData){
+          /* a fração sai do MESMO motor que a tela de Patrimônio usa, e não
+             de uma proporção por dias corridos: proporção aproximada deixava
+             as duas telas discordando em alguns reais no fim do mês. */
+          let fp=null;
+          try{ const r=fatorProduto(a,posData,S[j].ate,p); if(r&&isFinite(r.fator)&&r.fator>0) fp=r.fator; }catch(e){}
+          if(fp===null){
+            const tot=Math.max(1,dias(S[j].de,S[j].ate));
+            const rest=Math.max(0,Math.min(tot,dias(posData,S[j].ate)));
+            fp=Math.pow(S[j].f,rest/tot);
+          }
+          fj=fp;
+        }
+      }
+      sal=sal*fj;
       if(j>0&&aporte>0){ sal+=aporte; aportadoAc+=aporte; }
       if(comeCotas&&j>0&&FISCAL.comeCotasMeses.indexOf(mesOf(S[j].ym+"-15"))>=0){
         const d=R2(Math.max(0,(sal-aportadoAc)*aliqCC/100-ccAcum));
