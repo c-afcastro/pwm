@@ -12932,7 +12932,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.22";
+const APP_VERSION="10.23";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -16574,7 +16574,9 @@ function AST_CLASS_CUR(){try{return AST_CLASS;}catch(e){return "fixed_income";}}
 function astPreview(){
   const el=$("ast-preview"); if(!el) return;
   const saldo=unmaskCurrency($("ast-balance"))||0;
-  const fake={class:AST_CLASS_CUR(),balance:saldo,yieldPct:0,pro:collectAstPro()};
+  const fake={class:AST_CLASS_CUR(),balance:saldo,yieldPct:0,
+    lastUpdate:$("ast-date")?.value||today(),   /* a data da posição manda */
+    pro:collectAstPro()};
   const custoAuto=AST_CUSTO_AUTO;
   const bruto=astBrutoAM(fake), liq=astLiquidoAM(fake), res=astResgate(fake), dt=astLiquidezData(fake);
   const dv=astDisponivel(fake);
@@ -16594,7 +16596,7 @@ function astPreview(){
         <div style="color:var(--body)">${num(mmToAa(liq).toFixed(2).replace(".",",")+"%","a.a.")}</div></div>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
-      ${tag("Rende "+fmt(saldo*liq/100)+"/mês","rgba(15,36,64,.08)","#0F2440")}
+      ${tag("Rende "+fmt(dv.saldo*liq/100)+"/mês","rgba(15,36,64,.08)","#0F2440")}
       ${tag("IR hoje "+res.aliq+"%"+(res.iofPct>0?" + IOF "+res.iofPct+"%":""),"rgba(184,90,106,.12)","#B85A6A")}
       ${dv.dias>0?tag((dv.preso?"Liberado em ":"Cai em ")+brDate(dt),"rgba(0,0,0,.05)","#8A857D"):""}
     </div>
@@ -16620,8 +16622,13 @@ function astPreview(){
       return pd>ap
         ? `<div class="pro-note">A posição é de ${brDate(pd)} e a aplicação é de ${brDate(ap)}: o app regride até a aplicação para achar o valor aplicado.</div>`
         : `<div class="pro-note">Posição e aplicação na mesma data: o saldo informado é o próprio valor aplicado, e o app o corrige até hoje. Para deduzir o valor aplicado a partir do saldo de hoje, deixe a data da posição em ${brDate(today())}.</div>`;})()}
-    ${custoAuto&&saldo>0?(()=>{const F=fatorProduto(fake,fake.pro.aplic,today());
-      return `<div class="pro-note">Valor aplicado deduzido por regressão: ${fmt(dv.saldo)} descontados pelo próprio histórico do indexador, ${String(F.pct).replace(".",",")}% acumulados em ${res.dias} dias (${String(F.amEquiv).replace(".",",")}% ao mês equivalente).${F.temEstimativa?" Parte do período usa índice estimado — atualize o histórico em Impostos.":""} Toque em <strong>fixar</strong> ao lado do campo para informar o valor exato.</div>`;})():""}
+    ${custoAuto&&saldo>0?(()=>{
+      /* a janela da regressão é aplicação → posição, não aplicação → hoje */
+      const pd=$("ast-date")?.value||today(), ap=fake.pro.aplic;
+      const ate=(pd>ap?pd:today());
+      const F=fatorProduto(fake,ap,ate);
+      const nd=Math.max(0,dias(ap,ate));
+      return `<div class="pro-note">Valor aplicado deduzido por regressão: ${fmt(saldo)} da posição de ${brDate(ate)} descontados pelo próprio histórico do indexador, ${String(F.pct).replace(".",",")}% acumulados em ${nd} dias (${String(F.amEquiv).replace(".",",")}% ao mês equivalente).${F.temEstimativa?" Parte do período usa índice estimado — atualize o histórico em Impostos.":""} Toque em <strong>fixar</strong> ao lado do campo para informar o valor exato.</div>`;})():""}
     ${dv.preso?`<div class="pro-note">Recurso preso até ${brDate(dv.data)}${dv.dias>0?" ("+dv.dias+" dias)":""}: não entra na reserva de emergência.</div>`:""}
     ${dv.proxFaixa?`<div class="pro-note">Aguardando mais ${dv.proxFaixa.dias} dias, o IR cai de ${String(dv.proxFaixa.de).replace(".",",")}% para ${String(dv.proxFaixa.aliq).replace(".",",")}%.</div>`:""}`;
 }
