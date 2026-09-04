@@ -71,6 +71,40 @@
       --accent:#2A4A6B; --accent-ink:#FFFFFF;
       --accent-lt:#4E6E90; --accent-soft:rgba(42,74,107,.10); --accent-line:rgba(42,74,107,.20);
     }
+    /* ── TERROSOS ──────────────────────────────────────────────────
+       Quatro bases de terra, do barro rosado ao cacau. Todas mantêm
+       fundo claro e tinta escura: as cores dos módulos aparecem como
+       TEXTO em dezenas de lugares e precisam de contraste para se ler.
+       Nenhuma delas encosta em --green, --wood, --warn nem nos azuis,
+       marinhos e vinhos dos cabeçalhos. */
+    html[data-theme="barro"] {
+      --bg:#F5EAE2; --surface:#EEDCD0; --line:#DCC5B4; --paper:#FDF8F4;
+      --body:#3A2A20; --muted:#7E685A; --muted-lt:#7E685A;
+      --ink-2:#6F5B4E; --ink-3:#8D7869; --ink-4:#8A7466;
+      --accent:#9A4B2C; --accent-ink:#FFFFFF;
+      --accent-lt:#BC7454; --accent-soft:rgba(154,75,44,.11); --accent-line:rgba(154,75,44,.22);
+    }
+    html[data-theme="ocre"] {
+      --bg:#F5F1E2; --surface:#EBE5CF; --line:#D8CFB2; --paper:#FDFBF3;
+      --body:#332E1C; --muted:#77705A; --muted-lt:#77705A;
+      --ink-2:#6B644F; --ink-3:#8B846D; --ink-4:#88816A;
+      --accent:#7C5F14; --accent-ink:#FFFFFF;
+      --accent-lt:#A0833B; --accent-soft:rgba(124,95,20,.11); --accent-line:rgba(124,95,20,.22);
+    }
+    html[data-theme="argila"] {
+      --bg:#EFEAE3; --surface:#E2DBD1; --line:#CEC5B7; --paper:#FAF7F3;
+      --body:#302A23; --muted:#726A5E; --muted-lt:#726A5E;
+      --ink-2:#675F53; --ink-3:#877F72; --ink-4:#847C6F;
+      --accent:#6B5744; --accent-ink:#FFFFFF;
+      --accent-lt:#8E7A65; --accent-soft:rgba(107,87,68,.11); --accent-line:rgba(107,87,68,.22);
+    }
+    html[data-theme="cacau"] {
+      --bg:#EDE4DA; --surface:#DFD3C5; --line:#C9B9A7; --paper:#F9F4EE;
+      --body:#2C201A; --muted:#6E5F52; --muted-lt:#6E5F52;
+      --ink-2:#645547; --ink-3:#847567; --ink-4:#807164;
+      --accent:#4A3128; --accent-ink:#FFFFFF;
+      --accent-lt:#71544A; --accent-soft:rgba(74,49,40,.11); --accent-line:rgba(74,49,40,.22);
+    }
     html[data-theme="pedra"] {
       --bg:#E9E7E2; --surface:#DEDBD4; --line:#C7C3BA; --paper:#F7F5F1;
       --body:#2B2926; --muted:#6E6A63; --muted-lt:#6E6A63;
@@ -1451,7 +1485,13 @@
      quem abriu o app à noite. -->
 <script>
 try{ var _t=localStorage.getItem("gastos_v2_theme");
-     if(_t && _t!=="areia") document.documentElement.setAttribute("data-theme",_t); }catch(e){}
+     if(_t==="custom"){
+       /* tema próprio: a base pinta os neutros já no primeiro paint; o
+          acento derivado entra logo depois, com o motor completo */
+       var _c=JSON.parse(localStorage.getItem("gastos_v2_theme_custom")||"null");
+       document.documentElement.setAttribute("data-theme",(_c&&_c.base)||"linho");
+     }
+     else if(_t && _t!=="areia") document.documentElement.setAttribute("data-theme",_t); }catch(e){}
 </script>
 </head>
 <body>
@@ -5389,6 +5429,11 @@ const THEMES=[
   {id:"linho", k:"p_th_linho", bg:"#F0E8DD", sf:"#E7DDCE", ac:"#6E4523", meta:"#F0E8DD"},
   {id:"neve",  k:"p_th_neve",  bg:"#F6F7F8", sf:"#ECEEF1", ac:"#2A4A6B", meta:"#F6F7F8"},
   {id:"pedra", k:"p_th_pedra", bg:"#E9E7E2", sf:"#DEDBD4", ac:"#4A4640", meta:"#E9E7E2"},
+  /* terrosos */
+  {id:"barro", k:"p_th_barro", bg:"#F5EAE2", sf:"#EEDCD0", ac:"#9A4B2C", meta:"#F5EAE2"},
+  {id:"ocre",  k:"p_th_ocre",  bg:"#F5F1E2", sf:"#EBE5CF", ac:"#7C5F14", meta:"#F5F1E2"},
+  {id:"argila",k:"p_th_argila",bg:"#EFEAE3", sf:"#E2DBD1", ac:"#6B5744", meta:"#EFEAE3"},
+  {id:"cacau", k:"p_th_cacau", bg:"#EDE4DA", sf:"#DFD3C5", ac:"#4A3128", meta:"#EDE4DA"},
 ];
 /* Um tema escuro NÃO entra aqui ainda, e o motivo é concreto: as cores dos
    módulos aparecem como TEXTO sobre o fundo neutro em dezenas de lugares —
@@ -5398,20 +5443,73 @@ const THEMES=[
    titular perde a pista de módulo que pediu para preservar — ou cada uso
    como texto ganha um par claro próprio. É trabalho de token, não de
    paleta, e feito pela metade entrega números que não se leem. */
+/* ══ TEMA PRÓPRIO ══════════════════════════════════════════════════
+   Autonomia sem abrir mão da legibilidade. O titular escolhe DUAS
+   coisas: uma base neutra entre as prontas — que já foi calibrada para
+   contraste — e a cor de acento, livre. Todo o resto (tinta sobre o
+   acento, acento claro, véu e fio) é DERIVADO da cor escolhida, para
+   que nenhuma combinação produza texto ilegível sobre botão.
+   As cores dos módulos continuam fora do alcance: Despesas verde,
+   Entradas azul, Patrimônio marinho, Dívidas vinho. */
+const THEME_CUSTOM_KEY="gastos_v2_theme_custom";
+const CUSTOM_DEF={base:"linho", ac:"#8A5A2B"};
+let CUSTOM=Object.assign({},CUSTOM_DEF);
+try{ const c=JSON.parse(localStorage.getItem(THEME_CUSTOM_KEY)||"null");
+     if(c&&c.ac) CUSTOM=Object.assign({},CUSTOM_DEF,c); }catch(e){}
+
+const hex3=h=>{h=String(h||"").trim().replace("#","");
+  if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  if(!/^[0-9a-fA-F]{6}$/.test(h)) h="8A5A2B";
+  return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];};
+const hexOk=h=>"#"+hex3(h).map(v=>v.toString(16).padStart(2,"0")).join("");
+/* luminância relativa (WCAG): decide se a tinta sobre o acento é branca
+   ou escura. Um acento amarelo com letra branca some. */
+function corLum(h){
+  return hex3(h).map(v=>v/255).map(c=>c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4))
+    .reduce((a,c,i)=>a+c*[.2126,.7152,.0722][i],0);
+}
+const corMix=(h,alvo,q)=>{const c=hex3(h);
+  return "#"+c.map(v=>Math.round(v+(alvo-v)*q).toString(16).padStart(2,"0")).join("");};
+function temaCustomCSS(){
+  const ac=hexOk(CUSTOM.ac), [r,g,b]=hex3(ac), L=corLum(ac);
+  return `html[data-theme]{
+    --accent:${ac};
+    --accent-ink:${L>.45?"#1C1A17":"#FFFFFF"};
+    --accent-lt:${L>.6?corMix(ac,0,.28):corMix(ac,255,.28)};
+    --accent-soft:rgba(${r},${g},${b},.11);
+    --accent-line:rgba(${r},${g},${b},.22);
+  }`;
+}
+function temaCustomStyle(ligar){
+  let el=document.getElementById("tema-custom");
+  if(!ligar){ if(el) el.remove(); return; }
+  if(!el){ el=document.createElement("style"); el.id="tema-custom"; document.head.appendChild(el); }
+  /* precisa vir DEPOIS das regras html[data-theme="x"] para vencer no
+     desempate por ordem — mesma especificidade, última ganha */
+  else document.head.appendChild(el);
+  el.textContent=temaCustomCSS();
+}
+const temaBase=()=>THEMES.find(x=>x.id===CUSTOM.base)||THEMES[0];
+
 let THEME="areia";
 try{ const t=localStorage.getItem(THEME_KEY);
-     if(t&&THEMES.some(x=>x.id===t)) THEME=t; }catch(e){}
+     if(t==="custom"||THEMES.some(x=>x.id===t)) THEME=t; }catch(e){}
 
 function temaAplicar(id,persistir){
-  const th=THEMES.find(x=>x.id===id)||THEMES[0];
-  THEME=th.id;
-  if(th.id==="areia") document.documentElement.removeAttribute("data-theme");
+  const custom=(id==="custom");
+  const th=custom?temaBase():(THEMES.find(x=>x.id===id)||THEMES[0]);
+  THEME=custom?"custom":th.id;
+  /* no tema próprio o atributo fica SEMPRE preenchido, inclusive na base
+     areia: é o gancho de que a folha de acento precisa para existir */
+  if(th.id==="areia"&&!custom) document.documentElement.removeAttribute("data-theme");
   else document.documentElement.setAttribute("data-theme",th.id);
+  temaCustomStyle(custom);
   /* a barra do sistema no iOS acompanha, senão fica uma faixa clara
      colada num app escuro */
   try{ const m=document.querySelector('meta[name="theme-color"]');
        if(m) m.setAttribute("content",th.meta); }catch(e){}
-  if(persistir){ try{ localStorage.setItem(THEME_KEY,th.id); }catch(e){} }
+  if(persistir){ try{ localStorage.setItem(THEME_KEY,THEME);
+       localStorage.setItem(THEME_CUSTOM_KEY,JSON.stringify(CUSTOM)); }catch(e){} }
   /* telas desenhadas em canvas leem cor na hora do traço, não por CSS:
      precisam ser redesenhadas para acompanhar o tema */
   try{ if(typeof renderHome==="function") renderHome(); }catch(e){}
@@ -13884,7 +13982,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.40";
+const APP_VERSION="10.50";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -14470,6 +14568,15 @@ const TXD={
 "Média de variáveis":["Average variable spend","Ø variable Ausgaben"],
 "Investir a sobra":["Invest the surplus","Überschuss anlegen"],
 "Evolução projetada":["Projected path","Projizierter Verlauf"],
+"🔄 Taxas":["🔄 Rates","🔄 Sätze"],
+"Aplicações no período":["Holdings over the period","Anlagen im Zeitraum"],
+"Renda no período":["Income over the period","Einkommen im Zeitraum"],
+"Rendimento bruto":["Gross return","Bruttoertrag"],
+"(−) IR e come-cotas":["(−) Tax and come-cotas","(−) Steuer und Come-cotas"],
+"(=) Rendimento líquido":["(=) Net return","(=) Nettoertrag"],
+"Entradas brutas":["Gross income","Bruttoeinnahmen"],
+"(−) INSS e IRRF":["(−) INSS and withholding tax","(−) INSS und Lohnsteuer"],
+"(=) Entradas líquidas":["(=) Net income","(=) Nettoeinnahmen"],
 "Horizonte: 12 meses":["Horizon: 12 months","Horizont: 12 Monate"],
 "Horizonte: 24 meses":["Horizon: 24 months","Horizont: 24 Monate"],
 "Horizonte: 5 anos":["Horizon: 5 years","Horizont: 5 Jahre"],
@@ -14694,6 +14801,23 @@ const PDIC={
   p_th_linho:["Linho","Linen","Leinen"],
   p_th_neve:["Neve","Snow","Schnee"],
   p_th_pedra:["Pedra","Stone","Stein"],
+  p_th_barro:["Barro","Clay","Ton"],
+  p_th_ocre:["Ocre","Ochre","Ocker"],
+  p_th_argila:["Argila","Loam","Lehm"],
+  p_th_cacau:["Cacau","Cocoa","Kakao"],
+  p_th_own:["Tema próprio","Your own theme","Eigenes Thema"],
+  p_th_base:["Base neutra","Neutral base","Neutrale Basis"],
+  p_th_accent:["Cor de acento","Accent colour","Akzentfarbe"],
+  p_th_pick:["Escolher","Pick","Wählen"],
+  p_th_prev:["Prévia","Preview","Vorschau"],
+  p_th_prev_btn:["Confirmar","Confirm","Bestätigen"],
+  p_th_prev_pill:["Selecionado","Selected","Ausgewählt"],
+  p_th_prev_off:["Neutro","Neutral","Neutral"],
+  p_th_use:["Usar este tema","Use this theme","Thema übernehmen"],
+  p_th_reset:["Voltar ao padrão","Back to default","Auf Standard zurück"],
+  p_th_own_note:["A base define fundo, superfície e tinta — todas já calibradas para contraste. O acento é livre: a cor do texto sobre ele, o tom claro, o véu e o fio são derivados da sua escolha, para que nenhum botão fique ilegível. As cores dos módulos seguem intocadas.",
+    "The base sets background, surface and ink — all already calibrated for contrast. The accent is yours: the text colour on top of it, the lighter tone, the veil and the hairline are derived from your pick so no button ends up unreadable. Module colours stay untouched.",
+    "Die Basis bestimmt Hintergrund, Fläche und Schrift — alle auf Kontrast abgestimmt. Der Akzent ist frei: Schriftfarbe darauf, heller Ton, Schleier und Haarlinie werden daraus abgeleitet, damit keine Schaltfläche unlesbar wird. Die Modulfarben bleiben unberührt."],
 
   p_on:["Ligado","On","An"],
   p_off:["Desligado","Off","Aus"],
@@ -17927,8 +18051,11 @@ function renderProj(){
   const el=$("ast-view-proj"); if(!el) return;
   const rows=projetar(PROJ.meses);
   const last=rows[rows.length-1]||{};
-  const impTot=rows.reduce((s,r)=>s+r.imposto,0);
-  const rendTot=rows.reduce((s,r)=>s+r.rend,0);
+  const impTot=rows.reduce((s,r)=>s+r.imposto,0);      // INSS + IRRF sobre a RENDA
+  const brutoTot=rows.reduce((s,r)=>s+r.bruto,0);
+  const liqTot=rows.reduce((s,r)=>s+r.liquido,0);
+  const rendTot=rows.reduce((s,r)=>s+r.rend,0);        // rendimento BRUTO da carteira
+  const rendIrTot=rows.reduce((s,r)=>s+(r.rendIr||0),0);
   const ccTot=rows.reduce((s,r)=>s+r.comeCotas,0);
   const hoje=ASSETS.reduce((s,a)=>s+(astValorAtual(a)),0);
   const liqHoje=astLiquidoHojeTotal();
@@ -17995,11 +18122,38 @@ function renderProj(){
     <div style="background:#0F2440;border-radius:18px;padding:18px 20px;color:#fff;margin-bottom:12px;position:relative;overflow:hidden">
       <div style="position:absolute;top:-35px;right:-35px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
       <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.55)">Patrimônio líquido em ${PROJ.meses} meses</div>
-      <div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,36px);line-height:1.05;margin:3px 0 10px">${fmt(last.pl||0)}</div>
-      <div style="display:flex;gap:7px;flex-wrap:wrap">
-        <span style="background:rgba(255,255,255,.12);border-radius:20px;padding:3px 10px;font-size:11px">Rendimentos ${fmt(rendTot)}</span>
-        <span style="background:rgba(255,255,255,.12);border-radius:20px;padding:3px 10px;font-size:11px">Impostos ${fmt(impTot+ccTot)}</span>
+      <div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,36px);line-height:1.05;margin:3px 0 12px">${fmt(last.pl||0)}</div>
+      ${(()=>{
+        /* CADA IMPOSTO DEBAIXO DA SUA BASE. O cartão exibia "Rendimentos" —
+           rendimento bruto da carteira — ao lado de "Impostos", que somava
+           INSS e IRRF da RENDA com o come-cotas das aplicações. Duas
+           grandezas que não se dividem uma pela outra: parecia que o
+           tributo devorava o rendimento quando sequer incide sobre ele. */
+        const rendLiq=R2(rendTot-rendIrTot-ccTot);
+        const bloco=(tit,linhas)=>`
+          <div style="margin-bottom:10px">
+            <div style="font-size:8.5px;letter-spacing:1.6px;text-transform:uppercase;
+              color:rgba(255,255,255,.45);font-weight:700;margin-bottom:5px">${tit}</div>
+            ${linhas.map(l=>`<div style="display:flex;justify-content:space-between;align-items:baseline;
+              gap:10px;padding:2.5px 0;${l[3]?"border-top:1px solid rgba(255,255,255,.16);margin-top:3px;padding-top:6px":""}">
+              <span style="font-size:11.5px;color:rgba(255,255,255,${l[3]?".92":".62"});min-width:0;
+                overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l[0]}</span>
+              <span style="font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap;
+                font-weight:${l[3]?"700":"500"};color:${l[2]||"rgba(255,255,255,.92)"}">${l[1]}</span>
+            </div>`).join("")}
+          </div>`;
+        return bloco("Aplicações no período",[
+            ["Rendimento bruto","+ "+fmt(rendTot),"#9FD08C"],
+            ["(−) IR e come-cotas","− "+fmt(rendIrTot+ccTot),"#E9A3AE"],
+            ["(=) Rendimento líquido",fmt(rendLiq),null,true]])
+          + bloco("Renda no período",[
+            ["Entradas brutas","+ "+fmt(brutoTot),"#9FD08C"],
+            ["(−) INSS e IRRF","− "+fmt(impTot),"#E9A3AE"],
+            ["(=) Entradas líquidas",fmt(liqTot),null,true]]);
+      })()}
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:2px">
         <span style="background:rgba(255,255,255,.12);border-radius:20px;padding:3px 10px;font-size:11px">CDI ${MARKET.cdi.toFixed(2)}%</span>
+        <span style="background:rgba(255,255,255,.12);border-radius:20px;padding:3px 10px;font-size:11px">IPCA ${MARKET.ipca.toFixed(2)}%</span>
       </div>
     </div>
 
@@ -21369,7 +21523,7 @@ function renderParams(){
   const tema=`
     <div class="sec-label">${PL("p_theme")}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
-      ${THEMES.map(t=>{const on=THEME===t.id;
+      ${THEMES.map(t=>{const on=(THEME===t.id);
         return `<button type="button" onclick="PRO.temaEscolher('${t.id}')"
           style="display:flex;align-items:center;gap:9px;text-align:left;cursor:pointer;
             background:var(--paper);border:1.5px solid ${on?"var(--accent)":"var(--line)"};
@@ -21389,7 +21543,66 @@ function renderParams(){
           </span>
         </button>`;}).join("")}
     </div>
-    <div class="pro-note">${PL("p_theme_note")}</div>`;
+    <div class="pro-note">${PL("p_theme_note")}</div>
+
+    <div class="sec-label" style="margin-top:22px">${PL("p_th_own")}</div>
+    <div style="background:var(--paper);border:1.5px solid ${THEME==="custom"?"var(--accent)":"var(--line)"};
+      border-radius:15px;padding:13px 14px;${THEME==="custom"?"box-shadow:inset 0 0 0 1px var(--accent-line)":""}">
+
+      <div class="pro-f" style="margin-bottom:11px">
+        <label>${PL("p_th_base")}</label>
+        <select id="th-base" onchange="PRO.temaCustomSet('base',this.value)">
+          ${THEMES.map(t=>`<option value="${t.id}"${CUSTOM.base===t.id?" selected":""}>${PX(t.k)}</option>`).join("")}
+        </select>
+      </div>
+
+      <label style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-3);
+        font-weight:600;display:block;margin-bottom:6px">${PL("p_th_accent")}</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+        ${["#9A4B2C","#7C5F14","#6B5744","#4A3128","#2E6B4E","#1A3A5C","#6E2B3A","#2E2C28"]
+          .map(c=>`<button type="button" onclick="PRO.temaCustomSet('ac','${c}')" aria-label="${c}"
+            style="width:30px;height:30px;border-radius:50%;background:${c};cursor:pointer;flex-shrink:0;
+              border:2px solid ${CUSTOM.ac.toLowerCase()===c.toLowerCase()?"var(--body)":"var(--line)"};
+              box-shadow:${CUSTOM.ac.toLowerCase()===c.toLowerCase()?"0 0 0 2px var(--paper) inset":"none"}"></button>`).join("")}
+        <label style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);
+          border:1.5px solid var(--line);border-radius:20px;padding:0 11px;height:30px;cursor:pointer;
+          font-size:10.5px;font-weight:600;color:var(--ink-2);white-space:nowrap">
+          <input type="color" id="th-ac" value="${CUSTOM.ac}" oninput="PRO.temaCustomSet('ac',this.value)"
+            style="width:18px;height:18px;padding:0;border:none;background:none;cursor:pointer"/>
+          ${PL("p_th_pick")}
+        </label>
+      </div>
+
+      <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:10px 0 12px;
+        border-top:1px solid var(--line)">
+        <span style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-3);
+          font-weight:600;width:100%">${PL("p_th_prev")}</span>
+        <span style="background:var(--accent);color:var(--accent-ink);border-radius:20px;
+          padding:6px 14px;font-size:11.5px;font-weight:600">${PL("p_th_prev_btn")}</span>
+        <span style="background:var(--accent-soft);color:var(--accent);border-radius:20px;padding:6px 12px;
+          font-size:11.5px;font-weight:600;box-shadow:inset 0 0 0 1px var(--accent-line)">${PL("p_th_prev_pill")}</span>
+        <span style="background:var(--surface);color:var(--ink-2);border-radius:20px;padding:6px 12px;
+          font-size:11.5px">${PL("p_th_prev_off")}</span>
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:stretch">
+        <button type="button" onclick="PRO.temaEscolher('custom')"
+          style="flex:1 1 auto;min-width:0;height:46px;border-radius:13px;border:none;
+            display:inline-flex;align-items:center;justify-content:center;
+            font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:600;line-height:1;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+            background:${THEME==="custom"?"var(--surface)":"var(--accent)"};
+            color:${THEME==="custom"?"var(--ink-3)":"var(--accent-ink)"};
+            cursor:${THEME==="custom"?"default":"pointer"}">
+          ${THEME==="custom"?PL("p_th_on"):PL("p_th_use")}</button>
+        <button type="button" onclick="PRO.temaCustomReset()" title="${PL("p_th_reset")}"
+          style="flex:0 0 46px;width:46px;height:46px;border-radius:13px;
+            display:inline-flex;align-items:center;justify-content:center;
+            background:none;border:1.5px solid var(--line);color:var(--ink-2);
+            font-size:17px;line-height:1;cursor:pointer;padding:0">↺</button>
+      </div>
+      <div class="pro-note" style="margin-top:9px">${PL("p_th_own_note")}</div>
+    </div>`;
 
   const corpo=PAR_ABA==="macro"?macro:PAR_ABA==="renda"?renda:PAR_ABA==="inv"?inv
              :PAR_ABA==="tema"?tema:enc;
@@ -21929,6 +22142,15 @@ window.PRO={
   cfg:()=>PROJ,setProj:(k,v)=>{PROJ[k]=v;projAplicar();},
   projToggle,projSetMeses,cdbSavingExtrato,openSavingExtrato,savExpandir,
   temaEscolher:id=>{ try{ temaAplicar(id,true); }catch(e){} },
+  temaCustomSet:(campo,valor)=>{
+    if(campo==="ac") CUSTOM.ac=hexOk(valor);
+    else if(campo==="base") CUSTOM.base=valor;
+    /* editar o tema próprio já o coloca em uso: ajustar uma cor e não ver
+       nada mudar seria pedir fé no lugar de mostrar o resultado */
+    try{ temaAplicar("custom",true); }catch(e){}
+  },
+  temaCustomReset:()=>{ CUSTOM=Object.assign({},CUSTOM_DEF);
+    try{ temaAplicar("custom",true); }catch(e){} },
   market:()=>MARKET,fiscal:()=>FISCAL,projetar,incomeTotalsForYM,astResgate,astLiquidoAM,
   astBrutoAM,astIdxNorm,astFatorPeriodo,diasUteis,ehDiaUtil,feriadosDoAno,mesesCompletos,
   params:()=>PARAMS,saveParams,paramTaxa,paramMensal,paramsDoBacen,paramsLimpar,PARAM_IDX,
