@@ -2092,6 +2092,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       </div>
     </div>
     <div class="header-actions">
+      <button class="btn-ghost" id="btn-open-cotas" title="Atualizar posições" onclick="PRO.openCotas()">⟳</button>
       <button class="btn-ghost" id="btn-open-import-ast" title="Importar" data-i18n-title="import">↑</button>
       <button class="btn-ghost" id="btn-open-export-ast" title="Exportar" data-i18n-title="export">↓</button>
       <button onclick="openAsset()" style="background:#0F2440;color:#fff;border:none;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(15,36,64,.3)">+</button>
@@ -14160,7 +14161,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.55";
+const APP_VERSION="10.57";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -14295,6 +14296,72 @@ const pct=v=>(v>=0?"":"−")+Math.abs(v||0).toFixed(2).replace(".",",")+"%";
 
 /* ═══ 0.1 TRADUÇÃO DOS TEXTOS DESTE MÓDULO (pt → [en, de]) ═══ */
 const TXD={
+  /* atualização de posições em cotas */
+  "Vale para o que tem ticker cadastrado — FII, ETF e ações. O token gratuito é criado em brapi.dev e fica guardado só neste aparelho.":
+    ["Applies to anything with a ticker on file — REITs, ETFs and stocks. The free token is created at brapi.dev and is kept on this device only.",
+     "Gilt für alles mit hinterlegtem Ticker — REITs, ETFs und Aktien. Das kostenlose Token wird auf brapi.dev erstellt und bleibt nur auf diesem Gerät."],
+  "Aceita .xlsx e .csv. O app procura as colunas de CNPJ, ticker, quantidade e cota, e casa cada linha com a aplicação cadastrada. Cobre o que não tem cotação pública: multimercado, FIDC e previdência.":
+    ["Accepts .xlsx and .csv. The app looks for the CNPJ, ticker, quantity and unit-value columns and matches each row to a registered holding. Covers what has no public quote: hedge funds, receivables funds and pension funds.",
+     "Akzeptiert .xlsx und .csv. Die App sucht die Spalten CNPJ, Ticker, Menge und Anteilswert und ordnet jede Zeile einer erfassten Anlage zu. Deckt ab, was keinen öffentlichen Kurs hat: Multimarkt-, Forderungs- und Vorsorgefonds."],
+  "Nenhuma aplicação em cotas cadastrada. Cadastre um fundo, FII ou ação com a tributação correspondente.":
+    ["No unit-based holding on file. Register a fund, REIT or stock with the matching tax treatment.",
+     "Keine anteilsbasierte Anlage erfasst. Erfassen Sie einen Fonds, REIT oder eine Aktie mit der passenden Besteuerung."],
+  "Não foi possível buscar as cotações agora. Confira a internet e o token.":
+    ["Could not fetch quotes right now. Check the connection and the token.",
+     "Kurse konnten gerade nicht abgerufen werden. Verbindung und Token prüfen."],
+  "Sem token, a brapi só responde por PETR4, VALE3, MGLU3 e ITUB4.":
+    ["Without a token brapi only answers for PETR4, VALE3, MGLU3 and ITUB4.",
+     "Ohne Token antwortet brapi nur für PETR4, VALE3, MGLU3 und ITUB4."],
+  "Nenhuma linha do arquivo casou com as aplicações cadastradas.":
+    ["No row in the file matched a registered holding.",
+     "Keine Zeile der Datei passte zu einer erfassten Anlage."],
+  "Não achei colunas de quantidade ou de cota.":
+    ["No quantity or unit-value column found.","Keine Spalte für Menge oder Anteilswert gefunden."],
+  "Nada para gravar: informe quantidade e cota.":
+    ["Nothing to save: enter quantity and unit value.","Nichts zu speichern: Menge und Anteilswert eingeben."],
+  "Sem internet para ler .xlsx. Exporte em .csv.":
+    ["No connection to read .xlsx. Export as .csv instead.","Keine Verbindung zum Lesen von .xlsx. Als .csv exportieren."],
+  "Nenhuma aplicação com ticker cadastrado.":
+    ["No holding has a ticker on file.","Keine Anlage hat einen hinterlegten Ticker."],
+  "Selecionar arquivo da corretora":["Select the broker file","Datei des Brokers wählen"],
+  "Carregando leitor de planilha…":["Loading spreadsheet reader…","Tabellenleser wird geladen…"],
+  "Não foi possível ler o arquivo.":["Could not read the file.","Datei konnte nicht gelesen werden."],
+  "Nenhum ticker foi reconhecido.":["No ticker was recognised.","Kein Ticker erkannt."],
+  " sem correspondência":[" unmatched"," ohne Zuordnung"],
+  " cotações atualizadas":[" quotes updated"," Kurse aktualisiert"],
+  " posições atualizadas":[" positions updated"," Positionen aktualisiert"],
+  "sem quantidade ou cota":["no quantity or unit value","ohne Menge oder Anteilswert"],
+  "Preço unitário (R$)":["Unit price (R$)","Stückpreis (R$)"],
+  "Atualizar posições":["Update positions","Positionen aktualisieren"],
+  "Cotação online":["Online quote","Online-Kurs"],
+  "Importar extrato":["Import statement","Auszug importieren"],
+  "Conferir e salvar":["Review and save","Prüfen und speichern"],
+  "Buscar cotações":["Fetch quotes","Kurse abrufen"],
+  "Data da posição":["Position date","Positionsdatum"],
+  "Token brapi.dev":["brapi.dev token","brapi.dev-Token"],
+  "Cotas e posição":["Units and position","Anteile und Position"],
+  " linhas aplicadas":[" rows applied"," Zeilen übernommen"],
+  "Salvar tudo":["Save all","Alles speichern"],
+  "Arquivo vazio.":["Empty file.","Leere Datei."],
+  "sem ticker":["no ticker","kein Ticker"],
+  "Quantidade":["Quantity","Menge"],
+  "sem CNPJ":["no CNPJ","kein CNPJ"],
+  "Cancelar":["Cancel","Abbrechen"],
+  "Ticker B3":["B3 ticker","B3-Ticker"],
+  "Posição ":["Position ","Position "],
+  "Buscando…":["Fetching…","Wird abgerufen…"],
+  /* cotas de fundos */
+  "Informe a quantidade de cotas e o valor da cota para o app calcular a posição. A cota publicada já é líquida das taxas de administração e performance.":
+    ["Enter the number of units and the unit value so the app can compute the position. The published unit value is already net of management and performance fees.",
+     "Anzahl der Anteile und Anteilswert eingeben, damit die App die Position berechnet. Der veröffentlichte Anteilswert ist bereits abzüglich Verwaltungs- und Erfolgsgebühren."],
+  "Quantidade de cotas":["Number of units","Anzahl Anteile"],
+  "Posição pelas cotas":["Position from units","Position aus Anteilen"],
+  "Valor da cota (R$)":["Unit value (R$)","Anteilswert (R$)"],
+  "Retorno acumulado":["Cumulative return","Kumulierte Rendite"],
+  "CNPJ incompleto":["Incomplete CNPJ","CNPJ unvollständig"],
+  "CNPJ da classe":["Fund class CNPJ","CNPJ der Klasse"],
+  "Cotas do fundo":["Fund units","Fondsanteile"],
+  "Data da cota":["Unit date","Anteilsdatum"],
   /* rótulos que ficaram fora do dicionário e apareciam em português nos
      outros dois idiomas */
   "Guardar por mês":["Save per month","Monatlich sparen"],
@@ -16312,7 +16379,11 @@ function astPro(a){
     idx:d.idx, idxVal:d.idxVal, trib:d.trib, liq:d.liq, liqDias:1,
     taxaAdm:0, taxaPerf:0, benchPerf:"cdi", comeCotas:(d.trib||"").indexOf("fundo")===0,
     aplic:a.lastUpdate||today(), venc:"", carencia:"", aporte:0,
-    custoAuto:true, custo:0, dy:0
+    custoAuto:true, custo:0, dy:0,
+    /* fundos: CNPJ da classe, quantidade de cotas e a última cota conhecida.
+       ticker vale para o que é listado em bolsa — FII, ETF, ação — e é a
+       chave da atualização online. */
+    cnpj:"", ticker:"", cotas:0, cota:0, cotaData:""
   },a.pro||{});
   /* Sem valor aplicado informado, o app o deduz por regressão a partir do
      saldo atual, da taxa do produto e do tempo decorrido. */
@@ -17486,6 +17557,83 @@ function setDec(id,v){
   if(!el) return;
   el.value=(v===0||v)?String(v).replace(".",","):"";
 }
+/* ═══ COTAS DE FUNDOS ═══════════════════════════════════════════════════
+   A cota de um fundo é informação pública: a CVM a publica no informe
+   diário, já LÍQUIDA das taxas de administração e de performance — por
+   isso essas taxas não precisam ser projetadas em cima dela — porém BRUTA
+   de imposto: come-cotas, tabela regressiva e IOF seguem a cargo do app.
+
+   O saldo sozinho não converte cota em posição. Falta a QUANTIDADE DE
+   COTAS, que consta do extrato da corretora. Com ela a conta fecha:
+   posição = quantidade × cota. O titular passa a atualizar um número só,
+   e o saldo deixa de ser digitado à mão.
+
+   A projeção não muda de natureza: a cota corrige o PRESENTE — saldo e
+   data da posição — e o futuro continua saindo dos parâmetros da tela
+   inicial, exatamente como nos demais produtos. */
+function maskDec8(el){
+  if(!el) return;
+  let v=String(el.value).replace(/\./g,",").replace(/[^\d,]/g,"");
+  const p=v.split(",");
+  el.value=p.shift()+(p.length?","+p.join("").slice(0,8):"");
+}
+function valDec8(id){
+  const el=(typeof id==="string")?$(id):id;
+  if(!el) return 0;
+  const n=parseFloat(String(el.value).replace(",","."));
+  return isFinite(n)?n:0;
+}
+function maskCnpj(el){
+  if(!el) return;
+  const d=String(el.value).replace(/\D/g,"").slice(0,14);
+  let v=d;
+  if(d.length>12)     v=d.slice(0,2)+"."+d.slice(2,5)+"."+d.slice(5,8)+"/"+d.slice(8,12)+"-"+d.slice(12);
+  else if(d.length>8) v=d.slice(0,2)+"."+d.slice(2,5)+"."+d.slice(5,8)+"/"+d.slice(8);
+  else if(d.length>5) v=d.slice(0,2)+"."+d.slice(2,5)+"."+d.slice(5);
+  else if(d.length>2) v=d.slice(0,2)+"."+d.slice(2);
+  el.value=v;
+}
+const cnpjOk=s=>String(s||"").replace(/\D/g,"").length===14;
+function maskTicker(el){
+  if(!el) return;
+  el.value=String(el.value).toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,10);
+}
+/* Tributações cuja posição é contada em cotas. As listadas — FII, ETF,
+   ação, cripto — têm ticker e cotação pública; as de fundo aberto têm
+   CNPJ de classe e cota publicada pela CVM. */
+const COTAS_TRIBS=["fundoLP","fundoCP","fii","acoes","cripto"];
+const cotasTemPosicao=tr=>COTAS_TRIBS.indexOf(tr)>=0;
+const cotasEhListado=tr=>tr==="fii"||tr==="acoes"||tr==="cripto";
+const cotasElegivel=a=>{try{return cotasTemPosicao(astPro(a).trib);}catch(e){return false;}};
+/* posição de um ativo pelas cotas; 0 quando o par cota × quantidade falta */
+function cotasPosicao(p){
+  const q=+((p&&p.cotas)||0), c=+((p&&p.cota)||0);
+  return (q>0&&c>0)?R2(q*c):0;
+}
+function cotasRecalc(){
+  const info=$("ast-cota-info");
+  if(!info) return;
+  if(!cotasTemPosicao(AST_TRIB)){ info.textContent=""; return; }
+  const q=valDec8("ast-cotas"), c=valDec8("ast-cota");
+  const pos=(q>0&&c>0)?R2(q*c):0;
+  if(pos>0){
+    setCurrencyInput($("ast-balance"),pos);
+    const d=$("ast-cotadata")&&$("ast-cotadata").value;
+    if(d&&$("ast-date")) $("ast-date").value=d;
+    astRecalc();
+  }
+  const cn=$("ast-cnpj")&&$("ast-cnpj").value;
+  const alerta=(!cotasEhListado(AST_TRIB)&&cn&&!cnpjOk(cn))?H` · <strong>CNPJ incompleto</strong>`:"";
+  if(pos>0){
+    const custo=unmaskCurrency($("ast-custo"))||0;
+    const ret=(custo>0)?((pos/custo-1)*100):null;
+    info.innerHTML=H`<strong>Posição pelas cotas</strong> ${raw(fmt(pos))}`
+      +(ret===null?"":H` · <strong>Retorno acumulado</strong> ${raw((ret<0?"−":"+")+Math.abs(ret).toFixed(2).replace(".",",")+"%")}`)
+      +alerta;
+  }else{
+    info.innerHTML=H`Informe a quantidade de cotas e o valor da cota para o app calcular a posição. A cota publicada já é líquida das taxas de administração e performance.`+alerta;
+  }
+}
 const DECIN=(id,extra)=>`<input id="${id}" type="text" inputmode="decimal" class="dec" `
   +`oninput="PRO.maskDec(this)${extra||""}"/>`;
 /* ═══ 6. PROJEÇÃO ═══ */
@@ -18054,6 +18202,34 @@ function assetProHTML(){
       ${F("ast-aporte","Aporte mensal (R$)")}<div></div>
     </div>
 
+    <div id="ast-f-cotas" style="display:none">
+      <div class="pro-h"><b id="ast-cotas-h">Cotas do fundo</b><i></i></div>
+      <div class="pro-grid" id="ast-cnpj-wrap">
+        <div class="pro-f" style="grid-column:1/-1"><label>CNPJ da classe</label>
+          <input id="ast-cnpj" type="text" inputmode="numeric" placeholder="00.000.000/0001-00"
+                 oninput="PRO.maskCnpj(this);PRO.cotasRecalc()"/></div>
+      </div>
+      <div class="pro-grid" id="ast-ticker-wrap" style="margin-top:9px">
+        <div class="pro-f" style="grid-column:1/-1"><label>Ticker B3</label>
+          <input id="ast-ticker" type="text" placeholder="HGLG11" autocapitalize="characters"
+                 oninput="PRO.maskTicker(this);PRO.cotasRecalc()"/></div>
+      </div>
+      <div class="pro-grid" style="margin-top:9px">
+        <div class="pro-f"><label id="ast-cotas-lbl">Quantidade de cotas</label>
+          <input id="ast-cotas" type="text" inputmode="decimal" class="dec"
+                 oninput="PRO.maskDec8(this);PRO.cotasRecalc()"/></div>
+        <div class="pro-f"><label id="ast-cota-lbl">Valor da cota (R$)</label>
+          <input id="ast-cota" type="text" inputmode="decimal" class="dec"
+                 oninput="PRO.maskDec8(this);PRO.cotasRecalc()"/></div>
+      </div>
+      <div class="pro-grid" style="margin-top:9px">
+        <div class="pro-f"><label>Data da cota</label>
+          <input id="ast-cotadata" type="date" onchange="PRO.cotasRecalc()"/></div>
+        <div></div>
+      </div>
+      <div class="pro-note" id="ast-cota-info"></div>
+    </div>
+
     <div id="ast-f-fund" style="display:none">
       <div class="pro-h"><b>Taxas do fundo</b><i></i></div>
       <div class="pro-grid">
@@ -18154,6 +18330,14 @@ function renderAstPro(){
   $("ast-venc-lbl").textContent=TR(AST_LIQ==="car"?"Carência até":AST_LIQ==="venc"?"Vencimento":"Vencimento (opcional)");
   $("ast-f-fund").style.display=isFundo?"block":"none";
   $("ast-chip-cc").innerHTML=TR(chip(AST_CC,"🍽 Come-cotas (mai/nov)","PRO.toggleCC()","#0F2440"));
+  const listado=cotasEhListado(AST_TRIB);
+  $("ast-f-cotas").style.display=cotasTemPosicao(AST_TRIB)?"block":"none";
+  $("ast-cnpj-wrap").style.display=listado?"none":"grid";
+  $("ast-ticker-wrap").style.display=listado?"grid":"none";
+  $("ast-cotas-h").textContent=TR(listado?"Cotas e posição":"Cotas do fundo");
+  $("ast-cotas-lbl").textContent=TR(listado?"Quantidade":"Quantidade de cotas");
+  $("ast-cota-lbl").textContent=TR(listado?"Preço unitário (R$)":"Valor da cota (R$)");
+  cotasRecalc();
   astPreview();
 }
 function collectAstPro(){
@@ -18163,7 +18347,10 @@ function collectAstPro(){
     benchPerf:$("ast-bench")?.value||"cdi",comeCotas:AST_CC,
     aplic:$("ast-aplic")?.value||today(), venc:AST_LIQ==="car"?"":venc, carencia:AST_LIQ==="car"?venc:"",
     aporte:valDec("ast-aporte"), custo:unmaskCurrency($("ast-custo"))||0,
-    custoAuto:AST_CUSTO_AUTO};
+    custoAuto:AST_CUSTO_AUTO,
+    cnpj:($("ast-cnpj")?.value||"").trim(), ticker:($("ast-ticker")?.value||"").trim().toUpperCase(),
+    cotas:valDec8("ast-cotas"),
+    cota:valDec8("ast-cota"), cotaData:$("ast-cotadata")?.value||""};
 }
 function fillAstPro(a){
   const p=a?astPro(a):astPro({class:AST_CLASS_CUR(),balance:0});
@@ -18172,6 +18359,10 @@ function fillAstPro(a){
   set("ast-idxval",p.idxVal);set("ast-adm",p.taxaAdm||"");set("ast-perf",p.taxaPerf||"");
   set("ast-aporte",p.aporte||"");set("ast-aplic",p.aplic||today());
   set("ast-venc",p.venc||p.carencia||"");
+  if($("ast-cnpj"))$("ast-cnpj").value=p.cnpj||"";
+  if($("ast-ticker"))$("ast-ticker").value=p.ticker||"";
+  set("ast-cotas",p.cotas||"");set("ast-cota",p.cota||"");
+  if($("ast-cotadata"))$("ast-cotadata").value=p.cotaData||"";
   if($("ast-bench"))$("ast-bench").value=p.benchPerf||"cdi";
   AST_CUSTO_AUTO=a?(p.custoAuto!==false):true;
   setCurrencyInput($("ast-custo"),a?(p.custo||0):"");
@@ -22480,10 +22671,360 @@ function renderImpactos(){
 }
 
 /* API pública usada pelos onclick inline */
+
+/* ═══ ATUALIZAÇÃO DE POSIÇÕES EM COTAS ══════════════════════════════════
+   Três caminhos atrás de um botão só, do mais automático ao mais manual:
+
+   1. COTAÇÃO ONLINE — vale para o que é listado em bolsa e tem ticker
+      (FII, ETF, ação). Uma requisição só à brapi traz todos os preços de
+      uma vez. O token do plano gratuito fica guardado no aparelho.
+   2. IMPORTAR EXTRATO — .xlsx ou .csv da corretora. Cobre o que não tem
+      cotação pública por API: multimercado, FIDC, previdência. O casamento
+      é por CNPJ da classe, por ticker ou, em último caso, pelo nome.
+   3. CONFERIR E SALVAR — a lista de todas as aplicações em cotas, com
+      quantidade e cota editáveis. É o piso: funciona sem internet e sem
+      arquivo, e recebe o resultado dos dois caminhos anteriores antes de
+      qualquer coisa ser gravada.
+
+   Nada é escrito no patrimônio antes de "Salvar tudo". A projeção não
+   muda: o que se corrige aqui é a posição de HOJE — saldo e data. O
+   futuro continua saindo das curvas da tela inicial. */
+const BRAPI_KEY="gastos_v2_brapi";
+const brapiToken=()=>{try{return localStorage.getItem(BRAPI_KEY)||"";}catch(e){return "";}};
+const brapiSalvar=v=>{try{localStorage.setItem(BRAPI_KEY,String(v||"").trim());}catch(e){}};
+const cnpjDig=v=>String(v||"").replace(/\D/g,"");
+/* números de extrato chegam em pt-BR ("1.234,56") ou en-US ("1234.56") */
+function cotasNumBR(v){
+  if(typeof v==="number") return isFinite(v)?v:0;
+  let x=String(v==null?"":v).trim().replace(/R\$/gi,"").replace(/\s/g,"");
+  if(!x) return 0;
+  const neg=/^\(.*\)$/.test(x); x=x.replace(/[()]/g,"");
+  if(x.indexOf(",")>=0&&x.indexOf(".")>=0) x=(x.lastIndexOf(",")>x.lastIndexOf("."))
+    ? x.replace(/\./g,"").replace(",",".") : x.replace(/,/g,"");
+  else if(x.indexOf(",")>=0) x=x.replace(/\./g,"").replace(",",".");
+  x=x.replace(/[^\d.\-]/g,"");
+  const n=parseFloat(x);
+  return isFinite(n)?(neg?-n:n):0;
+}
+const cotasNorm=v=>String(v||"").toLowerCase().normalize("NFD")
+  .replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"");
+function cotasLimparCache(){
+  try{ Object.keys(AST_VAL_CACHE).forEach(k=>delete AST_VAL_CACHE[k]); }catch(e){}
+  try{ AST_CACHE&&Object.keys(AST_CACHE).forEach(k=>delete AST_CACHE[k]); }catch(e){}
+  try{ AST_YM_CACHE&&Object.keys(AST_YM_CACHE).forEach(k=>delete AST_YM_CACHE[k]); }catch(e){}
+  try{ window.AST_POS_CACHE=null; }catch(e){}
+  try{ cfLimparCache(); }catch(e){}
+}
+/* acha a aplicação por CNPJ, por ticker ou pelo nome */
+function cotasCasar(chave){
+  const d=cnpjDig(chave), t=String(chave||"").toUpperCase().replace(/[^A-Z0-9]/g,""), n=cotasNorm(chave);
+  const elig=ASSETS.filter(cotasElegivel);
+  if(d.length===14){
+    const a=elig.find(x=>cnpjDig(astPro(x).cnpj)===d); if(a) return a;
+  }
+  if(t.length>=4&&t.length<=10){
+    const a=elig.find(x=>String(astPro(x).ticker||"").toUpperCase()===t); if(a) return a;
+  }
+  if(n.length>=4){
+    const a=elig.find(x=>{const nm=cotasNorm(x.name);
+      return nm&&(nm===n||nm.indexOf(n)>=0||n.indexOf(nm)>=0);});
+    if(a) return a;
+  }
+  return null;
+}
+
+/* ── modal ────────────────────────────────────────────────────────────── */
+let COTAS_LANG="";
+function ensureCotasStyle(){
+  if($("cot-style")) return;
+  const st=document.createElement("style"); st.id="cot-style";
+  st.textContent=`
+  #modal-cotas .cot-row{background:var(--surface);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+  #modal-cotas .cot-hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px;min-width:0}
+  #modal-cotas .cot-hd b{font-size:12.5px;font-weight:600;color:var(--body);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #modal-cotas .cot-hd span{font-size:9.5px;color:var(--ink-3);letter-spacing:.5px;flex-shrink:0;white-space:nowrap}
+  #modal-cotas .cot-pos{font-size:10.5px;color:var(--ink-2);margin-top:7px;line-height:1.4}
+  #modal-cotas .cot-btn{background:#0F2440;color:#fff;border:none;border-radius:11px;
+    padding:10px 14px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+  #modal-cotas .cot-btn.ghost{background:rgba(15,36,64,.08);color:#0F2440}
+  #modal-cotas .cot-line{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+  #modal-cotas .cot-msg{font-size:10.5px;color:var(--ink-2);min-width:0;flex:1}
+  #modal-cotas .cot-drop{position:relative;border:1.5px dashed var(--line);border-radius:12px;
+    padding:14px;text-align:center;font-size:12px;color:var(--ink-2)}
+  #modal-cotas .cot-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+  #modal-cotas .sheet{max-height:88dvh;overflow-y:auto}`;
+  document.head.appendChild(st);
+}
+function cotasModalHTML(){
+  return H`<div class="sheet">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="document.getElementById('modal-cotas').classList.remove('open')">✕</button>
+    <div class="form-title">Atualizar posições</div>
+
+    <div class="pro-h" style="margin-top:4px"><b>1 · Cotação online</b><i></i></div>
+    <div class="cot-line">
+      <button type="button" class="cot-btn" onclick="PRO.cotasBuscarOnline()">⟳ Buscar cotações</button>
+      <span class="cot-msg" id="cot-online-msg"></span>
+    </div>
+    <div class="pro-grid" style="margin-top:9px">
+      <div class="pro-f" style="grid-column:1/-1"><label>Token brapi.dev</label>
+        <input id="cot-token" type="text" autocapitalize="none" autocorrect="off" placeholder="cole aqui"/></div>
+    </div>
+    <div class="pro-note">Vale para o que tem ticker cadastrado — FII, ETF e ações. O token gratuito é criado em brapi.dev e fica guardado só neste aparelho.</div>
+
+    <div class="pro-h"><b>2 · Importar extrato</b><i></i></div>
+    <div class="cot-drop">
+      <span id="cot-file-lbl">Selecionar arquivo da corretora</span>
+      <input type="file" id="cot-file" accept=".xlsx,.xls,.csv" onchange="PRO.cotasArquivo(event)"/>
+    </div>
+    <div class="pro-note">Aceita .xlsx e .csv. O app procura as colunas de CNPJ, ticker, quantidade e cota, e casa cada linha com a aplicação cadastrada. Cobre o que não tem cotação pública: multimercado, FIDC e previdência.</div>
+
+    <div class="pro-h"><b>3 · Conferir e salvar</b><i></i></div>
+    <div class="pro-grid">
+      <div class="pro-f"><label>Data da posição</label><input id="cot-data" type="date"/></div>
+      <div></div>
+    </div>
+    <div id="cot-lista" style="margin-top:11px"></div>
+    <div style="display:flex;gap:9px;margin-top:14px">
+      <button type="button" class="cot-btn ghost" style="flex:1"
+        onclick="document.getElementById('modal-cotas').classList.remove('open')">Cancelar</button>
+      <button type="button" class="cot-btn" style="flex:2" onclick="PRO.cotasSalvarTudo()">Salvar tudo</button>
+    </div>
+  </div>`;
+}
+function ensureCotasModal(){
+  const lg=(typeof LANG!=="undefined")?LANG:"pt";
+  ensureStyles(); ensureCotasStyle();
+  let ov=$("modal-cotas");
+  if(ov&&COTAS_LANG===lg) return ov;
+  if(ov) ov.remove();
+  COTAS_LANG=lg;
+  ov=document.createElement("div");
+  ov.className="overlay"; ov.id="modal-cotas"; ov.style.zIndex="135";
+  ov.innerHTML=cotasModalHTML();
+  document.body.appendChild(ov);
+  return ov;
+}
+function cotasLinha(a){
+  const p=astPro(a), listado=cotasEhListado(p.trib);
+  const chave=listado?(p.ticker||TR("sem ticker")):(p.cnpj||TR("sem CNPJ"));
+  return H`<div class="cot-row">
+    <div class="cot-hd"><b>${raw(a.name||"—")}</b><span>${raw(chave)}</span></div>
+    <div class="pro-grid">
+      <div class="pro-f"><label>${listado?"Quantidade":"Quantidade de cotas"}</label>
+        <input id="cot-q-${raw(a.id)}" type="text" inputmode="decimal" class="dec"
+               value="${raw(p.cotas?String(p.cotas).replace(".",","):"")}"
+               oninput="PRO.maskDec8(this);PRO.cotasPrevias()"/></div>
+      <div class="pro-f"><label>${listado?"Preço unitário (R$)":"Valor da cota (R$)"}</label>
+        <input id="cot-v-${raw(a.id)}" type="text" inputmode="decimal" class="dec"
+               value="${raw(p.cota?String(p.cota).replace(".",","):"")}"
+               oninput="PRO.maskDec8(this);PRO.cotasPrevias()"/></div>
+    </div>
+    <div class="cot-pos" id="cot-p-${raw(a.id)}"></div>
+  </div>`;
+}
+function renderCotasLista(){
+  const el=$("cot-lista"); if(!el) return;
+  const lst=ASSETS.filter(cotasElegivel);
+  el.innerHTML=lst.length?lst.map(cotasLinha).join("")
+    :H`<div class="pro-note">Nenhuma aplicação em cotas cadastrada. Cadastre um fundo, FII ou ação com a tributação correspondente.</div>`;
+  cotasPrevias();
+}
+/* prévia por linha: posição nova e a diferença contra o saldo gravado */
+function cotasPrevias(){
+  ASSETS.filter(cotasElegivel).forEach(a=>{
+    const el=$("cot-p-"+a.id); if(!el) return;
+    const q=valDec8("cot-q-"+a.id), c=valDec8("cot-v-"+a.id);
+    const pos=(q>0&&c>0)?R2(q*c):0;
+    if(!pos){ el.innerHTML=H`<span style="color:var(--ink-4)">sem quantidade ou cota</span>`; return; }
+    const dif=R2(pos-(+a.balance||0));
+    const cor=dif>0?"#5A8A4A":dif<0?"#B85A6A":"var(--ink-3)";
+    el.innerHTML=H`Posição ${raw(fmt(pos))} · <span style="color:${raw(cor)}">${raw((dif>0?"+":dif<0?"−":"")+fmt(Math.abs(dif)))}</span>`;
+  });
+}
+/* ── 1. cotação online ───────────────────────────────────────────────── */
+function cotasBuscarOnline(){
+  const msg=$("cot-online-msg");
+  const diz=x=>{ if(msg) msg.textContent=TR(x); };
+  const alvos=ASSETS.filter(a=>cotasElegivel(a)&&String(astPro(a).ticker||"").trim());
+  if(!alvos.length){ diz("Nenhuma aplicação com ticker cadastrado."); return; }
+  const tk=(($("cot-token")&&$("cot-token").value)||brapiToken()).trim();
+  brapiSalvar(tk);
+  const syms=[];
+  alvos.forEach(a=>{const t=String(astPro(a).ticker).trim().toUpperCase();
+    if(t&&syms.indexOf(t)<0) syms.push(t);});
+  diz("Buscando…");
+  const url="https://brapi.dev/api/quote/"+encodeURIComponent(syms.join(","))
+    +(tk?"?token="+encodeURIComponent(tk):"");
+  fetch(url,{cache:"no-store"})
+    .then(r=>r.json())
+    .then(j=>{
+      const mapa={};
+      (j&&j.results||[]).forEach(x=>{
+        const pr=+((x&&(x.regularMarketPrice||x.price))||0);
+        if(x&&x.symbol&&pr>0) mapa[String(x.symbol).toUpperCase()]=pr;
+      });
+      let n=0, faltou=[];
+      alvos.forEach(a=>{
+        const t=String(astPro(a).ticker).trim().toUpperCase();
+        const pr=mapa[t], el=$("cot-v-"+a.id);
+        if(pr>0&&el){ el.value=String(pr).replace(".",","); n++; }
+        else if(faltou.indexOf(t)<0) faltou.push(t);
+      });
+      const d=$("cot-data"); if(d&&n) d.value=today();
+      cotasPrevias();
+      if(n) diz(n+" cotações atualizadas"+(faltou.length?" · sem retorno: "+faltou.join(", "):""));
+      else if(!tk) diz("Sem token, a brapi só responde por PETR4, VALE3, MGLU3 e ITUB4.");
+      else diz("Nenhum ticker foi reconhecido.");
+    })
+    .catch(()=>diz("Não foi possível buscar as cotações agora. Confira a internet e o token."));
+}
+/* ── 2. importar extrato ─────────────────────────────────────────────── */
+function cotasArquivo(ev){
+  const f=ev&&ev.target&&ev.target.files&&ev.target.files[0];
+  const lbl=$("cot-file-lbl");
+  const diz=x=>{ if(lbl) lbl.textContent=TR(x); };
+  if(!f) return;
+  const nome=f.name.toLowerCase();
+  const fim=()=>{ try{ ev.target.value=""; }catch(e){} };
+  if(/\.csv$/.test(nome)){
+    const r=new FileReader();
+    r.onload=e=>{ try{ diz(cotasAplicarLinhas(parseCSVText(String(e.target.result)))); }
+                  catch(err){ diz("Não foi possível ler o arquivo."); } fim(); };
+    r.onerror=()=>{ diz("Não foi possível ler o arquivo."); fim(); };
+    r.readAsText(f,"UTF-8"); return;
+  }
+  const ler=()=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      try{
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:"uint8array"});
+        let melhor="";
+        wb.SheetNames.forEach(sn=>{
+          const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:""});
+          if(rows.length&&!melhor.startsWith("✓")) melhor=cotasAplicarLinhas(rows);
+        });
+        diz(melhor||"Arquivo vazio.");
+      }catch(err){ diz("Não foi possível ler o arquivo."); }
+      fim();
+    };
+    r.onerror=()=>{ diz("Não foi possível ler o arquivo."); fim(); };
+    r.readAsArrayBuffer(f);
+  };
+  if(window.XLSX){ ler(); return; }
+  diz("Carregando leitor de planilha…");
+  const sc=document.createElement("script");
+  sc.src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js";
+  sc.onload=ler;
+  sc.onerror=()=>{ diz("Sem internet para ler .xlsx. Exporte em .csv."); fim(); };
+  document.head.appendChild(sc);
+}
+/* Descobre as colunas pelo nome do cabeçalho e casa cada linha com uma
+   aplicação. A quantidade é procurada ANTES da cota porque "quantidade de
+   cotas" também contém a palavra cota — sem essa ordem as duas colunas
+   caem na mesma. */
+function cotasAplicarLinhas(rows){
+  if(!rows||!rows.length) return "Arquivo vazio.";
+  const heads=Object.keys(rows[0]||{});
+  const usados=[];
+  const acha=(...pats)=>{
+    const h=heads.find(x=>{
+      if(usados.indexOf(x)>=0) return false;
+      const n=cotasNorm(x);
+      return pats.some(pp=>n.indexOf(pp)>=0);
+    });
+    if(h) usados.push(h);
+    return h||"";
+  };
+  const cCnpj=acha("cnpj","cnpjclasse","cnpjfundo");
+  const cTick=acha("ticker","codigonegociacao","codigo","papel","simbolo");
+  const cQtd =acha("quantidade","qtde","qtd","quant","numerodecotas","nrcotas");
+  const cCota=acha("valordacota","vlquota","valorcota","cota","precomedio","precounitario","preco","ultimo","valorunitario");
+  const cNome=acha("nomedofundo","nomedoativo","nome","fundo","produto","descricao","ativo");
+  const cData=acha("datadacota","dtcomptc","datareferencia","dataposicao","data");
+  if(!cQtd&&!cCota) return "Não achei colunas de quantidade ou de cota.";
+  let n=0, semPar=0;
+  rows.forEach(r=>{
+    const chave=(cCnpj&&r[cCnpj])||(cTick&&r[cTick])||(cNome&&r[cNome])||"";
+    const a=cotasCasar(chave);
+    if(!a){ if(String(chave).trim()) semPar++; return; }
+    const q=cQtd?cotasNumBR(r[cQtd]):0, c=cCota?cotasNumBR(r[cCota]):0;
+    let tocou=false;
+    const eq=$("cot-q-"+a.id), ev2=$("cot-v-"+a.id);
+    if(q>0&&eq){ eq.value=String(q).replace(".",","); tocou=true; }
+    if(c>0&&ev2){ ev2.value=String(c).replace(".",","); tocou=true; }
+    if(tocou) n++;
+  });
+  if(cData){
+    const linha=rows.find(r=>String(r[cData]||"").trim());
+    const d=linha?cotasDataISO(linha[cData]):"";
+    if(d&&$("cot-data")) $("cot-data").value=d;
+  }
+  cotasPrevias();
+  if(!n) return "Nenhuma linha do arquivo casou com as aplicações cadastradas.";
+  return "✓ "+n+" linhas aplicadas"+(semPar?" · "+semPar+" sem correspondência":"");
+}
+/* Datas de extrato chegam como texto ou como serial do Excel. toISOString()
+   converte para UTC e, em fuso positivo, devolvia o dia anterior — por isso
+   a data é montada campo a campo. */
+function cotasDataISO(v){
+  const dois=x=>String(x).padStart(2,"0");
+  if(v instanceof Date&&!isNaN(v)) return v.getFullYear()+"-"+dois(v.getMonth()+1)+"-"+dois(v.getDate());
+  const s=String(v==null?"":v).trim();
+  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return m[1]+"-"+m[2]+"-"+m[3];
+  m=s.match(/^(\d{2})[\/.-](\d{2})[\/.-](\d{4})/);
+  if(m) return m[3]+"-"+m[2]+"-"+m[1];
+  const num=parseFloat(s);
+  if(isFinite(num)&&num>20000&&num<80000){
+    const d=new Date(Date.UTC(1899,11,30+Math.round(num)));
+    return d.getUTCFullYear()+"-"+dois(d.getUTCMonth()+1)+"-"+dois(d.getUTCDate());
+  }
+  return "";
+}
+/* ── 3. gravar ───────────────────────────────────────────────────────── */
+function cotasSalvarTudo(){
+  const data=($("cot-data")&&$("cot-data").value)||today();
+  let n=0;
+  ASSETS.forEach(a=>{
+    if(!cotasElegivel(a)) return;
+    const q=valDec8("cot-q-"+a.id), c=valDec8("cot-v-"+a.id);
+    if(!(q>0&&c>0)) return;
+    const p=astPro(a);
+    p.cotas=q; p.cota=c; p.cotaData=data;
+    a.pro=p;
+    a.balance=R2(q*c);
+    a.lastUpdate=data;
+    try{ a.yieldPct=R2(astLiquidoAM(a)); }catch(e){}
+    n++;
+  });
+  if(!n){ toast(TR("Nada para gravar: informe quantidade e cota.")); return; }
+  cotasLimparCache();
+  persist();
+  try{ renderAssets(); }catch(e){}
+  try{ refreshPro(); }catch(e){}
+  $("modal-cotas").classList.remove("open");
+  toast("✓ "+n+TR(" posições atualizadas"));
+}
+function openCotas(){
+  const ov=ensureCotasModal();
+  const tk=$("cot-token"); if(tk) tk.value=brapiToken();
+  const d=$("cot-data"); if(d&&!d.value) d.value=today();
+  const lb=$("cot-file-lbl"); if(lb) lb.textContent=TR("Selecionar arquivo da corretora");
+  const ms=$("cot-online-msg"); if(ms) ms.textContent="";
+  renderCotasLista();
+  ov.classList.add("open");
+}
+
 window.PRO={
   setIncRegime,toggle13,toggleFer,astPreview,setAstIdx,setAstTrib,setAstLiq,toggleCC,
   toggleFgts,toggleSplit,setIncScale,setFinScale,toggleFinDetail,syncFab,
   fgtsSaldoPatrimonio,fgtsFonte,getFgtsTmp:()=>FGTS_TMP,maskDec,valDec,setDec,incTouched,
+  maskDec8,valDec8,maskCnpj,cnpjOk,cotasPosicao,cotasRecalc,maskTicker,
+  cotasTemPosicao,cotasEhListado,cotasElegivel,cotasNumBR,cotasCasar,
+  openCotas,renderCotasLista,cotasBuscarOnline,cotasArquivo,cotasAplicarLinhas,
+  cotasPrevias,cotasDataISO,
+  cotasSalvarTudo,cotasLinha,brapiToken,brapiSalvar,cotasLimparCache,
   cashflowForYM,sugestaoPoupanca,renderCashFlow,
   renderCfPainel,cfSetEscala,cfNav,cfHoje,cfToggle,cfFoco,cfSetAno,cfEntra,
   cfMes,cfSerie,cfConsolida,cfDias,cfPosicaoYM,cfLimparCache,
