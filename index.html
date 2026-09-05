@@ -1621,7 +1621,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
   <!-- home header -->
   <div class="header">
     <div style="display:flex;align-items:center;gap:10px">
-      <span class="oi oi-sm oi-round oi-ring oi-ola" role="img" aria-label="Otto"></span>
+      <span class="oi oi-sm oi-round oi-ring oi-trabalho" role="img" aria-label="Otto"></span>
       <div>
         <div class="wordmark" style="font-size:13px;letter-spacing:.3px" data-i18n="appName">Gestão Financeira</div>
       </div>
@@ -1653,7 +1653,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <button onclick="PRO.openParams()" style="width:100%;display:flex;align-items:center;gap:11px;
       text-align:left;cursor:pointer;border:1.5px solid var(--line);border-radius:16px;
       padding:12px 15px;margin-bottom:12px;background:var(--surface)">
-      <span class="oi oi-sm oi-ring oi-planejamento" role="img" aria-label="Otto"></span>
+      <span class="oi oi-sm oi-ring oi-obras" role="img" aria-label="Otto"></span>
       <span style="flex:1;min-width:0">
         <span style="display:block;font-size:13px;font-weight:600;color:var(--body)" data-i18n="params_title">Parâmetros</span>
         <span style="display:block;font-size:10.5px;color:var(--ink-3)" data-i18n="params_sub">Índices, impostos e encargos que regem a projeção</span>
@@ -1670,7 +1670,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
       <!-- DESPESAS -->
       <button onclick="enterSection('despesas')" style="width:100%;text-align:left;cursor:pointer;background:var(--green);border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px">
-        <span class="oi oi-ring oi-controle" role="img" aria-label="Otto"></span>
+        <span class="oi oi-ring oi-pagamentos" role="img" aria-label="Otto"></span>
         <div style="flex:1;min-width:0">
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px" data-i18n="nav_expenses">Despesas</div>
           <div style="font-family:var(--serif);font-style:italic;font-size:clamp(22px,7vw,28px);line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="home-expense-val">—</div>
@@ -1685,7 +1685,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <!-- DÍVIDAS -->
       <button onclick="enterSection('dividas')" style="width:100%;text-align:left;cursor:pointer;background:#6E2B3A;border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px;position:relative;overflow:hidden">
         <div style="position:absolute;top:-25px;right:-25px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
-        <span class="oi oi-ring oi-apagar" style="position:relative" role="img" aria-label="Otto"></span>
+        <span class="oi oi-ring oi-controle" style="position:relative" role="img" aria-label="Otto"></span>
         <div style="flex:1;min-width:0;position:relative">
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px" data-i18n="nav_debts">Dívidas</div>
           <div style="font-family:var(--serif);font-style:italic;font-size:clamp(22px,7vw,28px);line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="home-debt-val">—</div>
@@ -1699,7 +1699,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
       <!-- RECEITAS -->
       <button onclick="enterSection('entradas')" style="width:100%;text-align:left;cursor:pointer;background:#1A3A5C;border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px">
-        <span class="oi oi-ring oi-areceber" role="img" aria-label="Otto"></span>
+        <span class="oi oi-ring oi-custos" role="img" aria-label="Otto"></span>
         <div style="flex:1;min-width:0">
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px" data-i18n="nav_income">Entradas</div>
           <div style="font-family:var(--serif);font-style:italic;font-size:clamp(22px,7vw,28px);line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="home-income-val">—</div>
@@ -1713,7 +1713,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
       <!-- PATRIMÔNIO -->
       <button onclick="enterSection('patrimonio')" style="width:100%;text-align:left;cursor:pointer;background:#0F2440;border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px">
-        <span class="oi oi-ring oi-tesouraria" role="img" aria-label="Otto"></span>
+        <span class="oi oi-ring oi-casa" role="img" aria-label="Otto"></span>
         <div style="flex:1;min-width:0">
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px" data-i18n="nav_assets">Patrimônio</div>
           <div style="font-family:var(--serif);font-style:italic;font-size:clamp(22px,7vw,28px);line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="home-asset-val">—</div>
@@ -1739,7 +1739,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 <button onclick="goHome()" style="width:36px;height:36px;border-radius:50%;background:var(--green-bg);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0" title="Início">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-      <span class="oi oi-sm oi-round oi-ring oi-controle" role="img" aria-label="Otto"></span>
+      <span class="oi oi-sm oi-round oi-ring oi-pagamentos" role="img" aria-label="Otto"></span>
       <div>
         <div class="wordmark" style="color:var(--green)">Despesas</div>
         <div id="header-month" style="display:none"></div>
@@ -1933,7 +1933,10 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     </div>
 
     <div id="view-goals" style="display:none">
-      <div class="sec-label" data-i18n="goal_by_cat">Meta mensal por categoria</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <span class="oi oi-sm oi-round oi-ring oi-foco" role="img" aria-label="Otto"></span>
+        <div class="sec-label" style="margin:0" data-i18n="goal_by_cat">Meta mensal por categoria</div>
+      </div>
       <div id="goals-list"></div>
       <div class="info-card" style="margin-top:12px" data-i18n="goals_hint">
         Toque no campo de valor à direita de cada categoria para definir a meta mensal. As metas se aplicam a todos os meses.
@@ -1971,7 +1974,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <button onclick="goHome()" style="width:36px;height:36px;border-radius:50%;background:#1A3A5C22;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1A3A5C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <span class="oi oi-sm oi-round oi-ring oi-areceber" role="img" aria-label="Otto"></span>
+      <span class="oi oi-sm oi-round oi-ring oi-custos" role="img" aria-label="Otto"></span>
       <div>
         <div class="wordmark" style="color:#1A3A5C;font-size:clamp(20px,6.4vw,28px)">Entradas</div>
 
@@ -2082,7 +2085,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <button onclick="goHome()" style="width:36px;height:36px;border-radius:50%;background:#0F244022;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F2440" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <span class="oi oi-sm oi-round oi-ring oi-tesouraria" role="img" aria-label="Otto"></span>
+      <span class="oi oi-sm oi-round oi-ring oi-casa" role="img" aria-label="Otto"></span>
       <div>
         <div class="wordmark" style="color:#0F2440;font-size:clamp(20px,6.4vw,28px)">Patrimônio</div>
 
@@ -2190,7 +2193,10 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <!-- METAS TAB -->
     <div id="ast-view-goals" style="display:none">
       <div id="ast-goals-summary" style="margin-bottom:16px"></div>
-      <div class="sec-label" data-i18n="goal_by_class">Meta por classe de ativo</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <span class="oi oi-sm oi-round oi-ring oi-foco" role="img" aria-label="Otto"></span>
+        <div class="sec-label" style="margin:0" data-i18n="goal_by_class">Meta por classe de ativo</div>
+      </div>
       <div id="ast-goals-list"></div>
       <div class="info-card" style="margin-top:12px" data-i18n="goals_ast_hint">
         Defina metas de alocação por classe. Acompanhe se sua carteira está balanceada conforme o planejado.
@@ -2210,7 +2216,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <button onclick="goHome()" style="width:36px;height:36px;border-radius:50%;background:#6E2B3A22;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6E2B3A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <span class="oi oi-sm oi-round oi-ring oi-apagar" role="img" aria-label="Otto"></span>
+      <span class="oi oi-sm oi-round oi-ring oi-controle" role="img" aria-label="Otto"></span>
       <div>
         <div class="wordmark" style="color:#6E2B3A;font-size:clamp(20px,6.4vw,28px)" data-i18n="nav_debts">Dívidas</div>
       </div>
@@ -2341,7 +2347,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <button onclick="goHome()" style="width:36px;height:36px;border-radius:50%;background:#1A3A2422;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E5A3E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <span class="oi oi-sm oi-round oi-ring oi-projecoes" role="img" aria-label="Otto"></span>
+      <span class="oi oi-sm oi-round oi-ring oi-apresentacao" role="img" aria-label="Otto"></span>
       <div class="wordmark" style="color:#2E5A3E;font-size:clamp(19px,6vw,26px)" data-i18n="nav_finlife">Vida financeira</div>
     </div>
   </div>
@@ -2860,7 +2866,10 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
   <div class="sheet" style="max-height:92dvh">
     <div class="sheet-handle"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div style="font-family:var(--serif);font-size:20px;color:var(--body)" data-i18n="cashflow_title">Fluxo de caixa</div>
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <span class="oi oi-sm oi-round oi-ring oi-projecoes" role="img" aria-label="Otto"></span>
+        <div style="font-family:var(--serif);font-size:20px;color:var(--body)" data-i18n="cashflow_title">Fluxo de caixa</div>
+      </div>
       <button onclick="document.getElementById('modal-cashflow').classList.remove('open')" style="width:34px;height:34px;border-radius:50%;background:var(--surface);border:none;cursor:pointer;color:#7A766D;font-size:16px">✕</button>
     </div>
     <div id="cfp-body"></div>
@@ -14151,7 +14160,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.54";
+const APP_VERSION="10.55";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -21934,7 +21943,7 @@ function renderParams(){
 
   el.innerHTML=H`
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-      <span class="oi oi-ring oi-planejamento" style="width:46px;height:46px" role="img" aria-label="Otto"></span>
+      <span class="oi oi-ring oi-obras" style="width:46px;height:46px" role="img" aria-label="Otto"></span>
       <div style="min-width:0">
         <div style="font-family:var(--serif);font-size:19px;color:var(--body);line-height:1.15">${PL("p_title")}</div>
         <div style="font-size:10.5px;color:var(--ink-3);margin-top:3px;line-height:1.4">${PL("p_sub")}</div>
