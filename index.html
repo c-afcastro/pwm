@@ -2062,9 +2062,11 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <div class="sec-label" data-i18n="monthly_evolution">Evolução mensal</div>
       <div style="background:var(--surface);border-radius:16px;padding:16px;margin-bottom:16px">
         <canvas id="inc-history-chart" height="150"></canvas>
+        <div id="inc-chart-legend" style="display:flex;gap:14px;justify-content:center;margin-top:8px"></div>
       </div>
       <div class="sec-label" data-i18n="by_type_time">Por tipo ao longo do tempo</div>
-      <div id="inc-type-history" style="background:var(--surface);border-radius:16px;padding:14px 16px"></div>
+      <div id="inc-hist-horiz" style="display:flex;gap:6px;justify-content:flex-end;margin-bottom:8px"></div>
+      <div id="inc-type-history"></div>
     </div>
 
   </div>
@@ -3099,6 +3101,21 @@ const I18N={
     goal_by_class:"Meta por classe de ativo",
     goal_by_inc:"Meta por tipo de receita",
     by_type_time:"Por tipo ao longo do tempo",
+    inc_h_gross:"Recebimento bruto",
+    inc_h_gross_s:"Bruto",
+    inc_h_net:"Recebimento líquido",
+    inc_h_net_s:"Líquido",
+    inc_h_tax:"Impostos",
+    inc_h_ir:"Imposto de renda",
+    inc_h_ded:"Outras deduções da base",
+    inc_h_fgts:"FGTS depositado (fora do caixa)",
+    inc_h_eff:"Carga efetiva",
+    inc_h_var:"Reajuste",
+    inc_h_month:"Mês",
+    inc_h_period:"Composição do período",
+    inc_h_bymonth:"Mês a mês",
+    inc_h_scroll:"O percentual à direita compara o bruto com o mês anterior: é onde o reajuste aparece — e também o 13º e o terço de férias.",
+    inc_h_none:"Sem recebimentos no período.",
     settled:"Baixas realizadas",
     by_expense:"Por gasto",
     open_balances:"Pendências em aberto",
@@ -3874,6 +3891,21 @@ const I18N={
     goal_by_class:"Goal by asset class",
     goal_by_inc:"Goal by income type",
     by_type_time:"By type over time",
+    inc_h_gross:"Gross received",
+    inc_h_gross_s:"Gross",
+    inc_h_net:"Net received",
+    inc_h_net_s:"Net",
+    inc_h_tax:"Taxes",
+    inc_h_ir:"Income tax",
+    inc_h_ded:"Other deductions from the base",
+    inc_h_fgts:"FGTS deposited (outside cash)",
+    inc_h_eff:"Effective load",
+    inc_h_var:"Change",
+    inc_h_month:"Month",
+    inc_h_period:"Period breakdown",
+    inc_h_bymonth:"Month by month",
+    inc_h_scroll:"The percentage on the right compares gross pay with the previous month: that is where a raise shows up — and so do the 13th salary and holiday pay.",
+    inc_h_none:"No income in this period.",
     settled:"Settled",
     by_expense:"By expense",
     open_balances:"Open balances",
@@ -4648,6 +4680,21 @@ const I18N={
     goal_by_class:"Ziel nach Anlageklasse",
     goal_by_inc:"Ziel nach Einnahmentyp",
     by_type_time:"Nach Typ im Zeitverlauf",
+    inc_h_gross:"Bruttoeingang",
+    inc_h_gross_s:"Brutto",
+    inc_h_net:"Nettoeingang",
+    inc_h_net_s:"Netto",
+    inc_h_tax:"Steuern",
+    inc_h_ir:"Einkommensteuer",
+    inc_h_ded:"Weitere Abzüge von der Bemessungsgrundlage",
+    inc_h_fgts:"FGTS eingezahlt (außerhalb der Liquidität)",
+    inc_h_eff:"Effektive Belastung",
+    inc_h_var:"Anpassung",
+    inc_h_month:"Monat",
+    inc_h_period:"Zusammensetzung des Zeitraums",
+    inc_h_bymonth:"Monat für Monat",
+    inc_h_scroll:"Der Prozentwert rechts vergleicht das Brutto mit dem Vormonat: dort zeigt sich die Anpassung — und ebenso das 13. Gehalt und das Urlaubsgeld.",
+    inc_h_none:"Keine Eingänge in diesem Zeitraum.",
     settled:"Beglichen",
     by_expense:"Nach Ausgabe",
     open_balances:"Offene Salden",
@@ -8231,9 +8278,14 @@ function renderIncChart(){
   ctx.clearRect(0,0,W,150);
   const months=[];
   for(let i=11;i>=0;i--){ let m=activeMonth-i,y=activeYear; if(m<0){m+=12;y--;} months.push({m,y,ymStr:`${y}-${String(m+1).padStart(2,"0")}`}); }
-  const vals=months.map(({ymStr})=>incomeItensYM(ymStr).reduce((s,i)=>s+i.amount,0));
+  /* O gráfico mostrava só o valor declarado das entradas. Quem recebe
+     salário não leva o bruto para casa: a linha verde é o que de fato cai
+     na conta, depois de INSS e IRRF. As duas juntas mostram a mordida. */
+  const tots=months.map(({ymStr})=>incHistTotais(ymStr));
+  const vals=tots.map(x=>x.bruto);
+  const nets=tots.map(x=>x.liquido);
   const labels=months.map(({m})=>MS[m].slice(0,3));
-  const maxV=Math.max(...vals,1);
+  const maxV=Math.max(...vals,...nets,1);
   const pad={t:20,b:28,l:8,r:8};
   const cW=W-pad.l-pad.r,cH=150-pad.t-pad.b;
   const step=cW/(months.length-1);
@@ -8245,25 +8297,142 @@ function renderIncChart(){
   vals.forEach((v,i)=>{ const x=pad.l+i*step,y=pad.t+cH-((v/maxV)*cH); ctx.lineTo(x,y); });
   ctx.lineTo(pad.l+(months.length-1)*step,pad.t+cH);ctx.lineTo(pad.l,pad.t+cH);ctx.closePath();
   ctx.fillStyle=grad;ctx.fill();
+  /* linha do líquido, sem preenchimento: fica legível sobreposta à área */
+  if(nets.some((v,i)=>Math.abs(v-vals[i])>0.005)){
+    ctx.beginPath();
+    nets.forEach((v,i)=>{ const x=pad.l+i*step,y=pad.t+cH-((v/maxV)*cH); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+    ctx.strokeStyle="#5A8A4A";ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
+    nets.forEach((v,i)=>{ const x=pad.l+i*step,y=pad.t+cH-((v/maxV)*cH);
+      ctx.beginPath();ctx.arc(x,y,2.4,0,Math.PI*2);ctx.fillStyle="#5A8A4A";ctx.fill(); });
+  }
   vals.forEach((v,i)=>{
     const x=pad.l+i*step,y=pad.t+cH-((v/maxV)*cH);
     ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fillStyle="#1A3A5C";ctx.fill();
     ctx.fillStyle="#9B9790";ctx.font="8px system-ui";ctx.textAlign="center";ctx.fillText(labels[i],x,150-8);
-    if(v>0&&(i===months.length-1||i===0||v===maxV)){ ctx.fillStyle="#1A3A5C";ctx.font="bold 9px system-ui";ctx.fillText(fmt(v).replace("R$","").trim(),x,y-7); }
+    /* três rótulos no máximo — primeiro, último e pico — e o pico só
+       aparece se não colidir com as pontas, senão os números empilham */
+    const iMax=vals.indexOf(maxV);
+    const perto=Math.abs(i-iMax)*step<44;
+    const mostra=(i===0||i===months.length-1)||(i===iMax&&!perto&&i!==0&&i!==months.length-1);
+    if(v>0&&mostra){ ctx.fillStyle="#1A3A5C";ctx.font="bold 9px system-ui";
+      ctx.textAlign=i===0?"left":(i===months.length-1?"right":"center");
+      ctx.fillText(fmt(v).replace("R$","").trim(),x+(i===0?3:(i===months.length-1?-3:0)),y-10); ctx.textAlign="center"; }
   });
-  const listEl=document.getElementById("inc-type-history");
-  if(!listEl) return;
-  listEl.innerHTML=[...months].reverse().slice(0,6).map(({m,y,ymStr})=>{
-    const v=incomeItensYM(ymStr).reduce((s,i)=>s+i.amount,0);
-    const idx=months.findIndex(mx=>mx.ymStr===ymStr);
-    const prevV=idx>0?incomeItensYM(months[idx-1].ymStr).reduce((s,i)=>s+i.amount,0):null;
-    const diff=prevV!==null?v-prevV:null;
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)">
-      <div style="font-size:13px;color:var(--body)">${MPT[m]} ${y}</div>
-      <div style="display:flex;align-items:center;gap:8px">
-        ${diff!==null&&diff!==0?`<span style="font-size:10px;color:${diff>0?"var(--green)":"var(--warn)"}">${diff>0?"+":""}${fmt(diff)}</span>`:""}
-        <span style="font-family:var(--serif);font-style:italic;font-size:15px;color:#1A3A5C">${v>0?fmt(v):"—"}</span>
-      </div></div>`;}).join("");
+  const legEl=document.getElementById("inc-chart-legend");
+  if(legEl){
+    const pt=(c,l,tr)=>`<span style="display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--ink-3)">
+      <span style="width:14px;height:0;border-top:2px ${tr?"dashed":"solid"} ${c}"></span>${l}</span>`;
+    legEl.innerHTML=pt("#1A3A5C",t("inc_h_gross_s"),false)
+      +(nets.some((v,i)=>Math.abs(v-vals[i])>0.005)?pt("#5A8A4A",t("inc_h_net_s"),true):"");
+  }
+  renderIncHistPanel();
+}
+
+/* ── HISTÓRICO DAS ENTRADAS, ABERTO ───────────────────────────────────
+   O quadro mostrava um número por mês e a diferença para o mês anterior.
+   Quem recebe salário precisa de outra coisa: quanto foi o bruto, quanto
+   o Estado levou e quanto sobrou — e em que mês o valor mudou, porque
+   reajuste, 13º e férias movem a linha por motivos diferentes. */
+let INC_HIST_N=12;
+function incHistTotais(ymStr){
+  try{
+    const x=PRO.incomeTotalsForYM(ymStr);
+    if(x&&typeof x.bruto==="number") return x;
+  }catch(e){}
+  const v=incomeItensYM(ymStr).reduce((s,i)=>s+(+i.amount||0),0);
+  return {bruto:v,inss:0,ir:0,deducoes:0,liquido:v,fgts:0,imposto:0,aliq:0};
+}
+function incHistHoriz(n){ INC_HIST_N=n; renderIncHistPanel(); }
+function renderIncHistPanel(){
+  const el=document.getElementById("inc-type-history");
+  if(!el) return;
+  const hzEl=document.getElementById("inc-hist-horiz");
+  if(hzEl) hzEl.innerHTML=[6,12,24].map(n=>
+    `<button type="button" onclick="incHistHoriz(${n})" style="background:${INC_HIST_N===n?"rgba(26,58,92,.14)":"transparent"};border:1px solid ${INC_HIST_N===n?"rgba(26,58,92,.32)":"var(--line)"};color:${INC_HIST_N===n?"#1A3A5C":"var(--ink-3)"};border-radius:8px;padding:4px 10px;font-size:10.5px;font-weight:${INC_HIST_N===n?600:500};cursor:pointer">${n}m</button>`).join("");
+
+  /* janela: os N meses que terminam no mês em foco */
+  const win=[];
+  for(let i=INC_HIST_N-1;i>=0;i--){
+    let m=activeMonth-i,y=activeYear;
+    while(m<0){ m+=12; y--; }
+    win.push({m,y,ymStr:`${y}-${String(m+1).padStart(2,"0")}`});
+  }
+  const rows=win.map(w=>Object.assign({},w,incHistTotais(w.ymStr)));
+  const S=c=>Math.round(rows.reduce((a,x)=>a+(+x[c]||0),0)*100)/100;
+  const bruto=S("bruto"), inss=S("inss"), ir=S("ir"), ded=S("deducoes");
+  const liq=S("liquido"), fg=S("fgts"), imp=Math.round((inss+ir)*100)/100;
+  const carga=bruto>0?(imp/bruto*100):0;
+  const BLU="#1A3A5C", GRN="#5A8A4A", RED="#B85A6A";
+
+  if(bruto<=0){
+    el.innerHTML=`<div style="background:var(--surface);border-radius:16px;padding:18px 16px;font-size:12px;color:var(--ink-3);text-align:center">${t("inc_h_none")}</div>`;
+    return;
+  }
+
+  const kpi=(l,v,c)=>`<div style="flex:1;min-width:0;background:var(--surface);border-radius:12px;padding:9px 11px">
+    <div style="font-size:8.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--ink-4);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l}</div>
+    <div style="font-size:11px;font-weight:700;color:${c};margin-top:3px;line-height:1.3;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v}</div></div>`;
+
+  const row=(l,v,col,forte)=>`<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)">
+    <span style="font-size:${forte?12.5:12}px;color:${forte?"var(--body)":"var(--ink-2)"};font-weight:${forte?600:400}">${l}</span>
+    <span style="font-size:${forte?14:12.5}px;color:${col};font-weight:${forte?700:500};white-space:nowrap">${v}</span></div>`;
+
+  const comp=row("(+) "+t("inc_h_gross"),fmt(bruto),BLU)
+    +(inss>0?row("(−) INSS","−"+fmt(inss),"var(--ink-3)"):"")
+    +(ded>0?row("(−) "+t("inc_h_ded"),"−"+fmt(ded),"var(--ink-3)"):"")
+    +(ir>0?row("(−) "+t("inc_h_ir"),"−"+fmt(ir),RED):"")
+    +row("(=) "+t("inc_h_net"),fmt(liq),GRN,true)
+    +(fg>0?row(t("inc_h_fgts"),"+"+fmt(fg),GRN):"");
+
+  /* variação do bruto de um mês para o outro: é onde o reajuste aparece,
+     e também o 13º e o terço de férias — por isso o rótulo do motivo */
+  const mesLbl=(m,y)=>MPT[m].slice(0,3)+"/"+String(y).slice(2);
+  const corpo=[...rows].reverse().map((x,i,arr)=>{
+    const ant=arr[i+1];
+    const d=ant?x.bruto-ant.bruto:null;
+    const pct=(ant&&ant.bruto>0)?(d/ant.bruto*100):null;
+    const mudou=d!==null&&Math.abs(d)>=0.005;
+    const sinal=mudou?((d>0?"+":"−")+Math.abs(pct).toFixed(1).replace(".",",")+"%"):"—";
+    const cor=mudou?(d>0?GRN:RED):"var(--ink-4)";
+    const chip=mudou
+      ? `<span style="font-size:10px;font-weight:600;color:${cor};background:${d>0?"rgba(90,138,74,.10)":"rgba(184,90,106,.10)"};border-radius:6px;padding:2px 7px;white-space:nowrap">${sinal}</span>`
+      : `<span style="font-size:10px;color:var(--ink-4)">—</span>`;
+    const det=[];
+    if(x.inss>0) det.push(`INSS ${fmt(x.inss)}`);
+    if(x.ir>0)   det.push(`IR ${fmt(x.ir)}`);
+    if(x.fgts>0) det.push(`FGTS ${fmt(x.fgts)}`);
+    return `<div style="padding:9px 4px;border-top:1px solid var(--line)">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span style="font-size:11.5px;color:var(--ink-2);font-weight:600;white-space:nowrap">${mesLbl(x.m,x.y)}</span>
+        ${chip}
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:3px">
+        <span style="font-size:12.5px;color:${BLU};font-weight:700;white-space:nowrap">${fmt(x.bruto)}</span>
+        <span style="font-size:10px;color:var(--ink-4);flex:1;text-align:center">→</span>
+        <span style="font-size:12.5px;color:${GRN};font-weight:700;white-space:nowrap">${fmt(x.liquido)}</span>
+      </div>
+      ${det.length?`<div style="font-size:9.5px;color:var(--ink-4);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${det.join(" · ")}</div>`:""}
+    </div>`;
+  }).join("");
+
+  el.innerHTML=`
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      ${kpi(t("inc_h_gross_s"),fmt(bruto),BLU)}
+      ${kpi(t("inc_h_tax"),fmt(imp),RED)}
+      ${kpi(t("inc_h_eff"),carga.toFixed(1).replace(".",",")+"%",GRN)}
+    </div>
+    <div style="background:var(--surface);border-radius:16px;padding:6px 16px 10px;margin-bottom:12px">
+      <div style="font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink-4);font-weight:700;padding:10px 0 2px">${t("inc_h_period")}</div>
+      ${comp}
+    </div>
+    <div style="background:var(--surface);border-radius:16px;padding:6px 16px 12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding:10px 4px 2px">
+        <span style="font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink-4);font-weight:700">${t("inc_h_bymonth")}</span>
+        <span style="font-size:8.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-4);font-weight:700">${t("inc_h_gross_s")} → ${t("inc_h_net_s")}</span>
+      </div>
+      ${corpo}
+      <div style="font-size:9.5px;color:var(--ink-3);margin-top:9px;padding:0 4px;line-height:1.5">${t("inc_h_scroll")}</div>
+    </div>`;
 }
 
 function renderIncGoals(){
@@ -13982,7 +14151,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.53";
+const APP_VERSION="10.54";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -14477,6 +14646,25 @@ const TXD={
 "Saídas":["Outflows","Abflüsse"],
 "Dia 1ª":["1st day","Tag 1."],
 "Dia do depósito":["Deposit day","Einzahlungstag"],
+"Depósito do empregador no período":["Employer deposits in the period","Arbeitgebereinzahlungen im Zeitraum"],
+"Recolhido sobre o salário, fora da conta corrente":["Withheld on the salary, outside your checking account","Vom Gehalt einbehalten, außerhalb des Girokontos"],
+"não é caixa":["not cash","keine Liquidität"],
+"Rendimento da conta vinculada":["Restricted account yield","Verzinsung des gebundenen Kontos"],
+"(=) Efeito no seu caixa":["(=) Effect on your cash","(=) Wirkung auf Ihre Liquidität"],
+"(+) Depósitos do empregador":["(+) Employer deposits","(+) Arbeitgebereinzahlungen"],
+"(+) Rendimento no período":["(+) Yield in the period","(+) Verzinsung im Zeitraum"],
+"Entra no patrimônio (não no caixa)":["Adds to net worth (not to cash)","Erhöht das Vermögen (nicht die Liquidität)"],
+"Depósitos":["Deposits","Einzahlungen"],
+"Depósito":["Deposit","Einzahlung"],
+"Quem paga o FGTS":["Who pays the FGTS","Wer zahlt die FGTS"],
+"Origem do depósito":["Source of the deposit","Herkunft der Einzahlung"],
+"empregador":["employer","Arbeitgeber"],
+"Alíquota sobre o bruto":["Rate on gross pay","Satz auf das Bruttogehalt"],
+"Rende a partir de":["Starts earning from","Verzinsung ab"],
+"um depósito por mês, do dia do recolhimento":["one deposit a month, from the day it is collected","eine Einzahlung pro Monat, ab dem Einzugstag"],
+"Sai da sua conta corrente":["Leaves your checking account","Verlässt Ihr Girokonto"],
+"nada":["nothing","nichts"],
+"Entra no seu patrimônio":["Adds to your net worth","Erhöht Ihr Vermögen"],
 "Saldo hoje (R$)":["Balance today (R$)","Guthaben heute (R$)"],
 "Depósito do empregador em conta vinculada: não sofre INSS nem IRRF e não entra no caixa livre do mês.":["Employer deposit into a restricted account: no INSS, no income tax, and it never reaches the month's free cash.","Arbeitgebereinzahlung auf ein gebundenes Konto: keine INSS, keine Lohnsteuer, und der Betrag fließt nie in die freie Liquidität des Monats."],
 "É um depósito por mês, no dia ":["One deposit a month, on day ","Eine Einzahlung pro Monat, am Tag "],
@@ -21968,24 +22156,41 @@ function impSerie(){
     const p=astPro(a);
     let saldo=astValorAtual(a), custo=+p.custo||0;
     const rate=astLiquidoAM(a)/100, aporte=+p.aporte||0, d0=dias(p.aplic);
+    /* Conta vinculada de FGTS: o que entra todo mês é DEPÓSITO DO
+       EMPREGADOR, não aporte do titular. O painel somava esse valor como
+       saída de caixa acumulada no horizonte — dinheiro que nunca passou
+       pela conta corrente de quem recebe. Aqui ele anda por fora do caixa,
+       na mesma regra da projeção: uma entrada por mês, no dia declarado na
+       renda, rendendo só a fração do mês que corre dali. */
+    const fgAuto=astEhFgtsAuto(a);
+    const fgDia=Math.min(31,Math.max(1,+p.fgtsDia||20));
     for(let k=0;k<IMP_N;k++){
       const ym=ymAdd(hoje,k);
       const rb=saldo*rate;
+      let dep=0, rendDep=0;
+      if(fgAuto){
+        dep=Math.max(0,fgtsDepositoMes(p.fonteRenda,ym,null,p));
+        rendDep=dep*rate*fgtsParteDoMes(ym,fgDia);
+      }
       let aliq=0; try{ aliq=astAliqIR(a,d0+30*k); }catch(e){}
       if(p.trib==="isento"||p.trib==="fii") aliq=0;
-      const ir=Math.max(0,rb)*aliq/100;
-      saldo=R2(saldo+rb);
-      if(aporte>0){ saldo=R2(saldo+aporte); custo=R2(custo+aporte); }
+      const brutoT=rb+rendDep;
+      const ir=Math.max(0,brutoT)*aliq/100;
+      saldo=R2(saldo+brutoT);
+      if(fgAuto){
+        if(dep>0){ saldo=R2(saldo+dep); custo=R2(custo+dep); }
+      }else if(aporte>0){ saldo=R2(saldo+aporte); custo=R2(custo+aporte); }
       let cc=0;
       if(p.comeCotas&&FISCAL.comeCotasMeses.indexOf(ymMonth(ym))>=0){
         const g=Math.max(0,saldo-custo);
         cc=g*(p.trib==="fundoCP"?FISCAL.irFundoCP:FISCAL.irFundoLP)/100;
         saldo=R2(saldo-cc); custo=saldo;
       }
-      out.push({ym,bruto:R2(rb),ir:R2(ir),comeCotas:R2(cc),
-        liquido:R2(rb-ir-cc),aporte:R2(aporte),saldo:R2(saldo),aliq:R2(aliq)});
+      out.push({ym,bruto:R2(brutoT),ir:R2(ir),comeCotas:R2(cc),
+        liquido:R2(brutoT-ir-cc),aporte:fgAuto?0:R2(aporte),
+        fgtsDep:R2(dep),saldo:R2(saldo),aliq:R2(aliq)});
     }
-    return {tipo:"asset",obj:a,linhas:out};
+    return {tipo:"asset",obj:a,linhas:out,fgAuto,fgDia};
   }
   if(IMP_TIPO==="income"){
     const inc=(typeof INCOME!=="undefined"?INCOME:[]).find(x=>String(x.id)===IMP_ID);
@@ -22069,21 +22274,39 @@ function renderImpactos(){
     emoji=cls.emoji||"💎"; titulo=S.obj.name||"—";
     sub=(cls.label?catLabel(cls):"")+" · "+String(R2(astLiquidoAM(S.obj))).replace(".",",")+"% a.m.";
     const fim=L.length?L[L.length-1].saldo:0, ini=astValorAtual(S.obj);
-    fluxo=R("(+) Receita financeira bruta","+"+V(soma("bruto")),"",GRN)
-      +(soma("ir")>0?R("(−) Provisão de IRRF","−"+V(soma("ir")),"",RED):"")
-      +(soma("comeCotas")>0?R("(−) Come-cotas","−"+V(soma("comeCotas")),"sub",RED):"")
-      +(soma("aporte")>0?R("(−) Aportes programados (saem do caixa)","−"+V(soma("aporte")),"","var(--ink-3)"):"")
-      +R("(=) Rendimento líquido",V(soma("liquido")),"grand",GRN);
+    const fgA=!!S.fgAuto, depTot=soma("fgtsDep");
+    /* A conta vinculada não é alimentada pelo titular: quem recolhe é o
+       empregador. Mostrar o depósito como aporte fazia o painel acusar uma
+       saída de caixa acumulada que nunca existiu. */
+    fluxo=fgA
+      ? R("Depósito do empregador no período","+"+V(depTot),"",GRN)
+        +R("Recolhido sobre o salário, fora da conta corrente","não é caixa","sub","var(--ink-3)")
+        +R("Rendimento da conta vinculada","+"+V(soma("bruto")),"sub",GRN)
+        +R("(=) Efeito no seu caixa","R$ 0,00","grand","var(--ink-3)")
+      : R("(+) Receita financeira bruta","+"+V(soma("bruto")),"",GRN)
+        +(soma("ir")>0?R("(−) Provisão de IRRF","−"+V(soma("ir")),"",RED):"")
+        +(soma("comeCotas")>0?R("(−) Come-cotas","−"+V(soma("comeCotas")),"sub",RED):"")
+        +(soma("aporte")>0?R("(−) Aportes programados (saem do caixa)","−"+V(soma("aporte")),"","var(--ink-3)"):"")
+        +R("(=) Rendimento líquido",V(soma("liquido")),"grand",GRN);
     patr=R("Saldo hoje",V(ini),"","var(--ink-3)")
+      +(fgA?R("(+) Depósitos do empregador","+"+V(depTot),"","var(--ink-3)")
+           +R("(+) Rendimento no período","+"+V(soma("bruto")),"",GRN):"")
       +R("Saldo projetado em "+IMP_N+" meses",V(fim),"tot",BLU)
       +R("(=) Variação","+"+V(R2(fim-ini)),"sub",GRN);
     div=`<div class="cfp-row sub"><span>Nenhum efeito sobre dívidas</span><span>—</span></div>`;
-    tabela=`<tr><th style="text-align:left">Mês</th><th>Rend.</th><th>IR</th><th>Aporte</th><th>Saldo</th></tr>`
+    tabela=`<tr><th style="text-align:left">Mês</th><th>Rend.</th><th>IR</th><th>${fgA?"Depósito":"Aporte"}</th><th>Saldo</th></tr>`
       +L.map(x=>`<tr class="lin"><td>${mesLbl(x.ym)}</td>
         <td style="color:${GRN}">${V(x.bruto)}</td>
         <td style="color:${RED}">${(x.ir+x.comeCotas)>0?V(x.ir+x.comeCotas):"—"}</td>
-        <td style="color:var(--ink-3)">${x.aporte>0?V(x.aporte):"—"}</td>
+        <td style="color:${fgA?GRN:"var(--ink-3)"}">${(fgA?x.fgtsDep:x.aporte)>0?V(fgA?x.fgtsDep:x.aporte):"—"}</td>
         <td style="font-weight:600">${V(x.saldo)}</td></tr>`).join("");
+    if(fgA) extra=bloco("Quem paga o FGTS",
+       R("Origem do depósito","empregador","",BLU)
+      +R("Alíquota sobre o bruto",String(FISCAL.fgtsPct||8).replace(".",",")+"%","sub","var(--ink-3)")
+      +R("Dia do depósito",String(S.fgDia||20),"sub","var(--ink-3)")
+      +R("Rende a partir de","um depósito por mês, do dia do recolhimento","sub","var(--ink-3)")
+      +R("Sai da sua conta corrente","nada","tot",GRN)
+      +R("Entra no seu patrimônio","+"+V(depTot),"grand",GRN));
   }
   else{
     const dt=gDebtType(S.obj.type); emoji=dt.emoji; titulo=S.obj.name||"—";
@@ -22187,14 +22410,19 @@ function renderImpactos(){
   let head=0, headLbl="", headCor=GRN;
   if(S.tipo==="income"){ head=soma("liquido"); headLbl="Entra no caixa"; }
   else if(S.tipo==="expense"){ head=-soma("meu"); headLbl="Sai do caixa"; headCor=RED; }
-  else if(S.tipo==="asset"){ head=soma("liquido"); headLbl="Rendimento líquido"; }
+  else if(S.tipo==="asset"){
+    if(S.fgAuto){ head=soma("fgtsDep")+soma("liquido"); headLbl="Entra no patrimônio (não no caixa)"; }
+    else { head=soma("liquido"); headLbl="Rendimento líquido"; }
+  }
   else { head=-soma("saida"); headLbl="Sai do caixa"; headCor=RED; }
   const kpi=(l,v,c)=>`<div style="flex:1;min-width:0;background:var(--surface);border-radius:12px;padding:9px 11px">
     <div style="font-size:8.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-4);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l}</div>
-    <div style="font-size:12px;font-weight:700;color:${c||"var(--body)"};margin-top:2px;line-height:1.25;word-break:break-word">${v}</div></div>`;
+    <div style="font-size:11px;font-weight:700;color:${c||"var(--body)"};margin-top:3px;line-height:1.3;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v}</div></div>`;
   let kpis="";
   if(S.tipo==="income") kpis=kpi("Bruto",V(soma("bruto")),BLU)+kpi("Impostos",V(soma("ir")+soma("inss")),RED)+kpi("Efetivo",(soma("bruto")>0?Math.round(soma("liquido")/soma("bruto")*100):0)+"%",GRN);
-  else if(S.tipo==="asset") kpis=kpi("Saldo hoje",V(astValorAtual(S.obj)),"var(--ink-2)")+kpi("Em "+IMP_N+"m",V(L.length?L[L.length-1].saldo:0),BLU)+kpi("IR",V(soma("ir")+soma("comeCotas")),RED);
+  else if(S.tipo==="asset") kpis=kpi("Saldo hoje",V(astValorAtual(S.obj)),"var(--ink-2)")
+    +kpi("Em "+IMP_N+"m",V(L.length?L[L.length-1].saldo:0),BLU)
+    +(S.fgAuto?kpi("Depósitos",V(soma("fgtsDep")),GRN):kpi("IR",V(soma("ir")+soma("comeCotas")),RED));
   else if(S.tipo==="debt") kpis=kpi("Saldo hoje",V(debtBalance(S.obj)),"var(--ink-2)")+kpi("Em "+IMP_N+"m",V(L.length?L[L.length-1].saldo:0),WIN)+kpi("Juros",V(soma("juros")),RED);
   else kpis=kpi("Total",V(soma("total")),"var(--ink-2)")+kpi("Terceiros",V(soma("terceiros")),"var(--ink-3)")+kpi("Sua parte",V(soma("meu")),RED);
 
