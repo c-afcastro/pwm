@@ -13982,7 +13982,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.52";
+const APP_VERSION="10.53";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -17228,7 +17228,15 @@ function sincronizarFgtsPatrimonio(inc){
   if(!inc) return null;
   const p=incPro(inc);
   const cap=incCaps(inc.type);
-  const mensal=fgtsDe(p,(+inc.amount||0),inc.type);
+  /* O valor digitado na renda é o do mês de referência. Se há reajuste
+     anual, o depósito de hoje já é outro — e o card do patrimônio mostrava
+     o número velho enquanto a projeção usava o corrigido. O aporte gravado
+     passa a ser o depósito recorrente do mês corrente. */
+  let mensal=fgtsDe(p,(+inc.amount||0),inc.type);
+  try{
+    const fat=dissidioFator(inc,ymNow());
+    if(fat>0) mensal=fgtsDe(p,(+inc.amount||0)*fat,inc.type);
+  }catch(e){}
   let a=ASSETS.find(x=>x.class==="fgts"&&x.pro&&x.pro.fonteRenda===inc.id);
   /* deixou de haver FGTS nesta renda: o patrimônio para de receber aportes */
   if(!(cap.fgts&&p.regime==="clt"&&p.fgts&&mensal>0)){
