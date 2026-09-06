@@ -1422,61 +1422,26 @@
     .oi-ring  { box-shadow: inset 0 0 0 1px rgba(0,0,0,.08) }
 
     /* ── OTTO ADVISOR ─────────────────────────────────────────────────
-       Otto deixa de ser só retrato e passa a ler os números. Duas peças:
-       o RECADO, cartão da tela inicial com a leitura que mais pesa no mês,
-       e a NOTA, tira fina no topo de cada módulo com o recorte daquele
-       assunto. Ambas usam a paleta neutra — o acento vem do tom da leitura
-       (risco, atenção, ok), nunca da cor do módulo, para que a advertência
-       não se confunda com a identidade da tela. */
-    .otto-brief {
-      width: 100%; display: flex; align-items: center; gap: 12px;
-      text-align: left; cursor: pointer;
-      background: var(--surface); border: 1.5px solid var(--line);
-      border-radius: 16px; padding: 12px 14px; margin-bottom: 16px;
-      transition: border-color .18s ease, transform .13s cubic-bezier(.22,.9,.32,1);
+       O ponto de entrada da análise é só o retrato do Otto com a lupa,
+       alinhado à direita. Não há frase fixa na tela: a conclusão inteira
+       mora no pop-up, e um resumo de duas linhas ao lado do retrato só
+       repetiria pela metade o que o toque entrega inteiro. O retrato não
+       muda com o teor do apontamento — se mudasse, viraria um semáforo, e
+       um semáforo dispensa a leitura que ele deveria convidar a fazer. */
+    .otto-toque {
+      display: block; margin: 0 0 12px auto;
+      background: none; border: none; padding: 0; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .13s cubic-bezier(.22,.9,.32,1);
     }
-    .otto-brief:active { transform: scale(.988) }
-    .otto-brief-txt { flex: 1; min-width: 0 }
-    .otto-brief-kicker {
-      display: block; font-size: 9px; letter-spacing: 1.6px;
-      text-transform: uppercase; color: var(--ink-3); margin-bottom: 3px;
-    }
-    .otto-brief-title {
-      display: block; font-size: 13px; font-weight: 600; color: var(--body);
-      line-height: 1.3; margin-bottom: 2px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .otto-brief-body {
-      display: block; font-size: 10.5px; color: var(--ink-2); line-height: 1.5;
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .otto-brief-tail { flex-shrink: 0; text-align: center; min-width: 30px }
-    .otto-brief-n {
-      display: block; font-size: 12px; font-weight: 700; line-height: 1;
-    }
-    .otto-brief-chev { display: block; color: var(--ink-4); font-size: 14px; margin-top: 3px }
-
-    /* tira fina no topo dos módulos — é botão: o retrato à direita gira
-       para dizer que há um raciocínio por trás, e o toque abre a conta. */
-    .otto-nota {
-      width: 100%; display: flex; align-items: center; gap: 12px;
-      background: var(--surface); border: 1px solid var(--line);
-      border-radius: 14px; padding: 10px 12px 10px 14px; margin-bottom: 14px;
-      text-align: left; cursor: pointer; font-family: inherit;
-      transition: border-color .18s ease, transform .13s cubic-bezier(.22,.9,.32,1);
-    }
-    .otto-nota:active { transform: scale(.99) }
-    .otto-nota-txt { font-size: 11.5px; line-height: 1.55; color: var(--ink-2); flex: 1; min-width: 0 }
-    .otto-nota-txt b { color: var(--body); font-weight: 600 }
-    .otto-nota[hidden] { display: none }
+    .otto-toque:active { transform: scale(.94) }
+    .otto-toque[hidden] { display: none }
 
     /* ── SINAL GIRATÓRIO ──────────────────────────────────────────────
        Um arco em gradiente cônico dá a volta no retrato. Não é enfeite: é
-       o único aviso de que aquele retrato responde ao toque e guarda a
-       conta que levou à conclusão. Feito em CSS, e não num GIF, porque um
-       GIF ficaria preso a um fundo e a uma cor — o arco herda o tom da
-       leitura e a superfície do tema. */
+       o único aviso de que aquele retrato responde ao toque. A cor é fixa
+       e neutra — o tom do apontamento aparece por escrito dentro do
+       pop-up, não como cor no rosto do Otto. */
     .otto-anel {
       position: relative; flex-shrink: 0; display: inline-flex;
       padding: 3px; border-radius: 50%;
@@ -1484,12 +1449,12 @@
     .otto-anel::before {
       content: ""; position: absolute; inset: 0; border-radius: 50%;
       background: conic-gradient(from 0deg,
-        transparent 0 52%, var(--anel, #C4863A) 76%, transparent 92% 100%);
+        transparent 0 52%, var(--anel, var(--wood)) 76%, transparent 92% 100%);
       animation: ottoGira 2.8s linear infinite;
     }
     .otto-anel::after {
       content: ""; position: absolute; inset: 3px; border-radius: 50%;
-      background: var(--surface);
+      background: var(--bg);
     }
     .otto-anel > .oi { position: relative; z-index: 1 }
     @keyframes ottoGira { to { transform: rotate(360deg) } }
@@ -1771,19 +1736,11 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <div id="home-health-card"></div>
     </button>
 
-    <!-- RECADO DO OTTO — leitura do mês, ordenada por urgência -->
-    <button class="otto-brief" id="otto-brief" onclick="OTTO.abrirPainel()" style="display:none">
-      <span class="otto-anel" id="otto-brief-anel">
-        <span class="oi oi-ring oi-analise" id="otto-brief-face" role="img" aria-label="Otto"></span>
-      </span>
-      <span class="otto-brief-txt">
-        <span class="otto-brief-kicker" id="otto-brief-kicker">Otto analisou</span>
-        <span class="otto-brief-title" id="otto-brief-title">—</span>
-        <span class="otto-brief-body" id="otto-brief-body">—</span>
-      </span>
-      <span class="otto-brief-tail">
-        <span class="otto-brief-n" id="otto-brief-n">—</span>
-        <span class="otto-brief-chev">›</span>
+    <!-- ANÁLISE DO OTTO — só o retrato; a leitura inteira vem no toque -->
+    <button class="otto-toque" id="otto-brief" onclick="OTTO.abrirPainel()"
+      style="display:none" aria-label="Otto">
+      <span class="otto-anel">
+        <span class="oi oi-ring oi-investiga" role="img" aria-hidden="true"></span>
       </span>
     </button>
 
@@ -1792,7 +1749,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
       <!-- DESPESAS -->
       <button onclick="enterSection('despesas')" style="width:100%;text-align:left;cursor:pointer;background:var(--green);border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px">
-        <span class="oi oi-ring oi-pagamentos" id="face-despesas" role="img" aria-label="Otto"></span>
+        <span class="oi oi-ring oi-pagamentos" role="img" aria-label="Otto"></span>
         <div style="flex:1;min-width:0">
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px" data-i18n="nav_expenses">Despesas</div>
           <div style="font-family:var(--serif);font-style:italic;font-size:clamp(22px,7vw,28px);line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="home-expense-val">—</div>
@@ -1807,7 +1764,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <!-- DÍVIDAS -->
       <button onclick="enterSection('dividas')" style="width:100%;text-align:left;cursor:pointer;background:#6E2B3A;border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px;position:relative;overflow:hidden">
         <div style="position:absolute;top:-25px;right:-25px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
-        <span class="oi oi-ring oi-controle" id="face-dividas" style="position:relative" role="img" aria-label="Otto"></span>
+        <span class="oi oi-ring oi-banco" style="position:relative" role="img" aria-label="Otto"></span>
         <div style="flex:1;min-width:0;position:relative">
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px" data-i18n="nav_debts">Dívidas</div>
           <div style="font-family:var(--serif);font-style:italic;font-size:clamp(22px,7vw,28px);line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="home-debt-val">—</div>
@@ -1821,7 +1778,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
       <!-- RECEITAS -->
       <button onclick="enterSection('entradas')" style="width:100%;text-align:left;cursor:pointer;background:#1A3A5C;border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px">
-        <span class="oi oi-ring oi-custos" id="face-entradas" role="img" aria-label="Otto"></span>
+        <span class="oi oi-ring oi-custos" role="img" aria-label="Otto"></span>
         <div style="flex:1;min-width:0">
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px" data-i18n="nav_income">Entradas</div>
           <div style="font-family:var(--serif);font-style:italic;font-size:clamp(22px,7vw,28px);line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="home-income-val">—</div>
@@ -1835,7 +1792,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
       <!-- PATRIMÔNIO -->
       <button onclick="enterSection('patrimonio')" style="width:100%;text-align:left;cursor:pointer;background:#0F2440;border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px">
-        <span class="oi oi-ring oi-casa" id="face-patrimonio" role="img" aria-label="Otto"></span>
+        <span class="oi oi-ring oi-casa" role="img" aria-label="Otto"></span>
         <div style="flex:1;min-width:0">
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px" data-i18n="nav_assets">Patrimônio</div>
           <div style="font-family:var(--serif);font-style:italic;font-size:clamp(22px,7vw,28px);line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="home-asset-val">—</div>
@@ -1930,10 +1887,10 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
   <div class="content">
 
-    <button class="otto-nota" id="otto-nota-despesas" hidden onclick="OTTO.abrirRacional('despesas')">
-      <span class="otto-nota-txt" id="otto-nota-despesas-txt"></span>
-      <span class="otto-anel" id="otto-nota-despesas-anel">
-        <span class="oi oi-sm oi-round oi-ring oi-analise" id="otto-nota-despesas-face" role="img" aria-label="Otto"></span>
+    <button class="otto-toque" id="otto-nota-despesas" hidden onclick="OTTO.abrirRacional('despesas')"
+      aria-label="Otto" data-i18n-aria="otto_panel_t">
+      <span class="otto-anel">
+        <span class="oi oi-sm oi-round oi-ring oi-investiga" role="img" aria-hidden="true"></span>
       </span>
     </button>
 
@@ -2151,10 +2108,10 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
   <div class="content" id="inc-content" style="padding:16px 16px 100px">
 
-    <button class="otto-nota" id="otto-nota-entradas" hidden onclick="OTTO.abrirRacional('entradas')">
-      <span class="otto-nota-txt" id="otto-nota-entradas-txt"></span>
-      <span class="otto-anel" id="otto-nota-entradas-anel">
-        <span class="oi oi-sm oi-round oi-ring oi-analise" id="otto-nota-entradas-face" role="img" aria-label="Otto"></span>
+    <button class="otto-toque" id="otto-nota-entradas" hidden onclick="OTTO.abrirRacional('entradas')"
+      aria-label="Otto" data-i18n-aria="otto_panel_t">
+      <span class="otto-anel">
+        <span class="oi oi-sm oi-round oi-ring oi-investiga" role="img" aria-hidden="true"></span>
       </span>
     </button>
 
@@ -2270,10 +2227,10 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
   <div class="content" id="ast-content" style="padding:16px 16px 100px">
 
-    <button class="otto-nota" id="otto-nota-patrimonio" hidden onclick="OTTO.abrirRacional('patrimonio')">
-      <span class="otto-nota-txt" id="otto-nota-patrimonio-txt"></span>
-      <span class="otto-anel" id="otto-nota-patrimonio-anel">
-        <span class="oi oi-sm oi-round oi-ring oi-analise" id="otto-nota-patrimonio-face" role="img" aria-label="Otto"></span>
+    <button class="otto-toque" id="otto-nota-patrimonio" hidden onclick="OTTO.abrirRacional('patrimonio')"
+      aria-label="Otto" data-i18n-aria="otto_panel_t">
+      <span class="otto-anel">
+        <span class="oi oi-sm oi-round oi-ring oi-investiga" role="img" aria-hidden="true"></span>
       </span>
     </button>
 
@@ -2359,7 +2316,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <button onclick="goHome()" style="width:36px;height:36px;border-radius:50%;background:#6E2B3A22;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6E2B3A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <span class="oi oi-sm oi-round oi-ring oi-controle" role="img" aria-label="Otto"></span>
+      <span class="oi oi-sm oi-round oi-ring oi-banco" role="img" aria-label="Otto"></span>
       <div>
         <div class="wordmark" style="color:#6E2B3A;font-size:clamp(20px,6.4vw,28px)" data-i18n="nav_debts">Dívidas</div>
       </div>
@@ -2397,10 +2354,10 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
   <div class="content" id="debt-content" style="padding:16px 16px 84px">
 
-    <button class="otto-nota" id="otto-nota-dividas" hidden onclick="OTTO.abrirRacional('dividas')">
-      <span class="otto-nota-txt" id="otto-nota-dividas-txt"></span>
-      <span class="otto-anel" id="otto-nota-dividas-anel">
-        <span class="oi oi-sm oi-round oi-ring oi-analise" id="otto-nota-dividas-face" role="img" aria-label="Otto"></span>
+    <button class="otto-toque" id="otto-nota-dividas" hidden onclick="OTTO.abrirRacional('dividas')"
+      aria-label="Otto" data-i18n-aria="otto_panel_t">
+      <span class="otto-anel">
+        <span class="oi oi-sm oi-round oi-ring oi-investiga" role="img" aria-hidden="true"></span>
       </span>
     </button>
 
@@ -4041,49 +3998,63 @@ const I18N={
     csv_split_status:"Status",
     csv_file_sim:"simulacao",
     /* ── OTTO ADVISOR ── */
-    otto_kicker:"Otto analisou",
-    otto_panel_t:"Leitura do Otto",
-    otto_panel_sub:"O que mais pesa em {m}, em ordem de urgência.",
-    otto_all_good_t:"Nada urgente por aqui",
-    otto_all_good_b:"Os indicadores do mês estão dentro do razoável. Otto segue de olho.",
+    otto_panel_t:"Análise do Otto",
+    otto_panel_sub:"Apontamentos de {m}, em ordem de materialidade.",
+    otto_all_good_t:"Sem apontamentos",
+    otto_all_good_b:"Nenhum indicador do mês está fora dos parâmetros de referência.",
     otto_tag_risk:"Risco",
     otto_tag_warn:"Atenção",
     otto_tag_note:"Nota",
     otto_tag_good:"Boa",
-    otto_start_t:"Vamos começar",
-    otto_start_b:"Cadastre entradas e despesas para o Otto montar seu balanço e projetar os próximos meses.",
-    otto_neg_t:"O mês fecha no vermelho",
-    otto_neg_b:"As saídas superam as entradas em {v}. Reveja os fixos ou reforce a receita antes que o rombo vire dívida.",
-    otto_dti_t:"Parcelas apertando a renda",
-    otto_dti_b:"As parcelas consomem {n}% do que entra ({v}/mês). Acima de 30% sobra pouco para poupar.",
-    otto_res_t:"Reserva curta",
-    otto_res_b:"O patrimônio cobre {n} meses de despesa. O alvo confortável é 6 — hoje faltam {v}.",
+    otto_start_t:"Base de dados vazia",
+    otto_start_b:"Não há lançamentos, aplicações ou contratos registrados. O cadastro de entradas e despesas habilita a apuração do balanço e a projeção.",
+    otto_neg_t:"Resultado mensal negativo",
+    otto_neg_b:"As saídas excedem as entradas em {v} no mês. O déficit exige consumo de reserva ou captação de crédito para ser coberto.",
+    otto_dti_t:"Comprometimento de renda elevado",
+    otto_dti_b:"As parcelas absorvem {n}% das entradas do mês ({v}). Acima de 30% a margem para poupança e para imprevistos torna-se residual.",
+    otto_res_t:"Reserva de liquidez insuficiente",
+    otto_res_b:"O patrimônio cobre {n} meses de despesa. O parâmetro usual é de 6 meses; a diferença corresponde a {v}.",
     otto_pl_t:"Patrimônio líquido negativo",
-    otto_pl_b:"Você deve {v} a mais do que tem. Amortizar o passivo mais caro é o caminho mais curto para virar o sinal.",
-    otto_jur_t:"Os juros comem o rendimento",
-    otto_jur_b:"A dívida custa {v}/mês de juros e o patrimônio rende {x}/mês. Neste ponto, amortizar rende mais do que aplicar.",
+    otto_pl_b:"O passivo excede o ativo em {v}. A reversão depende do acúmulo de resultado positivo — a amortização isolada substitui ativo por redução de passivo e não altera o patrimônio líquido.",
     otto_conc_t:"Concentração em {c}",
-    otto_conc_b:"{c} responde por {n}% das despesas do mês ({v}). Vale olhar de perto antes de cortar em outro lugar.",
-    otto_sub_t:"Despesas subiram",
-    otto_sub_b:"Gasto {n}% acima do mês anterior — {v} a mais. Confira o que mudou.",
-    otto_desc_t:"Despesas recuaram",
-    otto_desc_b:"Gasto {n}% abaixo do mês anterior — {v} a menos. Se o corte for estrutural, ele se repete.",
-    otto_quit_t:"Rota de quitação",
-    otto_quit_b:"No ritmo atual a última parcela cai em {n} meses, com {v} de juros pela frente.",
-    otto_poup_t:"Boa taxa de poupança",
-    otto_poup_b:"Você guardou {n}% do que entrou ({v}). Acima de 20% é o que constrói patrimônio de verdade.",
-    otto_semdiv_t:"Sem dívidas",
-    otto_semdiv_b:"Nenhum passivo em aberto. Tudo o que sobra do mês pode virar patrimônio.",
-    otto_res6_t:"Reserva sólida",
-    otto_res6_b:"Você cobre {n} meses de despesa. Com esse colchão dá para assumir mais risco na carteira.",
-    otto_rend_t:"O patrimônio trabalha por você",
-    otto_rend_b:"O rendimento do mês ({v}) já paga {n}% das suas despesas.",
-    otto_seed_t:"Hora de começar a construir",
-    otto_seed_b:"Ainda não há patrimônio cadastrado. Todo mês que fecha no azul é matéria-prima.",
-    otto_semrec_t:"Faltam as entradas",
-    otto_semrec_b:"Sem receita cadastrada o Otto não calcula poupança, folga nem nota de saúde.",
-    otto_fx_t:"Projeção segue seus parâmetros",
-    otto_fx_b:"Índices, impostos e encargos vêm da ficha de Parâmetros. Mudou a curva, muda tudo daqui para a frente.",
+    otto_conc_b:"{c} representa {n}% das despesas do mês ({v}). Acima de 35% a categoria determina o total, e ajustes nas demais têm efeito marginal.",
+    otto_sub_t:"Elevação da despesa mensal",
+    otto_sub_b:"Despesa {n}% superior à do mês anterior, equivalente a {v}. Recomenda-se identificar a origem da variação.",
+    otto_desc_t:"Redução da despesa mensal",
+    otto_desc_b:"Despesa {n}% inferior à do mês anterior, equivalente a {v}. Se a redução for estrutural, tende a se repetir nos meses seguintes.",
+    otto_quit_t:"Cronograma de quitação",
+    otto_quit_b:"Mantido o ritmo atual, a última parcela ocorre em {n} meses, com {v} de juros a incorrer.",
+    otto_poup_t:"Taxa de poupança adequada",
+    otto_poup_b:"Retenção de {n}% das entradas do mês ({v}). Acima de 20% a formação de patrimônio torna-se consistente.",
+    otto_semdiv_t:"Sem passivo registrado",
+    otto_semdiv_b:"Não há contratos em aberto. O resultado positivo do mês pode ser integralmente alocado em patrimônio.",
+    otto_res6_t:"Reserva de liquidez adequada",
+    otto_res6_b:"O patrimônio cobre {n} meses de despesa, acima do parâmetro de 6 meses. A margem comporta maior exposição a risco na carteira.",
+    otto_rend_t:"Rendimento da carteira",
+    otto_rend_b:"O rendimento do mês ({v}) corresponde a {n}% da despesa do período.",
+    otto_seed_t:"Sem posição em aplicações",
+    otto_seed_b:"Não há aplicações registradas. O resultado positivo do mês não está sendo convertido em patrimônio remunerado.",
+    otto_semrec_t:"Sem entradas registradas",
+    otto_semrec_b:"Não há receita lançada no mês. Sem ela não é possível apurar taxa de poupança, comprometimento de renda nem pontuação de saúde.",
+    otto_fx_t:"Valores projetados",
+    otto_fx_b:"O mês exibido é futuro. Todos os valores derivam das curvas de índice, tributação e encargos declaradas na ficha de Parâmetros.",
+    otto_r_hold:"Aplicação de referência",
+    otto_r_ctr:"Contrato de referência",
+    otto_r_spread:"Diferencial",
+    otto_r_net:"Rendimento líquido da carteira (a.a.)",
+    otto_r_idx:"Indexador do contrato (a.a.)",
+    otto_r_nom:"Juros do contrato (a.a.)",
+    otto_r_cost:"Custo efetivo da dívida (a.a.)",
+    otto_r_gross:"Rendimento bruto da aplicação (a.a.)",
+    otto_r_ir:"Imposto de renda considerado",
+    otto_r_exempt:"Isento",
+    otto_m_taxa:"Comparação entre o custo efetivo da dívida mais cara — juros do contrato compostos com o indexador declarado — e o rendimento da aplicação de maior taxa, líquido de taxas e da alíquota de IR de prazo longo (15%), já que no Brasil o imposto só incide no resgate. Ambos anualizados. A comparação é de taxas, não de valores em moeda: montantes de principal diferentes tornam a comparação em reais inconclusiva.",
+    otto_neutro_b:"Custo efetivo de {n}% a.a. contra {x}% a.a. de rendimento líquido. Com diferencial inferior a 1 ponto percentual, a escolha entre amortizar e aplicar passa a ser de liquidez e risco, não de retorno.",
+    otto_neutro_t:"Custo da dívida e rendimento equivalentes",
+    otto_aplic_b:"A carteira rende {x}% a.a. líquidos contra um custo efetivo de dívida de {n}% a.a. Manter o capital aplicado preserva liquidez e ainda gera diferencial positivo de {d} ponto(s) percentual(is).",
+    otto_aplic_t:"Aplicação supera a amortização",
+    otto_amort_b:"O custo efetivo da dívida é de {n}% a.a. contra {x}% a.a. de rendimento líquido da carteira. Enquanto o diferencial se mantiver, cada unidade amortizada economiza mais do que renderia aplicada.",
+    otto_amort_t:"Amortização supera a aplicação",
     /* ── RACIONAL DO OTTO ── */
     otto_r_how:"Como o Otto chegou aqui",
     otto_r_concl:"Conclusão",
@@ -4113,23 +4084,22 @@ const I18N={
     otto_r_intrem:"Juros ainda a pagar",
     otto_r_ndebt:"Contratos em aberto",
     otto_r_nast:"Aplicações cadastradas",
-    otto_m_start:"Ainda não há lançamento algum para analisar.",
-    otto_m_neg:"Somei tudo o que entra e tudo o que sai no mês exibido. Diferença negativa quer dizer que o mês só fecha consumindo reserva ou tomando crédito.",
-    otto_m_pl:"Somei o valor de todas as aplicações e subtraí o saldo de todos os contratos. Negativo significa que o passivo já é maior que o ativo.",
-    otto_m_dti:"Dividi a soma das parcelas mensais pelas entradas do mês. Acima de 30% o orçamento perde a folga que absorve imprevistos.",
-    otto_m_jur:"Comparei os juros que a dívida gera por mês com o rendimento que as aplicações geram no mesmo mês.",
-    otto_m_res:"Dividi o patrimônio pela despesa do mês para saber quantos meses ele cobre. Abaixo de 3 meses, um imprevisto vira dívida.",
-    otto_m_semrec:"Procurei entradas no mês exibido e não encontrei nenhuma.",
-    otto_m_conc:"Agrupei os lançamentos do mês por categoria e medi a participação da maior. Acima de 35% cortar em qualquer outro lugar rende pouco.",
-    otto_m_sub:"Comparei a despesa do mês exibido com a do mês anterior, pelo mesmo critério de soma.",
-    otto_m_desc:"Comparei a despesa do mês exibido com a do mês anterior, pelo mesmo critério de soma. Desta vez a diferença é a favor.",
-    otto_m_quit:"Montei o cronograma de cada contrato com o indexador e o abatimento por FGTS que você declarou, e somei os juros que faltam.",
-    otto_m_seed:"Não há nenhuma aplicação cadastrada, então não há o que render.",
-    otto_m_fx:"Você está num mês futuro: todo valor aqui é projeção, não fato consumado.",
-    otto_m_poup:"Dividi o saldo do mês pelas entradas do mês.",
-    otto_m_semdiv:"Procurei contratos em aberto e não encontrei nenhum.",
-    otto_m_res6:"Dividi o patrimônio pela despesa do mês, mesma conta da reserva — desta vez o resultado passa do alvo de seis meses.",
-    otto_m_rend:"Comparei o rendimento das aplicações no mês com a despesa do mesmo mês.",
+    otto_m_start:"Não há registro a apurar.",
+    otto_m_neg:"Soma das entradas menos soma das saídas do mês exibido. Resultado negativo indica que o período não se financia com a própria receita.",
+    otto_m_pl:"Soma do valor de todas as aplicações menos o saldo de todos os contratos em aberto.",
+    otto_m_dti:"Razão entre a soma das parcelas mensais e as entradas do mês. O limite de 30% é referência usual de crédito.",
+    otto_m_res:"Razão entre o patrimônio total e a despesa do mês, expressa em meses de cobertura.",
+    otto_m_semrec:"Consulta às receitas lançadas no mês exibido: nenhuma encontrada.",
+    otto_m_conc:"Agrupamento dos lançamentos do mês por categoria e participação da maior sobre o total. O limite de 35% marca o ponto em que a categoria passa a determinar o resultado.",
+    otto_m_sub:"Comparação da despesa do mês exibido com a do mês imediatamente anterior, pelo mesmo critério de apuração.",
+    otto_m_desc:"Comparação da despesa do mês exibido com a do mês imediatamente anterior, pelo mesmo critério de apuração.",
+    otto_m_quit:"Cronograma de cada contrato montado com o indexador e o abatimento por FGTS declarados, com soma dos juros remanescentes.",
+    otto_m_seed:"Consulta às aplicações registradas: nenhuma encontrada.",
+    otto_m_fx:"O mês exibido é posterior ao mês corrente; os valores são projeção, não posição realizada.",
+    otto_m_poup:"Razão entre o resultado do mês e as entradas do mês.",
+    otto_m_semdiv:"Consulta aos contratos em aberto: nenhum encontrado.",
+    otto_m_res6:"Razão entre o patrimônio total e a despesa do mês, expressa em meses de cobertura.",
+    otto_m_rend:"Razão entre o rendimento das aplicações no mês e a despesa do mesmo mês.",
   },
   en:{
     save_new_link:"Save new link",
@@ -4920,49 +4890,63 @@ const I18N={
     csv_split_status:"Status",
     csv_file_sim:"simulation",
     /* ── OTTO ADVISOR ── */
-    otto_kicker:"Otto reviewed",
-    otto_panel_t:"Otto's read",
-    otto_panel_sub:"What weighs most in {m}, ordered by urgency.",
-    otto_all_good_t:"Nothing urgent here",
-    otto_all_good_b:"This month's indicators sit within reason. Otto keeps watching.",
+    otto_panel_t:"Otto's analysis",
+    otto_panel_sub:"Findings for {m}, ordered by materiality.",
+    otto_all_good_t:"No findings",
+    otto_all_good_b:"No indicator for the month falls outside the reference parameters.",
     otto_tag_risk:"Risk",
     otto_tag_warn:"Watch",
     otto_tag_note:"Note",
     otto_tag_good:"Good",
-    otto_start_t:"Let's begin",
-    otto_start_b:"Add income and expenses so Otto can build your balance sheet and project the months ahead.",
-    otto_neg_t:"The month closes in the red",
-    otto_neg_b:"Outflows exceed inflows by {v}. Revisit fixed costs or lift revenue before the gap turns into debt.",
-    otto_dti_t:"Instalments squeezing income",
-    otto_dti_b:"Instalments take {n}% of what comes in ({v}/mo). Above 30% there is little left to save.",
-    otto_res_t:"Thin reserve",
-    otto_res_b:"Your assets cover {n} months of spending. A comfortable target is 6 — you're {v} short.",
+    otto_start_t:"Empty data set",
+    otto_start_b:"No entries, holdings or contracts are recorded. Registering income and expenses enables the balance sheet and the projection.",
+    otto_neg_t:"Negative monthly result",
+    otto_neg_b:"Outflows exceed inflows by {v} for the month. The deficit must be covered by drawing on reserves or by borrowing.",
+    otto_dti_t:"High income commitment",
+    otto_dti_b:"Instalments absorb {n}% of the month's income ({v}). Above 30% the margin for saving and contingencies becomes residual.",
+    otto_res_t:"Insufficient liquidity reserve",
+    otto_res_b:"Assets cover {n} months of spending. The usual parameter is 6 months; the gap amounts to {v}.",
     otto_pl_t:"Negative net worth",
-    otto_pl_b:"You owe {v} more than you hold. Paying down the priciest liability is the shortest way to flip the sign.",
-    otto_jur_t:"Interest is eating the yield",
-    otto_jur_b:"Debt costs {v}/mo in interest while assets yield {x}/mo. At this point paying down beats investing.",
-    otto_conc_t:"Concentrated in {c}",
-    otto_conc_b:"{c} accounts for {n}% of the month's spending ({v}). Worth a close look before cutting elsewhere.",
-    otto_sub_t:"Spending went up",
-    otto_sub_b:"{n}% above last month — {v} more. Check what changed.",
-    otto_desc_t:"Spending came down",
-    otto_desc_b:"{n}% below last month — {v} less. If the cut is structural, it repeats.",
-    otto_quit_t:"Payoff path",
-    otto_quit_b:"At the current pace the last instalment lands in {n} months, with {v} of interest still ahead.",
-    otto_poup_t:"Solid savings rate",
-    otto_poup_b:"You kept {n}% of what came in ({v}). Above 20% is what actually builds wealth.",
-    otto_semdiv_t:"Debt free",
-    otto_semdiv_b:"No liabilities open. Everything left over each month can become net worth.",
-    otto_res6_t:"Solid reserve",
-    otto_res6_b:"You cover {n} months of spending. With that cushion you can take more risk in the portfolio.",
-    otto_rend_t:"Your assets are working",
-    otto_rend_b:"This month's yield ({v}) already covers {n}% of your spending.",
-    otto_seed_t:"Time to start building",
-    otto_seed_b:"No assets registered yet. Every month that closes in the black is raw material.",
-    otto_semrec_t:"Income is missing",
-    otto_semrec_b:"Without registered income Otto can't compute savings, headroom or the health score.",
-    otto_fx_t:"Projection follows your parameters",
-    otto_fx_b:"Indices, taxes and charges come from the Parameters sheet. Change the curve and everything ahead changes.",
+    otto_pl_b:"Liabilities exceed assets by {v}. Reversal depends on accumulating positive results — amortisation alone swaps an asset for a reduction in liabilities and leaves net worth unchanged.",
+    otto_conc_t:"Concentration in {c}",
+    otto_conc_b:"{c} accounts for {n}% of the month's spending ({v}). Above 35% the category drives the total, and adjustments elsewhere have marginal effect.",
+    otto_sub_t:"Increase in monthly spending",
+    otto_sub_b:"Spending is {n}% above the previous month, equivalent to {v}. Identifying the source of the variance is advisable.",
+    otto_desc_t:"Decrease in monthly spending",
+    otto_desc_b:"Spending is {n}% below the previous month, equivalent to {v}. If the reduction is structural, it should recur in the following months.",
+    otto_quit_t:"Payoff schedule",
+    otto_quit_b:"At the current pace the last instalment falls in {n} months, with {v} of interest still to accrue.",
+    otto_poup_t:"Adequate savings rate",
+    otto_poup_b:"Retention of {n}% of the month's income ({v}). Above 20% wealth accumulation becomes consistent.",
+    otto_semdiv_t:"No liabilities recorded",
+    otto_semdiv_b:"There are no open contracts. The month's positive result can be allocated entirely to assets.",
+    otto_res6_t:"Adequate liquidity reserve",
+    otto_res6_b:"Assets cover {n} months of spending, above the 6-month parameter. The margin supports greater risk exposure in the portfolio.",
+    otto_rend_t:"Portfolio yield",
+    otto_rend_b:"The month's yield ({v}) corresponds to {n}% of the period's spending.",
+    otto_seed_t:"No investment position",
+    otto_seed_b:"No holdings are recorded. The month's positive result is not being converted into yield-bearing assets.",
+    otto_semrec_t:"No income recorded",
+    otto_semrec_b:"No income is recorded for the month. Without it, the savings rate, income commitment and health score cannot be computed.",
+    otto_fx_t:"Projected figures",
+    otto_fx_b:"The displayed month is in the future. All figures derive from the index, tax and charge curves declared on the Parameters sheet.",
+    otto_r_hold:"Reference holding",
+    otto_r_ctr:"Reference contract",
+    otto_r_spread:"Spread",
+    otto_r_net:"Net portfolio return (p.a.)",
+    otto_r_idx:"Contract index (p.a.)",
+    otto_r_nom:"Contract interest (p.a.)",
+    otto_r_cost:"Effective cost of debt (p.a.)",
+    otto_r_gross:"Gross holding return (p.a.)",
+    otto_r_ir:"Income tax applied",
+    otto_r_exempt:"Exempt",
+    otto_m_taxa:"Comparison between the effective cost of the most expensive debt — contract interest compounded with the declared index — and the return of the highest-yielding holding, net of fees and of the long-term 15% income-tax rate, since in Brazil the tax falls due only on redemption. Both annualised. The comparison is between rates, not currency amounts: differing principal balances would make a comparison in currency inconclusive.",
+    otto_neutro_b:"Effective cost of {n}% p.a. against a net return of {x}% p.a. With a spread under 1 percentage point, the choice between amortising and investing becomes one of liquidity and risk, not return.",
+    otto_neutro_t:"Cost of debt and return are equivalent",
+    otto_aplic_b:"The portfolio returns {x}% p.a. net against an effective cost of debt of {n}% p.a. Keeping the capital invested preserves liquidity and still yields a positive spread of {d} percentage point(s).",
+    otto_aplic_t:"Investing beats amortisation",
+    otto_amort_b:"The effective cost of debt is {n}% p.a. against a net portfolio return of {x}% p.a. While the spread holds, each unit amortised saves more than it would earn invested.",
+    otto_amort_t:"Amortisation beats investing",
     /* ── OTTO'S RATIONALE ── */
     otto_r_how:"How Otto got here",
     otto_r_concl:"Conclusion",
@@ -4992,23 +4976,22 @@ const I18N={
     otto_r_intrem:"Interest still to pay",
     otto_r_ndebt:"Open contracts",
     otto_r_nast:"Holdings registered",
-    otto_m_start:"There's nothing recorded yet to analyse.",
-    otto_m_neg:"I added everything coming in and everything going out this month. A negative difference means the month only closes by eating into reserves or borrowing.",
-    otto_m_pl:"I added up every holding and subtracted every outstanding contract. Negative means liabilities already exceed assets.",
-    otto_m_dti:"I divided total monthly instalments by the month's income. Above 30% the budget loses the slack that absorbs surprises.",
-    otto_m_jur:"I compared the interest the debt generates each month with the yield the holdings generate in the same month.",
-    otto_m_res:"I divided assets by the month's spending to see how many months they cover. Below 3 months, one surprise becomes debt.",
-    otto_m_semrec:"I looked for income in the displayed month and found none.",
-    otto_m_conc:"I grouped the month's entries by category and measured the largest one's share. Above 35%, cutting anywhere else achieves little.",
-    otto_m_sub:"I compared this month's spending with last month's, on the same basis.",
-    otto_m_desc:"I compared this month's spending with last month's, on the same basis. This time the difference is in your favour.",
-    otto_m_quit:"I built each contract's schedule using the index and FGTS offset you declared, then summed the interest still ahead.",
-    otto_m_seed:"No holdings are registered, so there is nothing to yield.",
-    otto_m_fx:"You're in a future month: every figure here is a projection, not a settled fact.",
-    otto_m_poup:"I divided the month's balance by the month's income.",
-    otto_m_semdiv:"I looked for open contracts and found none.",
-    otto_m_res6:"I divided assets by the month's spending, the same reserve calculation — this time the result clears the six-month target.",
-    otto_m_rend:"I compared the holdings' yield this month with the same month's spending.",
+    otto_m_start:"There is nothing recorded to compute.",
+    otto_m_neg:"Sum of inflows less sum of outflows for the displayed month. A negative result means the period is not funded by its own revenue.",
+    otto_m_pl:"Sum of all holdings less the balance of all open contracts.",
+    otto_m_dti:"Ratio of total monthly instalments to the month's income. The 30% threshold is a common credit reference.",
+    otto_m_res:"Ratio of total assets to the month's spending, expressed in months of coverage.",
+    otto_m_semrec:"Query of income recorded for the displayed month returned none.",
+    otto_m_conc:"Entries for the month grouped by category, with the largest one's share of the total. The 35% threshold marks where a category starts to drive the result.",
+    otto_m_sub:"Comparison of the displayed month's spending with the immediately preceding month, on the same basis.",
+    otto_m_desc:"Comparison of the displayed month's spending with the immediately preceding month, on the same basis.",
+    otto_m_quit:"Each contract's schedule built from the declared index and FGTS offset, with remaining interest summed.",
+    otto_m_seed:"Query of registered holdings returned none.",
+    otto_m_fx:"The displayed month is later than the current one; figures are projections, not realised positions.",
+    otto_m_poup:"Ratio of the month's result to the month's income.",
+    otto_m_semdiv:"Query of open contracts returned none.",
+    otto_m_res6:"Ratio of total assets to the month's spending, expressed in months of coverage.",
+    otto_m_rend:"Ratio of the holdings' yield for the month to the same month's spending.",
   },
   de:{
     save_new_link:"Neuen Link speichern",
@@ -5799,49 +5782,63 @@ const I18N={
     csv_split_status:"Status",
     csv_file_sim:"simulation",
     /* ── OTTO ADVISOR ── */
-    otto_kicker:"Otto hat geprüft",
-    otto_panel_t:"Ottos Lesart",
-    otto_panel_sub:"Was in {m} am schwersten wiegt, nach Dringlichkeit.",
-    otto_all_good_t:"Nichts Dringendes",
-    otto_all_good_b:"Die Kennzahlen des Monats liegen im Rahmen. Otto behält es im Blick.",
+    otto_panel_t:"Ottos Analyse",
+    otto_panel_sub:"Feststellungen für {m}, nach Wesentlichkeit geordnet.",
+    otto_all_good_t:"Keine Feststellungen",
+    otto_all_good_b:"Keine Kennzahl des Monats liegt außerhalb der Referenzparameter.",
     otto_tag_risk:"Risiko",
     otto_tag_warn:"Achtung",
     otto_tag_note:"Hinweis",
     otto_tag_good:"Gut",
-    otto_start_t:"Fangen wir an",
-    otto_start_b:"Erfasse Einnahmen und Ausgaben, damit Otto die Bilanz aufstellen und die nächsten Monate projizieren kann.",
-    otto_neg_t:"Der Monat schließt im Minus",
-    otto_neg_b:"Die Abflüsse übersteigen die Zuflüsse um {v}. Prüfe die Fixkosten oder stärke die Einnahmen, bevor daraus Schulden werden.",
-    otto_dti_t:"Raten drücken das Einkommen",
-    otto_dti_b:"Die Raten binden {n}% der Einnahmen ({v}/Monat). Über 30% bleibt kaum etwas zum Sparen.",
-    otto_res_t:"Dünne Reserve",
-    otto_res_b:"Das Vermögen deckt {n} Monate an Ausgaben. Komfortabel sind 6 — es fehlen {v}.",
+    otto_start_t:"Leerer Datenbestand",
+    otto_start_b:"Es sind keine Buchungen, Anlagen oder Verträge erfasst. Die Erfassung von Einnahmen und Ausgaben ermöglicht Bilanz und Projektion.",
+    otto_neg_t:"Negatives Monatsergebnis",
+    otto_neg_b:"Die Abflüsse übersteigen die Zuflüsse um {v} im Monat. Das Defizit muss durch Reserveentnahme oder Kreditaufnahme gedeckt werden.",
+    otto_dti_t:"Hohe Einkommensbindung",
+    otto_dti_b:"Die Raten binden {n}% der Monatseinnahmen ({v}). Über 30% wird der Spielraum für Sparen und Unvorhergesehenes marginal.",
+    otto_res_t:"Unzureichende Liquiditätsreserve",
+    otto_res_b:"Das Vermögen deckt {n} Monatsausgaben. Der übliche Richtwert liegt bei 6 Monaten; die Differenz beträgt {v}.",
     otto_pl_t:"Negatives Nettovermögen",
-    otto_pl_b:"Du schuldest {v} mehr als du besitzt. Die teuerste Verbindlichkeit zu tilgen dreht das Vorzeichen am schnellsten.",
-    otto_jur_t:"Zinsen fressen die Rendite",
-    otto_jur_b:"Die Schuld kostet {v}/Monat an Zinsen, das Vermögen bringt {x}/Monat. Hier lohnt Tilgen mehr als Anlegen.",
+    otto_pl_b:"Die Passiva übersteigen die Aktiva um {v}. Die Umkehr hängt vom Aufbau positiver Ergebnisse ab — eine Tilgung allein tauscht Aktiva gegen geringere Passiva und lässt das Nettovermögen unverändert.",
     otto_conc_t:"Konzentration auf {c}",
-    otto_conc_b:"{c} macht {n}% der Monatsausgaben aus ({v}). Lohnt einen genauen Blick, bevor anderswo gekürzt wird.",
-    otto_sub_t:"Ausgaben gestiegen",
-    otto_sub_b:"{n}% über dem Vormonat — {v} mehr. Prüfe, was sich geändert hat.",
-    otto_desc_t:"Ausgaben gesunken",
-    otto_desc_b:"{n}% unter dem Vormonat — {v} weniger. Ist der Schnitt strukturell, wiederholt er sich.",
-    otto_quit_t:"Tilgungsweg",
-    otto_quit_b:"Im aktuellen Tempo fällt die letzte Rate in {n} Monaten, mit {v} Zinsen davor.",
-    otto_poup_t:"Gute Sparquote",
-    otto_poup_b:"Du hast {n}% der Einnahmen behalten ({v}). Über 20% baut echtes Vermögen auf.",
-    otto_semdiv_t:"Schuldenfrei",
-    otto_semdiv_b:"Keine offenen Verbindlichkeiten. Alles, was übrig bleibt, kann zu Vermögen werden.",
-    otto_res6_t:"Solide Reserve",
-    otto_res6_b:"Du deckst {n} Monate an Ausgaben. Mit diesem Polster ist mehr Risiko im Depot tragbar.",
-    otto_rend_t:"Das Vermögen arbeitet",
-    otto_rend_b:"Die Rendite des Monats ({v}) deckt bereits {n}% deiner Ausgaben.",
-    otto_seed_t:"Zeit, Vermögen aufzubauen",
-    otto_seed_b:"Noch kein Vermögen erfasst. Jeder Monat im Plus ist Rohstoff dafür.",
-    otto_semrec_t:"Es fehlen die Einnahmen",
-    otto_semrec_b:"Ohne erfasste Einnahmen kann Otto weder Sparquote noch Spielraum oder Score berechnen.",
-    otto_fx_t:"Die Projektion folgt deinen Parametern",
-    otto_fx_b:"Indizes, Steuern und Abgaben stammen aus dem Parameterblatt. Ändert sich die Kurve, ändert sich alles danach.",
+    otto_conc_b:"{c} macht {n}% der Monatsausgaben aus ({v}). Über 35% bestimmt die Kategorie die Summe, Anpassungen anderswo wirken nur marginal.",
+    otto_sub_t:"Anstieg der Monatsausgaben",
+    otto_sub_b:"Die Ausgaben liegen {n}% über dem Vormonat, das entspricht {v}. Es empfiehlt sich, die Ursache der Abweichung zu ermitteln.",
+    otto_desc_t:"Rückgang der Monatsausgaben",
+    otto_desc_b:"Die Ausgaben liegen {n}% unter dem Vormonat, das entspricht {v}. Ist die Senkung struktureller Natur, wiederholt sie sich in den Folgemonaten.",
+    otto_quit_t:"Tilgungsplan",
+    otto_quit_b:"Beim aktuellen Tempo fällt die letzte Rate in {n} Monaten, mit {v} noch anfallenden Zinsen.",
+    otto_poup_t:"Angemessene Sparquote",
+    otto_poup_b:"Einbehalt von {n}% der Monatseinnahmen ({v}). Über 20% wird der Vermögensaufbau konsistent.",
+    otto_semdiv_t:"Keine Passiva erfasst",
+    otto_semdiv_b:"Es bestehen keine offenen Verträge. Das positive Monatsergebnis kann vollständig in Vermögen fließen.",
+    otto_res6_t:"Angemessene Liquiditätsreserve",
+    otto_res6_b:"Das Vermögen deckt {n} Monatsausgaben und liegt über dem Richtwert von 6 Monaten. Der Spielraum erlaubt höhere Risikoexposition im Depot.",
+    otto_rend_t:"Portfoliorendite",
+    otto_rend_b:"Die Monatsrendite ({v}) entspricht {n}% der Ausgaben der Periode.",
+    otto_seed_t:"Keine Anlageposition",
+    otto_seed_b:"Es sind keine Anlagen erfasst. Das positive Monatsergebnis wird nicht in verzinsliches Vermögen überführt.",
+    otto_semrec_t:"Keine Einnahmen erfasst",
+    otto_semrec_b:"Für den Monat sind keine Einnahmen erfasst. Ohne sie lassen sich Sparquote, Einkommensbindung und Score nicht ermitteln.",
+    otto_fx_t:"Projizierte Werte",
+    otto_fx_b:"Der angezeigte Monat liegt in der Zukunft. Alle Werte stammen aus den im Parameterblatt hinterlegten Index-, Steuer- und Abgabenkurven.",
+    otto_r_hold:"Referenzanlage",
+    otto_r_ctr:"Referenzvertrag",
+    otto_r_spread:"Abstand",
+    otto_r_net:"Netto-Portfoliorendite (p.a.)",
+    otto_r_idx:"Vertragsindex (p.a.)",
+    otto_r_nom:"Vertragszins (p.a.)",
+    otto_r_cost:"Effektive Schuldkosten (p.a.)",
+    otto_r_gross:"Bruttorendite der Anlage (p.a.)",
+    otto_r_ir:"Berücksichtigte Steuer",
+    otto_r_exempt:"Steuerfrei",
+    otto_m_taxa:"Vergleich zwischen den effektiven Kosten der teuersten Schuld — Vertragszins verzinst mit dem angegebenen Index — und der Rendite der bestverzinsten Anlage, netto nach Gebühren und dem langfristigen Steuersatz von 15%, da die Steuer in Brasilien erst bei Rückgabe anfällt. Beide auf Jahresbasis. Verglichen werden Sätze, keine Geldbeträge: unterschiedliche Kapitalstände machen einen Vergleich in Währung unschlüssig.",
+    otto_neutro_b:"Effektive Kosten von {n}% p.a. gegenüber {x}% p.a. Nettorendite. Bei einem Abstand unter 1 Prozentpunkt wird die Wahl zwischen Tilgen und Anlegen zur Frage von Liquidität und Risiko, nicht der Rendite.",
+    otto_neutro_t:"Schuldkosten und Rendite gleichauf",
+    otto_aplic_b:"Das Portfolio bringt {x}% p.a. netto gegenüber effektiven Schuldkosten von {n}% p.a. Das Kapital angelegt zu lassen erhält Liquidität und erzielt weiterhin einen positiven Abstand von {d} Prozentpunkt(en).",
+    otto_aplic_t:"Anlage schlägt Tilgung",
+    otto_amort_b:"Die effektiven Schuldkosten betragen {n}% p.a. gegenüber {x}% p.a. Nettorendite des Portfolios. Solange der Abstand besteht, spart jede getilgte Einheit mehr, als sie angelegt einbrächte.",
+    otto_amort_t:"Tilgung schlägt Anlage",
     /* ── OTTOS HERLEITUNG ── */
     otto_r_how:"Wie Otto darauf kommt",
     otto_r_concl:"Fazit",
@@ -5871,23 +5868,22 @@ const I18N={
     otto_r_intrem:"Noch zu zahlende Zinsen",
     otto_r_ndebt:"Offene Verträge",
     otto_r_nast:"Erfasste Anlagen",
-    otto_m_start:"Es ist noch nichts erfasst, was ich auswerten könnte.",
-    otto_m_neg:"Ich habe alle Zuflüsse und alle Abflüsse des Monats summiert. Eine negative Differenz heißt: Der Monat schließt nur, indem Reserve verbraucht oder Kredit aufgenommen wird.",
-    otto_m_pl:"Ich habe alle Anlagen summiert und alle offenen Verträge abgezogen. Negativ bedeutet, die Passiva übersteigen bereits die Aktiva.",
-    otto_m_dti:"Ich habe die Summe der Monatsraten durch die Einnahmen des Monats geteilt. Über 30% verliert das Budget den Puffer für Unvorhergesehenes.",
-    otto_m_jur:"Ich habe die Zinsen, die die Schuld pro Monat erzeugt, mit der Rendite der Anlagen im selben Monat verglichen.",
-    otto_m_res:"Ich habe das Vermögen durch die Monatsausgaben geteilt, um zu sehen, wie viele Monate es deckt. Unter 3 Monaten wird ein Zwischenfall zur Schuld.",
-    otto_m_semrec:"Ich habe im angezeigten Monat nach Einnahmen gesucht und keine gefunden.",
-    otto_m_conc:"Ich habe die Buchungen des Monats nach Kategorie gruppiert und den Anteil der größten gemessen. Über 35% bringt Sparen an anderer Stelle wenig.",
-    otto_m_sub:"Ich habe die Ausgaben des angezeigten Monats mit denen des Vormonats verglichen, nach demselben Maßstab.",
-    otto_m_desc:"Ich habe die Ausgaben des angezeigten Monats mit denen des Vormonats verglichen, nach demselben Maßstab. Diesmal fällt die Differenz zu deinen Gunsten aus.",
-    otto_m_quit:"Ich habe den Tilgungsplan jedes Vertrags mit dem von dir angegebenen Index und der FGTS-Anrechnung aufgestellt und die verbleibenden Zinsen summiert.",
-    otto_m_seed:"Es ist keine Anlage erfasst, also kann auch nichts Rendite bringen.",
-    otto_m_fx:"Du bist in einem künftigen Monat: Jeder Wert hier ist Projektion, keine feststehende Tatsache.",
-    otto_m_poup:"Ich habe den Saldo des Monats durch die Einnahmen des Monats geteilt.",
-    otto_m_semdiv:"Ich habe nach offenen Verträgen gesucht und keine gefunden.",
-    otto_m_res6:"Ich habe das Vermögen durch die Monatsausgaben geteilt, dieselbe Reserverechnung — diesmal liegt das Ergebnis über dem Ziel von sechs Monaten.",
-    otto_m_rend:"Ich habe die Rendite der Anlagen im Monat mit den Ausgaben desselben Monats verglichen.",
+    otto_m_start:"Es liegt nichts zur Auswertung vor.",
+    otto_m_neg:"Summe der Zuflüsse abzüglich der Abflüsse des angezeigten Monats. Ein negatives Ergebnis bedeutet, dass sich die Periode nicht aus eigenen Einnahmen trägt.",
+    otto_m_pl:"Summe aller Anlagen abzüglich des Saldos aller offenen Verträge.",
+    otto_m_dti:"Verhältnis der Summe der Monatsraten zu den Monatseinnahmen. Die 30%-Grenze ist ein üblicher Kreditrichtwert.",
+    otto_m_res:"Verhältnis des Gesamtvermögens zu den Monatsausgaben, ausgedrückt in Deckungsmonaten.",
+    otto_m_semrec:"Abfrage der im angezeigten Monat erfassten Einnahmen ergab keine Treffer.",
+    otto_m_conc:"Gruppierung der Monatsbuchungen nach Kategorie und Anteil der größten an der Summe. Die 35%-Schwelle markiert den Punkt, ab dem eine Kategorie das Ergebnis bestimmt.",
+    otto_m_sub:"Vergleich der Ausgaben des angezeigten Monats mit denen des unmittelbaren Vormonats, nach demselben Maßstab.",
+    otto_m_desc:"Vergleich der Ausgaben des angezeigten Monats mit denen des unmittelbaren Vormonats, nach demselben Maßstab.",
+    otto_m_quit:"Tilgungsplan jedes Vertrags anhand des angegebenen Index und der FGTS-Anrechnung, zuzüglich der Summe der Restzinsen.",
+    otto_m_seed:"Abfrage der erfassten Anlagen ergab keine Treffer.",
+    otto_m_fx:"Der angezeigte Monat liegt nach dem laufenden Monat; die Werte sind Projektionen, keine realisierten Positionen.",
+    otto_m_poup:"Verhältnis des Monatsergebnisses zu den Monatseinnahmen.",
+    otto_m_semdiv:"Abfrage der offenen Verträge ergab keine Treffer.",
+    otto_m_res6:"Verhältnis des Gesamtvermögens zu den Monatsausgaben, ausgedrückt in Deckungsmonaten.",
+    otto_m_rend:"Verhältnis der Anlagerendite des Monats zu den Ausgaben desselben Monats.",
   },
 };
 
@@ -9720,6 +9716,65 @@ const OTTO=(function(){
     catch(e){ return String(Math.round(v)); }
   }
 
+  /* ── CUSTO DA DÍVIDA × RENDIMENTO DA CARTEIRA ────────────────────────
+     A versão anterior comparava os JUROS EM REAIS que a dívida gera por mês
+     com o RENDIMENTO EM REAIS da carteira, e concluía "amortizar rende mais"
+     sempre que o primeiro superasse o segundo. A conta estava errada: os
+     dois valores incidem sobre principais diferentes. Uma dívida de 400 mil
+     a 8,8% a.a. gera mais juros em reais do que 20 mil aplicados a 13,9%
+     rendem — e ainda assim amortizar destrói valor, porque o dinheiro
+     aplicado cresce a uma taxa maior do que a dívida encarece.
+
+     A comparação correta é entre TAXAS, e do lado da dívida ela precisa
+     incluir o indexador do contrato: um financiamento de 8,8% a.a. corrigido
+     pela TR custa mais do que 8,8%. Do lado da carteira a taxa tem de estar
+     LÍQUIDA de imposto, que é o que astLiquidoAM já devolve. Só depois disso
+     o diferencial diz alguma coisa — e, com folga menor que um ponto, não diz
+     nem isso: aí a decisão é de liquidez e risco, não de retorno. */
+  function taxaEfetivaDivida(ymStr){
+    let melhor=null;
+    DEBTS.forEach(d=>{
+      const j=debtRateMonthly(d)||0;                     /* fração ao mês */
+      let ix=0;
+      try{ if(window.PRO&&PRO.debtIndexAM){ const v=PRO.debtIndexAM(d,ymStr); if(isFinite(v)) ix=v/100; } }catch(e){}
+      const am=(1+j)*(1+ix)-1;                           /* juros sobre saldo já corrigido */
+      if(!melhor||am>melhor.am) melhor={d,am,j,ix};
+    });
+    return melhor;
+  }
+  /* astLiquidoAM devolve a taxa líquida de taxa de administração e de
+     performance — NÃO de imposto de renda, que no Brasil incide só no
+     resgate. Comparar essa taxa com o custo de uma dívida seria comparar
+     um número antes do imposto com um número que já é definitivo, e o
+     erro corre sempre a favor de aplicar. O desconto aqui usa a alíquota
+     de prazo longo (15%) porque é o horizonte que importa quando o outro
+     lado da conta é um financiamento de anos; produtos declarados isentos
+     — LCI, LCA, poupança, FGTS, rendimento de FII — passam sem desconto. */
+  const IR_LONGO=0.15;
+  /* O regime declarado na ficha manda; sem ficha vale o padrão da classe,
+     o MESMO que astDefaults aplica. Ler só a.pro.trib trataria poupança e
+     FGTS — isentos por lei — como renda fixa tributada, e o Otto passaria
+     a recomendar amortizar com base num imposto que não existe. */
+  const TRIB_CLASSE={savings:"isento",fgts:"isento",fii:"fii",
+                     funds:"fundoLP",stocks:"acoes",crypto:"cripto"};
+  function irDaAplicacao(a){
+    const trib=(a&&a.pro&&a.pro.trib)||TRIB_CLASSE[a&&a.class]||"rf";
+    return (trib==="isento"||trib==="fii")?0:IR_LONGO;
+  }
+  function taxaLiquidaCarteira(ymStr){
+    let melhor=null;
+    ASSETS.forEach(a=>{
+      let bruta=null;
+      try{ if(window.PRO&&PRO.astLiquidoAM){ const x=PRO.astLiquidoAM(a,ymStr); if(isFinite(x)) bruta=x/100; } }catch(e){}
+      if(bruta===null) bruta=(parseFloat(a&&a.yieldPct)||0)/100;
+      const ir=irDaAplicacao(a);
+      const liq=bruta*(1-ir);
+      if(!melhor||liq>melhor.am) melhor={a,am:liq,bruta,ir};
+    });
+    return melhor;
+  }
+  const aoAno=am=>(Math.pow(1+am,12)-1)*100;
+
   /* ── LEITURA DO MÊS ──────────────────────────────────────────────────
      Cada leitura carrega, além da frase, o MÉTODO (a frase que explica o
      raciocínio) e a CONTA (as linhas de número que levaram até ele). Sem
@@ -9735,48 +9790,64 @@ const OTTO=(function(){
     const mesLbl=MPT[activeMonth]+" "+activeYear;
     /* uma linha da conta: rótulo traduzido à esquerda, número à direita */
     const L=(k,v)=>({k:t(k),v:v});
-    const add=(sec,tom,ico,tk,bk,vars,metKey,rac,pri)=>out.push({
-      sec,tom,ico,pri:!!pri,t:fx(tk,vars),b:fx(bk,vars),
+    const add=(sec,tom,tk,bk,vars,metKey,rac,pri)=>out.push({
+      sec,tom,pri:!!pri,t:fx(tk,vars),b:fx(bk,vars),
       met:t(metKey), rac:[L("otto_r_month",mesLbl)].concat(rac||[])
     });
 
     /* App vazio: uma única leitura, que é um convite */
     if(!ASSETS.length&&!DEBTS.length&&m.totalInc<=0&&m.totalExp<=0){
-      add("geral","nota","ola","otto_start_t","otto_start_b",{},"otto_m_start",[]);
+      add("geral","nota","otto_start_t","otto_start_b",{},"otto_m_start",[]);
       return out;
     }
 
     /* ── RISCO ── */
     if(m.balance<0)
-      add("entradas","risco","atencao","otto_neg_t","otto_neg_b",
+      add("entradas","risco","otto_neg_t","otto_neg_b",
           {v:fmt(Math.abs(m.balance))},"otto_m_neg",
           [L("otto_r_inc",fmt(m.totalInc)),L("otto_r_exp",fmt(m.totalExp)),
            L("otto_r_bal","−"+fmt(Math.abs(m.balance)))]);
     if(m.netWorth<0)
-      add("patrimonio","risco","alerta","otto_pl_t","otto_pl_b",
+      add("patrimonio","risco","otto_pl_t","otto_pl_b",
           {v:fmt(Math.abs(m.netWorth))},"otto_m_pl",
           [L("otto_r_ast",fmt(m.totalAssets)),L("otto_r_debt",fmt(m.totDebt)),
            L("otto_r_nw","−"+fmt(Math.abs(m.netWorth)))]);
     if(m.dti>30)
-      add("dividas","risco","controle","otto_dti_t","otto_dti_b",
+      add("dividas","risco","otto_dti_t","otto_dti_b",
           {n:num(m.dti),v:fmt(m.totMonthly)},"otto_m_dti",
           [L("otto_r_inst",fmt(m.totMonthly)),L("otto_r_inc",fmt(m.totalInc)),
            L("otto_r_dti",num(m.dti)+"%"),L("otto_r_limit","30%")]);
 
     /* ── ATENÇÃO ── */
-    if(m.monthlyDebtInterest>0&&m.monthlyDebtInterest>m.monthYield)
-      add("dividas","atencao","apagar","otto_jur_t","otto_jur_b",
-          {v:fmt(m.monthlyDebtInterest),x:fmt(m.monthYield)},"otto_m_jur",
-          [L("otto_r_int",fmt(m.monthlyDebtInterest)),L("otto_r_yield",fmt(m.monthYield)),
-           L("otto_r_delta","−"+fmt(m.monthlyDebtInterest-m.monthYield))]);
+    /* Amortizar ou aplicar: decidido por taxa, nunca por valor em moeda */
+    try{
+      const D=taxaEfetivaDivida(ymStr), A=taxaLiquidaCarteira(ymStr);
+      if(D&&A&&D.am>0&&A.am>0){
+        const cAA=aoAno(D.am), rAA=aoAno(A.am), dif=cAA-rAA;
+        const linhas=[
+          L("otto_r_ctr",(D.d&&D.d.name)||"—"),
+          L("otto_r_nom",num(aoAno(D.j),2)+"%"),
+          L("otto_r_idx",num(aoAno(D.ix),2)+"%"),
+          L("otto_r_cost",num(cAA,2)+"%"),
+          L("otto_r_hold",(A.a&&A.a.name)||"—"),
+          L("otto_r_gross",num(aoAno(A.bruta),2)+"%"),
+          L("otto_r_ir",A.ir>0?num(A.ir*100)+"%":t("otto_r_exempt")),
+          L("otto_r_net",num(rAA,2)+"%"),
+          L("otto_r_spread",(dif>=0?"+":"−")+num(Math.abs(dif),2)+" p.p.")];
+        const V={n:num(cAA,2),x:num(rAA,2),d:num(Math.abs(dif),2)};
+        if(dif>1)       add("dividas","atencao","otto_amort_t","otto_amort_b",V,"otto_m_taxa",linhas);
+        else if(dif<-1) add("dividas","nota","otto_aplic_t","otto_aplic_b",V,"otto_m_taxa",linhas);
+        else            add("dividas","nota","otto_neutro_t","otto_neutro_b",V,"otto_m_taxa",linhas);
+      }
+    }catch(e){ logErro("OTTO/taxa",e); }
     if(m.totalExp>0&&m.emergencyMonths<3)
-      add("patrimonio","atencao","caixa","otto_res_t","otto_res_b",
+      add("patrimonio","atencao","otto_res_t","otto_res_b",
           {n:num(m.emergencyMonths,1),v:fmt(Math.max(0,m.totalExp*6-m.totalAssets))},"otto_m_res",
           [L("otto_r_ast",fmt(m.totalAssets)),L("otto_r_exp",fmt(m.totalExp)),
            L("otto_r_cov",num(m.emergencyMonths,1)),L("otto_r_targ",fmt(m.totalExp*6)),
            L("otto_r_gap",fmt(Math.max(0,m.totalExp*6-m.totalAssets)))]);
     if(m.totalInc<=0&&m.totalExp>0)
-      add("entradas","atencao","duvidas","otto_semrec_t","otto_semrec_b",{},"otto_m_semrec",
+      add("entradas","atencao","otto_semrec_t","otto_semrec_b",{},"otto_m_semrec",
           [L("otto_r_inc",fmt(0)),L("otto_r_exp",fmt(m.totalExp))]);
 
     /* Concentração de despesa. Só sai quando há lançamentos de verdade no
@@ -9791,7 +9862,7 @@ const OTTO=(function(){
         for(const k in porCat) if(porCat[k]>topV){ topV=porCat[k]; topId=k; }
         const share=topV/soma*100;
         if(topId&&share>=35)
-          add("despesas","atencao","analise","otto_conc_t","otto_conc_b",
+          add("despesas","atencao","otto_conc_t","otto_conc_b",
               {c:catLabel(topId),n:num(share),v:fmt(topV)},"otto_m_conc",
               [L("otto_r_cat",catLabel(topId)),L("otto_r_exp",fmt(soma)),
                L("otto_r_share",num(share)+"%"),L("otto_r_limit","35%")]);
@@ -9810,45 +9881,45 @@ const OTTO=(function(){
         /* marcada como prioritária: dentro da aba de Despesas a comparação
            com o mês anterior é a única leitura que a tela não dá sozinha —
            a concentração por categoria já está nas barras logo abaixo. */
-        if(d>=15)       add("despesas","atencao","investiga","otto_sub_t","otto_sub_b",
+        if(d>=15)       add("despesas","atencao","otto_sub_t","otto_sub_b",
                             {n:num(d),v:fmt(cur-prev)},"otto_m_sub",linhas,true);
-        else if(d<=-10) add("despesas","boa","crescimento","otto_desc_t","otto_desc_b",
+        else if(d<=-10) add("despesas","boa","otto_desc_t","otto_desc_b",
                             {n:num(Math.abs(d)),v:fmt(prev-cur)},"otto_m_desc",linhas,true);
       }
     }catch(e){ logErro("OTTO/mom",e); }
 
     /* ── NOTAS ── */
     if(m.totDebt>0&&m.monthsToDebtFree>0)
-      add("dividas","nota","projecoes","otto_quit_t","otto_quit_b",
+      add("dividas","nota","otto_quit_t","otto_quit_b",
           {n:num(m.monthsToDebtFree),v:fmt(m.debtInterestRemaining)},"otto_m_quit",
           [L("otto_r_debt",fmt(m.totDebt)),L("otto_r_inst",fmt(m.totMonthly)),
            L("otto_r_months",num(m.monthsToDebtFree)),
            L("otto_r_intrem",fmt(m.debtInterestRemaining))]);
     if(!ASSETS.length&&m.totalInc>0)
-      add("patrimonio","nota","sonho","otto_seed_t","otto_seed_b",{},"otto_m_seed",
+      add("patrimonio","nota","otto_seed_t","otto_seed_b",{},"otto_m_seed",
           [L("otto_r_nast","0"),L("otto_r_bal",(m.balance>=0?"+":"−")+fmt(Math.abs(m.balance)))]);
     /* Só num mês projetado a lembrança dos Parâmetros tem função */
     if(ymStr>cym())
-      add("geral","nota","obras","otto_fx_t","otto_fx_b",{},"otto_m_fx",
+      add("geral","nota","otto_fx_t","otto_fx_b",{},"otto_m_fx",
           [L("otto_r_exp",fmt(m.totalExp)),L("otto_r_inc",fmt(m.totalInc)),
            L("otto_r_ast",fmt(m.totalAssets)),L("otto_r_debt",fmt(m.totDebt))]);
 
     /* ── BOAS ── */
     if(m.totalInc>0&&m.savingsRate>=20)
-      add("entradas","boa","sucesso","otto_poup_t","otto_poup_b",
+      add("entradas","boa","otto_poup_t","otto_poup_b",
           {n:num(m.savingsRate),v:fmt(m.balance)},"otto_m_poup",
           [L("otto_r_inc",fmt(m.totalInc)),L("otto_r_exp",fmt(m.totalExp)),
            L("otto_r_bal","+"+fmt(m.balance)),L("otto_r_rate",num(m.savingsRate)+"%")]);
     if(!DEBTS.length&&(m.totalInc>0||ASSETS.length))
-      add("dividas","boa","aprovado","otto_semdiv_t","otto_semdiv_b",{},"otto_m_semdiv",
+      add("dividas","boa","otto_semdiv_t","otto_semdiv_b",{},"otto_m_semdiv",
           [L("otto_r_ndebt","0"),L("otto_r_debt",fmt(0)),L("otto_r_inst",fmt(0))]);
     if(m.totalExp>0&&m.emergencyMonths>=6)
-      add("patrimonio","boa","tesouraria","otto_res6_t","otto_res6_b",
+      add("patrimonio","boa","otto_res6_t","otto_res6_b",
           {n:num(Math.min(999,m.emergencyMonths),1)},"otto_m_res6",
           [L("otto_r_ast",fmt(m.totalAssets)),L("otto_r_exp",fmt(m.totalExp)),
            L("otto_r_cov",num(Math.min(999,m.emergencyMonths),1)),L("otto_r_targ","6")]);
     if(m.monthYield>0&&m.totalExp>0)
-      add("patrimonio","boa","economia","otto_rend_t","otto_rend_b",
+      add("patrimonio","boa","otto_rend_t","otto_rend_b",
           {v:fmt(m.monthYield),n:num(m.monthYield/m.totalExp*100)},"otto_m_rend",
           [L("otto_r_yield",fmt(m.monthYield)),L("otto_r_exp",fmt(m.totalExp)),
            L("otto_r_share",num(m.monthYield/m.totalExp*100)+"%")]);
@@ -9862,61 +9933,28 @@ const OTTO=(function(){
   const VISTA={};
   let LISTA=[];
 
-  /* ── RECADO NA TELA INICIAL ─────────────────────────────────────────── */
-  function pintarHome(ctx){
+  /* ── PONTO DE ENTRADA NA TELA INICIAL ───────────────────────────────
+     Só o retrato. Nada de título nem resumo: a lista inteira abre no toque,
+     e um resumo ao lado repetiria pela metade o que o pop-up entrega
+     inteiro. Some quando não há apontamento algum a fazer. */
+  function pintarHome(){
     const el=document.getElementById("otto-brief");
     if(!el) return;
     let m=null;
     try{ m=computeFinMetrics(); }catch(e){ logErro("OTTO/home",e); }
     const lista=ler(m);
     LISTA=lista;
-    const top=lista[0];
-    if(!top){ el.style.display="none"; }
-    else{
-      const cor=TONS[top.tom].cor;
-      VISTA.brief=top;
-      el.style.display="flex";
-      el.style.borderColor=cor+"66";
-      const anel=document.getElementById("otto-brief-anel");
-      if(anel) anel.style.setProperty("--anel",cor);
-      const f=document.getElementById("otto-brief-face");
-      if(f) f.className="oi oi-ring oi-"+top.ico;
-      const k=document.getElementById("otto-brief-kicker");
-      if(k) k.textContent=t("otto_kicker");
-      const ti=document.getElementById("otto-brief-title");
-      if(ti) ti.textContent=top.t;
-      const bo=document.getElementById("otto-brief-body");
-      if(bo) bo.textContent=top.b;
-      const n=document.getElementById("otto-brief-n");
-      if(n){ n.textContent=lista.length; n.style.color=cor; }
-    }
-    pintarFaces(m,ctx);
+    el.style.display=lista.length?"block":"none";
   }
 
-  /* ── FACES DOS QUATRO CARTÕES ────────────────────────────────────────
-     Três são FIXAS por decisão do titular: Patrimônio é sempre o Otto na
-     casinha, Entradas sempre o das moedas, Dívidas sempre o do banco. São
-     a pista de qual módulo é aquele cartão, e uma pista que muda deixa de
-     ser pista. Só Despesas reage — e reage à única coisa que o cartão não
-     mostra sozinho: como o mês se compara ao anterior. */
-  function pintarFaces(mIn,ctx){
-    const set=(id,ico)=>{ const e=document.getElementById(id);
-      if(e) e.className="oi oi-ring oi-"+ico; };
+  /* As faces dos quatro cartões de módulo são fixas e vivem no HTML —
+     Despesas com o cartão de crédito, Dívidas com o banco, Entradas com as
+     moedas, Patrimônio com a casa —, e cada uma repete o retrato do
+     cabeçalho da própria seção. São a pista de qual módulo é aquele cartão,
+     e uma pista que muda de rosto deixa de ser pista. Não há função a
+     desenhá-las: um retrato constante não precisa de motor. */
 
-    let dExp=0;
-    try{
-      const ymStr=activeYM();
-      const prev=monthExpTotal(prevYMStr(ymStr)), cur=monthExpTotal(ymStr);
-      if(prev>0&&cur>0) dExp=(cur-prev)/prev*100;
-    }catch(e){}
-
-    set("face-despesas",   dExp>=15?"investiga" : dExp<=-10?"crescimento" : "pagamentos");
-    set("face-dividas",    "banco");
-    set("face-entradas",   "custos");
-    set("face-patrimonio", "casa");
-  }
-
-  /* ── NOTA NO TOPO DE UM MÓDULO ─────────────────────────────────────── */
+  /* ── PONTO DE ENTRADA NO TOPO DE UM MÓDULO ─────────────────────────── */
   function nota(sec){
     const box=document.getElementById("otto-nota-"+sec);
     if(!box) return;
@@ -9928,16 +9966,7 @@ const OTTO=(function(){
         ||lista.filter(x=>x.sec==="geral")[0]||null;
     }catch(e){ logErro("OTTO/nota "+sec,e); }
     VISTA[sec]=it;
-    if(!it){ box.hidden=true; return; }
-    box.hidden=false;
-    const cor=TONS[it.tom].cor;
-    box.style.borderColor=cor+"66";
-    const anel=document.getElementById("otto-nota-"+sec+"-anel");
-    if(anel) anel.style.setProperty("--anel",cor);
-    const f=document.getElementById("otto-nota-"+sec+"-face");
-    if(f) f.className="oi oi-sm oi-round oi-ring oi-"+it.ico;
-    const tx=document.getElementById("otto-nota-"+sec+"-txt");
-    if(tx) tx.innerHTML="<b>"+escapeHtml(it.t)+".</b> "+escapeHtml(it.b);
+    box.hidden=!it;
   }
 
   /* ── FOLHA DO RACIOCÍNIO ───────────────────────────────────────────── */
@@ -9954,8 +9983,8 @@ const OTTO=(function(){
     ov.innerHTML=`<div class="sheet" style="max-height:84dvh;overflow-y:auto">
       <div class="sheet-handle"></div>
       <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
-        <span class="otto-anel" style="--anel:${cor}">
-          <span class="oi oi-ring oi-${it.ico}" role="img" aria-label="Otto"></span>
+        <span class="otto-anel">
+          <span class="oi oi-ring oi-investiga" role="img" aria-hidden="true"></span>
         </span>
         <div style="flex:1;min-width:0">
           <div style="font-size:8.5px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:${cor};margin-bottom:3px">
@@ -9993,9 +10022,6 @@ const OTTO=(function(){
     const linhas = lista.length ? lista.map((it,i)=>{
       const cor=TONS[it.tom].cor;
       return `<div class="otto-row" role="button" tabindex="0" style="cursor:pointer" onclick="OTTO.abrirRacionalIdx(${i})">
-        <span class="otto-anel" style="--anel:${cor}">
-          <span class="oi oi-sm oi-round oi-ring oi-${it.ico}" role="img" aria-label="Otto"></span>
-        </span>
         <div style="flex:1;min-width:0">
           <div style="font-size:8.5px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:${cor};margin-bottom:3px">
             <span class="otto-dot" style="background:${cor}"></span>${escapeHtml(t(TONS[it.tom].tag))}
@@ -10006,7 +10032,6 @@ const OTTO=(function(){
         <span style="color:var(--ink-4);font-size:15px;flex-shrink:0;align-self:center">›</span>
       </div>`; }).join("")
       : `<div class="otto-row">
-        <span class="oi oi-sm oi-round oi-ring oi-bomtrabalho" role="img" aria-label="Otto"></span>
         <div style="flex:1;min-width:0">
           <div class="otto-row-t">${escapeHtml(t("otto_all_good_t"))}</div>
           <div class="otto-row-b">${escapeHtml(t("otto_all_good_b"))}</div>
@@ -10020,7 +10045,9 @@ const OTTO=(function(){
     ov.innerHTML=`<div class="sheet" style="max-height:82dvh;overflow-y:auto">
       <div class="sheet-handle"></div>
       <div style="display:flex;align-items:center;gap:11px;margin-bottom:6px">
-        <span class="oi oi-sm oi-round oi-ring oi-apresentacao" role="img" aria-label="Otto"></span>
+        <span class="otto-anel">
+          <span class="oi oi-sm oi-round oi-ring oi-investiga" role="img" aria-hidden="true"></span>
+        </span>
         <div style="flex:1;min-width:0">
           <div style="font-family:var(--serif);font-style:italic;font-size:19px;color:var(--body);line-height:1.15">${escapeHtml(t("otto_panel_t"))}</div>
           <div style="font-size:10.5px;color:var(--ink-3);margin-top:2px">${escapeHtml(fx("otto_panel_sub",{m:mesLbl}))}</div>
@@ -10035,7 +10062,7 @@ const OTTO=(function(){
     ov.onclick=e=>{ if(e.target===ov) fechar(); };
   }
 
-  return {ler,pintarHome,pintarFaces,nota,abrirPainel,abrirRacional,abrirRacionalIdx,TONS};
+  return {ler,pintarHome,nota,abrirPainel,abrirRacional,abrirRacionalIdx,TONS};
 })();
 window.OTTO=OTTO;
 
@@ -10128,7 +10155,7 @@ function renderHome(){
      guarda por window.OTTO não é zelo: a primeira pintura da tela acontece
      durante a leitura do próprio script, antes de o módulo existir — e um
      const em zona morta lança até sob typeof. */
-  passoSeguro("OTTO/home",()=>window.OTTO&&window.OTTO.pintarHome({saldo:balance}));
+  passoSeguro("OTTO/home",()=>window.OTTO&&window.OTTO.pintarHome());
 }
 
 /* Shared computation of all financial-life metrics across the 4 modules */
@@ -14954,7 +14981,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.57";
+const APP_VERSION="10.59";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
