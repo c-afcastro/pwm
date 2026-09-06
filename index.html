@@ -1420,6 +1420,65 @@
     .oi-xs { width: 28px; height: 28px }
     .oi-round { border-radius: 50% }   /* mantida: já é o padrão, não estorva */
     .oi-ring  { box-shadow: inset 0 0 0 1px rgba(0,0,0,.08) }
+
+    /* ── OTTO ADVISOR ─────────────────────────────────────────────────
+       Otto deixa de ser só retrato e passa a ler os números. Duas peças:
+       o RECADO, cartão da tela inicial com a leitura que mais pesa no mês,
+       e a NOTA, tira fina no topo de cada módulo com o recorte daquele
+       assunto. Ambas usam a paleta neutra — o acento vem do tom da leitura
+       (risco, atenção, ok), nunca da cor do módulo, para que a advertência
+       não se confunda com a identidade da tela. */
+    .otto-brief {
+      width: 100%; display: flex; align-items: center; gap: 12px;
+      text-align: left; cursor: pointer;
+      background: var(--surface); border: 1.5px solid var(--line);
+      border-radius: 16px; padding: 12px 14px; margin-bottom: 16px;
+      transition: border-color .18s ease, transform .13s cubic-bezier(.22,.9,.32,1);
+    }
+    .otto-brief:active { transform: scale(.988) }
+    .otto-brief-txt { flex: 1; min-width: 0 }
+    .otto-brief-kicker {
+      display: block; font-size: 9px; letter-spacing: 1.6px;
+      text-transform: uppercase; color: var(--ink-3); margin-bottom: 3px;
+    }
+    .otto-brief-title {
+      display: block; font-size: 13px; font-weight: 600; color: var(--body);
+      line-height: 1.3; margin-bottom: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .otto-brief-body {
+      display: block; font-size: 10.5px; color: var(--ink-2); line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .otto-brief-tail { flex-shrink: 0; text-align: center; min-width: 30px }
+    .otto-brief-n {
+      display: block; font-size: 12px; font-weight: 700; line-height: 1;
+    }
+    .otto-brief-chev { display: block; color: var(--ink-4); font-size: 14px; margin-top: 3px }
+
+    /* tira fina no topo dos módulos */
+    .otto-nota {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: 14px; padding: 10px 13px; margin-bottom: 14px;
+    }
+    .otto-nota-txt { font-size: 11.5px; line-height: 1.55; color: var(--ink-2); min-width: 0 }
+    .otto-nota-txt b { color: var(--body); font-weight: 600 }
+    .otto-nota[hidden] { display: none }
+
+    /* linhas do painel completo */
+    .otto-row {
+      display: flex; align-items: flex-start; gap: 11px;
+      padding: 12px 0; border-bottom: 1px solid var(--line);
+    }
+    .otto-row:last-child { border-bottom: none }
+    .otto-row-t { font-size: 13px; font-weight: 600; color: var(--body); margin-bottom: 3px }
+    .otto-row-b { font-size: 11.5px; color: var(--ink-2); line-height: 1.6 }
+    .otto-dot {
+      display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+      margin-right: 5px; vertical-align: middle; position: relative; top: -1px;
+    }
     .oi-projecoes{background-image:url(data:image/webp;base64,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)}
     .oi-alta{background-image:url(data:image/webp;base64,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)}
     .oi-baixa{background-image:url(data:image/webp;base64,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)}
@@ -1665,12 +1724,26 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <div id="home-health-card"></div>
     </button>
 
+    <!-- RECADO DO OTTO — leitura do mês, ordenada por urgência -->
+    <button class="otto-brief" id="otto-brief" onclick="OTTO.abrirPainel()" style="display:none">
+      <span class="oi oi-ring oi-analise" id="otto-brief-face" role="img" aria-label="Otto"></span>
+      <span class="otto-brief-txt">
+        <span class="otto-brief-kicker" id="otto-brief-kicker">Otto analisou</span>
+        <span class="otto-brief-title" id="otto-brief-title">—</span>
+        <span class="otto-brief-body" id="otto-brief-body">—</span>
+      </span>
+      <span class="otto-brief-tail">
+        <span class="otto-brief-n" id="otto-brief-n">—</span>
+        <span class="otto-brief-chev">›</span>
+      </span>
+    </button>
+
     <!-- 4 SECTION CARDS (full-width, ordered: Despesas, Dívidas, Receitas, Patrimônio) -->
     <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:20px">
 
       <!-- DESPESAS -->
       <button onclick="enterSection('despesas')" style="width:100%;text-align:left;cursor:pointer;background:var(--green);border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px">
-        <span class="oi oi-ring oi-pagamentos" role="img" aria-label="Otto"></span>
+        <span class="oi oi-ring oi-pagamentos" id="face-despesas" role="img" aria-label="Otto"></span>
         <div style="flex:1;min-width:0">
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px" data-i18n="nav_expenses">Despesas</div>
           <div style="font-family:var(--serif);font-style:italic;font-size:clamp(22px,7vw,28px);line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="home-expense-val">—</div>
@@ -1685,7 +1758,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <!-- DÍVIDAS -->
       <button onclick="enterSection('dividas')" style="width:100%;text-align:left;cursor:pointer;background:#6E2B3A;border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px;position:relative;overflow:hidden">
         <div style="position:absolute;top:-25px;right:-25px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
-        <span class="oi oi-ring oi-controle" style="position:relative" role="img" aria-label="Otto"></span>
+        <span class="oi oi-ring oi-controle" id="face-dividas" style="position:relative" role="img" aria-label="Otto"></span>
         <div style="flex:1;min-width:0;position:relative">
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px" data-i18n="nav_debts">Dívidas</div>
           <div style="font-family:var(--serif);font-style:italic;font-size:clamp(22px,7vw,28px);line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="home-debt-val">—</div>
@@ -1699,7 +1772,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
       <!-- RECEITAS -->
       <button onclick="enterSection('entradas')" style="width:100%;text-align:left;cursor:pointer;background:#1A3A5C;border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px">
-        <span class="oi oi-ring oi-custos" role="img" aria-label="Otto"></span>
+        <span class="oi oi-ring oi-custos" id="face-entradas" role="img" aria-label="Otto"></span>
         <div style="flex:1;min-width:0">
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px" data-i18n="nav_income">Entradas</div>
           <div style="font-family:var(--serif);font-style:italic;font-size:clamp(22px,7vw,28px);line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="home-income-val">—</div>
@@ -1713,7 +1786,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
       <!-- PATRIMÔNIO -->
       <button onclick="enterSection('patrimonio')" style="width:100%;text-align:left;cursor:pointer;background:#0F2440;border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px">
-        <span class="oi oi-ring oi-casa" role="img" aria-label="Otto"></span>
+        <span class="oi oi-ring oi-casa" id="face-patrimonio" role="img" aria-label="Otto"></span>
         <div style="flex:1;min-width:0">
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px" data-i18n="nav_assets">Patrimônio</div>
           <div style="font-family:var(--serif);font-style:italic;font-size:clamp(22px,7vw,28px);line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="home-asset-val">—</div>
@@ -1807,6 +1880,11 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
   </div>
 
   <div class="content">
+
+    <div class="otto-nota" id="otto-nota-despesas" hidden>
+      <span class="oi oi-xs oi-round oi-ring oi-analise" id="otto-nota-despesas-face" role="img" aria-label="Otto"></span>
+      <span class="otto-nota-txt" id="otto-nota-despesas-txt"></span>
+    </div>
 
     <div id="view-dashboard" class="up">
       <div class="stats" id="stats-grid"></div>
@@ -2022,6 +2100,11 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
   <div class="content" id="inc-content" style="padding:16px 16px 100px">
 
+    <div class="otto-nota" id="otto-nota-entradas" hidden>
+      <span class="oi oi-xs oi-round oi-ring oi-analise" id="otto-nota-entradas-face" role="img" aria-label="Otto"></span>
+      <span class="otto-nota-txt" id="otto-nota-entradas-txt"></span>
+    </div>
+
     <!-- RESUMO TAB -->
     <div id="inc-view-dashboard">
       <div id="inc-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px"></div>
@@ -2133,6 +2216,11 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
   </div>
 
   <div class="content" id="ast-content" style="padding:16px 16px 100px">
+
+    <div class="otto-nota" id="otto-nota-patrimonio" hidden>
+      <span class="oi oi-xs oi-round oi-ring oi-analise" id="otto-nota-patrimonio-face" role="img" aria-label="Otto"></span>
+      <span class="otto-nota-txt" id="otto-nota-patrimonio-txt"></span>
+    </div>
 
     <!-- RESUMO TAB -->
     <div id="ast-view-dashboard">
@@ -2253,6 +2341,11 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
   </div>
 
   <div class="content" id="debt-content" style="padding:16px 16px 84px">
+
+    <div class="otto-nota" id="otto-nota-dividas" hidden>
+      <span class="oi oi-xs oi-round oi-ring oi-analise" id="otto-nota-dividas-face" role="img" aria-label="Otto"></span>
+      <span class="otto-nota-txt" id="otto-nota-dividas-txt"></span>
+    </div>
 
     <!-- RESUMO TAB -->
     <div id="debt-view-dashboard">
@@ -3890,6 +3983,50 @@ const I18N={
     csv_split_name:"Nome",
     csv_split_status:"Status",
     csv_file_sim:"simulacao",
+    /* ── OTTO ADVISOR ── */
+    otto_kicker:"Otto analisou",
+    otto_panel_t:"Leitura do Otto",
+    otto_panel_sub:"O que mais pesa em {m}, em ordem de urgência.",
+    otto_all_good_t:"Nada urgente por aqui",
+    otto_all_good_b:"Os indicadores do mês estão dentro do razoável. Otto segue de olho.",
+    otto_tag_risk:"Risco",
+    otto_tag_warn:"Atenção",
+    otto_tag_note:"Nota",
+    otto_tag_good:"Boa",
+    otto_start_t:"Vamos começar",
+    otto_start_b:"Cadastre entradas e despesas para o Otto montar seu balanço e projetar os próximos meses.",
+    otto_neg_t:"O mês fecha no vermelho",
+    otto_neg_b:"As saídas superam as entradas em {v}. Reveja os fixos ou reforce a receita antes que o rombo vire dívida.",
+    otto_dti_t:"Parcelas apertando a renda",
+    otto_dti_b:"As parcelas consomem {n}% do que entra ({v}/mês). Acima de 30% sobra pouco para poupar.",
+    otto_res_t:"Reserva curta",
+    otto_res_b:"O patrimônio cobre {n} meses de despesa. O alvo confortável é 6 — hoje faltam {v}.",
+    otto_pl_t:"Patrimônio líquido negativo",
+    otto_pl_b:"Você deve {v} a mais do que tem. Amortizar o passivo mais caro é o caminho mais curto para virar o sinal.",
+    otto_jur_t:"Os juros comem o rendimento",
+    otto_jur_b:"A dívida custa {v}/mês de juros e o patrimônio rende {x}/mês. Neste ponto, amortizar rende mais do que aplicar.",
+    otto_conc_t:"Concentração em {c}",
+    otto_conc_b:"{c} responde por {n}% das despesas do mês ({v}). Vale olhar de perto antes de cortar em outro lugar.",
+    otto_sub_t:"Despesas subiram",
+    otto_sub_b:"Gasto {n}% acima do mês anterior — {v} a mais. Confira o que mudou.",
+    otto_desc_t:"Despesas recuaram",
+    otto_desc_b:"Gasto {n}% abaixo do mês anterior — {v} a menos. Se o corte for estrutural, ele se repete.",
+    otto_quit_t:"Rota de quitação",
+    otto_quit_b:"No ritmo atual a última parcela cai em {n} meses, com {v} de juros pela frente.",
+    otto_poup_t:"Boa taxa de poupança",
+    otto_poup_b:"Você guardou {n}% do que entrou ({v}). Acima de 20% é o que constrói patrimônio de verdade.",
+    otto_semdiv_t:"Sem dívidas",
+    otto_semdiv_b:"Nenhum passivo em aberto. Tudo o que sobra do mês pode virar patrimônio.",
+    otto_res6_t:"Reserva sólida",
+    otto_res6_b:"Você cobre {n} meses de despesa. Com esse colchão dá para assumir mais risco na carteira.",
+    otto_rend_t:"O patrimônio trabalha por você",
+    otto_rend_b:"O rendimento do mês ({v}) já paga {n}% das suas despesas.",
+    otto_seed_t:"Hora de começar a construir",
+    otto_seed_b:"Ainda não há patrimônio cadastrado. Todo mês que fecha no azul é matéria-prima.",
+    otto_semrec_t:"Faltam as entradas",
+    otto_semrec_b:"Sem receita cadastrada o Otto não calcula poupança, folga nem nota de saúde.",
+    otto_fx_t:"Projeção segue seus parâmetros",
+    otto_fx_b:"Índices, impostos e encargos vêm da ficha de Parâmetros. Mudou a curva, muda tudo daqui para a frente.",
   },
   en:{
     save_new_link:"Save new link",
@@ -4679,6 +4816,50 @@ const I18N={
     csv_split_name:"Name",
     csv_split_status:"Status",
     csv_file_sim:"simulation",
+    /* ── OTTO ADVISOR ── */
+    otto_kicker:"Otto reviewed",
+    otto_panel_t:"Otto's read",
+    otto_panel_sub:"What weighs most in {m}, ordered by urgency.",
+    otto_all_good_t:"Nothing urgent here",
+    otto_all_good_b:"This month's indicators sit within reason. Otto keeps watching.",
+    otto_tag_risk:"Risk",
+    otto_tag_warn:"Watch",
+    otto_tag_note:"Note",
+    otto_tag_good:"Good",
+    otto_start_t:"Let's begin",
+    otto_start_b:"Add income and expenses so Otto can build your balance sheet and project the months ahead.",
+    otto_neg_t:"The month closes in the red",
+    otto_neg_b:"Outflows exceed inflows by {v}. Revisit fixed costs or lift revenue before the gap turns into debt.",
+    otto_dti_t:"Instalments squeezing income",
+    otto_dti_b:"Instalments take {n}% of what comes in ({v}/mo). Above 30% there is little left to save.",
+    otto_res_t:"Thin reserve",
+    otto_res_b:"Your assets cover {n} months of spending. A comfortable target is 6 — you're {v} short.",
+    otto_pl_t:"Negative net worth",
+    otto_pl_b:"You owe {v} more than you hold. Paying down the priciest liability is the shortest way to flip the sign.",
+    otto_jur_t:"Interest is eating the yield",
+    otto_jur_b:"Debt costs {v}/mo in interest while assets yield {x}/mo. At this point paying down beats investing.",
+    otto_conc_t:"Concentrated in {c}",
+    otto_conc_b:"{c} accounts for {n}% of the month's spending ({v}). Worth a close look before cutting elsewhere.",
+    otto_sub_t:"Spending went up",
+    otto_sub_b:"{n}% above last month — {v} more. Check what changed.",
+    otto_desc_t:"Spending came down",
+    otto_desc_b:"{n}% below last month — {v} less. If the cut is structural, it repeats.",
+    otto_quit_t:"Payoff path",
+    otto_quit_b:"At the current pace the last instalment lands in {n} months, with {v} of interest still ahead.",
+    otto_poup_t:"Solid savings rate",
+    otto_poup_b:"You kept {n}% of what came in ({v}). Above 20% is what actually builds wealth.",
+    otto_semdiv_t:"Debt free",
+    otto_semdiv_b:"No liabilities open. Everything left over each month can become net worth.",
+    otto_res6_t:"Solid reserve",
+    otto_res6_b:"You cover {n} months of spending. With that cushion you can take more risk in the portfolio.",
+    otto_rend_t:"Your assets are working",
+    otto_rend_b:"This month's yield ({v}) already covers {n}% of your spending.",
+    otto_seed_t:"Time to start building",
+    otto_seed_b:"No assets registered yet. Every month that closes in the black is raw material.",
+    otto_semrec_t:"Income is missing",
+    otto_semrec_b:"Without registered income Otto can't compute savings, headroom or the health score.",
+    otto_fx_t:"Projection follows your parameters",
+    otto_fx_b:"Indices, taxes and charges come from the Parameters sheet. Change the curve and everything ahead changes.",
   },
   de:{
     save_new_link:"Neuen Link speichern",
@@ -5468,6 +5649,50 @@ const I18N={
     csv_split_name:"Name",
     csv_split_status:"Status",
     csv_file_sim:"simulation",
+    /* ── OTTO ADVISOR ── */
+    otto_kicker:"Otto hat geprüft",
+    otto_panel_t:"Ottos Lesart",
+    otto_panel_sub:"Was in {m} am schwersten wiegt, nach Dringlichkeit.",
+    otto_all_good_t:"Nichts Dringendes",
+    otto_all_good_b:"Die Kennzahlen des Monats liegen im Rahmen. Otto behält es im Blick.",
+    otto_tag_risk:"Risiko",
+    otto_tag_warn:"Achtung",
+    otto_tag_note:"Hinweis",
+    otto_tag_good:"Gut",
+    otto_start_t:"Fangen wir an",
+    otto_start_b:"Erfasse Einnahmen und Ausgaben, damit Otto die Bilanz aufstellen und die nächsten Monate projizieren kann.",
+    otto_neg_t:"Der Monat schließt im Minus",
+    otto_neg_b:"Die Abflüsse übersteigen die Zuflüsse um {v}. Prüfe die Fixkosten oder stärke die Einnahmen, bevor daraus Schulden werden.",
+    otto_dti_t:"Raten drücken das Einkommen",
+    otto_dti_b:"Die Raten binden {n}% der Einnahmen ({v}/Monat). Über 30% bleibt kaum etwas zum Sparen.",
+    otto_res_t:"Dünne Reserve",
+    otto_res_b:"Das Vermögen deckt {n} Monate an Ausgaben. Komfortabel sind 6 — es fehlen {v}.",
+    otto_pl_t:"Negatives Nettovermögen",
+    otto_pl_b:"Du schuldest {v} mehr als du besitzt. Die teuerste Verbindlichkeit zu tilgen dreht das Vorzeichen am schnellsten.",
+    otto_jur_t:"Zinsen fressen die Rendite",
+    otto_jur_b:"Die Schuld kostet {v}/Monat an Zinsen, das Vermögen bringt {x}/Monat. Hier lohnt Tilgen mehr als Anlegen.",
+    otto_conc_t:"Konzentration auf {c}",
+    otto_conc_b:"{c} macht {n}% der Monatsausgaben aus ({v}). Lohnt einen genauen Blick, bevor anderswo gekürzt wird.",
+    otto_sub_t:"Ausgaben gestiegen",
+    otto_sub_b:"{n}% über dem Vormonat — {v} mehr. Prüfe, was sich geändert hat.",
+    otto_desc_t:"Ausgaben gesunken",
+    otto_desc_b:"{n}% unter dem Vormonat — {v} weniger. Ist der Schnitt strukturell, wiederholt er sich.",
+    otto_quit_t:"Tilgungsweg",
+    otto_quit_b:"Im aktuellen Tempo fällt die letzte Rate in {n} Monaten, mit {v} Zinsen davor.",
+    otto_poup_t:"Gute Sparquote",
+    otto_poup_b:"Du hast {n}% der Einnahmen behalten ({v}). Über 20% baut echtes Vermögen auf.",
+    otto_semdiv_t:"Schuldenfrei",
+    otto_semdiv_b:"Keine offenen Verbindlichkeiten. Alles, was übrig bleibt, kann zu Vermögen werden.",
+    otto_res6_t:"Solide Reserve",
+    otto_res6_b:"Du deckst {n} Monate an Ausgaben. Mit diesem Polster ist mehr Risiko im Depot tragbar.",
+    otto_rend_t:"Das Vermögen arbeitet",
+    otto_rend_b:"Die Rendite des Monats ({v}) deckt bereits {n}% deiner Ausgaben.",
+    otto_seed_t:"Zeit, Vermögen aufzubauen",
+    otto_seed_b:"Noch kein Vermögen erfasst. Jeder Monat im Plus ist Rohstoff dafür.",
+    otto_semrec_t:"Es fehlen die Einnahmen",
+    otto_semrec_b:"Ohne erfasste Einnahmen kann Otto weder Sparquote noch Spielraum oder Score berechnen.",
+    otto_fx_t:"Die Projektion folgt deinen Parametern",
+    otto_fx_b:"Indizes, Steuern und Abgaben stammen aus dem Parameterblatt. Ändert sich die Kurve, ändert sich alles danach.",
   },
 };
 
@@ -6709,6 +6934,7 @@ function setDashCatFilter(catId){
 }
 
 function renderDash(){
+  passoSeguro("OTTO/nota-desp",()=>window.OTTO&&window.OTTO.nota("despesas"));
   renderStats();
   const me=TMexp();
   const map={};me.forEach(e=>{map[e.category]=(map[e.category]||0)+myAmount(e);});
@@ -8165,6 +8391,7 @@ function incEvLabel(tp){
 }
 
 function renderIncome(){
+  passoSeguro("OTTO/nota-inc",()=>window.OTTO&&window.OTTO.nota("entradas"));
   updateMonthNavInc();
   const ymStr=activeYM();
   const items=incomeItensYM(ymStr);
@@ -8660,6 +8887,7 @@ function initAstHeroScroll(){
 
 /* ── RENDER ASSETS (main, called on section enter) ── */
 function renderAssets(){
+  passoSeguro("OTTO/nota-ast",()=>window.OTTO&&window.OTTO.nota("patrimonio"));
   updateMonthNavAst();
   popularFiltroInst("ast-inst-filter",ASSETS);
   const FA=assetsFiltrados();
@@ -9252,6 +9480,268 @@ function homePatrimonioYM(ymStr){
 }
 
 /* ── HOME RENDER ── */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   OTTO ADVISOR — o mascote lê os números
+   ─────────────────────────────────────────────────────────────────────
+   Até aqui o Otto era retrato: aparecia no cabeçalho e reagia à nota de
+   saúde. Aqui ele passa a OPINAR. Um único motor (ler) devolve a lista de
+   leituras do mês ativo, cada uma com tom, retrato, seção de origem e
+   frase pronta nas três línguas. Dessa lista saem três peças:
+
+     · o RECADO na tela inicial  — a leitura que mais pesa;
+     · as QUATRO FACES dos cartões de módulo — o retrato muda quando o
+       número sai do razoável, e volta ao padrão quando não há nada a
+       dizer, para que a identidade do cartão continue estável;
+     · a NOTA no topo de cada módulo — o recorte daquele assunto.
+
+   Tudo bebe de computeFinMetrics(), que por sua vez sai de PRO.cfPosicaoYM:
+   as leituras seguem os mesmos Parâmetros que governam toda a projeção do
+   app. Mudou a curva de índice na tela inicial, muda o que o Otto diz.
+   ═══════════════════════════════════════════════════════════════════════ */
+const OTTO=(function(){
+
+  /* O tom carrega o peso da ordenação e a cor do sinal. As cores são as
+     mesmas famílias já usadas nas notas de saúde — nunca a cor do módulo,
+     senão a advertência se confundiria com a identidade da tela. */
+  const TONS={
+    risco  :{w:0,cor:"#B85A6A",tag:"otto_tag_risk"},
+    atencao:{w:1,cor:"#C4863A",tag:"otto_tag_warn"},
+    nota   :{w:2,cor:"#6B8FA8",tag:"otto_tag_note"},
+    boa    :{w:3,cor:"#5A8A4A",tag:"otto_tag_good"}
+  };
+
+  /* Marcadores {v} valor, {n} número, {x} extra, {c} nome, {m} mês. Ficam
+     fora do t() para que as três línguas usem a MESMA frase com os números
+     no lugar que cada gramática pede. */
+  function fx(key,vars){
+    let out=t(key);
+    for(const k in (vars||{})) out=out.split("{"+k+"}").join(vars[k]);
+    return out;
+  }
+  function num(v,d){
+    const loc=LANG==="en"?"en-US":LANG==="de"?"de-DE":"pt-BR";
+    try{ return new Intl.NumberFormat(loc,{minimumFractionDigits:d||0,maximumFractionDigits:d||0}).format(v); }
+    catch(e){ return String(Math.round(v)); }
+  }
+
+  /* ── LEITURA DO MÊS ──────────────────────────────────────────────────
+     Recebe as métricas já calculadas quando quem chama tem elas em mão;
+     senão calcula. Devolve sempre um array ordenado por urgência. */
+  function ler(mIn){
+    const out=[];
+    let m=mIn;
+    if(!m){ try{ m=computeFinMetrics(); }catch(e){ logErro("OTTO/metrics",e); return out; } }
+    if(!m) return out;
+    const ymStr=activeYM();
+    const add=(sec,tom,ico,tk,bk,vars)=>out.push({sec,tom,ico,t:fx(tk,vars),b:fx(bk,vars)});
+
+    /* App vazio: uma única leitura, que é um convite */
+    if(!ASSETS.length&&!DEBTS.length&&m.totalInc<=0&&m.totalExp<=0){
+      add("geral","nota","ola","otto_start_t","otto_start_b",{});
+      return out;
+    }
+
+    /* ── RISCO ── */
+    if(m.balance<0)
+      add("entradas","risco","atencao","otto_neg_t","otto_neg_b",{v:fmt(Math.abs(m.balance))});
+    if(m.netWorth<0)
+      add("patrimonio","risco","alerta","otto_pl_t","otto_pl_b",{v:fmt(Math.abs(m.netWorth))});
+    if(m.dti>30)
+      add("dividas","risco","controle","otto_dti_t","otto_dti_b",{n:num(m.dti),v:fmt(m.totMonthly)});
+
+    /* ── ATENÇÃO ── */
+    if(m.monthlyDebtInterest>0&&m.monthlyDebtInterest>m.monthYield)
+      add("dividas","atencao","apagar","otto_jur_t","otto_jur_b",
+          {v:fmt(m.monthlyDebtInterest),x:fmt(m.monthYield)});
+    if(m.totalExp>0&&m.emergencyMonths<3)
+      add("patrimonio","atencao","caixa","otto_res_t","otto_res_b",
+          {n:num(m.emergencyMonths,1),v:fmt(Math.max(0,m.totalExp*6-m.totalAssets))});
+    if(m.totalInc<=0&&m.totalExp>0)
+      add("entradas","atencao","duvidas","otto_semrec_t","otto_semrec_b",{});
+
+    /* Concentração de despesa. Só sai quando há lançamentos de verdade no
+       mês: num mês projetado a composição por categoria não existe. */
+    try{
+      const its=getExpensesForYM(ymStr).filter(e=>!isNeutral(e));
+      const soma=its.reduce((a,e)=>a+myAmount(e),0);
+      if(its.length&&soma>0){
+        const porCat={};
+        its.forEach(e=>{ porCat[e.category]=(porCat[e.category]||0)+myAmount(e); });
+        let topId=null,topV=0;
+        for(const k in porCat) if(porCat[k]>topV){ topV=porCat[k]; topId=k; }
+        const share=topV/soma*100;
+        if(topId&&share>=35)
+          add("despesas","atencao","analise","otto_conc_t","otto_conc_b",
+              {c:catLabel(topId),n:num(share),v:fmt(topV)});
+      }
+    }catch(e){ logErro("OTTO/conc",e); }
+
+    /* Variação contra o mês anterior */
+    try{
+      const prev=monthExpTotal(prevYMStr(ymStr)), cur=monthExpTotal(ymStr);
+      if(prev>0&&cur>0){
+        const d=(cur-prev)/prev*100;
+        if(d>=15)      add("despesas","atencao","alta","otto_sub_t","otto_sub_b",
+                           {n:num(d),v:fmt(cur-prev)});
+        else if(d<=-10) add("despesas","boa","baixa","otto_desc_t","otto_desc_b",
+                           {n:num(Math.abs(d)),v:fmt(prev-cur)});
+      }
+    }catch(e){ logErro("OTTO/mom",e); }
+
+    /* ── NOTAS ── */
+    if(m.totDebt>0&&m.monthsToDebtFree>0)
+      add("dividas","nota","projecoes","otto_quit_t","otto_quit_b",
+          {n:num(m.monthsToDebtFree),v:fmt(m.debtInterestRemaining)});
+    if(!ASSETS.length&&m.totalInc>0)
+      add("patrimonio","nota","sonho","otto_seed_t","otto_seed_b",{});
+    /* Só num mês projetado a lembrança dos Parâmetros tem função */
+    if(ymStr>cym())
+      add("geral","nota","obras","otto_fx_t","otto_fx_b",{});
+
+    /* ── BOAS ── */
+    if(m.totalInc>0&&m.savingsRate>=20)
+      add("entradas","boa","sucesso","otto_poup_t","otto_poup_b",
+          {n:num(m.savingsRate),v:fmt(m.balance)});
+    if(!DEBTS.length&&(m.totalInc>0||ASSETS.length))
+      add("dividas","boa","aprovado","otto_semdiv_t","otto_semdiv_b",{});
+    if(m.totalExp>0&&m.emergencyMonths>=6)
+      add("patrimonio","boa","tesouraria","otto_res6_t","otto_res6_b",
+          {n:num(Math.min(999,m.emergencyMonths),1)});
+    if(m.monthYield>0&&m.totalExp>0)
+      add("patrimonio","boa","economia","otto_rend_t","otto_rend_b",
+          {v:fmt(m.monthYield),n:num(m.monthYield/m.totalExp*100)});
+
+    out.sort((a,b)=>TONS[a.tom].w-TONS[b.tom].w);
+    return out;
+  }
+
+  /* ── RECADO NA TELA INICIAL ─────────────────────────────────────────── */
+  function pintarHome(ctx){
+    const el=document.getElementById("otto-brief");
+    if(!el) return;
+    let m=null;
+    try{ m=computeFinMetrics(); }catch(e){ logErro("OTTO/home",e); }
+    const L=ler(m);
+    const top=L[0];
+    if(!top){ el.style.display="none"; }
+    else{
+      const cor=TONS[top.tom].cor;
+      el.style.display="flex";
+      el.style.borderColor=cor+"66";
+      const f=document.getElementById("otto-brief-face");
+      if(f) f.className="oi oi-ring oi-"+top.ico;
+      const k=document.getElementById("otto-brief-kicker");
+      if(k) k.textContent=t("otto_kicker");
+      const ti=document.getElementById("otto-brief-title");
+      if(ti) ti.textContent=top.t;
+      const bo=document.getElementById("otto-brief-body");
+      if(bo) bo.textContent=top.b;
+      const n=document.getElementById("otto-brief-n");
+      if(n){ n.textContent=L.length; n.style.color=cor; }
+    }
+    pintarFaces(m,ctx);
+  }
+
+  /* ── FACES DOS QUATRO CARTÕES ────────────────────────────────────────
+     O retrato padrão volta sempre que não há nada a dizer: é ele que dá ao
+     cartão a pista estável de qual módulo é. Só muda quando o número saiu
+     do razoável — e aí a mudança carrega informação. */
+  function pintarFaces(mIn,ctx){
+    let m=mIn;
+    if(!m){ try{ m=computeFinMetrics(); }catch(e){ return; } }
+    if(!m) return;
+    const set=(id,ico)=>{ const e=document.getElementById(id);
+      if(e) e.className="oi oi-ring oi-"+ico; };
+
+    let dExp=0;
+    try{
+      const ymStr=activeYM();
+      const prev=monthExpTotal(prevYMStr(ymStr)), cur=monthExpTotal(ymStr);
+      if(prev>0&&cur>0) dExp=(cur-prev)/prev*100;
+    }catch(e){}
+
+    set("face-despesas",   dExp>=15?"atencao" : dExp<=-10?"sucesso" : "pagamentos");
+    set("face-dividas",    !DEBTS.length?"aprovado" : m.dti>30?"atencao" : "controle");
+    /* A face de Entradas segue o saldo que o PRÓPRIO cartão exibe ao lado
+       dela, não o fluxo projetado do cartão de saúde. Os dois números são
+       diferentes por construção — o de saúde inclui parcela e encargos — e
+       um retrato preocupado encostado num saldo positivo só faria o titular
+       duvidar de qual dos dois ler. */
+    const saldo=(ctx&&isFinite(ctx.saldo))?ctx.saldo:m.balance;
+    set("face-entradas",   saldo<0?"atencao" : m.savingsRate>=20?"sucesso" : "custos");
+    set("face-patrimonio", m.netWorth<0?"atencao" : (m.totalExp>0&&m.emergencyMonths>=6)?"tesouraria" : "casa");
+  }
+
+  /* ── NOTA NO TOPO DE UM MÓDULO ─────────────────────────────────────── */
+  function nota(sec){
+    const box=document.getElementById("otto-nota-"+sec);
+    if(!box) return;
+    let it=null;
+    try{
+      const L=ler();
+      it=L.filter(x=>x.sec===sec)[0]||L.filter(x=>x.sec==="geral")[0]||null;
+    }catch(e){ logErro("OTTO/nota "+sec,e); }
+    if(!it){ box.hidden=true; return; }
+    box.hidden=false;
+    box.style.borderColor=TONS[it.tom].cor+"66";
+    const f=document.getElementById("otto-nota-"+sec+"-face");
+    if(f) f.className="oi oi-xs oi-round oi-ring oi-"+it.ico;
+    const tx=document.getElementById("otto-nota-"+sec+"-txt");
+    if(tx) tx.innerHTML="<b>"+escapeHtml(it.t)+".</b> "+escapeHtml(it.b);
+  }
+
+  /* ── PAINEL COMPLETO ───────────────────────────────────────────────── */
+  function abrirPainel(){
+    let L=[];
+    try{ L=ler(); }catch(e){ logErro("OTTO/painel",e); }
+    const mesLbl=MPT[activeMonth]+" "+activeYear;
+    const linhas = L.length ? L.map(it=>{
+      const cor=TONS[it.tom].cor;
+      return `<div class="otto-row">
+        <span class="oi oi-sm oi-round oi-ring oi-${it.ico}" role="img" aria-label="Otto"></span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:8.5px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:${cor};margin-bottom:3px">
+            <span class="otto-dot" style="background:${cor}"></span>${escapeHtml(t(TONS[it.tom].tag))}
+          </div>
+          <div class="otto-row-t">${escapeHtml(it.t)}</div>
+          <div class="otto-row-b">${escapeHtml(it.b)}</div>
+        </div>
+      </div>`; }).join("")
+      : `<div class="otto-row">
+        <span class="oi oi-sm oi-round oi-ring oi-bomtrabalho" role="img" aria-label="Otto"></span>
+        <div style="flex:1;min-width:0">
+          <div class="otto-row-t">${escapeHtml(t("otto_all_good_t"))}</div>
+          <div class="otto-row-b">${escapeHtml(t("otto_all_good_b"))}</div>
+        </div>
+      </div>`;
+
+    const ov=document.createElement("div");
+    ov.className="overlay open";
+    ov.style.zIndex="240";
+    ov.style.alignItems="flex-end";
+    ov.innerHTML=`<div class="sheet" style="max-height:82dvh;overflow-y:auto">
+      <div class="sheet-handle"></div>
+      <div style="display:flex;align-items:center;gap:11px;margin-bottom:6px">
+        <span class="oi oi-sm oi-round oi-ring oi-apresentacao" role="img" aria-label="Otto"></span>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:var(--serif);font-style:italic;font-size:19px;color:var(--body);line-height:1.15">${escapeHtml(t("otto_panel_t"))}</div>
+          <div style="font-size:10.5px;color:var(--ink-3);margin-top:2px">${escapeHtml(fx("otto_panel_sub",{m:mesLbl}))}</div>
+        </div>
+        <button id="otto-pn-x" style="width:32px;height:32px;border-radius:50%;background:var(--surface);border:none;cursor:pointer;color:var(--ink-2);font-size:15px;flex-shrink:0">✕</button>
+      </div>
+      <div style="margin-top:6px">${linhas}</div>
+    </div>`;
+    document.body.appendChild(ov);
+    const fechar=()=>closeOverlay(ov);
+    const x=ov.querySelector("#otto-pn-x"); if(x) x.onclick=fechar;
+    ov.onclick=e=>{ if(e.target===ov) fechar(); };
+  }
+
+  return {ler,pintarHome,pintarFaces,nota,abrirPainel,TONS};
+})();
+window.OTTO=OTTO;
+
 function renderHome(){
   const ymStr=activeYM();
   const monthLabel=MPT[activeMonth]+" "+activeYear;
@@ -9336,6 +9826,12 @@ function renderHome(){
 
   // ═══════ FINANCIAL HEALTH EVALUATOR ═══════
   renderHealthCard();
+  /* O Otto lê por último: precisa das métricas já assentadas. Isolado em
+     passoSeguro para que uma leitura que falhe não leve a home junto. A
+     guarda por window.OTTO não é zelo: a primeira pintura da tela acontece
+     durante a leitura do próprio script, antes de o módulo existir — e um
+     const em zona morta lança até sob typeof. */
+  passoSeguro("OTTO/home",()=>window.OTTO&&window.OTTO.pintarHome({saldo:balance}));
 }
 
 /* Shared computation of all financial-life metrics across the 4 modules */
@@ -12421,6 +12917,7 @@ function showDebt(v){
 }
 
 function renderDebts(){
+  passoSeguro("OTTO/nota-debt",()=>window.OTTO&&window.OTTO.nota("dividas"));
   // hero
   popularFiltroInst("debt-inst-filter",DEBTS);
   const FD=debtsFiltrados();
@@ -14160,7 +14657,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.55";
+const APP_VERSION="10.56";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
