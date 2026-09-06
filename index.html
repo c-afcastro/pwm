@@ -1457,15 +1457,55 @@
     }
     .otto-brief-chev { display: block; color: var(--ink-4); font-size: 14px; margin-top: 3px }
 
-    /* tira fina no topo dos módulos */
+    /* tira fina no topo dos módulos — é botão: o retrato à direita gira
+       para dizer que há um raciocínio por trás, e o toque abre a conta. */
     .otto-nota {
-      display: flex; align-items: flex-start; gap: 10px;
+      width: 100%; display: flex; align-items: center; gap: 12px;
       background: var(--surface); border: 1px solid var(--line);
-      border-radius: 14px; padding: 10px 13px; margin-bottom: 14px;
+      border-radius: 14px; padding: 10px 12px 10px 14px; margin-bottom: 14px;
+      text-align: left; cursor: pointer; font-family: inherit;
+      transition: border-color .18s ease, transform .13s cubic-bezier(.22,.9,.32,1);
     }
-    .otto-nota-txt { font-size: 11.5px; line-height: 1.55; color: var(--ink-2); min-width: 0 }
+    .otto-nota:active { transform: scale(.99) }
+    .otto-nota-txt { font-size: 11.5px; line-height: 1.55; color: var(--ink-2); flex: 1; min-width: 0 }
     .otto-nota-txt b { color: var(--body); font-weight: 600 }
     .otto-nota[hidden] { display: none }
+
+    /* ── SINAL GIRATÓRIO ──────────────────────────────────────────────
+       Um arco em gradiente cônico dá a volta no retrato. Não é enfeite: é
+       o único aviso de que aquele retrato responde ao toque e guarda a
+       conta que levou à conclusão. Feito em CSS, e não num GIF, porque um
+       GIF ficaria preso a um fundo e a uma cor — o arco herda o tom da
+       leitura e a superfície do tema. */
+    .otto-anel {
+      position: relative; flex-shrink: 0; display: inline-flex;
+      padding: 3px; border-radius: 50%;
+    }
+    .otto-anel::before {
+      content: ""; position: absolute; inset: 0; border-radius: 50%;
+      background: conic-gradient(from 0deg,
+        transparent 0 52%, var(--anel, #C4863A) 76%, transparent 92% 100%);
+      animation: ottoGira 2.8s linear infinite;
+    }
+    .otto-anel::after {
+      content: ""; position: absolute; inset: 3px; border-radius: 50%;
+      background: var(--surface);
+    }
+    .otto-anel > .oi { position: relative; z-index: 1 }
+    @keyframes ottoGira { to { transform: rotate(360deg) } }
+    /* quem pediu menos movimento fica com o arco parado, não sem arco */
+    @media (prefers-reduced-motion: reduce) {
+      .otto-anel::before { animation: none }
+    }
+
+    /* linhas da conta, na folha do racional */
+    .otto-calc {
+      display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+      padding: 8px 0; border-bottom: 1px solid var(--line);
+    }
+    .otto-calc:last-child { border-bottom: none }
+    .otto-calc-k { font-size: 11px; color: var(--ink-2); min-width: 0 }
+    .otto-calc-v { font-size: 12.5px; font-weight: 600; color: var(--body); white-space: nowrap; flex-shrink: 0 }
 
     /* linhas do painel completo */
     .otto-row {
@@ -1523,6 +1563,13 @@
     .oi-agilidade{background-image:url(data:image/webp;base64,UklGRuAOAABXRUJQVlA4WAoAAAAQAAAAfwAAfwAAQUxQSGEDAAABDrratqfRI1thTlpmzkEwM55OfuiCR0AddczLjBVDF6p2u+CAr2vkIVvvUvV+/iQ5Ihw4kts2d6RPFo30okJ+gIUynTBRSHLuxj3jZz//5vtmlmMU//nZ8T0bq9xjmxiEblJCIMlFh86+/+JNNhDrF9EfYkIyuNhhAsnZW8988yqzbDdji+wGyRhFLf031dbadhi3EJSccuDik9y73Igigx1Eoo/a4RNWUxKa4FArJdeO/Gxf4E5Mh6RET1X9eWRtwjS4c8X2G29sD7Ug0lO1vrHdjQvUth7at7ulhZJRVWvbKPnuJORbrdjWwimR+Uap38FAbrySexFLom1ckYShxN7JJ992tUpsiK/K6jTkzh8yjVoyo+oPNVnGTU5kPJ9po62lU7xqHRlL8FWfaovqBEn9NBZtqeGJPzOvztBrYGKk2NsY6XubDtzkCGkK9FkXsmZbnaJErUNhppz3dfYuc47vssrTFOquWlHeUCfpc1aYu2wFOaylMj3nThtFhvu1vdz71ty8Mc84lI9Yd93iEDaBx6y7b55h0FuQ5X+1xX2I1MvTwW5AQvgyayoAo9YhyGB95zu3DkGvNcNAvs06ilUDmJhJv2YtFFB/nWSkv450X4RxzUhfMVz1rtXGgfBdTEw/vW4VSUIfCdxkHcs29TbDDwQNwsT00ZaCkVZ6ahbRELWXBG6xiiexWwLvWMWTuguGK16J4EHEVzTdo52GAtJ3jYBSmfZHu4UIyh91Kja+VzsOaRpsOPByu4EJL5c7SDn3RdbGhOiLimngZnuOeuqTMCk5pQ1UeK05yej3WRMVUcVoMv+ljaAGqvnkQau44slzNoIbiDQfYh/EzHpuI7iB52HDK4Wm5wGryFKNaURGVDmLDv+FtpBBDd+gw3+PDsnFscP/+zPCO/7vHv7vPv7/Hv7/Pv64B3/chz/uxR/348974Od9fwPzXvx5P/66B/66D/66F/66H/y6J/66L/66N/y6P/6+B/y+D/6+F/y+H/6+J/y+L/6+N/y+P37eA3zeB37eC3zeD3zeE37eF3zeG3zeH3zeI3zeJ37eK3zeL3zeM3zeN3zeO3zeP3zdA3zdB3zdC3rdD3zdE3zdF3zdG3rdH3zdI3rdJ3rdK3rdL3rdM3rd999m3Tt83T8BAFZQOCBYCwAAcDEAnQEqgACAAD6JOJZIpSMiIS2V7FCgEQlmbKVNUpJBX473AfoB/AH8A/QD+AaAB/AIEA/ACsgQH7WuHhVkJ2D/VR+kd615gP2o9Z70P/3PfPPQA/YDrVv3W9Jy8fP2fhv50PjH7Jxxmo0ZLyRyfeb/C/5ZUBfmv9Q88/5nzh0o+gB4sehX6u9gr9b2Bl0WbNVYOKp8U8r+BTbibcni8pC8/7EGyk5wOzhOfxhkMNHRwCkEn3nVT6QED5V4J1nrerRDI6LhuX4PjYfGMAp4bpF3VG8VLPgnTTS0YewKDxlTFf3bkb/+SfpEWSF7SgqNF3w2Bis2W8pz8cClJzCAAuF5xrx/w5X9EbiE+5DhUa97sBFJwY+l8HqpxeNcUZbAOhK0X/xQoA1tNbGdxuAfLj0k6eVpwtoKhJlWRO15gID9Z3L6Jl9imDsczLbklB7wxtEKbdy+nefODmbjqmXESI7C39vRXL0Bw39rCBcsgdzztfeFNHjYjxAJDekgKk1DdG6UKqOWiEIpJ/EtvHnmm6UMlgAA/v1uSliQdC/+wgNUqwabCrxS+C9eXW+V4rPTeIlYrMNZoOb5QZ4k3xxnv+9BBlmhwAkp8BPSs/r0yHljfLEqC3ZkGpGMy2QAvBq52oBdBPJG8iuua07VBFlu8QQ/3xd6M6SENL9Mnt/33hTs4fycpwov0K6eSHHu2r/TszNsR1ikgPJ8gDzTTeOAMfKoFXZv8dP4G2uZG1FVIJJfC+XGLnYn8WxwNrPMFOBaL83lru/AFxXKEi91Pur414eP2b2J9cuaulTfWu1+wvNIGKjk8uf+68INWvHzkTCnRagScRzv03JcPE+yG1yq7yy0kPEvlQlGSXGnGb7mplFTor8PUV33cvBBychEqINi5zB+Kr/f2OHf6QkjB6IBTxktiuCDVhrTqvgz/Otjkh93U0NgQa/T9PriY+rPi9MnEehARwt/0jp9sWOfokPl8KYpli3lhKdfbwy7xTX51oMOBjhKYQBL+KAmu+CvZ00ZjpcuOB57coGed18wN59p4Q+YwDxVbQsUd7zQHoEHeCFGOhgXRP+mauLsr9eb8oFz6omVjKzzYAdgwLkxEyxea5LZPh85XLLm97u2HSco9tX1WofEe2z5trTk8z/MJTiSfO6CVL6t35vuV4X75CEFJ3gUVbUUxQQmLvX4/EoOBaAHEbNBzGnyppOsXZqTiDTEr+KEzhTTqgY7aEAW+7Owq54bzt6IAEkcT5/tmkKdn7vpoO0eaZFh1PMPQuD+/fAbp0ZQXKtUZjAsNGGnaZMWGoG7GxKTGlVq51YfELEvjcGAc6TM3u7KSzyzWE5wI7YgWvTQsGRbrWZ0bzuZCZVr/Wh6ifcVkGxAB2EUxVqQYY4XDjhMiXjCs62k8tnNxqr65PK0WK7MzBgNPlkHmIVjE2yXAEwqQi45hXhl4kDyS8eYqAo0sTRFpLgPy2vD9WZL8heFwNIEgsjee5OKVK/+HiJPrlpjA5g2+Bn1zi8aEI59LZ4MRNUDf3/HweOmvFp1staXTgT/XrLb/T4V5jLa1DJfnqkWS7oOjP4miyyfgOmiORHnRo6ASz7uPckXqCkfQi2cwjbENGgfHkKD7Oz9xf8Cw3UFUn2Na7sOi5ocfawHirCR9cGwGJmNBoo1f3PGOHbrbXyvNfFpvqUdo35oMequz8dpHd3Sn4J9Sw4MIob30FMAsY/XS397gMFOIBQeZEVi9fE9jodglRmWJeY+htUYB7e4YA+dcb8yrju6Tjbvh7FBdGnHZBWieEZqv9Tzcd8byVyfdnPwRloDOb84CEWZzgVFGK6PN7IRtZ6mS00cG+WI7mOpMgg6Btg4hnaJLmKrL5v+3fDlYaksdYuhLM2sYzW92Cz9BMllRQV/UnTPyzWm01RzZFwSHrISQBd/5fGYbrltfLQaK6dTOuRdEsUiThMv6vdIQ6gSuIa4VZcjc6Cf/bf41E1Pz++MBdOHu0KzPtP8wKXqJi2a53xVTPBIxZ7YR6KjF7cXL04cL2mXwFS667vKD2e0GJvFpBhROfw7RQfvxcbqc+u2/VZYSxLZRqAPMGltBp7exCENBEfR5Ys63/qbyaQsZjYkTNpVkWYg6fXyQZ/kBZnvWRMQuHCM97vmLNue1xzkAXjNWreQAoP90pCQZFCTbQuT1mzX4a/+Yhuid/yp2CVjs2o/HFKyG51IZKzXL9WjTj3A8dO2TnDpnjA3vJhNQz1rIFfudRgCBGtAKkw00UnZJbv8N7nqLRuYX4BG1UdKw5cM7Ok+y9yuQDMMPgt0ABLz6vH1JgQB4xX231TI4TY1wykpKMP7Qk4xzR2vW85YsdYMp2wP1CIJTZiZbYRsw/K/tGyDZaS+lDcZgnQIhhDQWXrygUmBYgsW4tHwmG1ksm6VLHIWpgn4rjubTP71Bjq+h5HuFIlN73Uy9qCbli1pR1fPnT6KGnK7uSYwZV3WZDqRmXxM8376M8b9kD1K8tfuHfdHXHGgN7WzMqgasbbhPsvxYgmieBOXVeUMqWTBJLctUlheKUJwEg8IeBH0rGfMhd5pEuHyrcSGPSp0iJxmxdVE6j7EtNHH2jMsMf3fxhakVKDkdBvsJ97OUn1oznZllxjP7D9E8OeMfIZcF690JWNK9ByyCRIq7S581Uofk8KDdox6r/uYlg00G4tyP7bhapAkcs9StPPmlDboQX1mq5ldxlVB0DxFcwN69oYv3rNXrDK1nyVsJwQCeLAd65Gx3E86y4YVMUySA2zMyETAzkoY55/xFJMMBclpP/ax0O8TrPBADObuiNxoNffptwHfjAyAQVkpvjCXpg2H46eqy+mUiCyDhDq/arbpsJnZ4AiVRZymc/e6qu0ECqaYvZVTSRJ7HyKi+jp++llPaZxyECl++bLmMvbYVAU6C9eyn20+5Xl/je+NloV9uCI0IPPpzNvVgOq4VoXSbKPRi/sIT9YmtV+CM1qnf1flrkffgh39kcM4qFB07Y7l8R+R02JuI66xZpbKNRDWneASfFs5mLFjksfVoUOlQwMEc+4R4VkuaoRG8qxX9M+v5XMvBRNJKiOlFffUK4M11NbPCq8vw9ehAfRKRQxdmSjC7rWY5/SDcicMJ8tsKRI2sE8vV78Bn8+r+bRHljNKVz0eqBu2OOLmemK5RSF96SusoDAM3SyK15iHIKGU6QCYXCIFHbwuxCGSt9fUJyLQ9IpxosM9NVEZtRAWpTRlV8y5lLPs829DkT/SH30fQPPqtXg9xtDb+kmi1CtxjSzH1OfDElMPHwhFDpbQS+sfYg5JnKNe1SNLHEMN0cVHPig4rhQqzTCa9U/7zlQKrRfoepN2jIi+zldmUYI9WhH9EnI5rScAWKFVbt5Ryi/BILUX//5w0Fi7DQIFZ//7W4ZMd1oag2QCHc01mE/DYdSiFaRt8sJ+ONHxMFB8ne23JH7hxvopFVBTywdeGgMW/UbqzQ5eVcYpl4WY4UsB6cbDsLlDqXFmH8nSccIDom5+n0hUALW5T7DdxqOnve35pNyLxfFpGLyjWpXnJAYakTmk0H2a88lILpH0XFIrmFVgw/l7VI+nD95Q6wM4zzCQISF4PaYES+gToyHUHM3aPQTwk/cE4WkMbc6wNVj7W2P28ieExgW7F0bFyxHUfrchX7oS5Fd0gxMjX71fnwI/Cy3G+65JPAsBe76ZvNU2y6aUGcD/+ZfQHFIZBxpNDUrtfJLA4K+S8b+tZBQOFvEeHr6rFJ1Tc4Ab/vhnwtzpZ+nJ2s24s56sfDunY2s/EC8W2aVrxelLSUEg5uXcGuOowpyqwPmLIGOFQ50dGYYtMPUc44gZYmkMi0CfxFAuM+nP/l5UpTyTPl6cVPbAsWJb9FtAAAAA)}
     .oi-trabalho{background-image:url(data:image/webp;base64,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)}
     .oi-ola,.oi-bomtrabalho{background-image:url(data:image/webp;base64,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)}
+
+    /* Três retratos acrescentados na v10.57. O banco é a cara fixa do
+       módulo de Dívidas; a curva ascendente e a lupa marcam a queda e a
+       alta da despesa contra o mês anterior. */
+    .oi-banco{background-image:url(data:image/webp;base64,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)}
+    .oi-crescimento{background-image:url(data:image/webp;base64,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)}
+    .oi-investiga{background-image:url(data:image/webp;base64,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)}
 
     /* Estado vazio: em vez de uma linha de texto solta, o Otto cochilando.
        Sai por ::before na classe que ja existe — vale para todas as
@@ -1726,7 +1773,9 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
     <!-- RECADO DO OTTO — leitura do mês, ordenada por urgência -->
     <button class="otto-brief" id="otto-brief" onclick="OTTO.abrirPainel()" style="display:none">
-      <span class="oi oi-ring oi-analise" id="otto-brief-face" role="img" aria-label="Otto"></span>
+      <span class="otto-anel" id="otto-brief-anel">
+        <span class="oi oi-ring oi-analise" id="otto-brief-face" role="img" aria-label="Otto"></span>
+      </span>
       <span class="otto-brief-txt">
         <span class="otto-brief-kicker" id="otto-brief-kicker">Otto analisou</span>
         <span class="otto-brief-title" id="otto-brief-title">—</span>
@@ -1881,10 +1930,12 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
   <div class="content">
 
-    <div class="otto-nota" id="otto-nota-despesas" hidden>
-      <span class="oi oi-xs oi-round oi-ring oi-analise" id="otto-nota-despesas-face" role="img" aria-label="Otto"></span>
+    <button class="otto-nota" id="otto-nota-despesas" hidden onclick="OTTO.abrirRacional('despesas')">
       <span class="otto-nota-txt" id="otto-nota-despesas-txt"></span>
-    </div>
+      <span class="otto-anel" id="otto-nota-despesas-anel">
+        <span class="oi oi-sm oi-round oi-ring oi-analise" id="otto-nota-despesas-face" role="img" aria-label="Otto"></span>
+      </span>
+    </button>
 
     <div id="view-dashboard" class="up">
       <div class="stats" id="stats-grid"></div>
@@ -2100,10 +2151,12 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
   <div class="content" id="inc-content" style="padding:16px 16px 100px">
 
-    <div class="otto-nota" id="otto-nota-entradas" hidden>
-      <span class="oi oi-xs oi-round oi-ring oi-analise" id="otto-nota-entradas-face" role="img" aria-label="Otto"></span>
+    <button class="otto-nota" id="otto-nota-entradas" hidden onclick="OTTO.abrirRacional('entradas')">
       <span class="otto-nota-txt" id="otto-nota-entradas-txt"></span>
-    </div>
+      <span class="otto-anel" id="otto-nota-entradas-anel">
+        <span class="oi oi-sm oi-round oi-ring oi-analise" id="otto-nota-entradas-face" role="img" aria-label="Otto"></span>
+      </span>
+    </button>
 
     <!-- RESUMO TAB -->
     <div id="inc-view-dashboard">
@@ -2217,10 +2270,12 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
   <div class="content" id="ast-content" style="padding:16px 16px 100px">
 
-    <div class="otto-nota" id="otto-nota-patrimonio" hidden>
-      <span class="oi oi-xs oi-round oi-ring oi-analise" id="otto-nota-patrimonio-face" role="img" aria-label="Otto"></span>
+    <button class="otto-nota" id="otto-nota-patrimonio" hidden onclick="OTTO.abrirRacional('patrimonio')">
       <span class="otto-nota-txt" id="otto-nota-patrimonio-txt"></span>
-    </div>
+      <span class="otto-anel" id="otto-nota-patrimonio-anel">
+        <span class="oi oi-sm oi-round oi-ring oi-analise" id="otto-nota-patrimonio-face" role="img" aria-label="Otto"></span>
+      </span>
+    </button>
 
     <!-- RESUMO TAB -->
     <div id="ast-view-dashboard">
@@ -2342,10 +2397,12 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
   <div class="content" id="debt-content" style="padding:16px 16px 84px">
 
-    <div class="otto-nota" id="otto-nota-dividas" hidden>
-      <span class="oi oi-xs oi-round oi-ring oi-analise" id="otto-nota-dividas-face" role="img" aria-label="Otto"></span>
+    <button class="otto-nota" id="otto-nota-dividas" hidden onclick="OTTO.abrirRacional('dividas')">
       <span class="otto-nota-txt" id="otto-nota-dividas-txt"></span>
-    </div>
+      <span class="otto-anel" id="otto-nota-dividas-anel">
+        <span class="oi oi-sm oi-round oi-ring oi-analise" id="otto-nota-dividas-face" role="img" aria-label="Otto"></span>
+      </span>
+    </button>
 
     <!-- RESUMO TAB -->
     <div id="debt-view-dashboard">
@@ -4027,6 +4084,52 @@ const I18N={
     otto_semrec_b:"Sem receita cadastrada o Otto não calcula poupança, folga nem nota de saúde.",
     otto_fx_t:"Projeção segue seus parâmetros",
     otto_fx_b:"Índices, impostos e encargos vêm da ficha de Parâmetros. Mudou a curva, muda tudo daqui para a frente.",
+    /* ── RACIONAL DO OTTO ── */
+    otto_r_how:"Como o Otto chegou aqui",
+    otto_r_concl:"Conclusão",
+    otto_r_base:"Base: a posição do mês exibido, projetada pelas curvas de índice, impostos e encargos da ficha de Parâmetros.",
+    otto_r_month:"Mês analisado",
+    otto_r_inc:"Entradas do mês",
+    otto_r_exp:"Despesas do mês",
+    otto_r_bal:"Saldo do mês",
+    otto_r_debt:"Saldo devedor",
+    otto_r_inst:"Parcelas por mês",
+    otto_r_dti:"Parcelas ÷ entradas",
+    otto_r_limit:"Limite de conforto",
+    otto_r_ast:"Patrimônio",
+    otto_r_nw:"Ativo − passivo",
+    otto_r_cov:"Patrimônio ÷ despesas",
+    otto_r_targ:"Alvo de reserva",
+    otto_r_gap:"Falta",
+    otto_r_int:"Juros da dívida por mês",
+    otto_r_yield:"Rendimento do patrimônio por mês",
+    otto_r_cat:"Categoria líder",
+    otto_r_share:"Participação nas despesas",
+    otto_r_prev:"Mês anterior",
+    otto_r_cur:"Mês atual",
+    otto_r_delta:"Variação",
+    otto_r_rate:"Saldo ÷ entradas",
+    otto_r_months:"Meses até a última parcela",
+    otto_r_intrem:"Juros ainda a pagar",
+    otto_r_ndebt:"Contratos em aberto",
+    otto_r_nast:"Aplicações cadastradas",
+    otto_m_start:"Ainda não há lançamento algum para analisar.",
+    otto_m_neg:"Somei tudo o que entra e tudo o que sai no mês exibido. Diferença negativa quer dizer que o mês só fecha consumindo reserva ou tomando crédito.",
+    otto_m_pl:"Somei o valor de todas as aplicações e subtraí o saldo de todos os contratos. Negativo significa que o passivo já é maior que o ativo.",
+    otto_m_dti:"Dividi a soma das parcelas mensais pelas entradas do mês. Acima de 30% o orçamento perde a folga que absorve imprevistos.",
+    otto_m_jur:"Comparei os juros que a dívida gera por mês com o rendimento que as aplicações geram no mesmo mês.",
+    otto_m_res:"Dividi o patrimônio pela despesa do mês para saber quantos meses ele cobre. Abaixo de 3 meses, um imprevisto vira dívida.",
+    otto_m_semrec:"Procurei entradas no mês exibido e não encontrei nenhuma.",
+    otto_m_conc:"Agrupei os lançamentos do mês por categoria e medi a participação da maior. Acima de 35% cortar em qualquer outro lugar rende pouco.",
+    otto_m_sub:"Comparei a despesa do mês exibido com a do mês anterior, pelo mesmo critério de soma.",
+    otto_m_desc:"Comparei a despesa do mês exibido com a do mês anterior, pelo mesmo critério de soma. Desta vez a diferença é a favor.",
+    otto_m_quit:"Montei o cronograma de cada contrato com o indexador e o abatimento por FGTS que você declarou, e somei os juros que faltam.",
+    otto_m_seed:"Não há nenhuma aplicação cadastrada, então não há o que render.",
+    otto_m_fx:"Você está num mês futuro: todo valor aqui é projeção, não fato consumado.",
+    otto_m_poup:"Dividi o saldo do mês pelas entradas do mês.",
+    otto_m_semdiv:"Procurei contratos em aberto e não encontrei nenhum.",
+    otto_m_res6:"Dividi o patrimônio pela despesa do mês, mesma conta da reserva — desta vez o resultado passa do alvo de seis meses.",
+    otto_m_rend:"Comparei o rendimento das aplicações no mês com a despesa do mesmo mês.",
   },
   en:{
     save_new_link:"Save new link",
@@ -4860,6 +4963,52 @@ const I18N={
     otto_semrec_b:"Without registered income Otto can't compute savings, headroom or the health score.",
     otto_fx_t:"Projection follows your parameters",
     otto_fx_b:"Indices, taxes and charges come from the Parameters sheet. Change the curve and everything ahead changes.",
+    /* ── OTTO'S RATIONALE ── */
+    otto_r_how:"How Otto got here",
+    otto_r_concl:"Conclusion",
+    otto_r_base:"Source: the displayed month's position, projected from the index, tax and charge curves on the Parameters sheet.",
+    otto_r_month:"Month analysed",
+    otto_r_inc:"Income this month",
+    otto_r_exp:"Spending this month",
+    otto_r_bal:"Balance this month",
+    otto_r_debt:"Outstanding balance",
+    otto_r_inst:"Instalments per month",
+    otto_r_dti:"Instalments ÷ income",
+    otto_r_limit:"Comfort limit",
+    otto_r_ast:"Assets",
+    otto_r_nw:"Assets − liabilities",
+    otto_r_cov:"Assets ÷ spending",
+    otto_r_targ:"Reserve target",
+    otto_r_gap:"Short by",
+    otto_r_int:"Debt interest per month",
+    otto_r_yield:"Asset yield per month",
+    otto_r_cat:"Leading category",
+    otto_r_share:"Share of spending",
+    otto_r_prev:"Previous month",
+    otto_r_cur:"Current month",
+    otto_r_delta:"Change",
+    otto_r_rate:"Balance ÷ income",
+    otto_r_months:"Months to last instalment",
+    otto_r_intrem:"Interest still to pay",
+    otto_r_ndebt:"Open contracts",
+    otto_r_nast:"Holdings registered",
+    otto_m_start:"There's nothing recorded yet to analyse.",
+    otto_m_neg:"I added everything coming in and everything going out this month. A negative difference means the month only closes by eating into reserves or borrowing.",
+    otto_m_pl:"I added up every holding and subtracted every outstanding contract. Negative means liabilities already exceed assets.",
+    otto_m_dti:"I divided total monthly instalments by the month's income. Above 30% the budget loses the slack that absorbs surprises.",
+    otto_m_jur:"I compared the interest the debt generates each month with the yield the holdings generate in the same month.",
+    otto_m_res:"I divided assets by the month's spending to see how many months they cover. Below 3 months, one surprise becomes debt.",
+    otto_m_semrec:"I looked for income in the displayed month and found none.",
+    otto_m_conc:"I grouped the month's entries by category and measured the largest one's share. Above 35%, cutting anywhere else achieves little.",
+    otto_m_sub:"I compared this month's spending with last month's, on the same basis.",
+    otto_m_desc:"I compared this month's spending with last month's, on the same basis. This time the difference is in your favour.",
+    otto_m_quit:"I built each contract's schedule using the index and FGTS offset you declared, then summed the interest still ahead.",
+    otto_m_seed:"No holdings are registered, so there is nothing to yield.",
+    otto_m_fx:"You're in a future month: every figure here is a projection, not a settled fact.",
+    otto_m_poup:"I divided the month's balance by the month's income.",
+    otto_m_semdiv:"I looked for open contracts and found none.",
+    otto_m_res6:"I divided assets by the month's spending, the same reserve calculation — this time the result clears the six-month target.",
+    otto_m_rend:"I compared the holdings' yield this month with the same month's spending.",
   },
   de:{
     save_new_link:"Neuen Link speichern",
@@ -5693,6 +5842,52 @@ const I18N={
     otto_semrec_b:"Ohne erfasste Einnahmen kann Otto weder Sparquote noch Spielraum oder Score berechnen.",
     otto_fx_t:"Die Projektion folgt deinen Parametern",
     otto_fx_b:"Indizes, Steuern und Abgaben stammen aus dem Parameterblatt. Ändert sich die Kurve, ändert sich alles danach.",
+    /* ── OTTOS HERLEITUNG ── */
+    otto_r_how:"Wie Otto darauf kommt",
+    otto_r_concl:"Fazit",
+    otto_r_base:"Grundlage: die Position des angezeigten Monats, projiziert aus den Index-, Steuer- und Abgabenkurven im Parameterblatt.",
+    otto_r_month:"Analysierter Monat",
+    otto_r_inc:"Einnahmen des Monats",
+    otto_r_exp:"Ausgaben des Monats",
+    otto_r_bal:"Saldo des Monats",
+    otto_r_debt:"Restschuld",
+    otto_r_inst:"Raten pro Monat",
+    otto_r_dti:"Raten ÷ Einnahmen",
+    otto_r_limit:"Komfortgrenze",
+    otto_r_ast:"Vermögen",
+    otto_r_nw:"Aktiva − Passiva",
+    otto_r_cov:"Vermögen ÷ Ausgaben",
+    otto_r_targ:"Reserveziel",
+    otto_r_gap:"Es fehlen",
+    otto_r_int:"Schuldzinsen pro Monat",
+    otto_r_yield:"Vermögensrendite pro Monat",
+    otto_r_cat:"Führende Kategorie",
+    otto_r_share:"Anteil an den Ausgaben",
+    otto_r_prev:"Vormonat",
+    otto_r_cur:"Aktueller Monat",
+    otto_r_delta:"Veränderung",
+    otto_r_rate:"Saldo ÷ Einnahmen",
+    otto_r_months:"Monate bis zur letzten Rate",
+    otto_r_intrem:"Noch zu zahlende Zinsen",
+    otto_r_ndebt:"Offene Verträge",
+    otto_r_nast:"Erfasste Anlagen",
+    otto_m_start:"Es ist noch nichts erfasst, was ich auswerten könnte.",
+    otto_m_neg:"Ich habe alle Zuflüsse und alle Abflüsse des Monats summiert. Eine negative Differenz heißt: Der Monat schließt nur, indem Reserve verbraucht oder Kredit aufgenommen wird.",
+    otto_m_pl:"Ich habe alle Anlagen summiert und alle offenen Verträge abgezogen. Negativ bedeutet, die Passiva übersteigen bereits die Aktiva.",
+    otto_m_dti:"Ich habe die Summe der Monatsraten durch die Einnahmen des Monats geteilt. Über 30% verliert das Budget den Puffer für Unvorhergesehenes.",
+    otto_m_jur:"Ich habe die Zinsen, die die Schuld pro Monat erzeugt, mit der Rendite der Anlagen im selben Monat verglichen.",
+    otto_m_res:"Ich habe das Vermögen durch die Monatsausgaben geteilt, um zu sehen, wie viele Monate es deckt. Unter 3 Monaten wird ein Zwischenfall zur Schuld.",
+    otto_m_semrec:"Ich habe im angezeigten Monat nach Einnahmen gesucht und keine gefunden.",
+    otto_m_conc:"Ich habe die Buchungen des Monats nach Kategorie gruppiert und den Anteil der größten gemessen. Über 35% bringt Sparen an anderer Stelle wenig.",
+    otto_m_sub:"Ich habe die Ausgaben des angezeigten Monats mit denen des Vormonats verglichen, nach demselben Maßstab.",
+    otto_m_desc:"Ich habe die Ausgaben des angezeigten Monats mit denen des Vormonats verglichen, nach demselben Maßstab. Diesmal fällt die Differenz zu deinen Gunsten aus.",
+    otto_m_quit:"Ich habe den Tilgungsplan jedes Vertrags mit dem von dir angegebenen Index und der FGTS-Anrechnung aufgestellt und die verbleibenden Zinsen summiert.",
+    otto_m_seed:"Es ist keine Anlage erfasst, also kann auch nichts Rendite bringen.",
+    otto_m_fx:"Du bist in einem künftigen Monat: Jeder Wert hier ist Projektion, keine feststehende Tatsache.",
+    otto_m_poup:"Ich habe den Saldo des Monats durch die Einnahmen des Monats geteilt.",
+    otto_m_semdiv:"Ich habe nach offenen Verträgen gesucht und keine gefunden.",
+    otto_m_res6:"Ich habe das Vermögen durch die Monatsausgaben geteilt, dieselbe Reserverechnung — diesmal liegt das Ergebnis über dem Ziel von sechs Monaten.",
+    otto_m_rend:"Ich habe die Rendite der Anlagen im Monat mit den Ausgaben desselben Monats verglichen.",
   },
 };
 
@@ -9526,39 +9721,63 @@ const OTTO=(function(){
   }
 
   /* ── LEITURA DO MÊS ──────────────────────────────────────────────────
-     Recebe as métricas já calculadas quando quem chama tem elas em mão;
-     senão calcula. Devolve sempre um array ordenado por urgência. */
+     Cada leitura carrega, além da frase, o MÉTODO (a frase que explica o
+     raciocínio) e a CONTA (as linhas de número que levaram até ele). Sem
+     isso o Otto seria um oráculo: diria "reserva curta" sem mostrar que
+     dividiu patrimônio por despesa, e o titular não teria como discordar
+     — nem como corrigir o dado que produziu a conclusão. */
   function ler(mIn){
     const out=[];
     let m=mIn;
     if(!m){ try{ m=computeFinMetrics(); }catch(e){ logErro("OTTO/metrics",e); return out; } }
     if(!m) return out;
     const ymStr=activeYM();
-    const add=(sec,tom,ico,tk,bk,vars)=>out.push({sec,tom,ico,t:fx(tk,vars),b:fx(bk,vars)});
+    const mesLbl=MPT[activeMonth]+" "+activeYear;
+    /* uma linha da conta: rótulo traduzido à esquerda, número à direita */
+    const L=(k,v)=>({k:t(k),v:v});
+    const add=(sec,tom,ico,tk,bk,vars,metKey,rac,pri)=>out.push({
+      sec,tom,ico,pri:!!pri,t:fx(tk,vars),b:fx(bk,vars),
+      met:t(metKey), rac:[L("otto_r_month",mesLbl)].concat(rac||[])
+    });
 
     /* App vazio: uma única leitura, que é um convite */
     if(!ASSETS.length&&!DEBTS.length&&m.totalInc<=0&&m.totalExp<=0){
-      add("geral","nota","ola","otto_start_t","otto_start_b",{});
+      add("geral","nota","ola","otto_start_t","otto_start_b",{},"otto_m_start",[]);
       return out;
     }
 
     /* ── RISCO ── */
     if(m.balance<0)
-      add("entradas","risco","atencao","otto_neg_t","otto_neg_b",{v:fmt(Math.abs(m.balance))});
+      add("entradas","risco","atencao","otto_neg_t","otto_neg_b",
+          {v:fmt(Math.abs(m.balance))},"otto_m_neg",
+          [L("otto_r_inc",fmt(m.totalInc)),L("otto_r_exp",fmt(m.totalExp)),
+           L("otto_r_bal","−"+fmt(Math.abs(m.balance)))]);
     if(m.netWorth<0)
-      add("patrimonio","risco","alerta","otto_pl_t","otto_pl_b",{v:fmt(Math.abs(m.netWorth))});
+      add("patrimonio","risco","alerta","otto_pl_t","otto_pl_b",
+          {v:fmt(Math.abs(m.netWorth))},"otto_m_pl",
+          [L("otto_r_ast",fmt(m.totalAssets)),L("otto_r_debt",fmt(m.totDebt)),
+           L("otto_r_nw","−"+fmt(Math.abs(m.netWorth)))]);
     if(m.dti>30)
-      add("dividas","risco","controle","otto_dti_t","otto_dti_b",{n:num(m.dti),v:fmt(m.totMonthly)});
+      add("dividas","risco","controle","otto_dti_t","otto_dti_b",
+          {n:num(m.dti),v:fmt(m.totMonthly)},"otto_m_dti",
+          [L("otto_r_inst",fmt(m.totMonthly)),L("otto_r_inc",fmt(m.totalInc)),
+           L("otto_r_dti",num(m.dti)+"%"),L("otto_r_limit","30%")]);
 
     /* ── ATENÇÃO ── */
     if(m.monthlyDebtInterest>0&&m.monthlyDebtInterest>m.monthYield)
       add("dividas","atencao","apagar","otto_jur_t","otto_jur_b",
-          {v:fmt(m.monthlyDebtInterest),x:fmt(m.monthYield)});
+          {v:fmt(m.monthlyDebtInterest),x:fmt(m.monthYield)},"otto_m_jur",
+          [L("otto_r_int",fmt(m.monthlyDebtInterest)),L("otto_r_yield",fmt(m.monthYield)),
+           L("otto_r_delta","−"+fmt(m.monthlyDebtInterest-m.monthYield))]);
     if(m.totalExp>0&&m.emergencyMonths<3)
       add("patrimonio","atencao","caixa","otto_res_t","otto_res_b",
-          {n:num(m.emergencyMonths,1),v:fmt(Math.max(0,m.totalExp*6-m.totalAssets))});
+          {n:num(m.emergencyMonths,1),v:fmt(Math.max(0,m.totalExp*6-m.totalAssets))},"otto_m_res",
+          [L("otto_r_ast",fmt(m.totalAssets)),L("otto_r_exp",fmt(m.totalExp)),
+           L("otto_r_cov",num(m.emergencyMonths,1)),L("otto_r_targ",fmt(m.totalExp*6)),
+           L("otto_r_gap",fmt(Math.max(0,m.totalExp*6-m.totalAssets)))]);
     if(m.totalInc<=0&&m.totalExp>0)
-      add("entradas","atencao","duvidas","otto_semrec_t","otto_semrec_b",{});
+      add("entradas","atencao","duvidas","otto_semrec_t","otto_semrec_b",{},"otto_m_semrec",
+          [L("otto_r_inc",fmt(0)),L("otto_r_exp",fmt(m.totalExp))]);
 
     /* Concentração de despesa. Só sai quando há lançamentos de verdade no
        mês: num mês projetado a composição por categoria não existe. */
@@ -9573,48 +9792,75 @@ const OTTO=(function(){
         const share=topV/soma*100;
         if(topId&&share>=35)
           add("despesas","atencao","analise","otto_conc_t","otto_conc_b",
-              {c:catLabel(topId),n:num(share),v:fmt(topV)});
+              {c:catLabel(topId),n:num(share),v:fmt(topV)},"otto_m_conc",
+              [L("otto_r_cat",catLabel(topId)),L("otto_r_exp",fmt(soma)),
+               L("otto_r_share",num(share)+"%"),L("otto_r_limit","35%")]);
       }
     }catch(e){ logErro("OTTO/conc",e); }
 
-    /* Variação contra o mês anterior */
+    /* Variação contra o mês anterior. Os dois retratos aqui são os que o
+       titular escolheu: a curva ascendente quando a despesa cede, a lupa
+       quando ela sobe e pede investigação. */
     try{
       const prev=monthExpTotal(prevYMStr(ymStr)), cur=monthExpTotal(ymStr);
       if(prev>0&&cur>0){
         const d=(cur-prev)/prev*100;
-        if(d>=15)      add("despesas","atencao","alta","otto_sub_t","otto_sub_b",
-                           {n:num(d),v:fmt(cur-prev)});
-        else if(d<=-10) add("despesas","boa","baixa","otto_desc_t","otto_desc_b",
-                           {n:num(Math.abs(d)),v:fmt(prev-cur)});
+        const linhas=[L("otto_r_prev",fmt(prev)),L("otto_r_cur",fmt(cur)),
+                      L("otto_r_delta",(d>=0?"+":"−")+fmt(Math.abs(cur-prev))+" ("+num(Math.abs(d))+"%)")];
+        /* marcada como prioritária: dentro da aba de Despesas a comparação
+           com o mês anterior é a única leitura que a tela não dá sozinha —
+           a concentração por categoria já está nas barras logo abaixo. */
+        if(d>=15)       add("despesas","atencao","investiga","otto_sub_t","otto_sub_b",
+                            {n:num(d),v:fmt(cur-prev)},"otto_m_sub",linhas,true);
+        else if(d<=-10) add("despesas","boa","crescimento","otto_desc_t","otto_desc_b",
+                            {n:num(Math.abs(d)),v:fmt(prev-cur)},"otto_m_desc",linhas,true);
       }
     }catch(e){ logErro("OTTO/mom",e); }
 
     /* ── NOTAS ── */
     if(m.totDebt>0&&m.monthsToDebtFree>0)
       add("dividas","nota","projecoes","otto_quit_t","otto_quit_b",
-          {n:num(m.monthsToDebtFree),v:fmt(m.debtInterestRemaining)});
+          {n:num(m.monthsToDebtFree),v:fmt(m.debtInterestRemaining)},"otto_m_quit",
+          [L("otto_r_debt",fmt(m.totDebt)),L("otto_r_inst",fmt(m.totMonthly)),
+           L("otto_r_months",num(m.monthsToDebtFree)),
+           L("otto_r_intrem",fmt(m.debtInterestRemaining))]);
     if(!ASSETS.length&&m.totalInc>0)
-      add("patrimonio","nota","sonho","otto_seed_t","otto_seed_b",{});
+      add("patrimonio","nota","sonho","otto_seed_t","otto_seed_b",{},"otto_m_seed",
+          [L("otto_r_nast","0"),L("otto_r_bal",(m.balance>=0?"+":"−")+fmt(Math.abs(m.balance)))]);
     /* Só num mês projetado a lembrança dos Parâmetros tem função */
     if(ymStr>cym())
-      add("geral","nota","obras","otto_fx_t","otto_fx_b",{});
+      add("geral","nota","obras","otto_fx_t","otto_fx_b",{},"otto_m_fx",
+          [L("otto_r_exp",fmt(m.totalExp)),L("otto_r_inc",fmt(m.totalInc)),
+           L("otto_r_ast",fmt(m.totalAssets)),L("otto_r_debt",fmt(m.totDebt))]);
 
     /* ── BOAS ── */
     if(m.totalInc>0&&m.savingsRate>=20)
       add("entradas","boa","sucesso","otto_poup_t","otto_poup_b",
-          {n:num(m.savingsRate),v:fmt(m.balance)});
+          {n:num(m.savingsRate),v:fmt(m.balance)},"otto_m_poup",
+          [L("otto_r_inc",fmt(m.totalInc)),L("otto_r_exp",fmt(m.totalExp)),
+           L("otto_r_bal","+"+fmt(m.balance)),L("otto_r_rate",num(m.savingsRate)+"%")]);
     if(!DEBTS.length&&(m.totalInc>0||ASSETS.length))
-      add("dividas","boa","aprovado","otto_semdiv_t","otto_semdiv_b",{});
+      add("dividas","boa","aprovado","otto_semdiv_t","otto_semdiv_b",{},"otto_m_semdiv",
+          [L("otto_r_ndebt","0"),L("otto_r_debt",fmt(0)),L("otto_r_inst",fmt(0))]);
     if(m.totalExp>0&&m.emergencyMonths>=6)
       add("patrimonio","boa","tesouraria","otto_res6_t","otto_res6_b",
-          {n:num(Math.min(999,m.emergencyMonths),1)});
+          {n:num(Math.min(999,m.emergencyMonths),1)},"otto_m_res6",
+          [L("otto_r_ast",fmt(m.totalAssets)),L("otto_r_exp",fmt(m.totalExp)),
+           L("otto_r_cov",num(Math.min(999,m.emergencyMonths),1)),L("otto_r_targ","6")]);
     if(m.monthYield>0&&m.totalExp>0)
       add("patrimonio","boa","economia","otto_rend_t","otto_rend_b",
-          {v:fmt(m.monthYield),n:num(m.monthYield/m.totalExp*100)});
+          {v:fmt(m.monthYield),n:num(m.monthYield/m.totalExp*100)},"otto_m_rend",
+          [L("otto_r_yield",fmt(m.monthYield)),L("otto_r_exp",fmt(m.totalExp)),
+           L("otto_r_share",num(m.monthYield/m.totalExp*100)+"%")]);
 
     out.sort((a,b)=>TONS[a.tom].w-TONS[b.tom].w);
     return out;
   }
+
+  /* Guarda a leitura exibida em cada lugar, para que o toque no retrato
+     saiba de qual conclusão abrir a conta. */
+  const VISTA={};
+  let LISTA=[];
 
   /* ── RECADO NA TELA INICIAL ─────────────────────────────────────────── */
   function pintarHome(ctx){
@@ -9622,13 +9868,17 @@ const OTTO=(function(){
     if(!el) return;
     let m=null;
     try{ m=computeFinMetrics(); }catch(e){ logErro("OTTO/home",e); }
-    const L=ler(m);
-    const top=L[0];
+    const lista=ler(m);
+    LISTA=lista;
+    const top=lista[0];
     if(!top){ el.style.display="none"; }
     else{
       const cor=TONS[top.tom].cor;
+      VISTA.brief=top;
       el.style.display="flex";
       el.style.borderColor=cor+"66";
+      const anel=document.getElementById("otto-brief-anel");
+      if(anel) anel.style.setProperty("--anel",cor);
       const f=document.getElementById("otto-brief-face");
       if(f) f.className="oi oi-ring oi-"+top.ico;
       const k=document.getElementById("otto-brief-kicker");
@@ -9638,19 +9888,18 @@ const OTTO=(function(){
       const bo=document.getElementById("otto-brief-body");
       if(bo) bo.textContent=top.b;
       const n=document.getElementById("otto-brief-n");
-      if(n){ n.textContent=L.length; n.style.color=cor; }
+      if(n){ n.textContent=lista.length; n.style.color=cor; }
     }
     pintarFaces(m,ctx);
   }
 
   /* ── FACES DOS QUATRO CARTÕES ────────────────────────────────────────
-     O retrato padrão volta sempre que não há nada a dizer: é ele que dá ao
-     cartão a pista estável de qual módulo é. Só muda quando o número saiu
-     do razoável — e aí a mudança carrega informação. */
+     Três são FIXAS por decisão do titular: Patrimônio é sempre o Otto na
+     casinha, Entradas sempre o das moedas, Dívidas sempre o do banco. São
+     a pista de qual módulo é aquele cartão, e uma pista que muda deixa de
+     ser pista. Só Despesas reage — e reage à única coisa que o cartão não
+     mostra sozinho: como o mês se compara ao anterior. */
   function pintarFaces(mIn,ctx){
-    let m=mIn;
-    if(!m){ try{ m=computeFinMetrics(); }catch(e){ return; } }
-    if(!m) return;
     const set=(id,ico)=>{ const e=document.getElementById(id);
       if(e) e.className="oi oi-ring oi-"+ico; };
 
@@ -9661,16 +9910,10 @@ const OTTO=(function(){
       if(prev>0&&cur>0) dExp=(cur-prev)/prev*100;
     }catch(e){}
 
-    set("face-despesas",   dExp>=15?"atencao" : dExp<=-10?"sucesso" : "pagamentos");
-    set("face-dividas",    !DEBTS.length?"aprovado" : m.dti>30?"atencao" : "controle");
-    /* A face de Entradas segue o saldo que o PRÓPRIO cartão exibe ao lado
-       dela, não o fluxo projetado do cartão de saúde. Os dois números são
-       diferentes por construção — o de saúde inclui parcela e encargos — e
-       um retrato preocupado encostado num saldo positivo só faria o titular
-       duvidar de qual dos dois ler. */
-    const saldo=(ctx&&isFinite(ctx.saldo))?ctx.saldo:m.balance;
-    set("face-entradas",   saldo<0?"atencao" : m.savingsRate>=20?"sucesso" : "custos");
-    set("face-patrimonio", m.netWorth<0?"atencao" : (m.totalExp>0&&m.emergencyMonths>=6)?"tesouraria" : "casa");
+    set("face-despesas",   dExp>=15?"investiga" : dExp<=-10?"crescimento" : "pagamentos");
+    set("face-dividas",    "banco");
+    set("face-entradas",   "custos");
+    set("face-patrimonio", "casa");
   }
 
   /* ── NOTA NO TOPO DE UM MÓDULO ─────────────────────────────────────── */
@@ -9679,27 +9922,80 @@ const OTTO=(function(){
     if(!box) return;
     let it=null;
     try{
-      const L=ler();
-      it=L.filter(x=>x.sec===sec)[0]||L.filter(x=>x.sec==="geral")[0]||null;
+      const lista=ler();
+      it=lista.filter(x=>x.sec===sec&&x.pri)[0]
+        ||lista.filter(x=>x.sec===sec)[0]
+        ||lista.filter(x=>x.sec==="geral")[0]||null;
     }catch(e){ logErro("OTTO/nota "+sec,e); }
+    VISTA[sec]=it;
     if(!it){ box.hidden=true; return; }
     box.hidden=false;
-    box.style.borderColor=TONS[it.tom].cor+"66";
+    const cor=TONS[it.tom].cor;
+    box.style.borderColor=cor+"66";
+    const anel=document.getElementById("otto-nota-"+sec+"-anel");
+    if(anel) anel.style.setProperty("--anel",cor);
     const f=document.getElementById("otto-nota-"+sec+"-face");
-    if(f) f.className="oi oi-xs oi-round oi-ring oi-"+it.ico;
+    if(f) f.className="oi oi-sm oi-round oi-ring oi-"+it.ico;
     const tx=document.getElementById("otto-nota-"+sec+"-txt");
     if(tx) tx.innerHTML="<b>"+escapeHtml(it.t)+".</b> "+escapeHtml(it.b);
   }
 
+  /* ── FOLHA DO RACIOCÍNIO ───────────────────────────────────────────── */
+  function folhaRacional(it){
+    if(!it) return;
+    const cor=TONS[it.tom].cor;
+    const contas=(it.rac||[]).map(r=>
+      `<div class="otto-calc"><span class="otto-calc-k">${escapeHtml(r.k)}</span>
+        <span class="otto-calc-v">${escapeHtml(r.v)}</span></div>`).join("");
+    const ov=document.createElement("div");
+    ov.className="overlay open";
+    ov.style.zIndex="250";
+    ov.style.alignItems="flex-end";
+    ov.innerHTML=`<div class="sheet" style="max-height:84dvh;overflow-y:auto">
+      <div class="sheet-handle"></div>
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
+        <span class="otto-anel" style="--anel:${cor}">
+          <span class="oi oi-ring oi-${it.ico}" role="img" aria-label="Otto"></span>
+        </span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:8.5px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:${cor};margin-bottom:3px">
+            <span class="otto-dot" style="background:${cor}"></span>${escapeHtml(t(TONS[it.tom].tag))}
+          </div>
+          <div style="font-family:var(--serif);font-style:italic;font-size:19px;color:var(--body);line-height:1.2">${escapeHtml(it.t)}</div>
+        </div>
+        <button id="otto-rc-x" style="width:32px;height:32px;border-radius:50%;background:var(--surface);border:none;cursor:pointer;color:var(--ink-2);font-size:15px;flex-shrink:0">✕</button>
+      </div>
+
+      <div style="font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px">${escapeHtml(t("otto_r_concl"))}</div>
+      <div style="font-size:12.5px;color:var(--body);line-height:1.65;margin-bottom:16px">${escapeHtml(it.b)}</div>
+
+      <div style="font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px">${escapeHtml(t("otto_r_how"))}</div>
+      <div style="font-size:12px;color:var(--ink-2);line-height:1.65;margin-bottom:10px">${escapeHtml(it.met||"")}</div>
+
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 14px;margin-bottom:12px">${contas}</div>
+
+      <div style="font-size:10.5px;color:var(--ink-3);line-height:1.6">${escapeHtml(t("otto_r_base"))}</div>
+    </div>`;
+    document.body.appendChild(ov);
+    const fechar=()=>closeOverlay(ov);
+    const x=ov.querySelector("#otto-rc-x"); if(x) x.onclick=fechar;
+    ov.onclick=e=>{ if(e.target===ov) fechar(); };
+  }
+  function abrirRacional(chave){ folhaRacional(VISTA[chave]); }
+  function abrirRacionalIdx(i){ folhaRacional(LISTA[i]); }
+
   /* ── PAINEL COMPLETO ───────────────────────────────────────────────── */
   function abrirPainel(){
-    let L=[];
-    try{ L=ler(); }catch(e){ logErro("OTTO/painel",e); }
+    let lista=[];
+    try{ lista=ler(); }catch(e){ logErro("OTTO/painel",e); }
+    LISTA=lista;
     const mesLbl=MPT[activeMonth]+" "+activeYear;
-    const linhas = L.length ? L.map(it=>{
+    const linhas = lista.length ? lista.map((it,i)=>{
       const cor=TONS[it.tom].cor;
-      return `<div class="otto-row">
-        <span class="oi oi-sm oi-round oi-ring oi-${it.ico}" role="img" aria-label="Otto"></span>
+      return `<div class="otto-row" role="button" tabindex="0" style="cursor:pointer" onclick="OTTO.abrirRacionalIdx(${i})">
+        <span class="otto-anel" style="--anel:${cor}">
+          <span class="oi oi-sm oi-round oi-ring oi-${it.ico}" role="img" aria-label="Otto"></span>
+        </span>
         <div style="flex:1;min-width:0">
           <div style="font-size:8.5px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:${cor};margin-bottom:3px">
             <span class="otto-dot" style="background:${cor}"></span>${escapeHtml(t(TONS[it.tom].tag))}
@@ -9707,6 +10003,7 @@ const OTTO=(function(){
           <div class="otto-row-t">${escapeHtml(it.t)}</div>
           <div class="otto-row-b">${escapeHtml(it.b)}</div>
         </div>
+        <span style="color:var(--ink-4);font-size:15px;flex-shrink:0;align-self:center">›</span>
       </div>`; }).join("")
       : `<div class="otto-row">
         <span class="oi oi-sm oi-round oi-ring oi-bomtrabalho" role="img" aria-label="Otto"></span>
@@ -9738,7 +10035,7 @@ const OTTO=(function(){
     ov.onclick=e=>{ if(e.target===ov) fechar(); };
   }
 
-  return {ler,pintarHome,pintarFaces,nota,abrirPainel,TONS};
+  return {ler,pintarHome,pintarFaces,nota,abrirPainel,abrirRacional,abrirRacionalIdx,TONS};
 })();
 window.OTTO=OTTO;
 
@@ -14657,7 +14954,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.56";
+const APP_VERSION="10.57";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
