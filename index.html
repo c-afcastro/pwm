@@ -1428,14 +1428,22 @@
        repetiria pela metade o que o toque entrega inteiro. O retrato não
        muda com o teor do apontamento — se mudasse, viraria um semáforo, e
        um semáforo dispensa a leitura que ele deveria convidar a fazer. */
-    .otto-toque {
-      display: block; margin: 0 0 12px auto;
+    /* O retrato ocupava uma linha própria no topo de cada tela e empurrava
+       o conteúdo para baixo — uma faixa inteira de altura gasta com um
+       botão. Agora ele flutua sobre o app, no canto inferior direito, de
+       frente para o polegar e simétrico ao botão de voltar ao topo. A
+       altura que ele devolveu é do conteúdo. */
+    .fab-otto {
+      position: fixed; right: 16px; z-index: 90;
+      bottom: calc(18px + env(safe-area-inset-bottom));
       background: none; border: none; padding: 0; cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
+      display: none; -webkit-tap-highlight-color: transparent;
+      filter: drop-shadow(0 4px 14px rgba(0,0,0,.26));
       transition: transform .13s cubic-bezier(.22,.9,.32,1);
     }
-    .otto-toque:active { transform: scale(.94) }
-    .otto-toque[hidden] { display: none }
+    .fab-otto.on { display: block }
+    .fab-otto:active { transform: scale(.92) }
+    .fab-otto .oi { width: 42px; height: 42px }
 
     /* ── SINAL GIRATÓRIO ──────────────────────────────────────────────
        Um arco em gradiente cônico dá a volta no retrato. Não é enfeite: é
@@ -1736,14 +1744,6 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <div id="home-health-card"></div>
     </button>
 
-    <!-- ANÁLISE DO OTTO — só o retrato; a leitura inteira vem no toque -->
-    <button class="otto-toque" id="otto-brief" onclick="OTTO.abrirPainel()"
-      style="display:none" aria-label="Otto">
-      <span class="otto-anel">
-        <span class="oi oi-ring oi-investiga" role="img" aria-hidden="true"></span>
-      </span>
-    </button>
-
     <!-- 4 SECTION CARDS (full-width, ordered: Despesas, Dívidas, Receitas, Patrimônio) -->
     <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:20px">
 
@@ -1886,13 +1886,6 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
   </div>
 
   <div class="content">
-
-    <button class="otto-toque" id="otto-nota-despesas" hidden onclick="OTTO.abrirRacional('despesas')"
-      aria-label="Otto" data-i18n-aria="otto_panel_t">
-      <span class="otto-anel">
-        <span class="oi oi-sm oi-round oi-ring oi-investiga" role="img" aria-hidden="true"></span>
-      </span>
-    </button>
 
     <div id="view-dashboard" class="up">
       <div class="stats" id="stats-grid"></div>
@@ -2108,13 +2101,6 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
   <div class="content" id="inc-content" style="padding:16px 16px 100px">
 
-    <button class="otto-toque" id="otto-nota-entradas" hidden onclick="OTTO.abrirRacional('entradas')"
-      aria-label="Otto" data-i18n-aria="otto_panel_t">
-      <span class="otto-anel">
-        <span class="oi oi-sm oi-round oi-ring oi-investiga" role="img" aria-hidden="true"></span>
-      </span>
-    </button>
-
     <!-- RESUMO TAB -->
     <div id="inc-view-dashboard">
       <div id="inc-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px"></div>
@@ -2226,13 +2212,6 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
   </div>
 
   <div class="content" id="ast-content" style="padding:16px 16px 100px">
-
-    <button class="otto-toque" id="otto-nota-patrimonio" hidden onclick="OTTO.abrirRacional('patrimonio')"
-      aria-label="Otto" data-i18n-aria="otto_panel_t">
-      <span class="otto-anel">
-        <span class="oi oi-sm oi-round oi-ring oi-investiga" role="img" aria-hidden="true"></span>
-      </span>
-    </button>
 
     <!-- RESUMO TAB -->
     <div id="ast-view-dashboard">
@@ -2353,13 +2332,6 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
   </div>
 
   <div class="content" id="debt-content" style="padding:16px 16px 84px">
-
-    <button class="otto-toque" id="otto-nota-dividas" hidden onclick="OTTO.abrirRacional('dividas')"
-      aria-label="Otto" data-i18n-aria="otto_panel_t">
-      <span class="otto-anel">
-        <span class="oi oi-sm oi-round oi-ring oi-investiga" role="img" aria-hidden="true"></span>
-      </span>
-    </button>
 
     <!-- RESUMO TAB -->
     <div id="debt-view-dashboard">
@@ -2487,6 +2459,11 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
   <option value="Banco BMG"></option><option value="Banco Digio"></option>
 </datalist>
 <button class="fab-home" id="fab-home" onclick="fabAcao()" aria-label="Início" title="Início">⌂</button>
+<button class="fab-otto" id="fab-otto" onclick="OTTO.tocar()" aria-label="Otto" data-i18n-title="otto_panel_t">
+  <span class="otto-anel">
+    <span class="oi oi-ring oi-investiga" role="img" aria-hidden="true"></span>
+  </span>
+</button>
 
 <!-- diálogo de confirmação: precisa viver fora das telas,
      senão fica oculto junto com a tela que o continha -->
@@ -3868,6 +3845,17 @@ const I18N={
     sim_payment_drop:"Redução da parcela",
     sim_extra_short:"extra",
     sim_enter_amount:"Digite um valor de amortização extra acima para simular.",
+    sim_otto_kicker:"Análise do Otto",
+    sim_otto_horiz:"Período comparado",
+    sim_otto_selic:"Selic média do período (a.a.)",
+    sim_otto_liq:"Selic líquida de imposto (a.a.)",
+    sim_otto_yes_t:"Amortizar supera aplicar",
+    sim_otto_yes_b:"O custo efetivo da dívida ({n}% a.a.) excede em {d} ponto(s) percentual(is) o rendimento líquido da Selic projetada para o mesmo período ({x}% a.a.). Enquanto o diferencial se mantiver, cada unidade amortizada economiza mais do que renderia aplicada.",
+    sim_otto_no_t:"Amortizar não se paga",
+    sim_otto_no_b:"A Selic projetada para o período rende {x}% a.a. líquidos contra um custo efetivo de dívida de {n}% a.a. Antecipar a quitação abre mão de {d} ponto(s) percentual(is) ao ano e ainda consome liquidez que a dívida não exige hoje.",
+    sim_otto_tie_t:"Diferença imaterial",
+    sim_otto_tie_b:"Custo efetivo de {n}% a.a. contra {x}% a.a. de Selic líquida. Com menos de um ponto percentual de diferença, a escolha entre amortizar e aplicar passa a ser de liquidez e de risco, não de retorno.",
+    sim_otto_met:"Custo efetivo: os juros do contrato compostos, mês a mês, com o indexador declarado, ao longo do prazo remanescente. Referência de aplicação: a curva de Selic da ficha de Parâmetros no mesmo intervalo, descontada a alíquota de IR de prazo longo (15%), já que o imposto só incide no resgate. Ambos convertidos para taxa anual equivalente.",
     export_csv:"Exportar CSV",
     view_export_table:"Ver tabela e exportar",
     save_open_csv:"Salvar / abrir CSV no Excel",
@@ -4760,6 +4748,17 @@ const I18N={
     sim_payment_drop:"Payment reduction",
     sim_extra_short:"extra",
     sim_enter_amount:"Enter an extra amortization amount above to simulate.",
+    sim_otto_kicker:"Otto's analysis",
+    sim_otto_horiz:"Period compared",
+    sim_otto_selic:"Average Selic for the period (p.a.)",
+    sim_otto_liq:"Selic net of tax (p.a.)",
+    sim_otto_yes_t:"Amortising beats investing",
+    sim_otto_yes_b:"The effective cost of debt ({n}% p.a.) exceeds the net return of the Selic projected for the same period ({x}% p.a.) by {d} percentage point(s). While the spread holds, each unit amortised saves more than it would earn invested.",
+    sim_otto_no_t:"Amortising does not pay",
+    sim_otto_no_b:"The Selic projected for the period returns {x}% p.a. net against an effective cost of debt of {n}% p.a. Paying down early forgoes {d} percentage point(s) a year and also consumes liquidity the debt does not demand today.",
+    sim_otto_tie_t:"Immaterial difference",
+    sim_otto_tie_b:"Effective cost of {n}% p.a. against {x}% p.a. of Selic net of tax. With less than one percentage point between them, the choice between amortising and investing becomes one of liquidity and risk, not return.",
+    sim_otto_met:"Effective cost: the contract's interest compounded, month by month, with the declared index, over the remaining term. Investment reference: the Selic curve from the Parameters sheet across the same interval, net of the long-term 15% income-tax rate, since the tax falls due only on redemption. Both converted to an equivalent annual rate.",
     export_csv:"Export CSV",
     view_export_table:"View table & export",
     save_open_csv:"Save / open CSV in Excel",
@@ -5652,6 +5651,17 @@ const I18N={
     sim_payment_drop:"Ratensenkung",
     sim_extra_short:"extra",
     sim_enter_amount:"Oben einen Sondertilgungsbetrag eingeben zum Simulieren.",
+    sim_otto_kicker:"Ottos Analyse",
+    sim_otto_horiz:"Verglichener Zeitraum",
+    sim_otto_selic:"Durchschnittlicher Selic im Zeitraum (p.a.)",
+    sim_otto_liq:"Selic nach Steuern (p.a.)",
+    sim_otto_yes_t:"Tilgen schlägt Anlegen",
+    sim_otto_yes_b:"Die effektiven Schuldkosten ({n}% p.a.) übersteigen die Nettorendite des für denselben Zeitraum projizierten Selic ({x}% p.a.) um {d} Prozentpunkt(e). Solange der Abstand besteht, spart jede getilgte Einheit mehr, als sie angelegt einbrächte.",
+    sim_otto_no_t:"Tilgen lohnt sich nicht",
+    sim_otto_no_b:"Der für den Zeitraum projizierte Selic bringt {x}% p.a. netto gegenüber effektiven Schuldkosten von {n}% p.a. Eine vorzeitige Tilgung verzichtet auf {d} Prozentpunkt(e) pro Jahr und bindet zudem Liquidität, die die Schuld heute nicht verlangt.",
+    sim_otto_tie_t:"Unwesentlicher Unterschied",
+    sim_otto_tie_b:"Effektive Kosten von {n}% p.a. gegenüber {x}% p.a. Selic nach Steuern. Bei weniger als einem Prozentpunkt Abstand wird die Wahl zwischen Tilgen und Anlegen zur Frage von Liquidität und Risiko, nicht der Rendite.",
+    sim_otto_met:"Effektive Kosten: der Vertragszins, Monat für Monat mit dem angegebenen Index verzinst, über die Restlaufzeit. Anlagereferenz: die Selic-Kurve aus dem Parameterblatt im selben Intervall, abzüglich des langfristigen Steuersatzes von 15%, da die Steuer erst bei Rückgabe anfällt. Beide in einen äquivalenten Jahressatz umgerechnet.",
     export_csv:"CSV exportieren",
     view_export_table:"Tabelle ansehen & exportieren",
     save_open_csv:"CSV speichern / in Excel öffnen",
@@ -9938,13 +9948,10 @@ const OTTO=(function(){
      e um resumo ao lado repetiria pela metade o que o pop-up entrega
      inteiro. Some quando não há apontamento algum a fazer. */
   function pintarHome(){
-    const el=document.getElementById("otto-brief");
-    if(!el) return;
     let m=null;
     try{ m=computeFinMetrics(); }catch(e){ logErro("OTTO/home",e); }
-    const lista=ler(m);
-    LISTA=lista;
-    el.style.display=lista.length?"block":"none";
+    LISTA=ler(m);
+    sincFab();
   }
 
   /* As faces dos quatro cartões de módulo são fixas e vivem no HTML —
@@ -9956,8 +9963,6 @@ const OTTO=(function(){
 
   /* ── PONTO DE ENTRADA NO TOPO DE UM MÓDULO ─────────────────────────── */
   function nota(sec){
-    const box=document.getElementById("otto-nota-"+sec);
-    if(!box) return;
     let it=null;
     try{
       const lista=ler();
@@ -9966,7 +9971,32 @@ const OTTO=(function(){
         ||lista.filter(x=>x.sec==="geral")[0]||null;
     }catch(e){ logErro("OTTO/nota "+sec,e); }
     VISTA[sec]=it;
-    box.hidden=!it;
+    sincFab();
+  }
+
+  /* ── O BOTÃO FLUTUANTE ──────────────────────────────────────────────
+     Um só botão para o app inteiro. Na tela inicial ele abre a lista
+     completa; dentro de um módulo, abre direto a conta daquele assunto.
+     Some quando não há o que dizer — um botão que abre uma folha vazia
+     ensina o titular a não tocar nele. */
+  function alvoFab(){
+    const tela=(typeof SCREEN!=="undefined")?SCREEN:"home";
+    if(tela!=="home"&&VISTA[tela]) return {tipo:"racional",sec:tela};
+    if(tela==="home"&&LISTA.length) return {tipo:"painel"};
+    return null;
+  }
+  function sincFab(){
+    const f=document.getElementById("fab-otto");
+    if(!f) return;
+    const a=alvoFab();
+    f.classList.toggle("on",!!a);
+    f.dataset.alvo=a?a.tipo:"";
+    f.dataset.sec=(a&&a.sec)||"";
+  }
+  function tocar(){
+    const f=document.getElementById("fab-otto");
+    if(f&&f.dataset.alvo==="racional") abrirRacional(f.dataset.sec);
+    else abrirPainel();
   }
 
   /* ── FOLHA DO RACIOCÍNIO ───────────────────────────────────────────── */
@@ -10062,7 +10092,7 @@ const OTTO=(function(){
     ov.onclick=e=>{ if(e.target===ov) fechar(); };
   }
 
-  return {ler,pintarHome,nota,abrirPainel,abrirRacional,abrirRacionalIdx,TONS};
+  return {ler,pintarHome,nota,sincFab,tocar,abrirPainel,abrirRacional,abrirRacionalIdx,TONS};
 })();
 window.OTTO=OTTO;
 
@@ -13033,6 +13063,13 @@ function persistDebts(){
 
 const debtBalance=d=>parseFloat(d.balance)||0;
 const debtOriginal=d=>parseFloat(d.principal)||0;
+/* Um <select> devolve SEMPRE texto, e o id de uma dívida é o número que
+   Date.now() gerou no cadastro. A comparação estrita entre os dois nunca
+   casa: o simulador, o cronograma e a tabela de amortização recebiam a
+   dívida certa do menu e não encontravam nenhuma, devolvendo tela vazia
+   sem uma linha de explicação. A busca passa a comparar pelo texto. */
+const debtPorId=id=>DEBTS.find(x=>String(x.id)===String(id))||null;
+
 const debtRateMonthly=d=>{
   const raw=parseFloat(d.rate)||0;  // stored already as monthly
   return raw/100;
@@ -13509,7 +13546,7 @@ function renderDebtSchedule(){
 /* Render the full amortization table for the debt selected in the schedule tab */
 function renderSchedTable(){
   const id=document.getElementById("sched-debt-sel")?.value;
-  const d=DEBTS.find(x=>x.id===id);
+  const d=debtPorId(id);
   const sumEl=document.getElementById("sched-table-summary");
   const bodyEl=document.getElementById("sched-table-body");
   if(!d||!bodyEl){ if(bodyEl) bodyEl.innerHTML=""; if(sumEl) sumEl.innerHTML=""; return; }
@@ -13658,9 +13695,103 @@ function renderSimulator(){
   runSimulator();
 }
 
+/* ══ VALE A PENA AMORTIZAR? ═══════════════════════════════════════════
+   O simulador respondia "quanto você economiza de juros" e parava aí. Mas
+   juros economizados não são lucro: o dinheiro usado na amortização tinha
+   outro destino possível, e a pergunta que importa é qual dos dois rende
+   mais. A conta é entre TAXAS, e as duas precisam ser comparáveis:
+
+   · Do lado da dívida, o custo efetivo — os juros do contrato compostos,
+     mês a mês, com o indexador declarado. Um financiamento de 8,8% a.a.
+     corrigido pela TR não custa 8,8%.
+   · Do lado da aplicação, a Selic da curva de Parâmetros ao longo do MESMO
+     prazo remanescente, não a de hoje: comparar um custo que vale 20 anos
+     com a taxa de um mês é comparar coisas de duração diferente. E líquida
+     de imposto, porque no Brasil o IR só incide no resgate — a taxa bruta
+     é um número que o titular nunca leva para casa.
+
+   Só com as duas na mesma base o diferencial diz alguma coisa. E, com
+   folga menor que um ponto, não diz nem isso. */
+const AMORT_IR=0.15;                       /* alíquota de prazo longo */
+function amortSomarMes(ymS,k){
+  let [y,m]=String(ymS).split("-").map(Number);
+  m+=k; y+=Math.floor((m-1)/12); m=((m-1)%12+12)%12+1;
+  return y+"-"+String(m).padStart(2,"0");
+}
+/* média geométrica de uma taxa mensal ao longo de n meses, anualizada */
+function amortMediaAA(fn,ym0,n){
+  const meses=Math.max(1,Math.min(n||1,600));
+  let fator=1, lidos=0;
+  for(let k=0;k<meses;k++){
+    const v=fn(amortSomarMes(ym0,k));
+    if(!isFinite(v)) continue;
+    fator*=(1+v); lidos++;
+  }
+  if(!lidos) return null;
+  const am=Math.pow(fator,1/lidos)-1;
+  return {am, aa:(Math.pow(1+am,12)-1)*100};
+}
+function amortVeredito(d,meses){
+  if(!d||!(meses>0)) return null;
+  const ym0=cym();
+  const j=debtRateMonthly(d)||0;
+  const custo=amortMediaAA(ym=>{
+    let ix=0;
+    try{ if(window.PRO&&PRO.debtIndexAM){ const v=PRO.debtIndexAM(d,ym); if(isFinite(v)) ix=v/100; } }catch(e){}
+    return (1+j)*(1+ix)-1;
+  },ym0,meses);
+  const selic=amortMediaAA(ym=>{
+    try{ if(window.PRO&&PRO.idxTaxaMes){ const v=PRO.idxTaxaMes("selic",ym); if(isFinite(v)) return v/100; } }catch(e){}
+    return NaN;
+  },ym0,meses);
+  if(!custo||!selic) return null;
+  const liqAM=selic.am*(1-AMORT_IR);
+  const liqAA=(Math.pow(1+liqAM,12)-1)*100;
+  return {meses, custoAA:custo.aa, selicAA:selic.aa, liqAA,
+          dif:custo.aa-liqAA, jAA:(Math.pow(1+j,12)-1)*100};
+}
+/* O bloco que aparece no simulador, com a conclusão e a conta aberta */
+function amortCartaoOtto(d,meses){
+  const v=amortVeredito(d,meses);
+  if(!v) return "";
+  const num=(x,c)=>{
+    const loc=LANG==="en"?"en-US":LANG==="de"?"de-DE":"pt-BR";
+    try{ return new Intl.NumberFormat(loc,{minimumFractionDigits:c||0,maximumFractionDigits:c||0}).format(x); }
+    catch(e){ return String(Math.round(x)); }
+  };
+  const fx=(k,V)=>{ let o=t(k); for(const i in V) o=o.split("{"+i+"}").join(V[i]); return o; };
+  const V={n:num(v.custoAA,2),x:num(v.liqAA,2),d:num(Math.abs(v.dif),2)};
+  const chave=v.dif>1?"yes":(v.dif<-1?"no":"tie");
+  const cor=chave==="yes"?"#5A8A4A":(chave==="no"?"#B85A6A":"#6B8FA8");
+  const linha=(k,val)=>`<div class="otto-calc"><span class="otto-calc-k">${escapeHtml(k)}</span>
+    <span class="otto-calc-v">${escapeHtml(val)}</span></div>`;
+  return `<div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:10px">
+    <div style="display:flex;align-items:flex-start;gap:11px;margin-bottom:9px">
+      <span class="otto-anel" style="flex-shrink:0">
+        <span class="oi oi-sm oi-round oi-ring oi-investiga" role="img" aria-hidden="true"></span>
+      </span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:8.5px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:${cor};margin-bottom:3px">${escapeHtml(t("sim_otto_kicker"))}</div>
+        <div style="font-family:var(--serif);font-style:italic;font-size:17px;color:var(--body);line-height:1.2">${escapeHtml(t("sim_otto_"+chave+"_t"))}</div>
+      </div>
+    </div>
+    <div style="font-size:12.5px;color:var(--body);line-height:1.6;margin-bottom:10px">${escapeHtml(fx("sim_otto_"+chave+"_b",V))}</div>
+    <div style="background:var(--bg);border-radius:11px;padding:2px 12px;margin-bottom:9px">
+      ${linha(t("sim_otto_horiz"),v.meses+" "+t("w_months"))}
+      ${linha(t("otto_r_nom"),num(v.jAA,2)+"%")}
+      ${linha(t("otto_r_cost"),num(v.custoAA,2)+"%")}
+      ${linha(t("sim_otto_selic"),num(v.selicAA,2)+"%")}
+      ${linha(t("otto_r_ir"),num(AMORT_IR*100)+"%")}
+      ${linha(t("sim_otto_liq"),num(v.liqAA,2)+"%")}
+      ${linha(t("otto_r_spread"),(v.dif>=0?"+":"\u2212")+num(Math.abs(v.dif),2)+" p.p.")}
+    </div>
+    <div style="font-size:10.5px;color:var(--ink-3);line-height:1.55">${escapeHtml(t("sim_otto_met"))}</div>
+  </div>`;
+}
+
 function runSimulator(){
   const id=document.getElementById("sim-debt-sel")?.value;
-  const d=DEBTS.find(x=>x.id===id);
+  const d=debtPorId(id);
   const res=document.getElementById("sim-result");
   if(!d||!res){ if(res) res.innerHTML=""; return; }
 
@@ -13720,6 +13851,8 @@ function runSimulator(){
         </div>`}
       </div>
     </div>`:`<div class="info-card" style="margin-bottom:10px">${t("sim_enter_amount")}</div>`}
+
+    ${amortCartaoOtto(d,base.months)}
 
     <!-- comparison row -->
     <div style="display:flex;gap:8px;margin-bottom:10px">
@@ -14010,7 +14143,7 @@ function applySimAmortization(){
 /* ── Debt CRUD ── */
 function openDebt(id){
   DEBT_EID=id||null;
-  const d=id?DEBTS.find(x=>x.id===id):null;
+  const d=id?debtPorId(id):null;
   DEBT_TYPE_SEL=d?d.type:"other_debt";
   // rate is stored internally as monthly; show in the user's last-chosen unit
   DEBT_RATE_TYPE=d?(d.rateType||"month"):"month";
@@ -14302,7 +14435,7 @@ function saveDebt(){
 }
 
 function confirmDelDebt(id){
-  const d=DEBTS.find(x=>x.id===id); if(!d) return;
+  const d=debtPorId(id); if(!d) return;
   /* usa o mesmo dialogo do resto do app: confirm() nativo e bloqueado
      em alguns navegadores em modo standalone no iOS */
   const dt=gDebtType(d.type);
@@ -14438,7 +14571,7 @@ function saveDebtPayment(){
 }
 
 function openDebtDetail(id){
-  const d=DEBTS.find(x=>x.id===id); if(!d) return;
+  const d=debtPorId(id); if(!d) return;
   const dt=gDebtType(d.type);
   const bal=debtBalance(d);
   const orig=parseFloat(d.principal)||0;
@@ -14981,7 +15114,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.59";
+const APP_VERSION="10.60";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
