@@ -211,18 +211,244 @@
 
     /* ── HEADER ── */
     .header {
-      padding: 36px 24px 24px;
+      padding: 36px 16px 24px;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
+      gap: 8px;
     }
+    /* Sem min-width:0 um filho flex nunca encolhe abaixo do próprio
+       conteúdo: o wordmark seguia com 32px e escorria POR BAIXO dos
+       botões de ação em vez de ceder espaço. */
+    .header > div:first-child { min-width: 0; flex: 1 1 auto; }
+    .header > div:first-child > div { min-width: 0; }
+    .header-actions { flex: 0 0 auto; }
     .wordmark {
       font-family: var(--serif);
-      font-size: 32px;
+      /* Encolhe até caber ao lado dos botões de ação. O piso de 18px é o
+         menor tamanho em que a serifa itálica ainda se lê como marca e
+         não como legenda. */
+      font-size: clamp(18px, 5.8vw, 32px);
       font-style: italic;
       color: var(--body);
       letter-spacing: -.5px;
-      line-height: 1;
+      line-height: 1.05;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+    }
+    /* ── SELETOR DE IDIOMA E SIGILO ── */
+    .lang-seg{
+      display:flex; gap:2px; align-items:center;
+      background:var(--surface); border:1px solid var(--line);
+      border-radius:20px; padding:2px; flex-shrink:0;
+    }
+    .flag-btn{
+      border:none; background:none; padding:2px 4px; cursor:pointer;
+      border-radius:14px; line-height:0; display:flex; align-items:center;
+      opacity:.42; filter:grayscale(.75); transition:opacity .15s, filter .15s;
+    }
+    .flag-btn.on{ opacity:1; filter:none; background:var(--accent-soft, rgba(0,0,0,.05)); }
+    .flag-btn svg{ display:block; border-radius:2.5px; box-shadow:0 0 0 .5px rgba(0,0,0,.14); }
+    /* ── BARRA DE MÊS DA TELA INICIAL ──
+       O botão de Parâmetros é absoluto para não deslocar a data do centro
+       óptico da tela. Com position:static ele empurraria o navegador para
+       a esquerda e a barra ficaria visivelmente torta. */
+    /* Cartões de seção mais rentes: a tela inicial é um índice, não uma
+       leitura. Encurtar o padding vertical é o que faz os cinco blocos
+       caberem sem rolagem num aparelho de 844px. */
+    .home-cards > button{ padding:13px 18px !important; }
+    .home-cards > button .oi{ width:44px; height:44px; }
+    /* ══ MANUAL ═══════════════════════════════════════════════════════
+       Bauhaus-neutro como o resto do app: superfície, fio e um acento só.
+       O bloco-guia precisa se distinguir de um cartão comum já fechado —
+       daí a barra de acento à esquerda e a etiqueta em versalete. */
+    .btn-manual{
+      background:var(--surface); border:1px solid var(--line); border-radius:50%;
+      width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+      cursor:pointer; color:var(--ink-2); flex-shrink:0; padding:0;
+    }
+    .man-search-wrap{ position:relative; padding:0 16px 8px; }
+    .man-search{
+      width:100%; background:var(--surface); border:1px solid var(--line);
+      border-radius:13px; padding:11px 34px 11px 14px; color:var(--body);
+      font-size:14px; -webkit-appearance:none;
+    }
+    .man-search:focus{ border-color:var(--accent); background:var(--paper); outline:none; }
+    #man-search-clear{
+      display:none; position:absolute; right:26px; top:calc(50% - 4px);
+      transform:translateY(-50%); background:none; border:none;
+      color:var(--ink-3); font-size:19px; line-height:1; cursor:pointer;
+    }
+    .man-hit{ background:rgba(214,178,74,.34); border-radius:3px; padding:0 1px; }
+    .man-count{ font-size:11px; color:var(--ink-3); margin:2px 0 12px; }
+
+    /* ── bloco-guia ── */
+    .man-guia{
+      position:relative; background:var(--paper); border:1px solid var(--line);
+      border-radius:16px; margin-bottom:10px; overflow:hidden;
+    }
+    .man-guia::before{
+      content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+      background:var(--accent);
+    }
+    .man-guia-hd{
+      /* Topo, não centro: com o selo centrado verticalmente ele descia
+         até o meio de um subtítulo de quatro linhas e o cabeçalho perdia
+         a linha de leitura. */
+      display:flex; align-items:flex-start; gap:12px; width:100%;
+      padding:14px 15px 14px 18px; background:none; border:none;
+      text-align:left; cursor:pointer;
+    }
+    .man-guia-ic{
+      width:34px; height:34px; border-radius:11px; flex-shrink:0;
+      background:var(--accent); color:var(--accent-ink);
+      display:flex; align-items:center; justify-content:center; font-size:15px;
+    }
+    .man-guia-tag{
+      font-size:8.5px; letter-spacing:1.6px; text-transform:uppercase;
+      color:var(--ink-3); font-weight:600; display:block; margin-bottom:2px;
+    }
+    /* <span> não quebra linha sozinho: sem display:block o subtítulo
+       colava no fim do título e os dois viravam um parágrafo só. */
+    .man-guia-tt{ display:block; font-size:14px; font-weight:600; color:var(--body); line-height:1.3; }
+    .man-guia-sub{ display:block; font-size:11px; color:var(--ink-3); margin-top:3px; line-height:1.5; }
+    .man-guia-selo{
+      flex-shrink:0; font-size:10px; font-weight:600; letter-spacing:.4px;
+      border:1px solid var(--line); border-radius:20px; padding:5px 11px;
+      color:var(--ink-2); background:var(--surface); margin-top:12px;
+    }
+    .man-guia-bd{ padding:0 15px 15px 18px; }
+
+    /* trilha de etapas */
+    .man-trilha{
+      display:flex; gap:6px; overflow-x:auto; padding:0 0 10px;
+      -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    }
+    .man-trilha::-webkit-scrollbar{ display:none; }
+    .man-et{
+      flex:0 0 auto; display:flex; align-items:center; gap:6px;
+      border:1px solid var(--line); background:var(--surface);
+      border-radius:20px; padding:6px 12px; font-size:11px;
+      color:var(--ink-2); cursor:pointer; white-space:nowrap;
+    }
+    .man-et.on{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:600; }
+    .man-et .n{
+      width:16px; height:16px; border-radius:50%; font-size:9px; font-weight:700;
+      display:flex; align-items:center; justify-content:center;
+      background:var(--line); color:var(--ink-2);
+    }
+    .man-et.on .n{ background:rgba(255,255,255,.28); color:var(--accent-ink); }
+
+    .man-pan{ animation:manIn .22s ease both; }
+    @keyframes manIn{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+    .man-pan-tt{ font-size:13px; font-weight:600; color:var(--body); margin:4px 0 5px; line-height:1.4; }
+    .man-pan-res{ font-size:11.5px; color:var(--ink-2); line-height:1.65; margin-bottom:11px; }
+    .man-passos{ list-style:none; padding:0; margin:0; counter-reset:mp; }
+    .man-passos li{
+      counter-increment:mp; position:relative; padding:0 0 11px 27px;
+      font-size:12.5px; color:var(--body); line-height:1.65;
+      animation:manIn .24s ease both;
+    }
+    .man-passos li::before{
+      content:counter(mp); position:absolute; left:0; top:1px;
+      width:19px; height:19px; border-radius:50%;
+      background:var(--surface); border:1px solid var(--line);
+      font-size:9.5px; font-weight:700; color:var(--ink-2);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .man-nota{
+      display:flex; gap:9px; align-items:flex-start; margin-top:4px;
+      background:var(--surface); border:1px solid var(--line);
+      border-radius:12px; padding:10px 12px;
+      font-size:11px; color:var(--ink-2); line-height:1.6;
+    }
+    .man-nota b{ color:var(--body); font-weight:600; }
+    .man-navb{ display:flex; gap:7px; margin-top:12px; }
+    .man-navb button{
+      flex:1; border:1px solid var(--line); background:var(--surface);
+      color:var(--ink-2); border-radius:11px; padding:9px;
+      font-size:11.5px; font-weight:600; cursor:pointer;
+    }
+    .man-navb button:disabled{ opacity:.35; cursor:default; }
+
+    /* fac-símiles: reproduzem o controle real, e não são clicáveis */
+    .fs{
+      display:inline-flex; align-items:center; gap:5px; vertical-align:baseline;
+      border-radius:8px; padding:1px 7px; font-size:11px; font-weight:600;
+      border:1px solid var(--line); background:var(--surface); color:var(--ink-2);
+      white-space:nowrap; line-height:1.7;
+    }
+    .fs-ac{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+    .fs-vd{ background:var(--green); border-color:var(--green); color:#fff; }
+    .fs-ab{ border-radius:20px; font-weight:500; }
+    .fs-cp{ font-family:var(--serif); font-style:italic; font-weight:400; font-size:12px; }
+
+    /* seções de referência */
+    .man-sec{
+      background:var(--paper); border:1px solid var(--line);
+      border-radius:16px; margin-bottom:10px; overflow:hidden;
+    }
+    .man-sec-hd{
+      display:flex; align-items:center; gap:11px; width:100%;
+      padding:13px 15px; background:none; border:none; text-align:left; cursor:pointer;
+    }
+    .man-sec-ic{
+      width:30px; height:30px; border-radius:9px; flex-shrink:0;
+      background:var(--surface); display:flex; align-items:center;
+      justify-content:center; font-size:14px;
+    }
+    .man-sec-tt{ flex:1; min-width:0; font-size:13px; font-weight:600; color:var(--body); }
+    .man-sec-ch{ color:var(--ink-4); font-size:14px; transition:transform .18s; }
+    .man-sec.aberta .man-sec-ch{ transform:rotate(90deg); }
+    .man-sec-bd{ padding:0 15px 6px; animation:manIn .2s ease both; }
+    .man-it{ padding:10px 0; border-top:1px solid var(--line); }
+    .man-it-t{ font-size:12.5px; font-weight:600; color:var(--body); margin-bottom:3px; }
+    .man-it-d{ font-size:11.5px; color:var(--ink-2); line-height:1.65; }
+    .man-vazio{ text-align:center; color:var(--ink-3); font-size:12.5px; padding:30px 10px; line-height:1.7; }
+
+    /* ── LINHA DE HISTÓRICO (SOMENTE LEITURA) ──
+       Sem moldura de campo, sem fundo branco: a diferença visual para a
+       linha editável da curva é o que impede alguém de tentar digitar num
+       número que veio do Banco Central. */
+    .par-hrow{
+      display:grid; grid-template-columns:1fr auto 46px; gap:8px;
+      align-items:baseline; padding:7px 0;
+      border-bottom:1px solid var(--line);
+    }
+    .par-hrow:last-child{ border-bottom:none; }
+    .par-hper{ font-size:11.5px; color:var(--ink-2); letter-spacing:.3px; }
+    .par-hval{
+      font-family:var(--serif); font-size:14px; color:var(--body);
+      text-align:right; letter-spacing:-.2px;
+    }
+    .par-hval.vazio{ color:var(--ink-4); font-family:inherit; font-size:12px; }
+    .par-hun{ font-size:9.5px; color:var(--ink-4); text-align:right; }
+    .par-lock{
+      display:flex; align-items:flex-start; gap:9px;
+      background:var(--surface); border:1px solid var(--line);
+      border-radius:13px; padding:10px 13px; margin-bottom:16px;
+      font-size:11px; color:var(--ink-2); line-height:1.55;
+    }
+    .par-lock-ic{ font-size:13px; line-height:1.4; flex-shrink:0; }
+    .home-navbar{
+      position:relative; display:flex; align-items:center; justify-content:center;
+      padding:0 16px;
+    }
+    .home-navbar .month-nav{ margin-left:0; margin-right:0; }
+    .btn-params{
+      position:absolute; right:16px; top:50%; transform:translateY(-50%);
+      width:32px; height:32px; border-radius:50%;
+      background:var(--surface); border:1px solid var(--line);
+      display:flex; align-items:center; justify-content:center;
+      color:var(--ink-2); cursor:pointer; padding:0; flex-shrink:0;
+    }
+    .btn-params:active{ background:var(--line); }
+    .btn-olho{
+      background:var(--surface); border:1px solid var(--line); border-radius:50%;
+      width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+      cursor:pointer; color:var(--ink-2); flex-shrink:0; padding:0;
     }
     .wordmark em { color: var(--green) }
     .header-sub {
@@ -355,9 +581,10 @@
     /* ── CONTENT ── */
     .content { flex: 1; padding: 14px 16px 84px; overflow-y: auto; overflow-x: hidden; color: var(--body); }
     #view-list {
-      background: var(--green);
+      background: var(--paper);
+      border: 1px solid var(--line);
       border-radius: 16px;
-      padding: 4px 16px 8px;
+      padding: 4px 14px 8px;
       margin-top: 4px;
     }
     .sec-label {
@@ -378,8 +605,8 @@
       transition: box-shadow .15s, background .15s;
     }
     .stat-active {
-      box-shadow: 0 0 0 2px var(--green);
-      background: var(--green-bg);
+      box-shadow: inset 0 0 0 1.5px var(--line);
+      background: var(--paper);
     }
     .stat-label { font-size: 9px; color: var(--ink-2); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 3px; font-weight: 500; }
     .stat-val { font-family: var(--serif); font-size: 17px; letter-spacing: -.3px; }
@@ -408,50 +635,51 @@
     .bar-fill { height: 100%; border-radius: 2px; }
     .cat-sub { font-size: 10px; color: var(--ink-2); margin-top: 4px; display: flex; justify-content: space-between; }
 
-    /* cat-rows inside dark green cat-bars panel */
-    #cat-bars .cat-row-top .name { color: rgba(255,255,255,.95) !important; }
-    #cat-bars .cat-row-top .right { color: rgba(255,255,255,.6) !important; }
-    #cat-bars .cat-sub { color: rgba(255,255,255,.5) !important; }
-    #cat-bars .bar-bg { background: rgba(255,255,255,.15) !important; }
-    #cat-bars .goal-tag { background: rgba(255,255,255,.15); color: rgba(255,255,255,.8); }
-    #cat-bars .goal-tag.over { background: rgba(196,122,92,.3); color: #ffb89a; }
-    #cat-bars .cat-row { border-radius: 10px; padding: 6px 8px; margin: 0 -8px 10px; }
+    /* Folha clara: a barra colorida de cada categoria é o único elemento
+       cromático, e agora ela se lê contra o papel em vez de competir com
+       um fundo verde chapado. */
+    #cat-bars .cat-row-top .name { color: var(--body); }
+    #cat-bars .cat-row-top .right { color: var(--ink-2); }
+    #cat-bars .cat-sub { color: var(--ink-3); }
+    #cat-bars .bar-bg { background: var(--surface); }
+    #cat-bars .cat-row { border-radius: 10px; padding: 6px 8px; margin: 0 -8px 8px; }
+    #cat-bars .cat-row:active { background: var(--surface); }
 
     /* ── EXPENSE LIST ── */
     .exp-card {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 14px 0;
-      border-bottom: 1px solid rgba(255,255,255,.1);
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
       transition: opacity .15s;
     }
     .exp-card:last-child { border-bottom: none; }
     .exp-left { display: flex; gap: 12px; align-items: center; }
     .exp-icon {
-      width: 38px; height: 38px;
-      border-radius: 12px;
+      width: 36px; height: 36px;
+      border-radius: 11px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 17px;
-      background: rgba(255,255,255,.12);
+      font-size: 16px;
+      background: var(--surface);
       flex-shrink: 0;
     }
-    .exp-name { font-size: 14px; font-weight: 500; color: #fff; }
-    .exp-meta { font-size: 11px; color: rgba(255,255,255,.55); margin-top: 1px; }
+    .exp-name { font-size: 14px; font-weight: 600; color: var(--body); }
+    .exp-meta { font-size: 11px; color: var(--ink-3); margin-top: 1px; }
     .exp-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
-    .exp-amount { font-family: var(--serif); font-size: 17px; letter-spacing: -.3px; color: #fff; }
+    .exp-amount { font-family: var(--serif); font-size: 17px; letter-spacing: -.3px; color: var(--body); }
     .type-pill {
       font-size: 9px; padding: 2px 7px; border-radius: 8px;
       font-weight: 500; letter-spacing: .3px; text-transform: uppercase;
     }
-    .pill-fixed { background: rgba(255,255,255,.15); color: rgba(255,255,255,.9); }
-    .pill-var   { background: rgba(255,255,255,.1);  color: rgba(255,255,255,.75); }
+    .pill-fixed { background: var(--green-bg); color: var(--green); }
+    .pill-var   { background: var(--surface);  color: var(--ink-2); }
     .exp-actions { display: flex; gap: 6px; }
     .act-btn {
       background: none; border: none;
-      font-size: 11px; color: rgba(255,255,255,.5);
+      font-size: 11px; color: var(--ink-3);
       cursor: pointer; padding: 2px 4px;
-      transition: color .1s;
+      transition: color .1s; opacity: .75;
     }
-    .act-btn:hover { color: #fff; }
+    .act-btn:hover { color: var(--body); opacity: 1; }
     .act-del:hover { color: #ffaaaa; }
 
     /* ── FILTER BAR ── */
@@ -464,20 +692,26 @@
       transition: all .15s;
     }
     .filter-btn:hover { border-color: rgba(255,255,255,.5); color: #fff; background: rgba(255,255,255,.15); }
-    .filter-btn.on { background: var(--paper); border-color: var(--paper); color: var(--green); font-weight: 600; }
+    .filter-btn.on { background: var(--green); border-color: var(--green); color: #fff; font-weight: 600; }
+    /* Numa folha clara, borda e tinta translúcidas somem. */
+    #view-list .filter-btn{
+      border-color: var(--line); background: var(--surface); color: var(--ink-2);
+    }
+    #view-list .filter-btn.on{ background: var(--green); border-color: var(--green); color:#fff; }
+    #view-list .exp-check, #view-list input[type="checkbox"]{ accent-color: var(--green); }
     .recur-badge {
       font-size: 9px; padding: 2px 6px; border-radius: 8px;
-      background: rgba(255,255,255,.15); color: rgba(255,255,255,.8);
+      background: var(--surface); color: var(--ink-2);
       font-weight: 500; letter-spacing: .3px;
     }
     .split-badge {
       font-size: 9px; padding: 2px 6px; border-radius: 8px;
-      background: rgba(255,255,255,.1); color: rgba(255,255,255,.7);
+      background: var(--surface); color: var(--ink-3);
       font-weight: 500; letter-spacing: .3px;
     }
     .cur-badge {
       font-size: 9px; padding: 2px 6px; border-radius: 8px;
-      background: rgba(255,255,255,.12); color: rgba(255,255,255,.75);
+      background: var(--wood-bg, var(--surface)); color: var(--wood);
       font-weight: 600; letter-spacing: .3px;
     }
 
@@ -1635,11 +1869,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
                 font-weight:600;color:var(--ink-3)"></div>
 
     <!-- language switch top-right -->
-    <div style="position:absolute;top:18px;right:18px;display:flex;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:2px">
-      <button onclick="setLang('pt')" data-lang="pt" style="border:none;border-radius:16px;padding:4px 9px;font-size:10px;font-weight:600;cursor:pointer;letter-spacing:.5px;background:none;color:var(--ink-2)">PT</button>
-      <button onclick="setLang('en')" data-lang="en" style="border:none;border-radius:16px;padding:4px 9px;font-size:10px;font-weight:600;cursor:pointer;letter-spacing:.5px;background:none;color:var(--ink-2)">EN</button>
-      <button onclick="setLang('de')" data-lang="de" style="border:none;border-radius:16px;padding:4px 9px;font-size:10px;font-weight:600;cursor:pointer;letter-spacing:.5px;background:none;color:var(--ink-2)">DE</button>
-    </div>
+    <div class="lang-seg" id="lang-seg-auth" style="position:absolute;top:18px;right:18px"></div>
 
     <!-- Retrato do titular da casa. Vai embutido em base64 porque o app é um
          arquivo único e roda offline: um <img src> apontando para fora
@@ -1706,46 +1936,51 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       </div>
     </div>
     <div class="header-actions">
-      <div id="lang-seg" style="display:flex;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:2px;flex-shrink:0">
-        <button onclick="setLang('pt')" data-lang="pt" style="border:none;border-radius:16px;padding:3px 8px;font-size:10px;font-weight:600;cursor:pointer;letter-spacing:.5px;background:none;color:var(--muted)">PT</button>
-        <button onclick="setLang('en')" data-lang="en" style="border:none;border-radius:16px;padding:3px 8px;font-size:10px;font-weight:600;cursor:pointer;letter-spacing:.5px;background:none;color:var(--muted)">EN</button>
-        <button onclick="setLang('de')" data-lang="de" style="border:none;border-radius:16px;padding:3px 8px;font-size:10px;font-weight:600;cursor:pointer;letter-spacing:.5px;background:none;color:var(--muted)">DE</button>
-      </div>
+      <div class="lang-seg" id="lang-seg"></div>
+      <button class="btn-olho" onclick="toggleValores()" aria-pressed="false"></button>
+      <button class="btn-manual" onclick="enterSection('manual')"
+        data-i18n-title="nav_manual" title="Manual" aria-label="Manual">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+      </button>
       <button id="btn-auth-logout" onclick="confirmAuthLogout()" data-i18n-title="auth_lock_t" style="display:none;background:var(--surface);border:1px solid var(--line);border-radius:50%;width:30px;height:30px;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--ink-2);flex-shrink:0">🔒</button>
       <button id="btn-backup" onclick="openBackupSheet()" data-i18n-title="backup_t" style="background:var(--surface);border:1px solid var(--line);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--ink-2);flex-shrink:0">💾</button>
     </div>
   </div>
 
   <!-- home month nav -->
-  <div class="month-nav" id="home-month-nav">
-    <button class="month-nav-btn" id="btn-prev-month-home">‹</button>
-    <div class="month-label" id="month-nav-label-home"></div>
-    <button class="month-today-btn hidden" id="btn-today-home" data-i18n="today">Hoje</button>
-    <button class="month-nav-btn" id="btn-next-month-home">›</button>
-    <span class="month-delta" id="month-delta-home" style="display:none"></span>
+  <div class="home-navbar">
+    <div class="month-nav" id="home-month-nav">
+      <button class="month-nav-btn" id="btn-prev-month-home">‹</button>
+      <div class="month-label" id="month-nav-label-home"></div>
+      <button class="month-today-btn hidden" id="btn-today-home" data-i18n="today">Hoje</button>
+      <button class="month-nav-btn" id="btn-next-month-home">›</button>
+      <span class="month-delta" id="month-delta-home" style="display:none"></span>
+    </div>
+    <button id="btn-params" class="btn-params" onclick="PRO.openParams()"
+      data-i18n-title="params_open_t" title="Parâmetros" aria-label="Parâmetros">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+        <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+        <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/>
+        <line x1="17" y1="16" x2="23" y2="16"/>
+      </svg>
+    </button>
   </div>
 
-  <div class="content" style="padding-bottom:40px">
+  <div class="content" id="home-content" style="padding-bottom:16px">
 
-    <!-- BALANÇO CARD -->
-    <!-- Parâmetros: curvas de índice e tributação que governam a projeção -->
-    <button onclick="PRO.openParams()" style="width:100%;display:flex;align-items:center;gap:11px;
-      text-align:left;cursor:pointer;border:1.5px solid var(--line);border-radius:16px;
-      padding:12px 15px;margin-bottom:12px;background:var(--surface)">
-      <span class="oi oi-sm oi-ring oi-obras" role="img" aria-label="Otto"></span>
-      <span style="flex:1;min-width:0">
-        <span style="display:block;font-size:13px;font-weight:600;color:var(--body)" data-i18n="params_title">Parâmetros</span>
-        <span style="display:block;font-size:10.5px;color:var(--ink-3)" data-i18n="params_sub">Índices, impostos e encargos que regem a projeção</span>
-      </span>
-      <span style="color:var(--ink-4);font-size:15px">›</span>
-    </button>
-
-    <button onclick="enterSection('vidafinanceira')" style="width:100%;text-align:left;cursor:pointer;border:none;border-radius:20px;padding:0;margin-bottom:16px;background:none">
+    <button onclick="enterSection('vidafinanceira')" style="width:100%;text-align:left;cursor:pointer;border:none;border-radius:20px;padding:0;margin-bottom:10px;background:none">
       <div id="home-health-card"></div>
     </button>
 
     <!-- 4 SECTION CARDS (full-width, ordered: Despesas, Dívidas, Receitas, Patrimônio) -->
-    <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:20px">
+    <div class="home-cards" style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:6px">
 
       <!-- DESPESAS -->
       <button onclick="enterSection('despesas')" style="width:100%;text-align:left;cursor:pointer;background:var(--green);border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px">
@@ -1892,10 +2127,10 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <div class="sec-label"><span data-i18n="by_category">Por categoria</span> <span style="font-size:9px;color:var(--ink-2);font-weight:400;letter-spacing:.5px" data-i18n="tap_to_filter">· toque para filtrar</span></div>
       <!-- filter shortcut bar -->
       <div id="dash-filter-shortcut" style="display:none;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border-radius:10px;margin-bottom:12px;flex-wrap:wrap"></div>
-      <div id="cat-bars" style="background:var(--green);border-radius:16px;padding:14px 16px 8px"></div>
+      <div id="cat-bars" style="background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px 16px 8px"></div>
       <div id="recent-section" style="display:none">
         <div class="sec-label" style="margin-top:28px" id="recent-section-label" data-i18n="recent_tx">Últimos lançamentos</div>
-        <div id="recent-list" style="background:var(--green);border-radius:16px;padding:4px 16px 8px"></div>
+        <div id="recent-list" style="background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:4px 16px 8px"></div>
       </div>
     </div>
 
@@ -1905,22 +2140,22 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
         <input id="list-search" type="text" placeholder="🔍 Pesquisar por nome…"
           data-i18n="search_expense"
           oninput="renderList()"
-          style="width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:5px 30px 5px 10px;font-size:11px;box-sizing:border-box"
+          style="width:100%;background:var(--surface);border:1px solid var(--line);color:var(--body);border-radius:8px;padding:5px 30px 5px 10px;font-size:11px;box-sizing:border-box"
           autocomplete="off" autocorrect="off" spellcheck="false"/>
         <button id="list-search-clear" onclick="document.getElementById('list-search').value='';renderList()"
-          style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.5);font-size:16px;cursor:pointer;line-height:1">×</button>
+          style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--ink-3);font-size:16px;cursor:pointer;line-height:1">×</button>
       </div>
       <!-- Filters row -->
       <div style="display:flex;gap:5px;align-items:center;padding-bottom:0">
-        <select id="cat-filter-sel" class="sel-sm" onchange="setF(this.value)" style="flex:2;min-width:0;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:3px 5px;font-size:9.5px;cursor:pointer">
+        <select id="cat-filter-sel" class="sel-sm" onchange="setF(this.value)" style="flex:2;min-width:0;background:var(--surface);border:1px solid var(--line);color:var(--body);border-radius:8px;padding:3px 5px;font-size:9.5px;cursor:pointer">
           <option value="all" data-i18n="opt_category">🏷️ Categoria</option>
         </select>
-        <select id="type-filter-sel" class="sel-sm" onchange="setTypeFilter(this.value)" style="flex:1;min-width:0;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:3px 5px;font-size:9.5px;cursor:pointer">
+        <select id="type-filter-sel" class="sel-sm" onchange="setTypeFilter(this.value)" style="flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);color:var(--body);border-radius:8px;padding:3px 5px;font-size:9.5px;cursor:pointer">
           <option value="all" data-i18n="all_types">Todos</option>
           <option value="fixed" data-i18n="type_fixed_opt">📌 Fixos</option>
           <option value="variable" data-i18n="type_variable_opt">⚡ Variáveis</option>
         </select>
-        <select id="list-sort" class="sel-sm" onchange="renderList()" style="flex:1;min-width:0;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:3px 5px;font-size:9.5px;cursor:pointer">
+        <select id="list-sort" class="sel-sm" onchange="renderList()" style="flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);color:var(--body);border-radius:8px;padding:3px 5px;font-size:9.5px;cursor:pointer">
           <option value="date-desc" data-i18n="sort_recent">📅 Rec.</option>
           <option value="date-asc" data-i18n="sort_old">📅 Ant.</option>
           <option value="val-desc" data-i18n="sort_higher">💰 Maior</option>
@@ -1930,23 +2165,23 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
         </select>
       </div>
       <!-- batch classify bar -->
-      <div id="batch-bar" style="display:none;padding:8px 10px;background:rgba(255,255,255,.12);border-radius:10px;margin-top:8px">
+      <div id="batch-bar" style="display:none;padding:8px 10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-top:8px">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span id="batch-count" style="font-size:12px;color:rgba(255,255,255,.9);font-weight:600"></span>
-          <select id="batch-cat-sel" class="sel-sm" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:4px 8px;font-size:11px;flex:1;min-width:0"></select>
-          <select id="batch-type-sel" class="sel-sm" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:4px 8px;font-size:11px">
+          <span id="batch-count" style="font-size:12px;color:var(--body);font-weight:600"></span>
+          <select id="batch-cat-sel" class="sel-sm" style="background:var(--paper);border:1px solid var(--line);color:var(--body);border-radius:8px;padding:4px 8px;font-size:11px;flex:1;min-width:0"></select>
+          <select id="batch-type-sel" class="sel-sm" style="background:var(--paper);border:1px solid var(--line);color:var(--body);border-radius:8px;padding:4px 8px;font-size:11px">
             <option value="" data-i18n="type_label_opt">Tipo...</option>
             <option value="variable" data-i18n="type_variable_opt">⚡ Variável</option>
             <option value="fixed" data-i18n="type_fixed_opt">📌 Fixo</option>
           </select>
           <button onclick="applyBatch()" style="background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer" data-i18n="apply_btn">✓ Aplicar</button>
-          <button onclick="clearBatch()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:18px;cursor:pointer;line-height:1">×</button>
+          <button onclick="clearBatch()" style="background:none;border:none;color:var(--ink-3);font-size:18px;cursor:pointer;line-height:1">×</button>
         </div>
       </div>
       <div id="expense-list"></div>
       <div style="display:flex;justify-content:center;margin:18px 0 4px">
         <button id="btn-clear-month" data-i18n="clear_month_t"
-          style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:rgba(255,200,180,.85);border-radius:9px;padding:6px 14px;font-size:10.5px;cursor:pointer">Limpar mês</button>
+          style="background:none;border:1px solid var(--line);color:var(--wine,#6E2B3A);border-radius:9px;padding:6px 14px;font-size:10.5px;cursor:pointer">Limpar mês</button>
       </div>
     </div>
 
@@ -2432,6 +2667,24 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
   </div>
   <div class="content" id="vidafin-content" style="padding:14px 16px 84px"></div>
 </div><!-- end screen-vidafinanceira -->
+
+<div id="screen-manual" class="screen" style="background:var(--bg)">
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="goHome()" style="width:36px;height:36px;border-radius:50%;background:var(--surface);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="oi oi-sm oi-round oi-ring oi-estudo" role="img" aria-label="Otto"></span>
+      <div class="wordmark" data-i18n="nav_manual">Manual</div>
+    </div>
+  </div>
+  <div class="man-search-wrap">
+    <input id="man-search" class="man-search" type="search" autocomplete="off"
+      oninput="renderManual()" data-i18n="man_search_ph" placeholder="Buscar no manual…"/>
+    <button id="man-search-clear" onclick="document.getElementById('man-search').value='';renderManual()">×</button>
+  </div>
+  <div class="content" id="manual-content" style="padding:6px 16px 90px"></div>
+</div><!-- end screen-manual -->
 
 <!-- retorno ao início ao alcance do polegar (telas internas) -->
 <!-- Principais instituições do país, como sugestão. O campo aceita
@@ -3351,6 +3604,11 @@ const I18N={
     paste_empty:"Cole o texto da fatura primeiro.",
     paste_none:"Nenhum lançamento reconhecido no texto.",
     backup_t:"Backup",
+    nav_manual:"Manual",
+    man_search_ph:"Buscar no manual…",
+    vis_hide:"Ocultar os valores",
+    vis_show:"Mostrar os valores",
+    params_open_t:"Parâmetros da projeção",
     backup_title:"Backup e restauração",
     backup_intro:"Salve uma cópia de todos os seus dados (despesas, receitas, patrimônio, dívidas, categorias, regras e ajustes) num arquivo. Guarde-o no app Arquivos ou no iCloud para nunca perder nada.",
     backup_export_btn:"Exportar backup",
@@ -4255,6 +4513,11 @@ const I18N={
     paste_empty:"Paste the invoice text first.",
     paste_none:"No transactions recognized in the text.",
     backup_t:"Backup",
+    nav_manual:"Manual",
+    man_search_ph:"Search the manual…",
+    vis_hide:"Hide the amounts",
+    vis_show:"Show the amounts",
+    params_open_t:"Projection parameters",
     backup_title:"Backup & restore",
     backup_intro:"Save a copy of all your data (expenses, income, assets, debts, categories, rules and settings) to a file. Keep it in the Files app or iCloud so you never lose anything.",
     backup_export_btn:"Export backup",
@@ -5158,6 +5421,11 @@ const I18N={
     paste_empty:"Füge zuerst den Rechnungstext ein.",
     paste_none:"Keine Buchungen im Text erkannt.",
     backup_t:"Backup",
+    nav_manual:"Handbuch",
+    man_search_ph:"Im Handbuch suchen…",
+    vis_hide:"Beträge ausblenden",
+    vis_show:"Beträge einblenden",
+    params_open_t:"Projektionsparameter",
     backup_title:"Backup & Wiederherstellung",
     backup_intro:"Speichere eine Kopie all deiner Daten (Ausgaben, Einnahmen, Vermögen, Schulden, Kategorien, Regeln und Einstellungen) in einer Datei. Bewahre sie in der Dateien-App oder in iCloud auf, damit nichts verloren geht.",
     backup_export_btn:"Backup exportieren",
@@ -6082,16 +6350,10 @@ function applyTranslations(){
     el.title=t(el.dataset.i18nTitle);
   });
   // Highlight active language in the segmented selector
-  document.querySelectorAll("#lang-seg [data-lang]").forEach(b=>{
-    const active=b.dataset.lang===LANG;
-    b.style.background=active?"var(--accent)":"none";
-    b.style.color=active?"var(--accent-ink)":"var(--muted)";
-  });
-  // auth screen language buttons (light-on-dark)
-  document.querySelectorAll("#screen-auth [data-lang]").forEach(b=>{
-    const active=b.dataset.lang===LANG;
-    b.style.background=active?"var(--accent)":"none";
-    b.style.color=active?"var(--accent-ink)":"var(--ink-2)";
+  /* A bandeira ativa ganha anel e cor cheia; as outras ficam apagadas.
+     Fundo solido, como era com as siglas, cobriria a propria bandeira. */
+  document.querySelectorAll(".flag-btn[data-lang]").forEach(b=>{
+    b.classList.toggle("on",b.dataset.lang===LANG);
   });
   document.documentElement.lang=LANG==="pt"?"pt-BR":LANG==="de"?"de":"en";
 
@@ -6113,6 +6375,7 @@ function applyTranslations(){
       else if(SCREEN==="patrimonio") renderAssets();
       else if(SCREEN==="dividas") renderDebts();
       else if(SCREEN==="vidafinanceira") renderFinLife();
+      else if(SCREEN==="manual") renderManual();
     }
   }catch(e){ console.warn("applyTranslations:",e.message); }
 }
@@ -6530,7 +6793,68 @@ function isCurrentMonth(){ const n=new Date(); return activeYear===n.getFullYear
 /* migrate old data */
 (function(){const o=localStorage.getItem("gastos_expenses");if(o&&!EX.length){EX=JSON.parse(o).map(e=>({...e,type:e.type||"variable"}));persist();}})();
 
-const fmt=v=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(v);
+/* ── SIGILO DE VALORES ────────────────────────────────────────────────
+   O olho fechado troca todo valor em dinheiro por um travessao. Nao e
+   criptografia: e a possibilidade de abrir o app ao lado de alguem. O
+   estado atravessa os tres formatadores — nenhuma tela precisa saber que
+   ele existe, e por isso nenhuma esquece de respeitar. */
+const VIS_KEY="gastos_v2_valores_ocultos";
+let VALORES_OCULTOS=(()=>{try{return localStorage.getItem(VIS_KEY)==="1";}catch(e){return false;}})();
+const OCULTO_TXT="\u2014";
+function valoresOcultos(){ return VALORES_OCULTOS; }
+function toggleValores(){
+  VALORES_OCULTOS=!VALORES_OCULTOS;
+  try{ localStorage.setItem(VIS_KEY,VALORES_OCULTOS?"1":"0"); }catch(e){}
+  pintarOlho();
+  /* redesenha tudo o que estiver montado: os valores ja renderizados sao
+     texto no DOM, nao se escondem sozinhos */
+  try{ renderHome(); }catch(e){}
+  try{ updateHero(); }catch(e){}
+  try{ if(window.PRO&&PRO.refreshPro) PRO.refreshPro(); }catch(e){}
+  try{ if(typeof renderDash==="function"&&SCREEN==="despesas"){ renderDash();
+        if(typeof V!=="undefined"&&V==="list"&&typeof renderList==="function") renderList(); } }catch(e){}
+}
+function montarIdiomas(){
+  ["lang-seg","lang-seg-auth"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&!el.children.length) el.innerHTML=langSegHTML();
+  });
+  try{ pintarOlho(); }catch(e){}
+  try{ document.querySelectorAll(".flag-btn[data-lang]")
+        .forEach(b=>b.classList.toggle("on",b.dataset.lang===LANG)); }catch(e){}
+}
+function pintarOlho(){
+  document.querySelectorAll(".btn-olho").forEach(b=>{
+    b.innerHTML=VALORES_OCULTOS?ICON_OLHO_OFF:ICON_OLHO_ON;
+    b.setAttribute("aria-pressed",VALORES_OCULTOS?"true":"false");
+    b.title=t(VALORES_OCULTOS?"vis_show":"vis_hide");
+  });
+}
+const ICON_OLHO_ON='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+const ICON_OLHO_OFF='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+/* ── BANDEIRAS DOS IDIOMAS ───────────────────────────────────────────
+   Brasil, Reino Unido e Alemanha, em SVG inline. O app e um arquivo so e
+   precisa abrir sem rede: qualquer <img src> externo deixaria o seletor
+   com tres buracos justamente na tela de acesso. */
+const FLAGS={
+  pt:'<svg viewBox="0 0 28 20" width="21" height="15" aria-hidden="true"><rect width="28" height="20" rx="2.5" fill="#009B3A"/><path d="M14 2.6 25.2 10 14 17.4 2.8 10z" fill="#FEDF00"/><circle cx="14" cy="10" r="4.3" fill="#002776"/><path d="M9.9 8.5a10 10 0 0 1 8.3 2.2" stroke="#fff" stroke-width="1.15" fill="none"/></svg>',
+  en:'<svg viewBox="0 0 28 20" width="21" height="15" aria-hidden="true"><rect width="28" height="20" rx="2.5" fill="#012169"/><path d="M0 0l28 20M28 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0l28 20M28 0L0 20" stroke="#C8102E" stroke-width="2"/><path d="M14 0v20M0 10h28" stroke="#fff" stroke-width="6.5"/><path d="M14 0v20M0 10h28" stroke="#C8102E" stroke-width="3.9"/></svg>',
+  de:'<svg viewBox="0 0 28 20" width="21" height="15" aria-hidden="true"><rect width="28" height="20" rx="2.5" fill="#FFCE00"/><path d="M0 2.5A2.5 2.5 0 0 1 2.5 0h23A2.5 2.5 0 0 1 28 2.5V6.7H0z" fill="#000"/><rect y="6.7" width="28" height="6.6" fill="#DD0000"/></svg>'
+};
+const LANG_NOME={pt:"Portugu\u00eas",en:"English",de:"Deutsch"};
+/* Um seletor so, usado na tela de acesso e no cabecalho da tela inicial */
+function langSegHTML(){
+  return ["pt","en","de"].map(l=>
+    `<button onclick="setLang('${l}')" data-lang="${l}" class="flag-btn" `
+    +`title="${LANG_NOME[l]}" aria-label="${LANG_NOME[l]}">${FLAGS[l]}</button>`).join("");
+}
+
+/* O sinal vive fora do formatador: com o olho fechado, SGP("+")+fmt(x) daria
+   "+—". SGP e o unico lugar que decide se o sinal aparece. */
+const SGP=s=>VALORES_OCULTOS?"":s;
+const _fmtBRL=v=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(v);
+const fmt=v=>VALORES_OCULTOS?OCULTO_TXT:_fmtBRL(v);
 
 /* ── Currency input mask: shows 1.000.000,00, stores raw number ──
    Works on type=text inputs with inputmode=decimal. */
@@ -7161,7 +7485,7 @@ function renderDash(){
       <div class="bar-bg" style="${isDimmed?'opacity:.25':''}"><div class="bar-fill bar-anim" style="width:${(c.total/mx)*100}%;background:${c.color}"></div></div>
       <div class="cat-sub" style="${isDimmed?'opacity:.3':''}">
         <span>${((c.total/total)*100).toFixed(1)}%</span>
-        ${g>0?`<span style="color:${over?'var(--warn)':'rgba(255,255,255,.5)'}">${gp.toFixed(0)}% ${t("w_of_goal")}</span>`:''}
+        ${g>0?`<span style="color:${over?'var(--warn)':'var(--ink-3)'}">${gp.toFixed(0)}% ${t("w_of_goal")}</span>`:''}
       </div>
     </div>`;}).join("");
 
@@ -7198,7 +7522,7 @@ function renderDash(){
           <div class="exp-amount" style="${neutral?"color:rgba(255,255,255,.4)":""}">${neutral?"—":fmtCur(e.amount,cur)}</div>
           <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">
             ${neutral
-              ?`<span class="recur-badge" style="background:#f0f0ee;color:#888">${catLabel(c)}</span>`
+              ?`<span class="recur-badge">${catLabel(c)}</span>`
               :`<span class="type-pill ${e.type==='fixed'?'pill-fixed':'pill-var'}">${e.type==='fixed'?'Fixo':'Variável'}</span>`}
             ${cur!=="BRL"&&!neutral?`<span class="cur-badge">${cur}</span>`:''}
             ${rLabel?`<span class="recur-badge">${rLabel}</span>`:''}
@@ -7292,13 +7616,13 @@ function renderList(){
     // Estorno: negative amount OR category is refund/income/transfer with a credit nature
     const isEstorno=e.amount<0||e.category==="refund";
     const cardBg=isEstorno?"rgba(100,200,150,.08)":neutral?"opacity:.6":"";
-    const amountColor=isEstorno?"#4CAF82":neutral?"rgba(255,255,255,.4)":"";
+    const amountColor=isEstorno?"#4CAF82":neutral?"var(--ink-4)":"";
     const estornoBadge=isEstorno?`<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(100,200,150,.2);color:#4CAF82;font-weight:600;letter-spacing:.3px">↩ ESTORNO</span>`:"";
 
     return `
     <div class="exp-card" style="${neutral?"opacity:.6":""}${isEstorno?";border-left:3px solid #4CAF82":""}">
       <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
-        <div onclick="toggleBatch(${editId})" style="width:20px;height:20px;border-radius:6px;border:2px solid ${checked?'var(--accent)':'rgba(255,255,255,.25)'};background:${checked?'var(--accent)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:all .15s">
+        <div onclick="toggleBatch(${editId})" style="width:20px;height:20px;border-radius:6px;border:2px solid ${checked?'var(--accent)':'var(--line)'};background:${checked?'var(--accent)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:all .15s">
           ${checked?'<span style="color:#fff;font-size:10px;font-weight:700">✓</span>':''}
         </div>
         <div class="exp-icon" style="background:${isEstorno?'rgba(100,200,150,.15)':c.color+'28'}">${isEstorno?'↩️':c.emoji}</div>
@@ -7621,6 +7945,7 @@ function expInstancesByYM(ymList){
 
 /* eixo do gráfico: 12.480 vira 12,5k — rótulo curto não encavala */
 function fmtK(v){
+  if(VALORES_OCULTOS) return OCULTO_TXT;
   const a=Math.abs(v);
   const dec=s=>(LANG==="en"?s:s.replace(".",","));
   if(a>=1e6) return dec((v/1e6).toFixed(1))+"M";
@@ -8163,6 +8488,7 @@ const CURRENCIES={
 };
 
 function fmtCur(v, code){
+  if(VALORES_OCULTOS) return OCULTO_TXT;
   const cur=CURRENCIES[code]||CURRENCIES.BRL;
   return new Intl.NumberFormat(cur.locale,{style:"currency",currency:cur.code,maximumFractionDigits:code==="JPY"?0:2}).format(v);
 }
@@ -8815,11 +9141,11 @@ function renderIncHistPanel(){
     <span style="font-size:${forte?14:12.5}px;color:${col};font-weight:${forte?700:500};white-space:nowrap">${v}</span></div>`;
 
   const comp=row("(+) "+t("inc_h_gross"),fmt(bruto),BLU)
-    +(inss>0?row("(−) INSS","−"+fmt(inss),"var(--ink-3)"):"")
-    +(ded>0?row("(−) "+t("inc_h_ded"),"−"+fmt(ded),"var(--ink-3)"):"")
-    +(ir>0?row("(−) "+t("inc_h_ir"),"−"+fmt(ir),RED):"")
+    +(inss>0?row("(−) INSS",SGP("−")+fmt(inss),"var(--ink-3)"):"")
+    +(ded>0?row("(−) "+t("inc_h_ded"),SGP("−")+fmt(ded),"var(--ink-3)"):"")
+    +(ir>0?row("(−) "+t("inc_h_ir"),SGP("−")+fmt(ir),RED):"")
     +row("(=) "+t("inc_h_net"),fmt(liq),GRN,true)
-    +(fg>0?row(t("inc_h_fgts"),"+"+fmt(fg),GRN):"");
+    +(fg>0?row(t("inc_h_fgts"),SGP("+")+fmt(fg),GRN):"");
 
   /* variação do bruto de um mês para o outro: é onde o reajuste aparece,
      e também o 13º e o terço de férias — por isso o rótulo do motivo */
@@ -9540,7 +9866,7 @@ function openImportAssets(){
 let SCREEN="home"; // home | despesas | entradas | patrimonio | dividas
 
 function showScreen(name){
-  ["auth","home","despesas","entradas","patrimonio","dividas","vidafinanceira"].forEach(s=>{
+  ["auth","home","despesas","entradas","patrimonio","dividas","vidafinanceira","manual"].forEach(s=>{
     const el=document.getElementById("screen-"+s);
     if(!el) return;
     el.style.display="";
@@ -9569,7 +9895,7 @@ function navGarantirTela(){
   if(typeof AUTH_OK!=="undefined"&&!AUTH_OK) return;   // tela de acesso manda
   const alvo="screen-"+(SCREEN||"home");
   let achou=false;
-  ["home","despesas","entradas","patrimonio","dividas","vidafinanceira"].forEach(k=>{
+  ["home","despesas","entradas","patrimonio","dividas","vidafinanceira","manual"].forEach(k=>{
     const el=document.getElementById("screen-"+k);
     if(!el) return;
     el.classList.remove("slide-in","slide-out","slide-back","slide-out-back");
@@ -9610,6 +9936,7 @@ function enterSection(s){
     if(s==="patrimonio"){populateAstClassFilter();renderAssets();showAst("dashboard");}
     if(s==="dividas"){populateDebtTypeFilter();renderDebts();showDebt("dashboard");}
     if(s==="vidafinanceira"){renderFinLife();}
+    if(s==="manual"){renderManual();}
   }catch(err){
     console.error("enterSection error:",err);
     toast(t("err_open")+": "+err.message);
@@ -9620,7 +9947,7 @@ function goHome(){
   SCREEN="home";
   const seq=++NAV_SEQ;
   const home=document.getElementById("screen-home");
-  const screens=["despesas","entradas","patrimonio","dividas","vidafinanceira"];
+  const screens=["despesas","entradas","patrimonio","dividas","vidafinanceira","manual"];
   const current=screens.find(s=>document.getElementById("screen-"+s)?.classList.contains("active"));
   const currentEl=current?document.getElementById("screen-"+current):null;
 
@@ -9816,12 +10143,12 @@ const OTTO=(function(){
       add("entradas","risco","otto_neg_t","otto_neg_b",
           {v:fmt(Math.abs(m.balance))},"otto_m_neg",
           [L("otto_r_inc",fmt(m.totalInc)),L("otto_r_exp",fmt(m.totalExp)),
-           L("otto_r_bal","−"+fmt(Math.abs(m.balance)))]);
+           L("otto_r_bal",SGP("−")+fmt(Math.abs(m.balance)))]);
     if(m.netWorth<0)
       add("patrimonio","risco","otto_pl_t","otto_pl_b",
           {v:fmt(Math.abs(m.netWorth))},"otto_m_pl",
           [L("otto_r_ast",fmt(m.totalAssets)),L("otto_r_debt",fmt(m.totDebt)),
-           L("otto_r_nw","−"+fmt(Math.abs(m.netWorth)))]);
+           L("otto_r_nw",SGP("−")+fmt(Math.abs(m.netWorth)))]);
     if(m.dti>30)
       add("dividas","risco","otto_dti_t","otto_dti_b",
           {n:num(m.dti),v:fmt(m.totMonthly)},"otto_m_dti",
@@ -9887,7 +10214,7 @@ const OTTO=(function(){
       if(prev>0&&cur>0){
         const d=(cur-prev)/prev*100;
         const linhas=[L("otto_r_prev",fmt(prev)),L("otto_r_cur",fmt(cur)),
-                      L("otto_r_delta",(d>=0?"+":"−")+fmt(Math.abs(cur-prev))+" ("+num(Math.abs(d))+"%)")];
+                      L("otto_r_delta",SGP(d>=0?"+":"−")+fmt(Math.abs(cur-prev))+" ("+num(Math.abs(d))+"%)")];
         /* marcada como prioritária: dentro da aba de Despesas a comparação
            com o mês anterior é a única leitura que a tela não dá sozinha —
            a concentração por categoria já está nas barras logo abaixo. */
@@ -9907,7 +10234,7 @@ const OTTO=(function(){
            L("otto_r_intrem",fmt(m.debtInterestRemaining))]);
     if(!ASSETS.length&&m.totalInc>0)
       add("patrimonio","nota","otto_seed_t","otto_seed_b",{},"otto_m_seed",
-          [L("otto_r_nast","0"),L("otto_r_bal",(m.balance>=0?"+":"−")+fmt(Math.abs(m.balance)))]);
+          [L("otto_r_nast","0"),L("otto_r_bal",SGP(m.balance>=0?"+":"−")+fmt(Math.abs(m.balance)))]);
     /* Só num mês projetado a lembrança dos Parâmetros tem função */
     if(ymStr>cym())
       add("geral","nota","otto_fx_t","otto_fx_b",{},"otto_m_fx",
@@ -9919,7 +10246,7 @@ const OTTO=(function(){
       add("entradas","boa","otto_poup_t","otto_poup_b",
           {n:num(m.savingsRate),v:fmt(m.balance)},"otto_m_poup",
           [L("otto_r_inc",fmt(m.totalInc)),L("otto_r_exp",fmt(m.totalExp)),
-           L("otto_r_bal","+"+fmt(m.balance)),L("otto_r_rate",num(m.savingsRate)+"%")]);
+           L("otto_r_bal",SGP("+")+fmt(m.balance)),L("otto_r_rate",num(m.savingsRate)+"%")]);
     if(!DEBTS.length&&(m.totalInc>0||ASSETS.length))
       add("dividas","boa","otto_semdiv_t","otto_semdiv_b",{},"otto_m_semdiv",
           [L("otto_r_ndebt","0"),L("otto_r_debt",fmt(0)),L("otto_r_inst",fmt(0))]);
@@ -10147,7 +10474,7 @@ function renderHome(){
   document.getElementById("home-income-sub").textContent=incItems.length+" "+t("w_entries");
   document.getElementById("home-income-x-label").textContent=t("w_balance_lc");
   const incXEl=document.getElementById("home-income-x-val");
-  incXEl.textContent=(balance>=0?"+":"−")+fmt(Math.abs(balance)).replace(/^-/,"");
+  incXEl.textContent=SGP(balance>=0?"+":"−")+fmt(Math.abs(balance)).replace(/^-/,"");
   incXEl.style.color=balance>=0?"#9BE8C0":"#FF9B8A";
 
   document.getElementById("home-asset-val").textContent=fmt(totalAssets);
@@ -11047,8 +11374,8 @@ function renderCashFlowDaily(entries){
     </tr></thead>
     <tbody>${rows.filter(r=>r.inc>0||r.exp>0).reverse().map(r=>`<tr style="border-bottom:1px solid var(--line)">
       <td style="text-align:left;padding:7px 8px;color:var(--body);font-weight:600">${String(r.day).padStart(2,"0")}</td>
-      <td style="text-align:right;padding:7px 8px;color:#5A8A4A">${r.inc>0?"+"+fmt(r.inc):"—"}</td>
-      <td style="text-align:right;padding:7px 8px;color:#B85A6A">${r.exp>0?"−"+fmt(r.exp):"—"}</td>
+      <td style="text-align:right;padding:7px 8px;color:#5A8A4A">${r.inc>0?SGP("+")+fmt(r.inc):"—"}</td>
+      <td style="text-align:right;padding:7px 8px;color:#B85A6A">${r.exp>0?SGP("−")+fmt(r.exp):"—"}</td>
       <td style="text-align:right;padding:7px 8px;font-weight:600;color:${r.net>=0?"#5A8A4A":"#B85A6A"}">${r.net>=0?"+":"−"}${fmt(Math.abs(r.net))}</td>
       <td style="text-align:right;padding:7px 8px;color:${r.cum>=0?"var(--ink-2)":"#B85A6A"}">${r.cum<0?"−":""}${fmt(Math.abs(r.cum))}</td>
     </tr>`).join("")}</tbody>
@@ -13012,6 +13339,7 @@ document.getElementById("modal-rules").addEventListener("click",e=>{
     splash.classList.add("hide");
     setTimeout(()=>{
       splash.style.display="none";
+      montarIdiomas();
       authShowScreen();
       if(AUTH_DATA){
         // login required: do not render the app yet (waits for authLoginSubmit)
@@ -15114,7 +15442,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.60";
+const APP_VERSION="10.61";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -15886,6 +16214,30 @@ const PDIC={
   p_tab_renda:["Renda","Income","Einkommen"],
   p_tab_inv:["Aplicações","Holdings","Anlagen"],
   p_tab_enc:["Encargos","Fees","Gebühren"],
+  p_tab_hist:["Histórico","History","Historie"],
+  p_h_note:["A série mensal realizada de cada índice, como divulgada pelo Banco Central. É ela que corrige uma aplicação feita no passado até o saldo de hoje.",
+    "The realized monthly series of each index, as published by the Central Bank. It is what carries a past investment forward to today's balance.",
+    "Die realisierte Monatsreihe jedes Index, wie von der Zentralbank veröffentlicht. Sie schreibt eine frühere Anlage bis zum heutigen Saldo fort."],
+  p_h_lock:["Estes números não são editáveis: vêm do SGS do Banco Central. O que você declara na aba Macro vale do mês corrente em diante — o passado é fato.",
+    "These figures are not editable: they come from the Central Bank's SGS. What you declare on the Macro tab applies from the current month onward — the past is fact.",
+    "Diese Werte sind nicht editierbar: Sie stammen aus dem SGS der Zentralbank. Ihre Angaben im Reiter Makro gelten ab dem laufenden Monat — die Vergangenheit ist Fakt."],
+  p_h_idx:["Índice","Index","Index"],
+  p_h_source:["Origem dos dados","Data source","Datenquelle"],
+  p_h_origin:["Fonte","Source","Quelle"],
+  p_h_when:["Atualizado em","Updated on","Aktualisiert am"],
+  p_h_fetch:["Baixar do Banco Central","Fetch from the Central Bank","Von der Zentralbank laden"],
+  p_h_loading:["Baixando…","Fetching…","Wird geladen…"],
+  p_h_acc12:["Acumulado 12 meses","Trailing 12 months","Kumuliert 12 Monate"],
+  p_h_acc24:["Acumulado 24 meses","Trailing 24 months","Kumuliert 24 Monate"],
+  p_h_cover:["Cobertura","Coverage","Abdeckung"],
+  p_h_gaps:["meses sem dado","months missing","Monate ohne Daten"],
+  p_h_series:["Série mensal","Monthly series","Monatsreihe"],
+  p_h_empty:["Nenhuma série baixada ainda. Toque no botão acima para buscar no Banco Central.",
+    "No series downloaded yet. Tap the button above to fetch from the Central Bank.",
+    "Noch keine Reihe geladen. Tippen Sie oben, um sie von der Zentralbank zu holen."],
+  p_h_use:["Onde isto é usado: dedução do montante aplicado a partir do saldo informado, curva de evolução de cada aplicação, correção de dívidas indexadas e acumulado de doze meses dos reajustes por índice.",
+    "Where this is used: deriving the amount invested from the reported balance, each holding's evolution curve, indexed debt correction and the twelve-month accumulation behind index-linked raises.",
+    "Verwendung: Ableitung des Anlagebetrags aus dem gemeldeten Saldo, Verlaufskurve jeder Anlage, Korrektur indexierter Schulden und die Zwölfmonatssumme für indexgebundene Erhöhungen."],
   p_save:["Salvar parâmetros","Save parameters","Parameter speichern"],
   p_saved:["Parâmetros salvos","Parameters saved","Parameter gespeichert"],
   p_reset:["Restaurar padrão legal","Restore legal defaults","Gesetzliche Werte"],
@@ -16003,6 +16355,12 @@ const PDIC={
   p_proj_ci_h:["A média de variáveis é corrigida mês a mês pela curva de IPCA declarada abaixo.",
     "The variable average is indexed month by month by the inflation curve set below.",
     "Der Durchschnitt wird Monat für Monat mit der unten gesetzten Inflationskurve indexiert."],
+  p_poup_pct:["Guardar da renda líquida","Save from net income","Sparquote vom Nettoeinkommen"],
+  p_poup_un:["a.m.","p.m.","p.M."],
+  p_poup_res:["Reserva de emergência","Emergency fund","Notgroschen"],
+  p_poup_note:["A meta é o percentual da renda líquida que você pretende guardar todo mês, e a reserva é quantos meses de custo ela precisa cobrir. Enquanto a reserva não fecha, ela tem prioridade sobre a meta.",
+    "The target is the share of net income you intend to save every month; the fund is how many months of cost it must cover. Until the fund is complete it takes priority over the target.",
+    "Das Ziel ist der Anteil des Nettoeinkommens, den Sie monatlich sparen wollen; der Notgroschen ist die Zahl der abzudeckenden Kostenmonate. Bis er voll ist, hat er Vorrang vor dem Ziel."],
   p_proj_hz:["Horizonte da projeção","Projection horizon","Projektionshorizont"],
   p_proj_open:["Ajustar nos Parâmetros","Adjust in Parameters","In Parametern anpassen"],
   p_proj_locked:["Premissas definidas nos Parâmetros","Assumptions set in Parameters","Annahmen in den Parametern"],
@@ -16753,15 +17111,16 @@ function cashflowForYM(ymStr){
 function sugestaoPoupanca(cf){
   const livre=R2(Math.max(0,cf.caixaOper));
   const custoMensal=R2(cf.despesas+cf.divida.parcela);
-  const reservaAlvo=R2(custoMensal*6);
+  const reservaAlvo=R2(custoMensal*projReservaMeses());
   const reservaHoje=R2((typeof ASSETS!=="undefined"?ASSETS:[])
     .filter(a=>astDisponivelEm(a,30)).reduce((s,a)=>s+(astValorAtual(a)),0));
   const falta=R2(Math.max(0,reservaAlvo-reservaHoje));
-  const ideal=R2(cf.entLiquidas*0.20);
+  const ideal=R2(cf.entLiquidas*projPoupPct()/100);
   let alvo=0, motivo="deficit";
   if(livre>0&&falta>0){ alvo=R2(Math.min(livre,Math.max(ideal,livre*0.5))); motivo="reserva"; }
   else if(livre>0){ alvo=R2(Math.min(livre,ideal)); motivo="meta"; }
   return {livre,alvo,ideal,custoMensal,reservaAlvo,reservaHoje,falta,motivo,
+    metaPct:projPoupPct(),resMeses:projReservaMeses(),
     meses:(falta>0&&alvo>0)?Math.ceil(falta/alvo):0,
     pct:cf.entLiquidas>0?R2(alvo/cf.entLiquidas*100):0};
 }
@@ -18455,8 +18814,22 @@ let PROJ=(()=>{try{return Object.assign({meses:24,investir:true,mediaVar:true,co
      "carteira" mantém o comportamento antigo, de ratear pelos produtos que
      já existem. Campo novo de propósito: quem já tinha configuração salva
      recebe o CDB Saving sem precisar mexer em nada. */
-  sobraModo:"saving"},
-  JSON.parse(localStorage.getItem(PROJ_KEY)||"{}"));}catch(e){return{meses:24,investir:true,mediaVar:true,corrigirDesp:true,sobraModo:"saving"};}})();
+  sobraModo:"saving",
+  /* Quanto da renda LIQUIDA o titular pretende guardar por mes. Era 20%
+     cravado dentro de sugestaoPoupanca: um numero de cartilha, que nao
+     serve para quem tem renda variavel nem para quem esta amortizando
+     divida cara. Quem define agora e o titular. */
+  poupPct:20,
+  /* Meses de custo que a reserva de emergencia precisa cobrir. Tambem
+     estava fixo em 6 — e seis meses de reserva significam coisas muito
+     diferentes para um CLT e para um autonomo. */
+  reservaMeses:6},
+  JSON.parse(localStorage.getItem(PROJ_KEY)||"{}"));}catch(e){return{meses:24,investir:true,mediaVar:true,corrigirDesp:true,sobraModo:"saving",poupPct:20,reservaMeses:6};}})();
+/* Leitura unica das duas premissas, com faixa sensata. Toda superficie que
+   fala em "quanto guardar" passa por aqui — e por isso nenhuma discorda
+   das outras. */
+function projPoupPct(){ const v=+PROJ.poupPct; return (isFinite(v)&&v>=0&&v<=100)?v:20; }
+function projReservaMeses(){ const v=+PROJ.reservaMeses; return (isFinite(v)&&v>=0&&v<=60)?v:6; }
 const saveProj=()=>localStorage.setItem(PROJ_KEY,JSON.stringify(PROJ));
 
 function mediaVariaveis(){
@@ -18939,14 +19312,14 @@ function incPreview(){
     <div style="font-family:var(--serif);font-style:italic;font-size:25px;color:#1A3A5C;line-height:1;margin-bottom:4px">
       ${V(t.liquido)}<span style="font-size:12px;font-style:normal;color:var(--ink-3)"> ${CF_SUF[INC_SCALE]}</span></div>
     <div class="pro-cfh">Entrada bruta</div>
-    ${R("Valor bruto","+"+V(t.bruto),"","#5A8A4A")}
-    ${totDed>0?R("(−) Deduções da base","−"+V(totDed),"","var(--ink-3)"):""}
-    ${t.inss>0?R("↳ INSS","−"+V(t.inss),"sub","var(--ink-3)"):""}
-    ${t.deducoes>0?R("↳ "+dedNome,"−"+V(t.deducoes),"sub","var(--ink-3)"):""}
-    ${t.ir>0?R("(−) "+irNome,"−"+V(t.ir),"","#B85A6A"):""}
+    ${R("Valor bruto",SGP("+")+V(t.bruto),"","#5A8A4A")}
+    ${totDed>0?R("(−) Deduções da base",SGP("−")+V(totDed),"","var(--ink-3)"):""}
+    ${t.inss>0?R("↳ INSS",SGP("−")+V(t.inss),"sub","var(--ink-3)"):""}
+    ${t.deducoes>0?R("↳ "+dedNome,SGP("−")+V(t.deducoes),"sub","var(--ink-3)"):""}
+    ${t.ir>0?R("(−) "+irNome,SGP("−")+V(t.ir),"","#B85A6A"):""}
     ${R("(=) Líquido no bolso",V(t.liquido),"tot","#1A3A5C")}
     ${fg>0?`<div class="pro-cfh">Memória — fora do caixa</div>`+
-      R("FGTS depositado (não caixa)","+"+V(fg),"sub","#5A8A4A"):""}
+      R("FGTS depositado (não caixa)",SGP("+")+V(fg),"sub","#5A8A4A"):""}
     ${parc.length?`<div class="pro-cfh">Datas de recebimento</div>`+
       parc.map(x=>R(TR(x.lbl)+" · dia "+x.dia+" ("+String(x.pct).replace(".",",")+"%)",
         (x.valor<0?"−":"")+V(Math.abs(x.valor)),"sub",x.valor<0?"#B85A6A":"#1A3A5C")).join(""):""}
@@ -19668,29 +20041,31 @@ function renderCashFlow(){
   const sc=(id,lbl)=>`<button type="button" class="${FIN_SCALE===id?"on":""}" onclick="PRO.setFinScale('${id}')">${lbl}</button>`;
   const RED="#B85A6A", GRN="#5A8A4A", BLU="#1A3A5C";
 
-  const entradas=cf.tipos.map(o=>R(o.emoji+" "+raw(o.label),"+"+V(o.bruto),"",GRN)).join("")
+  const entradas=cf.tipos.map(o=>R(o.emoji+" "+raw(o.label),SGP("+")+V(o.bruto),"",GRN)).join("")
     ||`<div class="pro-cf sub"><span>Nenhuma entrada neste mês</span><span>—</span></div>`;
   const detDed=FIN_OPEN?cf.tipos.filter(o=>o.inss>0||o.ded>0).map(o=>
-      (o.inss>0?R("↳ INSS · "+raw(o.label),"−"+V(o.inss),"sub","var(--ink-3)"):"")+
-      (o.ded>0?R("↳ "+(o.regime==="aluguel"?"Despesas do imóvel":"Prev., pensão e outros")+" · "+raw(o.label),"−"+V(o.ded),"sub","var(--ink-3)"):"")
+      (o.inss>0?R("↳ INSS · "+raw(o.label),SGP("−")+V(o.inss),"sub","var(--ink-3)"):"")+
+      (o.ded>0?R("↳ "+(o.regime==="aluguel"?"Despesas do imóvel":"Prev., pensão e outros")+" · "+raw(o.label),SGP("−")+V(o.ded),"sub","var(--ink-3)"):"")
     ).join(""):"";
   const detImp=FIN_OPEN?cf.tipos.filter(o=>o.ir>0).map(o=>
       R("↳ "+(o.regime==="pj"?"DAS":o.regime==="aluguel"?"Carnê-leão":o.regime==="exclusivo"?"IR na fonte":"IRRF")
         +(o.margem?" na margem":"")+" · "+raw(o.label)
-        +(o.aliq>0?" · "+String(o.aliq).replace(".",",")+"%":""),"−"+V(o.ir),"sub",RED)
+        +(o.aliq>0?" · "+String(o.aliq).replace(".",",")+"%":""),SGP("−")+V(o.ir),"sub",RED)
     ).join(""):"";
   const detDiv=FIN_OPEN?cf.divida.itens.map(x=>
-      R("↳ "+(x.emoji||"")+" "+raw(x.nome)+(x.fgts>0?" · FGTS":""),"−"+V(x.parcela),"sub",RED)).join(""):"";
+      R("↳ "+(x.emoji||"")+" "+raw(x.nome)+(x.fgts>0?" · FGTS":""),SGP("−")+V(x.parcela),"sub",RED)).join(""):"";
   const detApl=FIN_OPEN?cf.aplic.itens.filter(x=>x.bruto>0).slice(0,6).map(x=>
       R("↳ "+raw(x.nome)+(x.aliq>0?" · IR "+String(x.aliq).replace(".",",")+"%":" · isento"),
-        "+"+V(x.bruto),"sub",GRN)).join(""):"";
+        SGP("+")+V(x.bruto),"sub",GRN)).join(""):"";
 
   /* trava do FGTS: o depósito do mês fica retido enquanto a leva corre */
   const bloq=fgtsBloqueioVigente();
   const mesLabel=k=>{try{return typeof monthFullLabel==="function"?monthFullLabel(k):k;}catch(e){return k;}};
 
+  /* O alvo sai da premissa do titular, nao de uma regra de bolso. */
+  const pctTxt=String(sg.metaPct).replace(".",",");
   const mot={reserva:"Prioridade: completar a reserva de emergência.",
-             meta:"Reserva completa. Alvo de 20% da renda líquida.",
+             meta:"Reserva completa. Alvo de "+pctTxt+"% da renda líquida.",
              deficit:"O mês fecha negativo. Não há sobra para guardar."}[sg.motivo];
 
   el.innerHTML=H`
@@ -19703,36 +20078,36 @@ function renderCashFlow(){
       <div class="pro-cfh">Entradas</div>
       ${entradas}
       ${R("(=) Receita bruta",V(cf.bruto),"tot",BLU)}
-      ${cf.deducoes>0?R("(−) Deduções da base","−"+V(cf.deducoes),"","var(--ink-3)"):""}
+      ${cf.deducoes>0?R("(−) Deduções da base",SGP("−")+V(cf.deducoes),"","var(--ink-3)"):""}
       ${detDed}
-      ${cf.impostos>0?R("(−) Imposto de renda","−"+V(cf.impostos),"",RED):""}
+      ${cf.impostos>0?R("(−) Imposto de renda",SGP("−")+V(cf.impostos),"",RED):""}
       ${detImp}
       ${R("(=) Entradas líquidas",V(cf.entLiquidas),"tot",GRN)}
 
       <div class="pro-cfh">Saídas</div>
-      ${R("Despesas",cf.despesas>0?"−"+V(cf.despesas):V(0),"",RED)}
-      ${R("Dívidas · juros",cf.divida.juros>0?"−"+V(cf.divida.juros):V(0),"",RED)}
-      ${R("Dívidas · amortização",cf.divida.amort>0?"−"+V(cf.divida.amort):V(0),"",RED)}
-      ${cf.divida.encargos>0?R("Dívidas · seguros e taxa adm.","−"+V(cf.divida.encargos),"",RED):""}
-      ${cf.divida.fgtsAbat>0?R("(+) Abatimento pelo FGTS","+"+V(cf.divida.fgtsAbat),"",GRN):""}
+      ${R("Despesas",cf.despesas>0?SGP("−")+V(cf.despesas):V(0),"",RED)}
+      ${R("Dívidas · juros",cf.divida.juros>0?SGP("−")+V(cf.divida.juros):V(0),"",RED)}
+      ${R("Dívidas · amortização",cf.divida.amort>0?SGP("−")+V(cf.divida.amort):V(0),"",RED)}
+      ${cf.divida.encargos>0?R("Dívidas · seguros e taxa adm.",SGP("−")+V(cf.divida.encargos),"",RED):""}
+      ${cf.divida.fgtsAbat>0?R("(+) Abatimento pelo FGTS",SGP("+")+V(cf.divida.fgtsAbat),"",GRN):""}
       ${detDiv}
-      ${R("(=) Total de saídas","−"+V(cf.saidas),"tot",RED)}
+      ${R("(=) Total de saídas",SGP("−")+V(cf.saidas),"tot",RED)}
 
       <div class="pro-cfh">Rendimento de aplicações</div>
-      ${R("Receita financeira",cf.aplic.bruto>0?"+"+V(cf.aplic.bruto):V(0),"",GRN)}
+      ${R("Receita financeira",cf.aplic.bruto>0?SGP("+")+V(cf.aplic.bruto):V(0),"",GRN)}
       ${detApl}
-      ${R("(−) Provisão de IRRF",cf.aplic.ir>0?"−"+V(cf.aplic.ir):V(0),"",RED)}
-      ${cf.aplic.comeCotas>0?R("(−) Come-cotas do mês","−"+V(cf.aplic.comeCotas),"sub",RED):""}
+      ${R("(−) Provisão de IRRF",cf.aplic.ir>0?SGP("−")+V(cf.aplic.ir):V(0),"",RED)}
+      ${cf.aplic.comeCotas>0?R("(−) Come-cotas do mês",SGP("−")+V(cf.aplic.comeCotas),"sub",RED):""}
       ${R("(=) Rendimento líquido",V(cf.aplic.liquido),"tot",GRN)}
 
-      ${R("(=) Caixa operacional",(cf.caixaOper<0?"−":"+")+V(Math.abs(cf.caixaOper)),"grand",cf.caixaOper>=0?GRN:RED)}
-      ${R("(=) Resultado total",(cf.caixaTotal<0?"−":"+")+V(Math.abs(cf.caixaTotal)),"tot",cf.caixaTotal>=0?GRN:RED)}
+      ${R("(=) Caixa operacional",SGP(cf.caixaOper<0?"−":"+")+V(Math.abs(cf.caixaOper)),"grand",cf.caixaOper>=0?GRN:RED)}
+      ${R("(=) Resultado total",SGP(cf.caixaTotal<0?"−":"+")+V(Math.abs(cf.caixaTotal)),"tot",cf.caixaTotal>=0?GRN:RED)}
 
       ${(cf.fgts>0||cf.aplic.aportes>0)?`<div class="pro-cfh">Memória — fora do caixa</div>`:""}
-      ${cf.fgts>0?R("FGTS depositado pelo empregador","+"+V(cf.fgts),"sub",GRN):""}
+      ${cf.fgts>0?R("FGTS depositado pelo empregador",SGP("+")+V(cf.fgts),"sub",GRN):""}
       ${(cf.fgts>0&&bloq)?R("↳ retido até "+mesLabel(bloq.liberaYm)+" pela utilização em curso","",
           "sub","#B85A6A"):""}
-      ${cf.aplic.aportes>0?R("Aportes programados às aplicações","−"+V(cf.aplic.aportes),"sub","var(--ink-3)"):""}
+      ${cf.aplic.aportes>0?R("Aportes programados às aplicações",SGP("−")+V(cf.aplic.aportes),"sub","var(--ink-3)"):""}
       ${(cf.fgts>0||cf.aplic.aportes>0)?`<div style="font-size:10px;color:var(--ink-3);line-height:1.5;margin-top:6px">Estas linhas não passam pela conta corrente: o depósito do FGTS é do empregador e os aportes apenas trocam caixa por aplicação.</div>`:""}
 
       <div style="text-align:right;margin-top:8px">
@@ -19756,7 +20131,7 @@ function renderCashFlow(){
         ${sg.meses>0?`<span style="background:rgba(255,255,255,.12);border-radius:8px;padding:3px 9px;font-size:10.5px">${sg.meses} meses para completar</span>`:""}
       </div>
       <div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:9px;line-height:1.5">
-        Base: entradas líquidas − despesas − parcelas de dívida (juros + amortização). Reserva alvo de 6 meses de custo: ${fmt(sg.reservaAlvo)}.</div>
+        Base: entradas líquidas − despesas − parcelas de dívida (juros + amortização). Reserva alvo de ${sg.resMeses} meses de custo: ${fmt(sg.reservaAlvo)}. Meta de ${pctTxt}% definida nos Parâmetros.</div>
     </div>`;
 }
 
@@ -19930,10 +20305,10 @@ function renderRendimento(){
       ${e.aporte>0?R("Aporte mensal",fmt(e.aporte),"sub","var(--ink-2)"):""}
       ${e.aporte>0?R("(=) Total aportado",fmt(e.aportado),"sub","var(--ink-2)"):""}
       ${R(e.ancorado?"Saldo informado":"Valor de hoje pela taxa",fmt(e.real),"",NAV)}
-      ${R("(=) Rendimento bruto",(e.ganho>=0?"+":"−")+fmt(Math.abs(e.ganho)),"tot",GRN)}
-      ${provHoje.iof>0?R("(−) IOF "+String(provHoje.iofPct).replace(".",",")+"% · "+e.diasCorridos+" dias","−"+fmt(provHoje.iof),"sub",RED):""}
-      ${R("(−) IR "+String(provHoje.aliq).replace(".",",")+"%","−"+fmt(provHoje.ir),"",RED)}
-      ${e.atual.ccAcum>0?R("Come-cotas já debitado","−"+fmt(e.atual.ccAcum),"sub",RED):""}
+      ${R("(=) Rendimento bruto",SGP(e.ganho>=0?"+":"−")+fmt(Math.abs(e.ganho)),"tot",GRN)}
+      ${provHoje.iof>0?R("(−) IOF "+String(provHoje.iofPct).replace(".",",")+"% · "+e.diasCorridos+" dias",SGP("−")+fmt(provHoje.iof),"sub",RED):""}
+      ${R("(−) IR "+String(provHoje.aliq).replace(".",",")+"%",SGP("−")+fmt(provHoje.ir),"",RED)}
+      ${e.atual.ccAcum>0?R("Come-cotas já debitado",SGP("−")+fmt(e.atual.ccAcum),"sub",RED):""}
       ${R("(=) Líquido hoje",fmt(e.real-provHoje.total),"grand",GRN)}
     </div>
 
@@ -20557,7 +20932,7 @@ function fabTelaAtual(){
      "active" durante a transição, e aí a varredura elegia a errada. */
   if(typeof SCREEN!=="undefined"&&SCREEN) return SCREEN;
   let cur=null;
-  ["home","despesas","entradas","patrimonio","dividas","vidafinanceira","auth"].forEach(k=>{
+  ["home","despesas","entradas","patrimonio","dividas","vidafinanceira","manual","auth"].forEach(k=>{
     const e=document.getElementById("screen-"+k);
     if(e&&e.classList.contains("active")) cur=k;
   });
@@ -20592,7 +20967,7 @@ function fabIcone(){
 }
 /* acompanha a rolagem de cada tela para trocar o ícone na hora certa */
 function fabLigarScroll(){
-  ["home","despesas","entradas","patrimonio","dividas","vidafinanceira"].forEach(k=>{
+  ["home","despesas","entradas","patrimonio","dividas","vidafinanceira","manual"].forEach(k=>{
     const sc=document.querySelector("#screen-"+k+" .content")||document.getElementById("screen-"+k);
     if(!sc||sc.dataset.fabLigado) return;
     sc.dataset.fabLigado="1";
@@ -20601,7 +20976,7 @@ function fabLigarScroll(){
 }
 
 /* Botao de retorno so aparece nas telas internas. */
-const FAB_ON=["entradas","patrimonio","dividas","vidafinanceira","despesas"];
+const FAB_ON=["entradas","patrimonio","dividas","vidafinanceira","despesas","manual"];
 function syncFab(){
   const f=document.getElementById("fab-home"); if(!f) return;
   const cur=fabTelaAtual();
@@ -20620,6 +20995,7 @@ function syncFab(){
 setTimeout(syncFab,3200);
 /* o módulo roda dentro de uma IIFE: o onclick inline precisa do escopo global */
 window.fabAcao=fabAcao; window.fabIcone=fabIcone; window.syncFab=syncFab;
+window.SGP=SGP; window.toggleValores=toggleValores; window.montarIdiomas=montarIdiomas;
 
 function refreshPro(){
   try{
@@ -20634,10 +21010,170 @@ function refreshPro(){
   }catch(e){}
 }
 
+const MANUAL={"pt": {"rot_guia": "PASSO A PASSO","rot_comecar": "Começar","rot_fechar": "Fechar","rot_ant": "Anterior","rot_prox": "Próxima","rot_nota": "Atenção:","rot_ref": "Referência","rot_result": "resultados","vazio": "Nada encontrado. Tente uma palavra do próprio app — “indexador”, “reserva”, “rateio”, “come-cotas”.","intro": "Quatro procedimentos na ordem em que fazem sentido, e a referência de cada tela logo abaixo. Tudo funciona offline, no seu aparelho.","guias": [{"id": "param","ic": "<span class=\"fs\">⚙</span>","tt": "Antes de tudo: acertar os parâmetros","sub": "Onde se declara o mundo em que a sua projeção acontece. Cinco minutos aqui evitam meses de número errado.","etapas": [{"rot": "Abrir","tt": "Abrir o painel de Parâmetros","res": "Os parâmetros governam TODA a projeção do app — tela inicial, patrimônio, dívidas e fluxo de caixa. Não existe um segundo lugar para dizer a mesma coisa.","passos": ["Na tela inicial, toque no botão <span class=\"fs\">⚙</span> à direita do navegador de mês.","O painel abre em cinco abas: <span class=\"fs fs-ab\">Macro</span>, <span class=\"fs fs-ab\">Histórico</span>, <span class=\"fs fs-ab\">Renda</span>, <span class=\"fs fs-ab\">Aplicações</span> e <span class=\"fs fs-ab\">Encargos</span>.","Comece por <span class=\"fs fs-ab\">Macro</span>: é dela que saem as curvas de índice."],"nota": "Mudar um parâmetro aqui recalcula tudo o que já está na tela. Nenhum lançamento é alterado — só a projeção deles para a frente."},{"rot": "Curvas","tt": "Declarar a curva de cada índice","res": "A curva é uma escada: a taxa declarada num mês vale dele em diante, até que outro mês receba um número diferente. Você só marca as viradas, não mês a mês.","passos": ["Escolha o índice nas pílulas: Selic, CDI, IPCA, IGP-M, TR ou Poupança.","Informe a taxa e o mês a partir do qual ela passa a valer.","Acrescente uma linha nova só quando esperar uma virada — um corte de juros, por exemplo.","Além do horizonte declarado, manda a taxa de longo prazo."],"nota": "Meses já fechados ignoram a sua curva: eles usam o número realizado do Banco Central. O que você declara vale do mês corrente em diante."},{"rot": "Poupança","tt": "Definir quanto guardar e o tamanho da reserva","res": "Duas premissas que costumavam ser regra de bolso e agora são suas: o percentual da renda líquida que você pretende guardar todo mês, e quantos meses de custo a reserva de emergência precisa cobrir.","passos": ["Ainda em <span class=\"fs fs-ab\">Macro</span>, desça até <span class=\"fs\">Premissas de projeção</span>.","Preencha <span class=\"fs\">Guardar da renda líquida</span> com o seu percentual.","Preencha <span class=\"fs\">Reserva de emergência</span> com o número de meses.","O cartão <span class=\"fs fs-cp\">Guardar por mês</span> da tela inicial passa a responder a esses dois números."],"nota": "Enquanto a reserva não fecha, ela tem prioridade sobre a meta: o app manda guardar tudo que sobrar, não só o percentual."},{"rot": "Renda e taxas","tt": "Ajustar tributação e encargos","res": "Aqui ficam as tabelas que transformam bruto em líquido: faixas de INSS e IR, dedução por dependente, alíquotas de renda fixa e taxas de fundo.","passos": ["Em <span class=\"fs fs-ab\">Renda</span>, confira as faixas vigentes e a dedução por dependente.","Em <span class=\"fs fs-ab\">Aplicações</span>, ajuste a tabela regressiva de IR e o come-cotas.","Em <span class=\"fs fs-ab\">Encargos</span>, declare taxas de administração e performance.","Toque em <span class=\"fs fs-ac\">Salvar</span> ao terminar."],"nota": "Os valores vêm preenchidos com a legislação vigente. Só mexa se souber que mudou — e confira a data de vigência."}]},{"id": "aplic","ic": "📈","tt": "Registrar uma aplicação e entender o valor aplicado","sub": "Você informa o saldo de hoje; o app deduz quanto foi aplicado no passado usando o histórico oficial do índice.","etapas": [{"rot": "Cadastro","tt": "Cadastrar a aplicação","res": "O cadastro pede o saldo ATUAL, não o valor investido. É o contrário do que a maioria das planilhas faz, e é de propósito: o saldo é o número que você lê no extrato hoje.","passos": ["Abra <span class=\"fs fs-cp\">Patrimônio</span> na tela inicial e toque em <span class=\"fs fs-ac\">+</span>.","Escolha a classe: renda fixa, tesouro, fundo, ação, imóvel ou outros.","Informe o saldo atual e a instituição.","Preencha a <span class=\"fs\">Data da aplicação</span> — é ela que abre a janela do histórico."],"nota": "Sem data de aplicação não há regressão possível: o app não tem como saber por quantos meses corrigir para trás."},{"rot": "Indexador","tt": "Dizer a que a aplicação está atrelada","res": "O indexador é o que liga a sua aplicação à série do Banco Central. É ele que diz qual histórico usar na dedução e qual curva usar na projeção.","passos": ["Escolha o indexador: % do CDI, IPCA + spread, prefixado, poupança ou variável.","Informe o percentual ou o spread contratado.","Para fundos, preencha também a cota e a data da cota."],"nota": "“Variável” não consulta o Banco Central: você declara o rendimento esperado, e o app o usa tal e qual."},{"rot": "Dedução","tt": "Ler o valor aplicado deduzido","res": "Com saldo, data e indexador, o app percorre a série mensal realizada do índice de trás para a frente e chega ao montante que, aplicado naquela data, resultaria no saldo de hoje.","passos": ["Abra a aplicação e veja o campo <span class=\"fs\">Valor aplicado (custo)</span>.","É a base de cálculo do imposto: o lucro tributável é o saldo menos esse valor.","Se você tem o valor real do extrato, digite-o — o informado sempre vence o deduzido."],"nota": "A dedução é uma estimativa. Ela é boa quando a aplicação seguiu o indexador sem aportes intermediários, e piora quando houve entradas e saídas no meio do caminho."},{"rot": "Conferência","tt": "Conferir o histórico que sustenta a conta","res": "A série que alimenta a dedução é pública e verificável. Vale conferir a cobertura antes de confiar num valor aplicado de anos atrás.","passos": ["Volte aos <span class=\"fs\">⚙</span> <span class=\"fs\">Parâmetros</span> e abra a aba <span class=\"fs fs-ab\">Histórico</span>.","Escolha o índice e confira a cobertura: de que mês a que mês há dado.","Se houver buracos, toque em <span class=\"fs fs-ac\">Baixar do Banco Central</span>.","Compare o acumulado de doze meses com o que você conhece do mercado."],"nota": "O histórico não é editável, e é de propósito: uma série realizada que você pudesse alterar deixaria de ser histórico e viraria mais uma premissa."}]},{"id": "mes","ic": "💳","tt": "Fechar o mês de despesas","sub": "Do lançamento ao rateio, sem deixar gasto órfão nem duplicar recorrência.","etapas": [{"rot": "Lançar","tt": "Lançar os gastos do mês","res": "Cada gasto tem categoria e natureza. A natureza — fixo ou variável — é o que decide se ele entra na média que projeta os meses seguintes.","passos": ["Abra <span class=\"fs fs-cp\">Despesas</span> e toque em <span class=\"fs fs-vd\">+</span>.","Descreva, informe o valor e escolha a categoria.","Marque <span class=\"fs\">Fixo</span> para o que se repete igual, <span class=\"fs\">Variável</span> para o resto.","Para contas que se repetem, ligue a recorrência em vez de lançar todo mês."],"nota": "Valor negativo registra estorno ou reembolso — é assim que se cancela uma cobrança indevida sem apagar o histórico."},{"rot": "Importar","tt": "Importar fatura ou extrato","res": "Colar o texto da fatura poupa dezenas de lançamentos manuais. O app reconhece data, descrição e valor, e propõe categoria pelas regras que você já ensinou.","passos": ["No cabeçalho de Despesas, toque no botão de importar <span class=\"fs\">↑</span>.","Cole o texto copiado da fatura ou do PDF do extrato.","Revise a lista proposta antes de confirmar: descarte o que não for gasto.","Categorias corrigidas viram regra e valem para a próxima importação."],"nota": "Transferências, pagamentos de fatura e aplicações entram como neutros: aparecem na lista mas não somam ao total, senão o mesmo dinheiro seria contado duas vezes."},{"rot": "Conferir","tt": "Conferir o resumo do mês","res": "A aba de resumo mostra para onde o dinheiro foi. As barras por categoria são o instrumento: elas comparam proporção, não valor absoluto.","passos": ["Na aba <span class=\"fs fs-ab\">Resumo</span>, confira total, fixos e variáveis.","Toque numa barra de categoria para filtrar a lista por ela.","Use a aba <span class=\"fs fs-ab\">Histórico</span> para comparar com os meses anteriores.","Em <span class=\"fs fs-ab\">Metas</span>, defina um teto por categoria."],"nota": "O mês corrente sempre parece menor que os anteriores até o dia 30 — compare meses fechados com meses fechados."},{"rot": "Ratear","tt": "Ratear o que é dividido","res": "Gasto dividido com outra pessoa distorce o seu custo mensal se entrar inteiro. O rateio guarda o valor cheio e conta só a sua parte.","passos": ["Ao lançar, escolha a divisão por valor ou por percentual.","Informe quem participa e quanto cabe a cada um.","Acompanhe os saldos na aba <span class=\"fs fs-ab\">Rateios</span>."],"nota": "O rateio muda o que entra no seu fluxo de caixa e, por consequência, a média de variáveis que projeta os próximos meses."}]},{"id": "patri","ic": "🏡","tt": "Construir patrimônio ao longo do tempo","sub": "Como o app sai do mês fechado e chega ao balanço projetado — e o que você controla nesse caminho.","etapas": [{"rot": "Diagnóstico","tt": "Ler o diagnóstico da saúde financeira","res": "A nota resume liquidez, endividamento, taxa de poupança e diversificação num número só. Serve para ordenar prioridades, não para se comparar com ninguém.","passos": ["Na tela inicial, toque no cartão <span class=\"fs fs-cp\">Saúde financeira</span>.","Veja quais componentes puxam a nota para baixo.","Use <span class=\"fs\">👁</span> para esconder os valores quando estiver acompanhado."],"nota": "Reserva de emergência incompleta derruba a nota mais do que qualquer outro item — e com razão: é o que separa um imprevisto de uma dívida cara."},{"rot": "Meta","tt": "Fixar a meta de poupança","res": "Quanto guardar por mês é decisão sua, declarada nos parâmetros. O app calcula o alvo do mês como o menor entre a sobra real de caixa e a sua meta.","passos": ["Abra <span class=\"fs\">⚙</span> <span class=\"fs\">Parâmetros</span> e ajuste <span class=\"fs\">Guardar da renda líquida</span>.","Volte à tela inicial e confira <span class=\"fs fs-cp\">Guardar por mês</span>.","Abra <span class=\"fs fs-cp\">Vida financeira</span> para ver a memória do cálculo."],"nota": "Se o mês fecha negativo não há sobra para guardar, e o app diz isso em vez de sugerir um número que você não tem."},{"rot": "Projeção","tt": "Entender a projeção do patrimônio","res": "Cada aplicação evolui pelo seu próprio indexador; despesas fixas se repetem; variáveis entram pela média dos três últimos meses, corrigida pela inflação se você mandar.","passos": ["Em <span class=\"fs fs-cp\">Patrimônio</span>, abra a visão de projeção.","Navegue pelos meses com o seletor de data da tela inicial.","Ligue <span class=\"fs\">Investir a sobra</span> nos parâmetros para que o excedente vire aplicação.","Escolha o horizonte: 12, 24, 60 ou 120 meses."],"nota": "A projeção não é promessa. Ela responde “se tudo se comportar como declarado”, e o valor dela está em comparar cenários, não em acertar o número."},{"rot": "Dívida","tt": "Colocar a dívida na conta","res": "Patrimônio sem dívida é meia história. O app amortiza cada contrato mês a mês e desconta o serviço da dívida do caixa antes de calcular quanto sobra.","passos": ["Abra <span class=\"fs fs-cp\">Dívidas</span> e cadastre o contrato: saldo, taxa, prazo e sistema.","Informe o indexador do contrato — TR, IPCA ou prefixado.","Para financiamento imobiliário, declare o uso de FGTS se houver.","Confira o patrimônio líquido na tela inicial: é o total menos as dívidas."],"nota": "Amortizar dívida cara quase sempre rende mais que aplicar. Compare a taxa do contrato com o rendimento líquido da sua melhor aplicação antes de decidir."}]}],"secoes": [{"id": "s_inicio","ic": "🏠","tt": "Tela inicial","itens": [{"t": "Navegador de mês","d": "Todo o app responde ao mês selecionado aqui. Meses passados mostram o que aconteceu; meses futuros, o que a projeção espera. O botão <span class=\"fs\">Hoje</span> volta ao mês corrente."},{"t": "Botão de parâmetros","d": "O <span class=\"fs\">⚙</span> à direita da data abre as premissas que governam toda a projeção. Fica ao lado do navegador porque as duas coisas se completam: a data diz de que mês se fala, os parâmetros dizem com que premissas."},{"t": "Ocultar valores","d": "O <span class=\"fs\">👁</span> troca todo valor em dinheiro por um travessão, em todas as telas. Não é criptografia — é a possibilidade de abrir o app ao lado de alguém. O estado fica guardado entre sessões."},{"t": "Idioma","d": "As três bandeiras alternam entre português, inglês e alemão. A escolha vale para todo o app, inclusive o manual, e persiste no aparelho."},{"t": "Saúde financeira","d": "Nota de 0 a 100 combinando liquidez, endividamento, taxa de poupança e diversificação. Toque para ver a memória de cálculo de cada componente."},{"t": "Patrimônio líquido","d": "Soma das aplicações e bens menos o saldo devedor de todas as dívidas, no mês selecionado."}]},{"id": "s_par","ic": "<span class=\"fs\">⚙</span>","tt": "Parâmetros","itens": [{"t": "Aba Macro","d": "As curvas de Selic, CDI, IPCA, IGP-M, TR e poupança. Funcionam como escada: a taxa declarada vale do mês informado em diante, até a próxima virada."},{"t": "Aba Histórico","d": "A série mensal realizada de cada índice, baixada do SGS do Banco Central. Somente leitura: é fato divulgado, não premissa. Traz a cobertura da série, o acumulado de doze e vinte e quatro meses e um botão para atualizar."},{"t": "Onde o histórico é usado","d": "Dedução do valor aplicado a partir do saldo informado, curva de evolução de cada aplicação, correção de dívidas indexadas e o acumulado de doze meses por trás dos reajustes por índice."},{"t": "Premissas de projeção","d": "Investir a sobra, concentrar no CDB Saving, usar média de variáveis, corrigir despesas pela inflação, percentual a guardar, meses de reserva e horizonte da projeção."},{"t": "Renda, Aplicações e Encargos","d": "Faixas de INSS e IR, dedução por dependente, tabela regressiva de imposto, come-cotas e taxas de administração e performance."},{"t": "Tema","d": "Paletas neutras claras e a possibilidade de compor uma própria. A barra de status do sistema acompanha a escolha."}]},{"id": "s_desp","ic": "💳","tt": "Despesas","itens": [{"t": "Fixo ou variável","d": "Fixo é o que se repete igual e entra na projeção pelo próprio valor. Variável entra pela média dos três últimos meses. A classificação errada distorce todos os meses seguintes."},{"t": "Recorrência","d": "Um lançamento recorrente se repete sozinho até a data-limite, se houver. Lançar manualmente todo mês uma conta recorrente duplica o gasto."},{"t": "Lançamentos neutros","d": "Transferências, investimentos e receitas aparecem na lista mas não somam ao total de gastos: o mesmo dinheiro seria contado duas vezes."},{"t": "Estorno","d": "Valor negativo registra devolução ou reembolso e abate do total do mês, preservando o lançamento original no histórico."},{"t": "Rateio","d": "Divide um gasto por valor ou percentual. O total cheio fica registrado; só a sua parte entra no seu custo."},{"t": "Metas","d": "Teto mensal por categoria, com aviso ao ultrapassar. A comparação é sempre contra o mês selecionado."},{"t": "Importação","d": "Cola o texto de uma fatura ou extrato e reconhece data, descrição e valor. Cada correção de categoria vira regra para as próximas importações."}]},{"id": "s_ent","ic": "💰","tt": "Entradas","itens": [{"t": "Regimes","d": "CLT, autônomo, PJ, aluguel e outros. Cada um traz a sua própria conta de bruto a líquido, com as faixas declaradas nos parâmetros."},{"t": "13º e férias","d": "Entram nos meses corretos, com o adicional de um terço, e afetam o caixa apenas quando efetivamente pagos."},{"t": "FGTS","d": "Depositado no dia configurado, rende proporcionalmente e não passa pelo fluxo de caixa: é patrimônio, não renda disponível."},{"t": "Reajuste","d": "Declare o mês do reajuste e o índice. O app aplica o acumulado de doze meses do índice escolhido, lido do histórico oficial."},{"t": "Histórico de renda","d": "Gráfico de bruto e líquido, imposto efetivo do período e o detalhamento mês a mês."}]},{"id": "s_pat","ic": "🏦","tt": "Patrimônio","itens": [{"t": "Classes","d": "Renda fixa, tesouro, fundos, ações, imóveis e outros. A classe define a tributação padrão e o comportamento na projeção."},{"t": "Saldo atual, não valor investido","d": "O cadastro pede o número do extrato de hoje. O valor aplicado é deduzido a partir dele, do indexador e da data da aplicação."},{"t": "Cotas","d": "Para fundos, o app acompanha quantidade de cotas com oito casas decimais, a data da cota e o rendimento acumulado."},{"t": "Liquidez","d": "D+0, D+1, prazo declarado ou só no vencimento. É o que separa reserva de emergência de aplicação de longo prazo."},{"t": "Tributação","d": "Tabela regressiva por prazo, come-cotas semestral em maio e novembro para fundos, e isenção onde a lei prevê."},{"t": "Projeção","d": "Cada aplicação evolui pelo próprio indexador, mês a mês, seguindo as curvas dos parâmetros. Com “investir a sobra” ligada, o excedente de caixa vira aplicação nova."}]},{"id": "s_div","ic": "🏛","tt": "Dívidas","itens": [{"t": "Sistemas de amortização","d": "SAC, Price e prestação fixa. O sistema decide como parcela, juros e amortização se distribuem ao longo do contrato."},{"t": "Indexação","d": "TR, IPCA ou prefixado. Contratos indexados são corrigidos pelo histórico realizado nos meses fechados e pela curva daí em diante."},{"t": "FGTS no financiamento","d": "Abatimento de parcela ou amortização do saldo. Reduz o desembolso, não os juros nem a amortização contratada."},{"t": "Encargos","d": "Seguros e taxa de administração entram no desembolso mensal e não na amortização — por isso a parcela paga é maior que juros mais principal."},{"t": "Serviço da dívida","d": "Sai do caixa antes do cálculo da sobra. É por isso que uma dívida grande derruba a sugestão de quanto guardar."}]},{"id": "s_seg","ic": "🔒","tt": "Dados, backup e acesso","itens": [{"t": "Onde ficam os dados","d": "Tudo é gravado no armazenamento do próprio navegador, neste aparelho. Nada é enviado para servidor: o app funciona sem rede, exceto para buscar índices e câmbio."},{"t": "Backup","d": "Exporta um arquivo com despesas, entradas, patrimônio, dívidas, categorias, regras e parâmetros. Guarde-o fora do aparelho."},{"t": "Restauração","d": "Substitui os dados atuais pelos do arquivo. Faça um backup antes de restaurar: a operação não tem volta."},{"t": "Senha de acesso","d": "Usuário e senha ficam guardados como resumo criptográfico neste aparelho. Protegem contra acesso casual, não são segurança de servidor."},{"t": "Limpar dados do aparelho","d": "Apagar os dados do navegador remove tudo, inclusive as credenciais. Sem backup, não há recuperação."}]}]},"en": {"rot_guia": "STEP BY STEP","rot_comecar": "Start","rot_fechar": "Close","rot_ant": "Previous","rot_prox": "Next","rot_nota": "Watch out:","rot_ref": "Reference","rot_result": "results","vazio": "Nothing found. Try a word from the app itself — “benchmark”, “fund”, “split”, “amortisation”.","intro": "Four procedures in the order that makes sense, with the reference for each screen below. Everything works offline, on your device.","guias": [{"id": "param","ic": "<span class=\"fs\">⚙</span>","tt": "First of all: get the parameters right","sub": "Where you declare the world your projection lives in. Five minutes here save months of wrong numbers.","etapas": [{"rot": "Open","tt": "Open the Parameters panel","res": "Parameters govern EVERY projection in the app — home, holdings, debts and cash flow. There is no second place to say the same thing.","passos": ["On the home screen, tap <span class=\"fs\">⚙</span> to the right of the month navigator.","The panel opens on five tabs: <span class=\"fs fs-ab\">Macro</span>, <span class=\"fs fs-ab\">History</span>, <span class=\"fs fs-ab\">Income</span>, <span class=\"fs fs-ab\">Holdings</span> and <span class=\"fs fs-ab\">Fees</span>.","Start with <span class=\"fs fs-ab\">Macro</span>: that is where the index curves come from."],"nota": "Changing a parameter here recalculates everything on screen. No entry is altered — only how they are projected forward."},{"rot": "Curves","tt": "Declare each index curve","res": "The curve is a staircase: a rate declared for one month holds from there on, until another month gets a different number. You only mark the turns, not every month.","passos": ["Pick the index from the pills: Selic, CDI, inflation, IGP-M, TR or savings.","Enter the rate and the month it starts to apply.","Add a new line only where you expect a turn — a rate cut, say.","Beyond the declared horizon, the long-term rate takes over."],"nota": "Closed months ignore your curve: they use the realised figure from the Central Bank. What you declare applies from the current month onward."},{"rot": "Saving","tt": "Set how much to save and the size of the fund","res": "Two assumptions that used to be rules of thumb and are now yours: the share of net income you intend to save every month, and how many months of cost the emergency fund must cover.","passos": ["Still under <span class=\"fs fs-ab\">Macro</span>, scroll to <span class=\"fs\">Projection assumptions</span>.","Fill in <span class=\"fs\">Save from net income</span> with your percentage.","Fill in <span class=\"fs\">Emergency fund</span> with the number of months.","The home card <span class=\"fs fs-cp\">Save per month</span> now answers to those two numbers."],"nota": "Until the fund is complete it takes priority over the target: the app tells you to save everything left over, not just the percentage."},{"rot": "Tax","tt": "Adjust taxation and fees","res": "This is where the tables that turn gross into net live: social security and income tax bands, dependant allowance, fixed-income rates and fund fees.","passos": ["Under <span class=\"fs fs-ab\">Income</span>, check the current bands and the dependant allowance.","Under <span class=\"fs fs-ab\">Holdings</span>, adjust the regressive tax table and the semi-annual levy.","Under <span class=\"fs fs-ab\">Fees</span>, declare management and performance fees.","Tap <span class=\"fs fs-ac\">Save</span> when done."],"nota": "The figures ship with current legislation. Change them only when you know something changed — and check the effective date."}]},{"id": "aplic","ic": "📈","tt": "Record a holding and read the amount invested","sub": "You enter today's balance; the app derives what was invested using the index's official history.","etapas": [{"rot": "Entry","tt": "Create the holding","res": "The form asks for the CURRENT balance, not the amount invested. That is the opposite of most spreadsheets, and it is deliberate: the balance is the number on your statement today.","passos": ["Open <span class=\"fs fs-cp\">Holdings</span> on the home screen and tap <span class=\"fs fs-ac\">+</span>.","Pick the class: fixed income, treasury, fund, equity, property or other.","Enter the current balance and the institution.","Fill in the <span class=\"fs\">Investment date</span> — it opens the history window."],"nota": "Without an investment date there is no possible regression: the app cannot know how many months to carry backwards."},{"rot": "Benchmark","tt": "Say what the holding tracks","res": "The benchmark links your holding to the Central Bank series. It decides which history feeds the derivation and which curve feeds the projection.","passos": ["Choose the benchmark: % of CDI, inflation plus spread, fixed, savings or variable.","Enter the contracted percentage or spread.","For funds, also fill in the unit price and its date."],"nota": "“Variable” never queries the Central Bank: you declare the expected return and the app uses it as given."},{"rot": "Derivation","tt": "Read the derived amount invested","res": "With balance, date and benchmark, the app walks the index's realised monthly series backwards and reaches the amount that, invested on that date, would produce today's balance.","passos": ["Open the holding and look at <span class=\"fs\">Amount invested (cost)</span>.","It is the tax base: taxable gain is the balance less that amount.","If you have the real figure from your statement, type it — entered always beats derived."],"nota": "The derivation is an estimate. It is good when the holding tracked its benchmark with no intermediate contributions, and degrades when money moved in and out along the way."},{"rot": "Check","tt": "Check the history behind the number","res": "The series feeding the derivation is public and verifiable. Worth checking coverage before trusting an amount invested from years back.","passos": ["Go back to <span class=\"fs\">⚙</span> <span class=\"fs\">Parameters</span> and open the <span class=\"fs fs-ab\">History</span> tab.","Pick the index and check the coverage: from which month to which.","If there are gaps, tap <span class=\"fs fs-ac\">Fetch from the Central Bank</span>.","Compare the trailing twelve months with what you know of the market."],"nota": "The history is not editable, and deliberately so: a realised series you could alter would stop being history and become one more assumption."}]},{"id": "mes","ic": "💳","tt": "Close the month of expenses","sub": "From entry to split, without orphan spending or duplicated recurrences.","etapas": [{"rot": "Enter","tt": "Enter the month's spending","res": "Every expense has a category and a nature. The nature — fixed or variable — decides whether it feeds the average that projects the months ahead.","passos": ["Open <span class=\"fs fs-cp\">Expenses</span> and tap <span class=\"fs fs-vd\">+</span>.","Describe it, enter the amount and pick the category.","Mark <span class=\"fs\">Fixed</span> for what repeats unchanged, <span class=\"fs\">Variable</span> for the rest.","For repeating bills, switch on recurrence instead of entering them monthly."],"nota": "A negative amount records a refund — that is how you cancel a wrong charge without deleting the history."},{"rot": "Import","tt": "Import a statement","res": "Pasting statement text saves dozens of manual entries. The app recognises date, description and amount, and proposes a category from the rules you have already taught it.","passos": ["In the Expenses header, tap the import button <span class=\"fs\">↑</span>.","Paste the text copied from the card statement or the PDF.","Review the proposed list before confirming: drop anything that is not spending.","Corrected categories become rules for the next import."],"nota": "Transfers, bill payments and investments come in as neutral: they show in the list but do not add to the total, otherwise the same money would be counted twice."},{"rot": "Review","tt": "Review the month","res": "The summary tab shows where the money went. The category bars are the instrument: they compare proportion, not absolute value.","passos": ["On the <span class=\"fs fs-ab\">Summary</span> tab, check total, fixed and variable.","Tap a category bar to filter the list by it.","Use the <span class=\"fs fs-ab\">History</span> tab to compare with earlier months.","Under <span class=\"fs fs-ab\">Goals</span>, set a ceiling per category."],"nota": "The current month always looks smaller than earlier ones until it ends — compare closed months with closed months."},{"rot": "Split","tt": "Split what is shared","res": "Spending shared with someone else distorts your monthly cost if it comes in whole. The split keeps the full amount on record and counts only your share.","passos": ["While entering, choose a split by amount or by percentage.","Say who takes part and how much each owes.","Track balances on the <span class=\"fs fs-ab\">Splits</span> tab."],"nota": "A split changes what enters your cash flow and, in turn, the variable average that projects the months ahead."}]},{"id": "patri","ic": "🏡","tt": "Build wealth over time","sub": "How the app moves from a closed month to a projected balance sheet — and what you control along the way.","etapas": [{"rot": "Diagnosis","tt": "Read the financial health score","res": "The score folds liquidity, leverage, savings rate and diversification into one number. It is for ranking priorities, not for comparing yourself with anyone.","passos": ["On the home screen, tap the <span class=\"fs fs-cp\">Financial health</span> card.","See which components drag the score down.","Use <span class=\"fs\">👁</span> to hide the amounts when someone is beside you."],"nota": "An incomplete emergency fund pulls the score down more than anything else — rightly so: it is what stands between a surprise and expensive debt."},{"rot": "Target","tt": "Set the savings target","res": "How much to save each month is your decision, declared in the parameters. The app takes the month's target as the lesser of the actual cash left over and your target.","passos": ["Open <span class=\"fs\">⚙</span> <span class=\"fs\">Parameters</span> and adjust <span class=\"fs\">Save from net income</span>.","Go back home and check <span class=\"fs fs-cp\">Save per month</span>.","Open <span class=\"fs fs-cp\">Financial life</span> to see the working behind the figure."],"nota": "If the month closes negative there is nothing left to save, and the app says so instead of suggesting a number you do not have."},{"rot": "Projection","tt": "Understand the wealth projection","res": "Each holding grows by its own benchmark; fixed expenses repeat; variable ones come in at the average of the last three months, inflation-adjusted if you say so.","passos": ["In <span class=\"fs fs-cp\">Holdings</span>, open the projection view.","Move through months with the date selector on the home screen.","Switch on <span class=\"fs\">Invest the surplus</span> in the parameters so leftovers become holdings.","Pick the horizon: 12, 24, 60 or 120 months."],"nota": "A projection is not a promise. It answers “if everything behaves as declared”, and its value is in comparing scenarios, not in hitting the number."},{"rot": "Debt","tt": "Put debt in the picture","res": "Wealth without debt is half the story. The app amortises each contract month by month and takes debt service out of cash before working out what is left.","passos": ["Open <span class=\"fs fs-cp\">Debts</span> and enter the contract: balance, rate, term and system.","State the contract's indexation — TR, inflation or fixed.","For a mortgage, declare any use of the severance fund.","Check net worth on the home screen: total less debts."],"nota": "Paying down expensive debt almost always beats investing. Compare the contract rate with the net return of your best holding before deciding."}]}],"secoes": [{"id": "s_inicio","ic": "🏠","tt": "Home screen","itens": [{"t": "Month navigator","d": "The whole app answers to the month selected here. Past months show what happened; future months, what the projection expects. The <span class=\"fs\">Today</span> button returns to the current month."},{"t": "Parameters button","d": "The <span class=\"fs\">⚙</span> to the right of the date opens the assumptions that govern every projection. It sits beside the navigator because the two complete each other: the date says which month, the parameters say under which assumptions."},{"t": "Hide amounts","d": "The <span class=\"fs\">👁</span> replaces every money figure with a dash, across all screens. It is not encryption — it is the freedom to open the app next to someone. The state persists between sessions."},{"t": "Language","d": "The three flags switch between Portuguese, English and German. The choice applies to the whole app, manual included, and persists on the device."},{"t": "Financial health","d": "A 0–100 score combining liquidity, leverage, savings rate and diversification. Tap it for the working behind each component."},{"t": "Net worth","d": "Holdings and property less the outstanding balance of every debt, for the selected month."}]},{"id": "s_par","ic": "<span class=\"fs\">⚙</span>","tt": "Parameters","itens": [{"t": "Macro tab","d": "The curves for Selic, CDI, inflation, IGP-M, TR and savings. They work as a staircase: the declared rate holds from the given month until the next turn."},{"t": "History tab","d": "The realised monthly series of each index, fetched from the Central Bank's SGS. Read-only: it is published fact, not assumption. It shows coverage, trailing twelve and twenty-four months, and a refresh button."},{"t": "Where the history is used","d": "Deriving the amount invested from the reported balance, each holding's evolution curve, indexed debt correction and the twelve-month accumulation behind index-linked raises."},{"t": "Projection assumptions","d": "Invest the surplus, concentrate in the CDB Saving, use the variable average, adjust expenses for inflation, the share to save, months of emergency fund and the projection horizon."},{"t": "Income, Holdings and Fees","d": "Social security and income tax bands, dependant allowance, the regressive tax table, the semi-annual levy and management and performance fees."},{"t": "Theme","d": "Light neutral palettes and the option to compose your own. The system status bar follows the choice."}]},{"id": "s_desp","ic": "💳","tt": "Expenses","itens": [{"t": "Fixed or variable","d": "Fixed repeats unchanged and projects at its own value. Variable projects at the average of the last three months. Misclassifying distorts every month ahead."},{"t": "Recurrence","d": "A recurring entry repeats itself until its end date, if any. Entering a recurring bill by hand every month doubles the spending."},{"t": "Neutral entries","d": "Transfers, investments and income show in the list but do not add to the spending total: the same money would be counted twice."},{"t": "Refunds","d": "A negative amount records a refund and reduces the month's total while keeping the original entry in the history."},{"t": "Splits","d": "Divides an expense by amount or percentage. The full amount stays on record; only your share counts towards your cost."},{"t": "Goals","d": "A monthly ceiling per category, with a warning when exceeded. The comparison is always against the selected month."},{"t": "Import","d": "Paste statement text and it recognises date, description and amount. Every category correction becomes a rule for the next import."}]},{"id": "s_ent","ic": "💰","tt": "Income","itens": [{"t": "Regimes","d": "Employee, self-employed, company, rent and other. Each brings its own gross-to-net calculation, using the bands declared in the parameters."},{"t": "13th salary and holiday pay","d": "They land in the right months, with the one-third holiday bonus, and hit cash only when actually paid."},{"t": "Severance fund","d": "Deposited on the configured day, yields proportionally and never passes through cash flow: it is wealth, not disposable income."},{"t": "Raises","d": "Declare the month of the raise and the index. The app applies the trailing twelve months of the chosen index, read from the official history."},{"t": "Income history","d": "A gross and net chart, the period's effective tax rate and a month-by-month breakdown."}]},{"id": "s_pat","ic": "🏦","tt": "Holdings","itens": [{"t": "Classes","d": "Fixed income, treasury, funds, equities, property and other. The class sets the default taxation and the behaviour in the projection."},{"t": "Current balance, not amount invested","d": "The form asks for today's statement figure. The amount invested is derived from it, the benchmark and the investment date."},{"t": "Fund units","d": "For funds the app tracks unit counts to eight decimal places, the unit date and the accumulated return."},{"t": "Liquidity","d": "Same day, next day, a declared term or only at maturity. It is what separates an emergency fund from a long-term holding."},{"t": "Taxation","d": "A regressive table by holding period, a semi-annual levy in May and November for funds, and exemption where the law provides it."},{"t": "Projection","d": "Each holding grows by its own benchmark, month by month, following the parameter curves. With “invest the surplus” on, leftover cash becomes a new holding."}]},{"id": "s_div","ic": "🏛","tt": "Debts","itens": [{"t": "Amortisation systems","d": "Constant amortisation, annuity and fixed instalment. The system decides how instalment, interest and principal spread across the contract."},{"t": "Indexation","d": "TR, inflation or fixed. Indexed contracts are corrected by the realised history for closed months and by the curve from there on."},{"t": "Severance fund in a mortgage","d": "Either reduces the instalment or amortises the balance. It cuts the cash outlay, not the contracted interest or principal."},{"t": "Charges","d": "Insurance and administration fees enter the monthly outlay but not the amortisation — which is why the instalment paid exceeds interest plus principal."},{"t": "Debt service","d": "It leaves cash before the surplus is worked out. That is why a large debt pulls down the suggested amount to save."}]},{"id": "s_seg","ic": "🔒","tt": "Data, backup and access","itens": [{"t": "Where the data lives","d": "Everything is written to this device's browser storage. Nothing goes to a server: the app works without a network, except to fetch indices and exchange rates."},{"t": "Backup","d": "Exports one file with expenses, income, holdings, debts, categories, rules and parameters. Keep it off the device."},{"t": "Restore","d": "Replaces current data with the file's. Take a backup before restoring: the operation cannot be undone."},{"t": "Access password","d": "Username and password are stored as a cryptographic digest on this device. They guard against casual access; they are not server-grade security."},{"t": "Clearing device data","d": "Clearing browser data removes everything, credentials included. Without a backup there is no recovery."}]}]},"de": {"rot_guia": "SCHRITT FÜR SCHRITT","rot_comecar": "Starten","rot_fechar": "Schließen","rot_ant": "Zurück","rot_prox": "Weiter","rot_nota": "Achtung:","rot_ref": "Referenz","rot_result": "Treffer","vazio": "Nichts gefunden. Versuchen Sie ein Wort aus der App selbst — „Index“, „Fonds“, „Aufteilung“, „Tilgung“.","intro": "Vier Abläufe in sinnvoller Reihenfolge, darunter die Referenz zu jedem Bildschirm. Alles läuft offline, auf Ihrem Gerät.","guias": [{"id": "param","ic": "<span class=\"fs\">⚙</span>","tt": "Zuerst: die Parameter richtig setzen","sub": "Hier erklären Sie die Welt, in der Ihre Projektion stattfindet. Fünf Minuten hier ersparen Monate falscher Zahlen.","etapas": [{"rot": "Öffnen","tt": "Das Parameterfenster öffnen","res": "Die Parameter steuern JEDE Projektion der App — Start, Vermögen, Schulden und Cashflow. Es gibt keinen zweiten Ort dafür.","passos": ["Tippen Sie auf dem Startbildschirm auf <span class=\"fs\">⚙</span> rechts neben der Monatsnavigation.","Das Fenster öffnet fünf Reiter: <span class=\"fs fs-ab\">Makro</span>, <span class=\"fs fs-ab\">Historie</span>, <span class=\"fs fs-ab\">Einkommen</span>, <span class=\"fs fs-ab\">Anlagen</span> und <span class=\"fs fs-ab\">Gebühren</span>.","Beginnen Sie mit <span class=\"fs fs-ab\">Makro</span>: daher stammen die Indexkurven."],"nota": "Eine Änderung hier rechnet alles Sichtbare neu. Keine Buchung wird verändert — nur ihre Fortschreibung."},{"rot": "Kurven","tt": "Die Kurve jedes Index festlegen","res": "Die Kurve ist eine Treppe: ein für einen Monat erklärter Satz gilt ab dort weiter, bis ein anderer Monat eine andere Zahl bekommt. Sie markieren nur die Wendepunkte.","passos": ["Wählen Sie den Index über die Pillen: Selic, CDI, Inflation, IGP-M, TR oder Sparbuch.","Geben Sie den Satz und den Monat an, ab dem er gilt.","Fügen Sie eine Zeile nur dort hinzu, wo Sie eine Wende erwarten.","Jenseits des Horizonts gilt der langfristige Satz."],"nota": "Abgeschlossene Monate ignorieren Ihre Kurve: sie nutzen den realisierten Wert der Zentralbank. Ihre Angabe gilt ab dem laufenden Monat."},{"rot": "Sparen","tt": "Sparquote und Notgroschen festlegen","res": "Zwei Annahmen, die früher Faustregeln waren und nun Ihre sind: der Anteil des Nettoeinkommens, den Sie monatlich sparen wollen, und wie viele Kostenmonate der Notgroschen abdecken muss.","passos": ["Weiterhin unter <span class=\"fs fs-ab\">Makro</span>, scrollen Sie zu <span class=\"fs\">Projektionsannahmen</span>.","Tragen Sie unter <span class=\"fs\">Sparquote vom Nettoeinkommen</span> Ihren Prozentsatz ein.","Tragen Sie unter <span class=\"fs\">Notgroschen</span> die Zahl der Monate ein.","Die Startkachel <span class=\"fs fs-cp\">Monatlich sparen</span> folgt nun diesen beiden Zahlen."],"nota": "Solange der Notgroschen nicht voll ist, hat er Vorrang: die App rät, den gesamten Überschuss zu sparen, nicht nur den Prozentsatz."},{"rot": "Steuern","tt": "Besteuerung und Gebühren anpassen","res": "Hier liegen die Tabellen, die Brutto in Netto verwandeln: Beitrags- und Steuerstufen, Freibetrag je Angehörigem, Sätze für Festverzinsliches und Fondsgebühren.","passos": ["Prüfen Sie unter <span class=\"fs fs-ab\">Einkommen</span> die geltenden Stufen und den Freibetrag.","Passen Sie unter <span class=\"fs fs-ab\">Anlagen</span> die degressive Steuertabelle an.","Erklären Sie unter <span class=\"fs fs-ab\">Gebühren</span> Verwaltungs- und Performancegebühren.","Tippen Sie zum Schluss auf <span class=\"fs fs-ac\">Speichern</span>."],"nota": "Die Werte kommen mit der geltenden Gesetzgebung. Ändern Sie sie nur, wenn Sie wissen, dass sich etwas geändert hat."}]},{"id": "aplic","ic": "📈","tt": "Eine Anlage erfassen und den Anlagebetrag verstehen","sub": "Sie geben den heutigen Saldo an; die App leitet den Anlagebetrag aus der offiziellen Indexhistorie ab.","etapas": [{"rot": "Erfassen","tt": "Die Anlage anlegen","res": "Das Formular fragt den AKTUELLEN Saldo, nicht den Anlagebetrag. Das ist das Gegenteil der meisten Tabellen und volle Absicht: der Saldo ist die Zahl, die heute im Auszug steht.","passos": ["Öffnen Sie <span class=\"fs fs-cp\">Vermögen</span> auf dem Startbildschirm und tippen Sie auf <span class=\"fs fs-ac\">+</span>.","Wählen Sie die Klasse: festverzinslich, Staatsanleihe, Fonds, Aktie, Immobilie oder Sonstiges.","Geben Sie den aktuellen Saldo und das Institut an.","Füllen Sie das <span class=\"fs\">Anlagedatum</span> aus — es öffnet das Fenster in die Historie."],"nota": "Ohne Anlagedatum ist keine Rückrechnung möglich: die App weiß nicht, über wie viele Monate zurückzurechnen ist."},{"rot": "Index","tt": "Angeben, woran die Anlage hängt","res": "Der Index verbindet Ihre Anlage mit der Reihe der Zentralbank. Er bestimmt, welche Historie die Ableitung speist und welche Kurve die Projektion.","passos": ["Wählen Sie den Index: % des CDI, Inflation plus Aufschlag, fest, Sparbuch oder variabel.","Geben Sie den vereinbarten Prozentsatz oder Aufschlag an.","Bei Fonds tragen Sie zusätzlich Anteilspreis und Stichtag ein."],"nota": "„Variabel“ fragt die Zentralbank nie: Sie erklären die erwartete Rendite, und die App übernimmt sie unverändert."},{"rot": "Ableitung","tt": "Den abgeleiteten Anlagebetrag lesen","res": "Mit Saldo, Datum und Index geht die App die realisierte Monatsreihe rückwärts durch und findet den Betrag, der zu jenem Datum angelegt den heutigen Saldo ergäbe.","passos": ["Öffnen Sie die Anlage und sehen Sie <span class=\"fs\">Angelegter Betrag (Kosten)</span>.","Er ist die Steuerbemessung: der steuerpflichtige Gewinn ist Saldo minus dieser Betrag.","Haben Sie den echten Wert aus dem Auszug, tragen Sie ihn ein — eingetragen schlägt abgeleitet."],"nota": "Die Ableitung ist eine Schätzung. Sie ist gut, wenn die Anlage dem Index ohne Zwischeneinzahlungen folgte, und schlechter, wenn unterwegs Geld ein- und ausging."},{"rot": "Prüfen","tt": "Die zugrunde liegende Historie prüfen","res": "Die Reihe hinter der Ableitung ist öffentlich und nachprüfbar. Vor dem Vertrauen in einen Anlagebetrag von vor Jahren lohnt der Blick auf die Abdeckung.","passos": ["Zurück zu <span class=\"fs\">⚙</span> <span class=\"fs\">Parameter</span> und den Reiter <span class=\"fs fs-ab\">Historie</span> öffnen.","Index wählen und die Abdeckung prüfen: von welchem Monat bis zu welchem.","Bei Lücken auf <span class=\"fs fs-ac\">Von der Zentralbank laden</span> tippen.","Vergleichen Sie die Zwölfmonatssumme mit dem, was Sie vom Markt kennen."],"nota": "Die Historie ist nicht editierbar, und zwar mit Absicht: eine realisierte Reihe, die Sie ändern könnten, wäre keine Historie mehr, sondern eine weitere Annahme."}]},{"id": "mes","ic": "💳","tt": "Den Ausgabenmonat abschließen","sub": "Von der Buchung bis zur Aufteilung, ohne verwaiste Ausgaben und ohne doppelte Wiederholungen.","etapas": [{"rot": "Buchen","tt": "Die Ausgaben des Monats buchen","res": "Jede Ausgabe hat eine Kategorie und eine Natur. Die Natur — fix oder variabel — entscheidet, ob sie in den Durchschnitt eingeht, der die Folgemonate fortschreibt.","passos": ["Öffnen Sie <span class=\"fs fs-cp\">Ausgaben</span> und tippen Sie auf <span class=\"fs fs-vd\">+</span>.","Beschreiben Sie sie, geben Sie den Betrag ein und wählen Sie die Kategorie.","Markieren Sie <span class=\"fs\">Fix</span> für Gleichbleibendes, <span class=\"fs\">Variabel</span> für den Rest.","Schalten Sie bei wiederkehrenden Rechnungen die Wiederholung ein."],"nota": "Ein negativer Betrag bucht eine Erstattung — so storniert man eine falsche Belastung, ohne die Historie zu löschen."},{"rot": "Import","tt": "Abrechnung oder Auszug importieren","res": "Text einer Abrechnung einzufügen erspart Dutzende Handbuchungen. Die App erkennt Datum, Beschreibung und Betrag und schlägt eine Kategorie aus Ihren Regeln vor.","passos": ["Tippen Sie in der Kopfzeile der Ausgaben auf die Import-Schaltfläche <span class=\"fs\">↑</span>.","Fügen Sie den kopierten Text der Abrechnung oder des PDF ein.","Prüfen Sie die Vorschlagsliste vor dem Bestätigen.","Korrigierte Kategorien werden zur Regel für den nächsten Import."],"nota": "Überweisungen, Rechnungszahlungen und Anlagen kommen neutral herein: sie stehen in der Liste, zählen aber nicht zur Summe — sonst würde dasselbe Geld doppelt gezählt."},{"rot": "Prüfen","tt": "Die Monatsübersicht prüfen","res": "Der Übersichtsreiter zeigt, wohin das Geld ging. Die Kategoriebalken sind das Instrument: sie vergleichen Anteile, nicht absolute Beträge.","passos": ["Prüfen Sie im Reiter <span class=\"fs fs-ab\">Übersicht</span> Summe, Fixes und Variables.","Tippen Sie auf einen Kategoriebalken, um die Liste zu filtern.","Nutzen Sie <span class=\"fs fs-ab\">Historie</span> für den Vergleich mit Vormonaten.","Setzen Sie unter <span class=\"fs fs-ab\">Ziele</span> eine Obergrenze je Kategorie."],"nota": "Der laufende Monat wirkt bis zum Monatsende stets kleiner — vergleichen Sie abgeschlossene Monate mit abgeschlossenen."},{"rot": "Aufteilen","tt": "Geteiltes aufteilen","res": "Eine mit anderen geteilte Ausgabe verzerrt Ihre Monatskosten, wenn sie ganz eingeht. Die Aufteilung bewahrt den vollen Betrag und zählt nur Ihren Anteil.","passos": ["Wählen Sie beim Buchen die Aufteilung nach Betrag oder Prozent.","Geben Sie an, wer beteiligt ist und wie viel auf wen entfällt.","Verfolgen Sie die Salden im Reiter <span class=\"fs fs-ab\">Aufteilungen</span>."],"nota": "Die Aufteilung ändert Ihren Cashflow und damit den Durchschnitt der variablen Ausgaben, der die Folgemonate fortschreibt."}]},{"id": "patri","ic": "🏡","tt": "Vermögen über die Zeit aufbauen","sub": "Wie die App vom abgeschlossenen Monat zur projizierten Bilanz kommt — und was Sie auf dem Weg steuern.","etapas": [{"rot": "Diagnose","tt": "Die Finanzgesundheit lesen","res": "Die Note fasst Liquidität, Verschuldung, Sparquote und Streuung in einer Zahl zusammen. Sie dient dem Ordnen von Prioritäten, nicht dem Vergleich mit anderen.","passos": ["Tippen Sie auf dem Startbildschirm auf die Kachel <span class=\"fs fs-cp\">Finanzgesundheit</span>.","Sehen Sie, welche Bestandteile die Note drücken.","Nutzen Sie <span class=\"fs\">👁</span>, um die Beträge in Gesellschaft auszublenden."],"nota": "Ein unvollständiger Notgroschen drückt die Note stärker als alles andere — zu Recht: er trennt einen Zwischenfall von teurer Verschuldung."},{"rot": "Ziel","tt": "Das Sparziel setzen","res": "Wie viel monatlich gespart wird, entscheiden Sie in den Parametern. Die App nimmt als Monatsziel den kleineren Wert aus tatsächlichem Überschuss und Ihrem Ziel.","passos": ["Öffnen Sie <span class=\"fs\">⚙</span> <span class=\"fs\">Parameter</span> und passen Sie <span class=\"fs\">Sparquote vom Nettoeinkommen</span> an.","Zurück auf dem Start prüfen Sie <span class=\"fs fs-cp\">Monatlich sparen</span>.","Öffnen Sie <span class=\"fs fs-cp\">Finanzleben</span> für den Rechenweg."],"nota": "Schließt der Monat negativ, gibt es nichts zu sparen — und die App sagt das, statt eine Zahl vorzuschlagen, die Sie nicht haben."},{"rot": "Projektion","tt": "Die Vermögensprojektion verstehen","res": "Jede Anlage wächst mit ihrem eigenen Index; fixe Ausgaben wiederholen sich; variable gehen mit dem Schnitt der letzten drei Monate ein, auf Wunsch inflationsbereinigt.","passos": ["Öffnen Sie in <span class=\"fs fs-cp\">Vermögen</span> die Projektionsansicht.","Wechseln Sie die Monate über die Datumsauswahl am Start.","Schalten Sie <span class=\"fs\">Überschuss anlegen</span> ein, damit Übriges zur Anlage wird.","Wählen Sie den Horizont: 12, 24, 60 oder 120 Monate."],"nota": "Eine Projektion ist kein Versprechen. Sie beantwortet „wenn sich alles wie erklärt verhält“ — ihr Wert liegt im Vergleich von Szenarien."},{"rot": "Schulden","tt": "Schulden mitrechnen","res": "Vermögen ohne Schulden ist die halbe Geschichte. Die App tilgt jeden Vertrag Monat für Monat und zieht den Schuldendienst vom Cashflow ab, bevor der Überschuss entsteht.","passos": ["Öffnen Sie <span class=\"fs fs-cp\">Schulden</span> und erfassen Sie Saldo, Satz, Laufzeit und System.","Geben Sie die Indexierung an — TR, Inflation oder fest.","Erklären Sie bei einer Baufinanzierung die Nutzung des Abfindungsfonds.","Prüfen Sie das Nettovermögen am Start: Summe abzüglich Schulden."],"nota": "Teure Schulden zu tilgen schlägt fast immer das Anlegen. Vergleichen Sie den Vertragssatz mit der Nettorendite Ihrer besten Anlage."}]}],"secoes": [{"id": "s_inicio","ic": "🏠","tt": "Startbildschirm","itens": [{"t": "Monatsnavigation","d": "Die ganze App folgt dem hier gewählten Monat. Vergangene Monate zeigen das Geschehene, künftige die Projektion. <span class=\"fs\">Heute</span> führt zum laufenden Monat zurück."},{"t": "Parameter-Schaltfläche","d": "Das <span class=\"fs\">⚙</span> rechts des Datums öffnet die Annahmen, die jede Projektion steuern. Es steht neben der Navigation, weil beides zusammengehört: das Datum sagt welcher Monat, die Parameter unter welchen Annahmen."},{"t": "Beträge ausblenden","d": "Das <span class=\"fs\">👁</span> ersetzt jeden Geldbetrag durch einen Gedankenstrich, auf allen Bildschirmen. Keine Verschlüsselung — die Freiheit, die App neben jemandem zu öffnen. Der Zustand bleibt erhalten."},{"t": "Sprache","d": "Die drei Flaggen wechseln zwischen Portugiesisch, Englisch und Deutsch. Die Wahl gilt für die ganze App, das Handbuch eingeschlossen."},{"t": "Finanzgesundheit","d": "Note von 0 bis 100 aus Liquidität, Verschuldung, Sparquote und Streuung. Tippen zeigt den Rechenweg je Bestandteil."},{"t": "Nettovermögen","d": "Anlagen und Sachwerte abzüglich der Restschuld aller Verträge, im gewählten Monat."}]},{"id": "s_par","ic": "<span class=\"fs\">⚙</span>","tt": "Parameter","itens": [{"t": "Reiter Makro","d": "Die Kurven für Selic, CDI, Inflation, IGP-M, TR und Sparbuch. Sie wirken als Treppe: der erklärte Satz gilt ab dem genannten Monat bis zur nächsten Wende."},{"t": "Reiter Historie","d": "Die realisierte Monatsreihe jedes Index, aus dem SGS der Zentralbank. Nur lesbar: veröffentlichte Tatsache, keine Annahme. Mit Abdeckung, Zwölf- und Vierundzwanzigmonatssumme und einer Schaltfläche zum Aktualisieren."},{"t": "Wozu die Historie dient","d": "Ableitung des Anlagebetrags aus dem gemeldeten Saldo, Verlaufskurve jeder Anlage, Korrektur indexierter Schulden und die Zwölfmonatssumme hinter indexgebundenen Erhöhungen."},{"t": "Projektionsannahmen","d": "Überschuss anlegen, im CDB Saving bündeln, Durchschnitt variabler Ausgaben, Inflationsbereinigung, Sparquote, Monate Notgroschen und der Projektionshorizont."},{"t": "Einkommen, Anlagen und Gebühren","d": "Beitrags- und Steuerstufen, Freibetrag je Angehörigem, degressive Steuertabelle, Halbjahressteuer sowie Verwaltungs- und Performancegebühren."},{"t": "Design","d": "Helle, neutrale Paletten und die Möglichkeit, eine eigene zu setzen. Die Statusleiste des Systems folgt der Wahl."}]},{"id": "s_desp","ic": "💳","tt": "Ausgaben","itens": [{"t": "Fix oder variabel","d": "Fixes wiederholt sich unverändert und wird mit dem eigenen Wert fortgeschrieben. Variables geht mit dem Schnitt der letzten drei Monate ein. Falsche Einordnung verzerrt alle Folgemonate."},{"t": "Wiederholung","d": "Eine wiederkehrende Buchung wiederholt sich bis zum Enddatum von selbst. Wer sie monatlich zusätzlich erfasst, verdoppelt die Ausgabe."},{"t": "Neutrale Buchungen","d": "Überweisungen, Anlagen und Einnahmen erscheinen in der Liste, zählen aber nicht zur Ausgabensumme: dasselbe Geld würde doppelt gezählt."},{"t": "Erstattung","d": "Ein negativer Betrag bucht eine Rückerstattung und mindert die Monatssumme, während die Ursprungsbuchung erhalten bleibt."},{"t": "Aufteilung","d": "Teilt eine Ausgabe nach Betrag oder Prozent. Der volle Betrag bleibt erfasst; nur Ihr Anteil zählt zu Ihren Kosten."},{"t": "Ziele","d": "Monatliche Obergrenze je Kategorie, mit Hinweis bei Überschreitung. Verglichen wird stets der gewählte Monat."},{"t": "Import","d": "Text einer Abrechnung einfügen; Datum, Beschreibung und Betrag werden erkannt. Jede Kategoriekorrektur wird zur Regel für den nächsten Import."}]},{"id": "s_ent","ic": "💰","tt": "Einnahmen","itens": [{"t": "Regime","d": "Angestellt, selbständig, Unternehmen, Miete und Sonstiges. Jedes bringt seine eigene Rechnung von Brutto zu Netto mit den erklärten Stufen."},{"t": "13. Gehalt und Urlaubsgeld","d": "Sie fallen in die richtigen Monate, mit dem Drittel-Zuschlag, und treffen den Cashflow erst bei tatsächlicher Zahlung."},{"t": "Abfindungsfonds","d": "Wird am eingestellten Tag eingezahlt, verzinst anteilig und läuft nie durch den Cashflow: er ist Vermögen, kein verfügbares Einkommen."},{"t": "Erhöhung","d": "Erklären Sie Monat und Index der Erhöhung. Die App wendet die Zwölfmonatssumme des gewählten Index aus der offiziellen Historie an."},{"t": "Einkommenshistorie","d": "Diagramm für Brutto und Netto, effektiver Steuersatz des Zeitraums und die Aufschlüsselung Monat für Monat."}]},{"id": "s_pat","ic": "🏦","tt": "Vermögen","itens": [{"t": "Klassen","d": "Festverzinsliches, Staatsanleihen, Fonds, Aktien, Immobilien und Sonstiges. Die Klasse setzt die Standardbesteuerung und das Verhalten in der Projektion."},{"t": "Aktueller Saldo, nicht Anlagebetrag","d": "Das Formular fragt die heutige Auszugszahl. Der Anlagebetrag wird daraus, aus dem Index und dem Anlagedatum abgeleitet."},{"t": "Fondsanteile","d": "Bei Fonds verfolgt die App die Anteilszahl mit acht Nachkommastellen, den Stichtag und die kumulierte Rendite."},{"t": "Liquidität","d": "Taggleich, am Folgetag, mit erklärter Frist oder erst bei Fälligkeit. Das trennt den Notgroschen von der langfristigen Anlage."},{"t": "Besteuerung","d": "Degressive Tabelle nach Haltedauer, Halbjahressteuer im Mai und November bei Fonds und Befreiung, wo das Gesetz sie vorsieht."},{"t": "Projektion","d": "Jede Anlage wächst mit dem eigenen Index, Monat für Monat, entlang der Parameterkurven. Mit „Überschuss anlegen“ wird Übriges zur neuen Anlage."}]},{"id": "s_div","ic": "🏛","tt": "Schulden","itens": [{"t": "Tilgungssysteme","d": "Konstante Tilgung, Annuität und feste Rate. Das System bestimmt die Verteilung von Rate, Zins und Tilgung über den Vertrag."},{"t": "Indexierung","d": "TR, Inflation oder fest. Indexierte Verträge werden in abgeschlossenen Monaten mit der realisierten Historie und danach mit der Kurve fortgeschrieben."},{"t": "Abfindungsfonds bei Baufinanzierung","d": "Mindert entweder die Rate oder tilgt den Saldo. Er senkt den Mittelabfluss, nicht den vereinbarten Zins oder die Tilgung."},{"t": "Nebenkosten","d": "Versicherungen und Verwaltungsgebühr gehen in den Mittelabfluss ein, nicht in die Tilgung — deshalb übersteigt die gezahlte Rate Zins plus Tilgung."},{"t": "Schuldendienst","d": "Er verlässt den Cashflow vor der Ermittlung des Überschusses. Deshalb drückt eine große Schuld den Sparvorschlag."}]},{"id": "s_seg","ic": "🔒","tt": "Daten, Backup und Zugang","itens": [{"t": "Wo die Daten liegen","d": "Alles wird im Browserspeicher dieses Geräts abgelegt. Nichts geht an einen Server: die App läuft ohne Netz, außer zum Laden von Indizes und Wechselkursen."},{"t": "Backup","d": "Exportiert eine Datei mit Ausgaben, Einnahmen, Vermögen, Schulden, Kategorien, Regeln und Parametern. Bewahren Sie sie außerhalb des Geräts auf."},{"t": "Wiederherstellung","d": "Ersetzt die aktuellen Daten durch die der Datei. Legen Sie vorher ein Backup an: der Vorgang ist unumkehrbar."},{"t": "Zugangspasswort","d": "Benutzername und Passwort liegen als kryptografischer Abdruck auf diesem Gerät. Sie schützen vor beiläufigem Zugriff, nicht auf Serverniveau."},{"t": "Gerätedaten löschen","d": "Das Löschen der Browserdaten entfernt alles, auch die Zugangsdaten. Ohne Backup gibt es keine Wiederherstellung."}]}]}};
+
+
+/* ═══ MANUAL DO APP ═══════════════════════════════════════════════════
+   Duas naturezas de conteudo, deliberadamente separadas:
+
+   · GUIAS — procedimento com ordem. Trilha de etapas, um "lugar" do app
+     por etapa, fac-similes dos controles reais. Serve para quem esta
+     fazendo a coisa pela primeira vez.
+   · SECOES — referencia. Cartoes de "o que e / como se comporta". Serve
+     para quem ja sabe o caminho e quer conferir uma regra.
+
+   Misturar os dois foi tentador e seria pior: um passo a passo que se
+   interrompe para explicar tributacao deixa de ser passo a passo.
+
+   Os fac-similes sao <span>, nunca <button>. Um fac-simile clicavel faz o
+   usuario tocar no manual esperando efeito no app. */
+
+let _gvAberto=null;      // id do guia expandido
+let _gvEtapa=0;          // etapa corrente do guia expandido
+let _gvTudo=false;       // busca casou: mostra todas as etapas de uma vez
+let _manSecAberta=null;  // id da secao de referencia expandida
+
+/* fac-similes — o rotulo tem de bater com o rotulo real na tela, senao o
+   manual ensina a procurar a coisa errada */
+function fsBt(txt,tipo){ return '<span class="fs'+(tipo?" fs-"+tipo:"")+'">'+txt+'</span>'; }
+function fsAba(txt){ return '<span class="fs fs-ab">'+txt+'</span>'; }
+function fsCard(txt){ return '<span class="fs fs-cp">'+txt+'</span>'; }
+
+function manTxt(){ return MANUAL[LANG]||MANUAL.pt; }
+
+/* Destaque do termo buscado. Escapa o HTML do texto ANTES de injetar a
+   marca — o conteudo do manual ja traz fac-similes em HTML, entao cada
+   trecho decide se e texto ou marcacao. */
+function manEsc(x){ return String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function manHl(html,q){
+  if(!q) return html;
+  /* so destaca fora de tags, para nao corromper um atributo */
+  return String(html).replace(/>([^<]+)</g,(m,txt)=>{
+    const re=new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");
+    return ">"+txt.replace(re,'<mark class="man-hit">$1</mark>')+"<";
+  });
+}
+/* texto puro de um guia ou secao, para a busca */
+function manPlano(o){
+  const p=[];
+  const push=v=>{ if(typeof v==="string") p.push(v.replace(/<[^>]+>/g," ")); };
+  push(o.tt); push(o.sub);
+  (o.etapas||[]).forEach(e=>{ push(e.rot); push(e.tt); push(e.res); push(e.nota);
+    (e.passos||[]).forEach(push); });
+  (o.itens||[]).forEach(i=>{ push(i.t); push(i.d); });
+  return p.join(" ").toLowerCase();
+}
+
+function gvToggle(id){
+  if(_gvAberto===id){ _gvAberto=null; }
+  else { _gvAberto=id; _gvEtapa=0; }
+  renderManual();
+}
+function gvIr(i){ _gvEtapa=i; renderManual(); }
+function gvPasso(d){
+  const g=manTxt().guias.find(x=>x.id===_gvAberto);
+  if(!g) return;
+  _gvEtapa=Math.max(0,Math.min(g.etapas.length-1,_gvEtapa+d));
+  renderManual();
+}
+function manSecToggle(id){
+  _manSecAberta=(_manSecAberta===id)?null:id;
+  renderManual();
+}
+
+function gvHTML(g,q){
+  const aberto=(_gvAberto===g.id)||_gvTudo;
+  const T=manTxt();
+  const hd=`
+    <button class="man-guia-hd" onclick="gvToggle('${g.id}')">
+      <span class="man-guia-ic" style="align-self:flex-start">${g.ic}</span>
+      <span style="flex:1;min-width:0">
+        <span class="man-guia-tag">${T.rot_guia}</span>
+        <span class="man-guia-tt">${manHl(">"+manEsc(g.tt)+"<",q).slice(1,-1)}</span>
+        <span class="man-guia-sub">${manHl(">"+manEsc(g.sub)+"<",q).slice(1,-1)}</span>
+      </span>
+      <span class="man-guia-selo">${aberto?T.rot_fechar:T.rot_comecar}</span>
+    </button>`;
+  if(!aberto) return `<div class="man-guia">${hd}</div>`;
+
+  const etapas=_gvTudo?g.etapas.map((_,i)=>i):[Math.min(_gvEtapa,g.etapas.length-1)];
+  const trilha=`<div class="man-trilha">`+g.etapas.map((e,i)=>
+    `<span class="man-et${(!_gvTudo&&i===_gvEtapa)?" on":""}" onclick="gvIr(${i})">
+       <span class="n">${i+1}</span>${manEsc(e.rot)}</span>`).join("")+`</div>`;
+
+  const pans=etapas.map(i=>{
+    const e=g.etapas[i];
+    const passos=e.passos.map((p,k)=>
+      `<li style="animation-delay:${k*45}ms">${manHl(">"+p+"<",q).slice(1,-1)}</li>`).join("");
+    return `<div class="man-pan">
+      <div class="man-pan-tt">${_gvTudo?(i+1)+". ":""}${manHl(">"+manEsc(e.tt)+"<",q).slice(1,-1)}</div>
+      <div class="man-pan-res">${manHl(">"+manEsc(e.res)+"<",q).slice(1,-1)}</div>
+      <ol class="man-passos">${passos}</ol>
+      ${e.nota?`<div class="man-nota"><span>\u26A0\uFE0F</span><span><b>${T.rot_nota}</b> ${manHl(">"+manEsc(e.nota)+"<",q).slice(1,-1)}</span></div>`:""}
+    </div>`;
+  }).join("");
+
+  const nav=_gvTudo?"":`<div class="man-navb">
+      <button onclick="gvPasso(-1)"${_gvEtapa<=0?" disabled":""}>\u2039 ${T.rot_ant}</button>
+      <button onclick="gvPasso(1)"${_gvEtapa>=g.etapas.length-1?" disabled":""}>${T.rot_prox} \u203A</button>
+    </div>`;
+
+  return `<div class="man-guia">${hd}<div class="man-guia-bd">${trilha}${pans}${nav}</div></div>`;
+}
+
+function manSecHTML(sec,q){
+  const aberta=(_manSecAberta===sec.id)||!!q;
+  const itens=sec.itens.map(i=>`
+    <div class="man-it">
+      <div class="man-it-t">${manHl(">"+manEsc(i.t)+"<",q).slice(1,-1)}</div>
+      <div class="man-it-d">${manHl(">"+i.d+"<",q).slice(1,-1)}</div>
+    </div>`).join("");
+  return `<div class="man-sec${aberta?" aberta":""}">
+    <button class="man-sec-hd" onclick="manSecToggle('${sec.id}')">
+      <span class="man-sec-ic">${sec.ic}</span>
+      <span class="man-sec-tt">${manHl(">"+manEsc(sec.tt)+"<",q).slice(1,-1)}</span>
+      <span class="man-sec-ch">\u203A</span>
+    </button>
+    ${aberta?`<div class="man-sec-bd">${itens}</div>`:""}
+  </div>`;
+}
+
+function renderManual(){
+  const box=document.getElementById("manual-content");
+  if(!box) return;
+  const inp=document.getElementById("man-search");
+  const q=(inp?.value||"").trim();
+  const cb=document.getElementById("man-search-clear");
+  if(cb) cb.style.display=q?"block":"none";
+  const T=manTxt();
+  const ql=q.toLowerCase();
+
+  const guias=T.guias.filter(g=>!ql||manPlano(g).includes(ql));
+  const secoes=T.secoes.filter(x=>!ql||manPlano(x).includes(ql));
+  /* Busca casando abre tudo: um resultado que exige mais dois toques para
+     aparecer nao e resultado. */
+  _gvTudo=!!ql;
+
+  if(ql&&!guias.length&&!secoes.length){
+    box.innerHTML=`<div class="man-vazio">${T.vazio}</div>`;
+    return;
+  }
+  box.innerHTML=
+    (ql?`<div class="man-count">${guias.length+secoes.length} ${T.rot_result}</div>`
+       :`<div class="man-count">${T.intro}</div>`)
+    +guias.map(g=>gvHTML(g,q)).join("")
+    +(secoes.length?`<div class="sec-label" style="margin:16px 0 8px">${T.rot_ref}</div>`:"")
+    +secoes.map(x=>manSecHTML(x,q)).join("");
+}
+
+window.gvToggle=gvToggle; window.gvIr=gvIr; window.gvPasso=gvPasso;
+window.manSecToggle=manSecToggle; window.renderManual=renderManual;
+
 /* ═══ 13. INIT ═══ */
 function init(){
   ensureStyles();
   injectTabs();
+  montarIdiomas();
   /* o histórico mensal muda pouco: busca em segundo plano quando vence */
   if(!histAtualizado()) setTimeout(()=>fetchHistorico(true).catch(()=>{}),1500);
   if(!MARKET.ts||Date.now()-MARKET.ts>12*3600e3) fetchMarket(true);
@@ -21411,65 +21947,65 @@ function cfDemonstrativo(cf,pref){
   const ID=k=>pref+"-"+k;
 
   const ent=cf.tipos.length
-    ? cf.tipos.map((o,i)=>R(o.emoji+" "+raw(o.label),"+"+V(o.bruto),"",GRN,ID("t"+i))
+    ? cf.tipos.map((o,i)=>R(o.emoji+" "+raw(o.label),SGP("+")+V(o.bruto),"",GRN,ID("t"+i))
         +sub(ID("t"+i),(o.itens||[]).map(x=>
           RI(x,"↳ "+raw(x.nome)+(x.data?" · "+x.data.split("-").reverse().slice(0,2).join("/"):""),
-            "+"+V(x.bruto)))
+            SGP("+")+V(x.bruto)))
           .concat([
-            o.inss>0?R("↳ INSS","−"+V(o.inss),"sub","var(--ink-3)"):"",
-            o.ded>0?R("↳ Previdência, pensão e outros","−"+V(o.ded),"sub","var(--ink-3)"):"",
-            o.ir>0?R("↳ IR"+(o.aliq>0?" · "+String(o.aliq).replace(".",",")+"%":""),"−"+V(o.ir),"sub",RED):"",
-            R("↳ Líquido","+"+V(o.liq),"sub",GRN)
+            o.inss>0?R("↳ INSS",SGP("−")+V(o.inss),"sub","var(--ink-3)"):"",
+            o.ded>0?R("↳ Previdência, pensão e outros",SGP("−")+V(o.ded),"sub","var(--ink-3)"):"",
+            o.ir>0?R("↳ IR"+(o.aliq>0?" · "+String(o.aliq).replace(".",",")+"%":""),SGP("−")+V(o.ir),"sub",RED):"",
+            R("↳ Líquido",SGP("+")+V(o.liq),"sub",GRN)
           ].filter(Boolean)))
       ).join("")
     : `<div class="cfp-row sub"><span>Nenhuma entrada no período</span><span>—</span></div>`;
 
   const desp=sub(ID("desp"),cf.despItens.slice(0,40).map(x=>
     RI(x,"↳ "+(x.emoji||"")+" "+raw(x.nome)+(x.fixa?" · fixa":"")+(x.estimado?" · estimada":""),
-      "−"+V(x.valor))));
+      SGP("−")+V(x.valor))));
   const div=sub(ID("div"),cf.divida.itens.map(x=>[
-    RI(x,"↳ "+(x.emoji||"")+" "+raw(x.nome),"−"+V(x.pago),RED),
-    R("&nbsp;&nbsp;&nbsp;juros","−"+V(x.juros),"sub","var(--ink-3)"),
-    R("&nbsp;&nbsp;&nbsp;amortização","−"+V(x.amort),"sub","var(--ink-3)"),
-    x.encargos>0?R("&nbsp;&nbsp;&nbsp;seguros e taxa adm.","−"+V(x.encargos),"sub","var(--ink-3)"):"",
-    x.fgts>0?R("&nbsp;&nbsp;&nbsp;coberto pelo FGTS","+"+V(x.fgts),"sub",GRN):""
+    RI(x,"↳ "+(x.emoji||"")+" "+raw(x.nome),SGP("−")+V(x.pago),RED),
+    R("&nbsp;&nbsp;&nbsp;juros",SGP("−")+V(x.juros),"sub","var(--ink-3)"),
+    R("&nbsp;&nbsp;&nbsp;amortização",SGP("−")+V(x.amort),"sub","var(--ink-3)"),
+    x.encargos>0?R("&nbsp;&nbsp;&nbsp;seguros e taxa adm.",SGP("−")+V(x.encargos),"sub","var(--ink-3)"):"",
+    x.fgts>0?R("&nbsp;&nbsp;&nbsp;coberto pelo FGTS",SGP("+")+V(x.fgts),"sub",GRN):""
   ].filter(Boolean).join("")));
   const apl=sub(ID("apl"),cf.aplic.itens.slice(0,20).map(x=>
     RI(x,"↳ "+raw(x.nome)+(x.aliq>0?" · IR "+String(x.aliq).replace(".",",")+"%":" · isento"),
-      "+"+V(x.bruto),GRN)));
+      SGP("+")+V(x.bruto),GRN)));
 
   return `<div class="cfp-card">
     <div class="cfp-h">Entradas</div>
     ${ent}
     ${R("(=) Receita bruta",V(cf.bruto),"tot",BLU)}
-    ${cf.deducoes>0?R("(−) Deduções da base","−"+V(cf.deducoes),"","var(--ink-3)"):""}
-    ${cf.impostos>0?R("(−) Imposto de renda","−"+V(cf.impostos),"",RED):""}
+    ${cf.deducoes>0?R("(−) Deduções da base",SGP("−")+V(cf.deducoes),"","var(--ink-3)"):""}
+    ${cf.impostos>0?R("(−) Imposto de renda",SGP("−")+V(cf.impostos),"",RED):""}
     ${R("(=) Entradas líquidas",V(cf.entLiquidas),"tot",GRN)}
 
     <div class="cfp-h">Saídas</div>
-    ${R("Despesas","−"+V(cf.despesas),"",RED,ID("desp"))}
+    ${R("Despesas",SGP("−")+V(cf.despesas),"",RED,ID("desp"))}
     ${desp}
-    ${R("Dívidas · desembolso","−"+V(cf.divida.parcela),"",RED,ID("div"))}
+    ${R("Dívidas · desembolso",SGP("−")+V(cf.divida.parcela),"",RED,ID("div"))}
     ${div}
-    ${R("↳ juros","−"+V(cf.divida.juros),"sub","var(--ink-3)")}
-    ${R("↳ amortização","−"+V(cf.divida.amort),"sub","var(--ink-3)")}
-    ${cf.divida.encargos>0?R("↳ seguros e taxa de administração","−"+V(cf.divida.encargos),"sub","var(--ink-3)"):""}
-    ${cf.divida.fgtsAbat>0?R("↳ coberto pelo FGTS","+"+V(cf.divida.fgtsAbat),"sub",GRN):""}
-    ${R("(=) Total de saídas","−"+V(cf.saidas),"tot",RED)}
+    ${R("↳ juros",SGP("−")+V(cf.divida.juros),"sub","var(--ink-3)")}
+    ${R("↳ amortização",SGP("−")+V(cf.divida.amort),"sub","var(--ink-3)")}
+    ${cf.divida.encargos>0?R("↳ seguros e taxa de administração",SGP("−")+V(cf.divida.encargos),"sub","var(--ink-3)"):""}
+    ${cf.divida.fgtsAbat>0?R("↳ coberto pelo FGTS",SGP("+")+V(cf.divida.fgtsAbat),"sub",GRN):""}
+    ${R("(=) Total de saídas",SGP("−")+V(cf.saidas),"tot",RED)}
 
     <div class="cfp-h">Rendimento de aplicações</div>
-    ${R("Receita financeira","+"+V(cf.aplic.bruto),"",GRN,ID("apl"))}
+    ${R("Receita financeira",SGP("+")+V(cf.aplic.bruto),"",GRN,ID("apl"))}
     ${apl}
-    ${R("(−) Provisão de IRRF","−"+V(cf.aplic.ir),"",RED)}
-    ${cf.aplic.comeCotas>0?R("(−) Come-cotas","−"+V(cf.aplic.comeCotas),"sub",RED):""}
+    ${R("(−) Provisão de IRRF",SGP("−")+V(cf.aplic.ir),"",RED)}
+    ${cf.aplic.comeCotas>0?R("(−) Come-cotas",SGP("−")+V(cf.aplic.comeCotas),"sub",RED):""}
     ${R("(=) Rendimento líquido",V(cf.aplic.liquido),"tot",GRN)}
 
-    ${R("(=) Caixa operacional",(cf.caixaOper<0?"−":"+")+V(Math.abs(cf.caixaOper)),"grand",cf.caixaOper>=0?GRN:RED)}
-    ${R("(=) Resultado total",(cf.caixaTotal<0?"−":"+")+V(Math.abs(cf.caixaTotal)),"tot",cf.caixaTotal>=0?GRN:RED)}
+    ${R("(=) Caixa operacional",SGP(cf.caixaOper<0?"−":"+")+V(Math.abs(cf.caixaOper)),"grand",cf.caixaOper>=0?GRN:RED)}
+    ${R("(=) Resultado total",SGP(cf.caixaTotal<0?"−":"+")+V(Math.abs(cf.caixaTotal)),"tot",cf.caixaTotal>=0?GRN:RED)}
 
     ${(cf.fgts>0||cf.aplic.aportes>0)?`<div class="cfp-h">Memória — fora do caixa</div>`:""}
-    ${cf.fgts>0?R("FGTS depositado pelo empregador","+"+V(cf.fgts),"sub",GRN):""}
-    ${cf.aplic.aportes>0?R("Aportes programados às aplicações","−"+V(cf.aplic.aportes),"sub","var(--ink-3)"):""}
+    ${cf.fgts>0?R("FGTS depositado pelo empregador",SGP("+")+V(cf.fgts),"sub",GRN):""}
+    ${cf.aplic.aportes>0?R("Aportes programados às aplicações",SGP("−")+V(cf.aplic.aportes),"sub","var(--ink-3)"):""}
   </div>`;
 }
 
@@ -21765,11 +22301,11 @@ function renderAstLiquidez(){
       <span style="color:${col||"var(--body)"}">${v}</span></div>`;
     return `<div style="padding:8px 0 2px">
       ${R(PL("l_gross_at"),V(x.bruto),"tot","#0F2440")}
-      ${R(PL("l_yield"),"+"+V(x.rendimento),"sub","#5A8A4A")}
-      ${x.iof>0?R(PL("l_iof")+" · "+P(x.iofPct)+"%","−"+V(x.iof),"sub","#B85A6A"):""}
-      ${R(PL("l_ir")+" · "+P(x.aliq)+"%","−"+V(x.irBruto),"sub","#B85A6A")}
-      ${x.comeCotas>0?R(PL("l_cc_paid"),"+"+V(x.comeCotas),"sub","#5A8A4A"):""}
-      ${x.taxas>0?R(PL("l_fees"),"−"+V(x.taxas),"sub","#B85A6A"):""}
+      ${R(PL("l_yield"),SGP("+")+V(x.rendimento),"sub","#5A8A4A")}
+      ${x.iof>0?R(PL("l_iof")+" · "+P(x.iofPct)+"%",SGP("−")+V(x.iof),"sub","#B85A6A"):""}
+      ${R(PL("l_ir")+" · "+P(x.aliq)+"%",SGP("−")+V(x.irBruto),"sub","#B85A6A")}
+      ${x.comeCotas>0?R(PL("l_cc_paid"),SGP("+")+V(x.comeCotas),"sub","#5A8A4A"):""}
+      ${x.taxas>0?R(PL("l_fees"),SGP("−")+V(x.taxas),"sub","#B85A6A"):""}
       ${R(PL("l_net"),V(x.liquido),"grand","#5A8A4A")}
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px">
         <span class="liq-tag">${PL("l_term")} ${raw(nDias(x.prazo))}</span>
@@ -22071,6 +22607,8 @@ function loteTrocar(id,btn){
    da dívida, lê destes números. */
 
 let PAR_IDX_SEL="selic", PAR_ABA="macro", PAR_VISTA="mes";
+/* Quantos meses fechados a aba Historico mostra de uma vez. */
+let PAR_HIST_N=24;
 
 function openParams(){
   let ov=document.getElementById("modal-params");
@@ -22256,13 +22794,17 @@ function parMarcarAno(el){ el.dataset.dirty="1"; }
 function parSelIdx(id){ parLerCurva(); PAR_IDX_SEL=id; renderParams(); }
 function parSetVista(v){ parLerCurva(); PAR_VISTA=v; renderParams(); }
 function parSetAba(v){
-  if(PAR_ABA==="macro") parLerCurva(); else parLerFiscal();
+  /* A aba Historico nao tem um unico campo editavel: tentar ler curva ou
+     tabela fiscal a partir dela varreria um DOM que nao existe. */
+  if(PAR_ABA==="macro") parLerCurva();
+  else if(PAR_ABA!=="hist"&&PAR_ABA!=="tema") parLerFiscal();
   PAR_ABA=v; renderParams();
   const el=$("par-body");
   if(el){ el.classList.remove("tab-enter"); void el.offsetWidth; el.classList.add("tab-enter"); }
 }
 function parSalvar(){
-  if(PAR_ABA==="macro") parLerCurva(); else parLerFiscal();
+  if(PAR_ABA==="macro") parLerCurva();
+  else if(PAR_ABA!=="hist"&&PAR_ABA!=="tema") parLerFiscal();
   saveParams(); saveFiscal();
   try{ renderHome(); }catch(e){}
   try{ refreshPro(); }catch(e){}
@@ -22298,6 +22840,17 @@ function projToggle(k){
   else if(k==="sobraDestino")
     PROJ.sobraDestino=(PROJ.sobraDestino==="melhor")?"proporcional":"melhor";
   else PROJ[k]=!PROJ[k];
+  projAplicar();
+}
+/* Le os dois campos de poupanca de uma vez. Sao gravados juntos porque a
+   sugestao os usa juntos: o alvo e o menor entre a sobra e a meta, e a
+   reserva e que decide se a meta vale ou se o mes inteiro vai para ela. */
+function projSetPoup(){
+  const p=document.getElementById("par-poup-pct");
+  const r=document.getElementById("par-poup-res");
+  if(p){ const v=parNum(p.value); if(v!==null&&v>=0&&v<=100) PROJ.poupPct=v; }
+  if(r){ const n=parseInt(String(r.value).replace(/\D/g,""),10);
+         if(isFinite(n)&&n>=0&&n<=60) PROJ.reservaMeses=n; }
   projAplicar();
 }
 function projSetMeses(v){
@@ -22422,6 +22975,112 @@ function parTabela(key,arr,tetoLbl,comDed){
       ${comDed?parC(key+"."+i+".ded",f.ded):""}</div>`).join("");
 }
 
+/* ═══ HISTÓRICO DOS ÍNDICES — leitura, nunca escrita ══════════════════
+   Estes numeros sao divulgados pelo Banco Central (SGS) e baixados pelo
+   proprio app. Nao ha campo para edita-los, e e de proposito: uma serie
+   realizada que o titular pudesse alterar deixaria de ser historico e
+   viraria mais uma premissa — e a regressao do valor aplicado, que bebe
+   dela, passaria a devolver um numero que nao corresponde a extrato
+   nenhum. Onde o titular manda e na curva da aba Macro, que so vale do
+   mes corrente em diante. */
+function parHistSetN(n){ PAR_HIST_N=Math.max(6,Math.min(120,+n||24)); renderParams(); }
+async function parHistAtualizar(){
+  const b=document.getElementById("par-hist-btn");
+  if(b){ b.disabled=true; b.textContent=PX("p_h_loading"); }
+  try{ await fetchHistorico(false); }catch(e){}
+  renderParams();
+}
+/* Acumulado de uma janela de meses JA FECHADOS. Meses sem dado nao entram
+   e sao contados a parte: um acumulado de doze com tres buracos nao pode
+   ser apresentado como acumulado de doze. */
+function histAcumulado(idx,n){
+  const s=HIST.series[idx]||{};
+  let f=1, tem=0, falta=0;
+  for(let k=1;k<=n;k++){
+    const ym=ymAdd(ymNow(),-k);
+    if(typeof s[ym]==="number"){ f*=(1+s[ym]/100); tem++; }
+    else falta++;
+  }
+  return {pct:tem?R2((f-1)*100):null,meses:tem,falta};
+}
+function parHistHTML(){
+  const meta=PARAM_IDX.find(x=>x.id===PAR_IDX_SEL)||PARAM_IDX[0];
+  const serie=HIST.series[PAR_IDX_SEL]||{};
+  const cob=histCobertura(PAR_IDX_SEL);
+  const P=v=>String(R2(v)).replace(".",",");
+  const casas=(PAR_IDX_SEL==="tr")?4:2;
+  const P4=v=>String(Math.round((v||0)*Math.pow(10,casas))/Math.pow(10,casas)).replace(".",",");
+  const a12=histAcumulado(PAR_IDX_SEL,12);
+  const a24=histAcumulado(PAR_IDX_SEL,24);
+
+  /* linha por mes fechado, do mais recente para tras */
+  const linhas=[];
+  for(let k=1;k<=PAR_HIST_N;k++){
+    const ym=ymAdd(ymNow(),-k);
+    const v=serie[ym];
+    const tem=typeof v==="number";
+    linhas.push(`<div class="par-hrow">
+      <span class="par-hper">${cfMesLabel(ym).slice(0,3)}/${ym.slice(2,4)}</span>
+      <span class="par-hval${tem?"":" vazio"}">${tem?P4(v):"\u2014"}</span>
+      <span class="par-hun">% a.m.</span>
+    </div>`);
+  }
+
+  const quando=HIST.ts
+    ? new Date(HIST.ts).toLocaleDateString(LANG==="pt"?"pt-BR":LANG==="de"?"de-DE":"en-GB",
+        {day:"2-digit",month:"2-digit",year:"numeric"})
+    : "\u2014";
+
+  const opt=(v)=>`<option value="${v}"${PAR_HIST_N===v?" selected":""}>${v} ${PX("p_months").toLowerCase()}</option>`;
+
+  return `
+    <div class="pro-note">${PL("p_h_note")}</div>
+
+    <div class="par-lock">
+      <span class="par-lock-ic">\u{1F512}</span>
+      <span>${PL("p_h_lock")}</span>
+    </div>
+
+    <div class="sec-label">${PL("p_h_source")}</div>
+    <div class="stats" style="margin-bottom:10px">
+      <div class="stat"><div class="stat-label">${PL("p_h_origin")}</div>
+        <div class="stat-val" style="font-size:14px;color:#0F2440">${raw(TR(HIST.src||"\u2014"))}</div></div>
+      <div class="stat"><div class="stat-label">${PL("p_h_when")}</div>
+        <div class="stat-val" style="font-size:14px;color:#0F2440">${quando}</div></div>
+    </div>
+    <button class="pro-btn-lg" id="par-hist-btn" onclick="PRO.parHistAtualizar()"
+      style="width:100%;background:#1A3A5C;color:#fff;border:none;font-weight:600;cursor:pointer">
+      \u{1F3DB}\uFE0F ${PL("p_h_fetch")}</button>
+
+    <div class="sec-label" style="margin-top:20px">${PL("p_h_idx")}</div>
+    <div class="pro-chips" style="margin:0 0 12px">
+      ${PARAM_IDX.map(x=>`<span class="pro-pill ${x.id===PAR_IDX_SEL?"on":""}"
+        onclick="PRO.parSelIdx('${x.id}')">${x.lbl}</span>`).join("")}
+    </div>
+
+    <div class="stats" style="margin-bottom:10px">
+      <div class="stat"><div class="stat-label">${PL("p_h_acc12")}</div>
+        <div class="stat-val" style="color:#0F2440">${a12.pct===null?"\u2014":P(a12.pct)+"%"}</div></div>
+      <div class="stat"><div class="stat-label">${PL("p_h_acc24")}</div>
+        <div class="stat-val" style="color:#0F2440">${a24.pct===null?"\u2014":P(a24.pct)+"%"}</div></div>
+    </div>
+    ${cob?`<div style="font-size:10px;color:var(--ink-3);margin:-4px 0 14px;line-height:1.55">
+        ${PL("p_h_cover")}: ${cfMesLabel(cob.de).slice(0,3)}/${cob.de.slice(0,4)} \u2192
+        ${cfMesLabel(cob.ate).slice(0,3)}/${cob.ate.slice(0,4)} \u00b7 ${cob.n} ${PX("p_months").toLowerCase()}
+        ${a12.falta?" \u00b7 "+a12.falta+" "+PX("p_h_gaps"):""}</div>`
+      :`<div class="pro-note" style="margin:0 0 14px">${PL("p_h_empty")}</div>`}
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px">
+      <span class="sec-label" style="margin:0">${PL("p_h_series")} \u00b7 ${meta.lbl}</span>
+      <select class="sel-sm" onchange="PRO.parHistSetN(this.value)"
+        style="flex:0 0 auto">${opt(12)}${opt(24)}${opt(36)}${opt(60)}</select>
+    </div>
+    <div style="background:var(--surface);border-radius:15px;padding:4px 14px 8px;
+      max-height:320px;overflow-y:auto;-webkit-overflow-scrolling:touch">${linhas.join("")}</div>
+
+    <div class="pro-note" style="margin-top:12px">${PL("p_h_use")}</div>`;
+}
+
 function renderParams(){
   const el=$("par-body"); if(!el) return;
   ensureStyles();
@@ -22531,6 +23190,19 @@ function renderParams(){
           PROJ.sobraDestino!=="melhor","sobraDestino"):"")
       +rowP(PL("p_proj_mv"),PL("p_proj_mv_h"),!!PROJ.mediaVar,"mediaVar")
       +rowP(PL("p_proj_ci"),PL("p_proj_ci_h"),!!PROJ.corrigirDesp,"corrigirDesp")
+      +`<div class="pro-grid" style="margin-top:12px">
+          <div class="pro-f"><label>${PL("p_poup_pct")}</label>
+            <div class="par-inp"><input id="par-poup-pct" type="text" inputmode="decimal"
+              value="${String(projPoupPct()).replace(".",",")}"
+              oninput="PRO.parMask(this)" onchange="PRO.projSetPoup()" onblur="PRO.projSetPoup()"
+              /><span class="par-un">% ${PX("p_poup_un")}</span></div></div>
+          <div class="pro-f"><label>${PL("p_poup_res")}</label>
+            <div class="par-inp"><input id="par-poup-res" type="text" inputmode="numeric"
+              value="${projReservaMeses()}"
+              onchange="PRO.projSetPoup()" onblur="PRO.projSetPoup()"
+              /><span class="par-un">${PX("p_months").toLowerCase()}</span></div></div>
+        </div>
+        <div class="pro-note" style="margin:8px 0 0">${PL("p_poup_note")}</div>`
       +`<div class="pro-grid" style="margin-top:12px">
           <div class="pro-f"><label>${PL("p_proj_hz")}</label>
             <select onchange="PRO.projSetMeses(this.value)">
@@ -22890,7 +23562,8 @@ function renderParams(){
       <div class="pro-note" style="margin-top:9px">${PL("p_th_own_note")}</div>
     </div>`;
 
-  const corpo=PAR_ABA==="macro"?macro:PAR_ABA==="renda"?renda:PAR_ABA==="inv"?inv
+  const corpo=PAR_ABA==="macro"?macro:PAR_ABA==="hist"?parHistHTML()
+             :PAR_ABA==="renda"?renda:PAR_ABA==="inv"?inv
              :PAR_ABA==="tema"?tema:enc;
   const aba=(id,k)=>`<button type="button" class="${PAR_ABA===id?"on":""}"
     onclick="PRO.parSetAba('${id}')">${PX(k)}</button>`;
@@ -22905,7 +23578,7 @@ function renderParams(){
     </div>
 
     <div class="pro-scale" style="margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch">
-      ${aba("macro","p_tab_macro")}${aba("renda","p_tab_renda")}${aba("inv","p_tab_inv")}${aba("enc","p_tab_enc")}${aba("tema","p_tab_tema")}
+      ${aba("macro","p_tab_macro")}${aba("hist","p_tab_hist")}${aba("renda","p_tab_renda")}${aba("inv","p_tab_inv")}${aba("enc","p_tab_enc")}${aba("tema","p_tab_tema")}
     </div>
 
     ${corpo}
@@ -22927,9 +23600,9 @@ function renderParams(){
           </div>`:""}
       </div>`;})()}
 
-    <div class="pro-note" style="margin:12px 0 0">${PL("p_live")}</div>
+    ${PAR_ABA==="hist"?"":`<div class="pro-note" style="margin:12px 0 0">${PL("p_live")}</div>
     <button class="pro-btn-lg" onclick="PRO.parSalvar()" style="width:100%;background:var(--accent);color:var(--accent-ink);
-      border:none;font-weight:600;cursor:pointer;margin:10px 0 6px">${PL("p_save")}</button>`;
+      border:none;font-weight:600;cursor:pointer;margin:10px 0 6px">${PL("p_save")}</button>`}`;
 }
 
 /* ═══ 11.11 HISTÓRICO DE POSIÇÕES ════════════════════════════════════
@@ -23008,34 +23681,34 @@ function cfRelatorio(snap){
   return `
   <div class="cfp-card">
     <div class="cfp-h">Entradas</div>
-    ${(snap.detalhe.tipos||[]).map(o=>R(o.emoji+" "+raw(o.label),"+"+V(o.bruto),"",GRN)).join("")}
+    ${(snap.detalhe.tipos||[]).map(o=>R(o.emoji+" "+raw(o.label),SGP("+")+V(o.bruto),"",GRN)).join("")}
     ${R("(=) Receita bruta",V(a.bruto),"tot",BLU)}
-    ${a.deducoes>0?R("(−) Deduções da base","−"+V(a.deducoes),"","var(--ink-3)"):""}
-    ${a.impostos>0?R("(−) Imposto de renda","−"+V(a.impostos),"",RED):""}
+    ${a.deducoes>0?R("(−) Deduções da base",SGP("−")+V(a.deducoes),"","var(--ink-3)"):""}
+    ${a.impostos>0?R("(−) Imposto de renda",SGP("−")+V(a.impostos),"",RED):""}
     ${R("(=) Entradas líquidas",V(a.entLiquidas),"tot",GRN)}
 
     <div class="cfp-h">Despesas</div>
-    ${(snap.detalhe.despesas||[]).slice(0,30).map(x=>R((x.emoji||"")+" "+raw(x.nome)+(x.fixa?" · fixa":""),"−"+V(x.valor),"sub","var(--ink-3)")).join("")}
-    ${R("(=) Total de despesas","−"+V(a.despesas),"tot",RED)}
+    ${(snap.detalhe.despesas||[]).slice(0,30).map(x=>R((x.emoji||"")+" "+raw(x.nome)+(x.fixa?" · fixa":""),SGP("−")+V(x.valor),"sub","var(--ink-3)")).join("")}
+    ${R("(=) Total de despesas",SGP("−")+V(a.despesas),"tot",RED)}
 
     <div class="cfp-h">Dívidas</div>
-    ${(snap.detalhe.dividas||[]).map(x=>R((x.emoji||"")+" "+raw(x.nome),"−"+V(x.pago),"sub",RED)).join("")}
-    ${R("↳ juros","−"+V(a.divJuros),"sub","var(--ink-3)")}
-    ${R("↳ amortização","−"+V(a.divAmort),"sub","var(--ink-3)")}
-    ${a.divEncargos>0?R("↳ seguros e taxa adm.","−"+V(a.divEncargos),"sub","var(--ink-3)"):""}
-    ${a.divFgts>0?R("↳ coberto pelo FGTS","+"+V(a.divFgts),"sub",GRN):""}
-    ${R("(=) Serviço da dívida","−"+V(a.divServico),"tot",RED)}
+    ${(snap.detalhe.dividas||[]).map(x=>R((x.emoji||"")+" "+raw(x.nome),SGP("−")+V(x.pago),"sub",RED)).join("")}
+    ${R("↳ juros",SGP("−")+V(a.divJuros),"sub","var(--ink-3)")}
+    ${R("↳ amortização",SGP("−")+V(a.divAmort),"sub","var(--ink-3)")}
+    ${a.divEncargos>0?R("↳ seguros e taxa adm.",SGP("−")+V(a.divEncargos),"sub","var(--ink-3)"):""}
+    ${a.divFgts>0?R("↳ coberto pelo FGTS",SGP("+")+V(a.divFgts),"sub",GRN):""}
+    ${R("(=) Serviço da dívida",SGP("−")+V(a.divServico),"tot",RED)}
 
     <div class="cfp-h">Aplicações</div>
-    ${(snap.detalhe.aplic||[]).slice(0,20).map(x=>R(raw(x.nome),"+"+V(x.bruto),"sub",GRN)).join("")}
-    ${R("(−) Provisão de IRRF","−"+V(a.rendIr),"sub",RED)}
+    ${(snap.detalhe.aplic||[]).slice(0,20).map(x=>R(raw(x.nome),SGP("+")+V(x.bruto),"sub",GRN)).join("")}
+    ${R("(−) Provisão de IRRF",SGP("−")+V(a.rendIr),"sub",RED)}
     ${R("(=) Rendimento líquido",V(a.rendLiq),"tot",GRN)}
 
-    ${R("(=) Resultado do mês",(a.caixaTotal<0?"−":"+")+V(Math.abs(a.caixaTotal)),"grand",a.caixaTotal>=0?GRN:RED)}
+    ${R("(=) Resultado do mês",SGP(a.caixaTotal<0?"−":"+")+V(Math.abs(a.caixaTotal)),"grand",a.caixaTotal>=0?GRN:RED)}
 
     <div class="cfp-h">Posição</div>
     ${R("Patrimônio",V(a.patrimonio),"",BLU)}
-    ${R("Dívidas","−"+V(a.dividaSaldo),"",RED)}
+    ${R("Dívidas",SGP("−")+V(a.dividaSaldo),"",RED)}
     ${R("(=) Patrimônio líquido",(a.pl<0?"−":"")+V(Math.abs(a.pl)),"grand",a.pl>=0?GRN:RED)}
   </div>
 
@@ -23204,12 +23877,12 @@ function renderImpactos(){
     const T=gIncomeType(S.obj.type||"other_in");
     emoji=T.emoji; titulo=S.obj.desc||catLabel(T); sub=catLabel(T);
     fluxo=R("(+) Receita bruta",V(soma("bruto")),"tot",BLU)
-      +(soma("inss")>0?R("(−) INSS","−"+V(soma("inss")),"","var(--ink-3)"):"")
-      +(soma("ded")>0?R("(−) Outras deduções da base","−"+V(soma("ded")),"","var(--ink-3)"):"")
-      +(soma("ir")>0?R("(−) Imposto de renda","−"+V(soma("ir")),"",RED):"")
+      +(soma("inss")>0?R("(−) INSS",SGP("−")+V(soma("inss")),"","var(--ink-3)"):"")
+      +(soma("ded")>0?R("(−) Outras deduções da base",SGP("−")+V(soma("ded")),"","var(--ink-3)"):"")
+      +(soma("ir")>0?R("(−) Imposto de renda",SGP("−")+V(soma("ir")),"",RED):"")
       +R("(=) Entrada líquida no caixa",V(soma("liquido")),"grand",GRN);
     patr=soma("fgts")>0
-      ? R("FGTS depositado (não caixa)","+"+V(soma("fgts")),"sub",GRN)
+      ? R("FGTS depositado (não caixa)",SGP("+")+V(soma("fgts")),"sub",GRN)
       : `<div class="cfp-row sub"><span>Este item não altera o patrimônio diretamente</span><span>—</span></div>`;
     div=`<div class="cfp-row sub"><span>Nenhum efeito sobre dívidas</span><span>—</span></div>`;
     tabela=`<tr><th style="text-align:left">Mês</th><th>Bruto</th><th>INSS</th><th>IR</th><th>Líquido</th></tr>`
@@ -23222,9 +23895,9 @@ function renderImpactos(){
     const c=(typeof gc==="function"?gc(S.obj.category||S.obj.cat):null)||{};
     emoji=c.emoji||"🧾"; titulo=S.obj.desc||"—";
     sub=(c.label?catLabel(c):"")+(S.obj.recurrence&&S.obj.recurrence!=="none"?" · recorrente":" · único");
-    fluxo=R("(−) Despesa total do período","−"+V(soma("total")),"",RED)
-      +(soma("terceiros")>0?R("(+) Parte rateada com terceiros","+"+V(soma("terceiros")),"sub","var(--ink-3)"):"")
-      +R("(=) Saída do seu caixa","−"+V(soma("meu")),"grand",RED);
+    fluxo=R("(−) Despesa total do período",SGP("−")+V(soma("total")),"",RED)
+      +(soma("terceiros")>0?R("(+) Parte rateada com terceiros",SGP("+")+V(soma("terceiros")),"sub","var(--ink-3)"):"")
+      +R("(=) Saída do seu caixa",SGP("−")+V(soma("meu")),"grand",RED);
     patr=`<div class="cfp-row sub"><span>Reduz o caixa disponível para aportes</span><span>−${V(soma("meu"))}</span></div>`;
     div=`<div class="cfp-row sub"><span>Nenhum efeito sobre dívidas</span><span>—</span></div>`;
     tabela=`<tr><th style="text-align:left">Mês</th><th>Total</th><th>Terceiros</th><th>Sua parte</th></tr>`
@@ -23242,20 +23915,20 @@ function renderImpactos(){
        empregador. Mostrar o depósito como aporte fazia o painel acusar uma
        saída de caixa acumulada que nunca existiu. */
     fluxo=fgA
-      ? R("Depósito do empregador no período","+"+V(depTot),"",GRN)
+      ? R("Depósito do empregador no período",SGP("+")+V(depTot),"",GRN)
         +R("Recolhido sobre o salário, fora da conta corrente","não é caixa","sub","var(--ink-3)")
-        +R("Rendimento da conta vinculada","+"+V(soma("bruto")),"sub",GRN)
+        +R("Rendimento da conta vinculada",SGP("+")+V(soma("bruto")),"sub",GRN)
         +R("(=) Efeito no seu caixa","R$ 0,00","grand","var(--ink-3)")
-      : R("(+) Receita financeira bruta","+"+V(soma("bruto")),"",GRN)
-        +(soma("ir")>0?R("(−) Provisão de IRRF","−"+V(soma("ir")),"",RED):"")
-        +(soma("comeCotas")>0?R("(−) Come-cotas","−"+V(soma("comeCotas")),"sub",RED):"")
-        +(soma("aporte")>0?R("(−) Aportes programados (saem do caixa)","−"+V(soma("aporte")),"","var(--ink-3)"):"")
+      : R("(+) Receita financeira bruta",SGP("+")+V(soma("bruto")),"",GRN)
+        +(soma("ir")>0?R("(−) Provisão de IRRF",SGP("−")+V(soma("ir")),"",RED):"")
+        +(soma("comeCotas")>0?R("(−) Come-cotas",SGP("−")+V(soma("comeCotas")),"sub",RED):"")
+        +(soma("aporte")>0?R("(−) Aportes programados (saem do caixa)",SGP("−")+V(soma("aporte")),"","var(--ink-3)"):"")
         +R("(=) Rendimento líquido",V(soma("liquido")),"grand",GRN);
     patr=R("Saldo hoje",V(ini),"","var(--ink-3)")
-      +(fgA?R("(+) Depósitos do empregador","+"+V(depTot),"","var(--ink-3)")
-           +R("(+) Rendimento no período","+"+V(soma("bruto")),"",GRN):"")
+      +(fgA?R("(+) Depósitos do empregador",SGP("+")+V(depTot),"","var(--ink-3)")
+           +R("(+) Rendimento no período",SGP("+")+V(soma("bruto")),"",GRN):"")
       +R("Saldo projetado em "+IMP_N+" meses",V(fim),"tot",BLU)
-      +R("(=) Variação","+"+V(R2(fim-ini)),"sub",GRN);
+      +R("(=) Variação",SGP("+")+V(R2(fim-ini)),"sub",GRN);
     div=`<div class="cfp-row sub"><span>Nenhum efeito sobre dívidas</span><span>—</span></div>`;
     tabela=`<tr><th style="text-align:left">Mês</th><th>Rend.</th><th>IR</th><th>${fgA?"Depósito":"Aporte"}</th><th>Saldo</th></tr>`
       +L.map(x=>`<tr class="lin"><td>${mesLbl(x.ym)}</td>
@@ -23269,23 +23942,23 @@ function renderImpactos(){
       +R("Dia do depósito",String(S.fgDia||20),"sub","var(--ink-3)")
       +R("Rende a partir de","um depósito por mês, do dia do recolhimento","sub","var(--ink-3)")
       +R("Sai da sua conta corrente","nada","tot",GRN)
-      +R("Entra no seu patrimônio","+"+V(depTot),"grand",GRN));
+      +R("Entra no seu patrimônio",SGP("+")+V(depTot),"grand",GRN));
   }
   else{
     const dt=gDebtType(S.obj.type); emoji=dt.emoji; titulo=S.obj.name||"—";
     sub=catLabel(dt)+(S.obj.indexador?" · "+debtIndexLbl(S.obj):"");
     const fim=L.length?L[L.length-1].saldo:0, ini=debtBalance(S.obj);
-    fluxo=R("(−) Juros do período","−"+V(soma("juros")),"",RED)
-      +R("(−) Amortização","−"+V(soma("amort")),"","var(--ink-3)")
-      +(soma("encargos")>0?R("(−) Seguros e taxa de administração","−"+V(soma("encargos")),"",RED):"")
-      +(soma("fgts")>0?R("(+) Coberto pelo FGTS","+"+V(soma("fgts")),"",GRN):"")
-      +R("(=) Saída do seu caixa","−"+V(soma("saida")),"grand",RED);
+    fluxo=R("(−) Juros do período",SGP("−")+V(soma("juros")),"",RED)
+      +R("(−) Amortização",SGP("−")+V(soma("amort")),"","var(--ink-3)")
+      +(soma("encargos")>0?R("(−) Seguros e taxa de administração",SGP("−")+V(soma("encargos")),"",RED):"")
+      +(soma("fgts")>0?R("(+) Coberto pelo FGTS",SGP("+")+V(soma("fgts")),"",GRN):"")
+      +R("(=) Saída do seu caixa",SGP("−")+V(soma("saida")),"grand",RED);
     patr=soma("fgts")>0
-      ? R("FGTS consumido do patrimônio","−"+V(soma("fgts")),"sub","var(--ink-3)")
+      ? R("FGTS consumido do patrimônio",SGP("−")+V(soma("fgts")),"sub","var(--ink-3)")
       : `<div class="cfp-row sub"><span>Este item não altera o patrimônio</span><span>—</span></div>`;
     div=R("Saldo devedor hoje",V(ini),"","var(--ink-3)")
-      +(soma("correcao")>0?R("(+) Correção pelo indexador","+"+V(soma("correcao")),"",RED):"")
-      +R("(−) Amortizado no período","−"+V(soma("amort")),"","var(--ink-3)")
+      +(soma("correcao")>0?R("(+) Correção pelo indexador",SGP("+")+V(soma("correcao")),"",RED):"")
+      +R("(−) Amortizado no período",SGP("−")+V(soma("amort")),"","var(--ink-3)")
       +R("(=) Saldo projetado em "+IMP_N+" meses",V(fim),"grand",WIN)
       +R("Quitação estimada",S.sch.meses+" meses","sub","var(--ink-3)");
     tabela=`<tr><th style="text-align:left">Mês</th><th>Corr.</th><th>Juros</th><th>Amort.</th><th>Enc.</th><th>FGTS</th><th>Paga</th><th>Saldo</th></tr>`
@@ -23306,13 +23979,13 @@ function renderImpactos(){
 
     /* 1. composição da prestação do mês corrente, passo a passo */
     const comp=R("Saldo devedor no início do mês",V(ini),"","var(--ink-3)")
-      +(r0.correcao>0?R("(+) Correção "+debtIndexLbl(d0)+" · "+String(idxAM.toFixed(4)).replace(".",",")+"% a.m.","+"+V(r0.correcao),"",RED):"")
+      +(r0.correcao>0?R("(+) Correção "+debtIndexLbl(d0)+" · "+String(idxAM.toFixed(4)).replace(".",",")+"% a.m.",SGP("+")+V(r0.correcao),"",RED):"")
       +R("(=) Base de cálculo dos juros",V(R2(ini+(r0.correcao||0))),"tot","var(--ink-3)")
-      +R("Juros do contrato · "+String(R2(rm)).replace(".",",")+"% a.m.","−"+V(r0.juros||0),"",RED)
-      +R("Amortização do principal","−"+V(r0.amort||0),"","var(--ink-3)")
+      +R("Juros do contrato · "+String(R2(rm)).replace(".",",")+"% a.m.",SGP("−")+V(r0.juros||0),"",RED)
+      +R("Amortização do principal",SGP("−")+V(r0.amort||0),"","var(--ink-3)")
       +R("(=) Prestação",V(R2((r0.juros||0)+(r0.amort||0))),"tot",BLU)
-      +(r0.encargos>0?R("(+) Seguros e taxa de administração","+"+V(r0.encargos),"",RED):"")
-      +(r0.fgts>0?R("(−) Coberto pelo FGTS","−"+V(r0.fgts),"",GRN):"")
+      +(r0.encargos>0?R("(+) Seguros e taxa de administração",SGP("+")+V(r0.encargos),"",RED):"")
+      +(r0.fgts>0?R("(−) Coberto pelo FGTS",SGP("−")+V(r0.fgts),"",GRN):"")
       +R("(=) Você desembolsa",V(r0.saida||0),"grand",WIN);
 
     /* 2. onde cada componente entra no fluxo de caixa */
@@ -23329,8 +24002,8 @@ function renderImpactos(){
       +(d0.indexador==="tr"?R("Selic vigente",String(R2(MARKET.selic)).replace(".",",")+"% a.a.","sub","var(--ink-3)")
         +R(MARKET.selic<=TR_SELIC_PISO?"Selic em 8,5% a.a. ou menos: TR zerada":"Selic acima de 8,5% a.a.: TR positiva",
            String(idxAM.toFixed(4)).replace(".",",")+"% a.m.","sub",idxAM>0?RED:GRN):"")
-      +(idxAM>0?R("Correção no horizonte de "+IMP_N+" meses","+"+V(soma("correcao")),"",RED)
-        +R("Correção até a quitação","+"+V(sch.correcao||0),"tot",RED)
+      +(idxAM>0?R("Correção no horizonte de "+IMP_N+" meses",SGP("+")+V(soma("correcao")),"",RED)
+        +R("Correção até a quitação",SGP("+")+V(sch.correcao||0),"tot",RED)
         :R("Sem correção monetária no patamar atual","—","sub",GRN))
       +R("Sistema de amortização",sis,"sub","var(--ink-3)")
     ):R("Contrato sem indexador declarado","—","sub","var(--ink-3)");
@@ -23345,8 +24018,8 @@ function renderImpactos(){
         ? R("Cobertura","até "+String(P.pct).replace(".",",")+"% de 12 prestações","sub","var(--ink-3)")
           +R("Coberto na prática",sch.parcelasCobertas+" de 12 · "+sch.pctMedio.toFixed(0)+"% de cada","sub",GRN)
         : R("Efeito","amortiza o saldo devedor em "+mesLbl(ymAdd(ymNow(),fgtsMesDe(P.ym)-1)),"sub","var(--ink-3)"))
-      +R("FGTS aplicado no horizonte","+"+V(soma("fgts")),"",GRN)
-      +R("FGTS aplicado até a quitação","+"+V(sch.fgtsUsado||0),"tot",GRN)
+      +R("FGTS aplicado no horizonte",SGP("+")+V(soma("fgts")),"",GRN)
+      +R("FGTS aplicado até a quitação",SGP("+")+V(sch.fgtsUsado||0),"tot",GRN)
       +(bloq?R("Depósitos retidos até","​"+cfMesLabel(bloq.liberaYm),"sub",RED):"")
       +(P.deduzido?R("Saldo já debitado do Patrimônio","sim","sub","var(--ink-3)"):"")
     ):R("Nenhum plano de FGTS aplicado","—","sub","var(--ink-3)");
@@ -23354,10 +24027,10 @@ function renderImpactos(){
     /* 5. custo total do contrato */
     const base=debtScheduleFGTS(d0,{on:false});
     const tot=R("Principal a quitar",V(ini),"","var(--ink-3)")
-      +R("(+) Juros até a quitação","+"+V(sch.juros),"",RED)
-      +((sch.correcao||0)>0?R("(+) Correção "+debtIndexLbl(d0),"+"+V(sch.correcao),"",RED):"")
-      +((sch.encargos||0)>0?R("(+) Seguros e taxa de administração","+"+V(sch.encargos),"",RED):"")
-      +((sch.fgtsUsado||0)>0?R("(−) Pago pelo FGTS","−"+V(sch.fgtsUsado),"",GRN):"")
+      +R("(+) Juros até a quitação",SGP("+")+V(sch.juros),"",RED)
+      +((sch.correcao||0)>0?R("(+) Correção "+debtIndexLbl(d0),SGP("+")+V(sch.correcao),"",RED):"")
+      +((sch.encargos||0)>0?R("(+) Seguros e taxa de administração",SGP("+")+V(sch.encargos),"",RED):"")
+      +((sch.fgtsUsado||0)>0?R("(−) Pago pelo FGTS",SGP("−")+V(sch.fgtsUsado),"",GRN):"")
       +R("(=) Desembolso total do seu bolso",V(sch.desembolso),"grand",WIN)
       +R("Prazo",sch.meses+" meses"+(base&&base.meses!==sch.meses?" (sem FGTS: "+base.meses+")":""),"sub","var(--ink-3)")
       +R("Custo sobre o principal",String(ini>0?R2((sch.desembolso/ini-1)*100):0).replace(".",",")+"%","sub",RED);
@@ -23491,7 +24164,9 @@ window.PRO={
   parSetVista,parMarcarAno,parAplicarAno,parRecalcIRRF,parToggle,parRestaurar,parNum,parMask,parMoney,parTabela,
   parCurvaMudou,parAtualizarLinhas,parHorizMudou,diagCopiar,diagZerar,
   liqSetH,liqToggle,astLiqSerie,astComeCotasAte,irPrevidencia,irGanhoCapital,faixaAliq,
-  PX,PL,px:PX,proTabsI18n,refreshPro,idxTaxaMes
+  PX,PL,px:PX,proTabsI18n,refreshPro,idxTaxaMes,
+  projSetPoup,projPoupPct,projReservaMeses,
+  parHistSetN,parHistAtualizar,histAcumulado
 };
 })();
 
