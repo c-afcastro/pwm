@@ -2545,6 +2545,9 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
   <div class="content" id="ast-content" style="padding:16px 16px 100px">
 
+    <!-- AVISO DE VENCIMENTO — vale para todas as abas -->
+    <div id="ast-venc-box"></div>
+
     <!-- RESUMO TAB -->
     <div id="ast-view-dashboard">
       <div id="ast-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px"></div>
@@ -4418,6 +4421,16 @@ const I18N={
     otto_r_cov:"Patrimônio ÷ despesas",
     otto_r_targ:"Alvo de reserva",
     otto_r_gap:"Falta",
+    otto_r_vn:"Aplicações que vencem",
+    otto_r_vgross:"Montante bruto",
+    otto_r_vchg:"IR e IOF na liquidação",
+    otto_r_vnet:"Líquido a receber",
+    otto_venc_t:"Vencimento neste mês",
+    otto_venc_b:"{n} aplicação(ões) vence(m) em {m}, somando {v} brutos e {x} líquidos de imposto. Do dia do vencimento em diante o montante para de render — reaplicar é decisão sua.",
+    otto_m_venc:"Posição de cada aplicação corrigida pela curva dos parâmetros até a data de vencimento. Sobre o ganho incidem a alíquota de IR da faixa do prazo total e o IOF quando o prazo é inferior a 30 dias.",
+    otto_ven2_t:"Dinheiro parado desde o vencimento",
+    otto_ven2_b:"{n} aplicação(ões) já venceu(ram) e continua(m) sem render: {v} brutos, {x} líquidos. Enquanto não for reaplicado, esse montante perde para a inflação todo mês.",
+    otto_m_ven2:"Aplicações cuja data de vencimento é anterior ao mês exibido e que ainda não foram resgatadas nem reaplicadas. A posição fica congelada na data do vencimento.",
     otto_r_int:"Juros da dívida por mês",
     otto_r_yield:"Rendimento do patrimônio por mês",
     otto_r_cat:"Categoria líder",
@@ -5329,6 +5342,16 @@ const I18N={
     otto_r_cov:"Assets ÷ spending",
     otto_r_targ:"Reserve target",
     otto_r_gap:"Short by",
+    otto_r_vn:"Holdings maturing",
+    otto_r_vgross:"Gross amount",
+    otto_r_vchg:"Tax and IOF on settlement",
+    otto_r_vnet:"Net proceeds",
+    otto_venc_t:"Maturing this month",
+    otto_venc_b:"{n} holding(s) mature in {m}, adding up to {v} gross and {x} net of tax. From the maturity day onward the amount stops earning — reinvesting is your call.",
+    otto_m_venc:"Each holding's position carried forward on the parameter curve to its maturity date. The gain is taxed at the band for the full term, plus IOF when the term is under 30 days.",
+    otto_ven2_t:"Money idle since maturity",
+    otto_ven2_b:"{n} holding(s) have matured and are no longer earning: {v} gross, {x} net. Until reinvested, that amount loses to inflation every month.",
+    otto_m_ven2:"Holdings whose maturity date precedes the displayed month and that have not been redeemed or reinvested. The position is frozen at the maturity date.",
     otto_r_int:"Debt interest per month",
     otto_r_yield:"Asset yield per month",
     otto_r_cat:"Leading category",
@@ -6240,6 +6263,16 @@ const I18N={
     otto_r_cov:"Vermögen ÷ Ausgaben",
     otto_r_targ:"Reserveziel",
     otto_r_gap:"Es fehlen",
+    otto_r_vn:"Fällige Anlagen",
+    otto_r_vgross:"Bruttobetrag",
+    otto_r_vchg:"Steuer und IOF bei Fälligkeit",
+    otto_r_vnet:"Nettoerlös",
+    otto_venc_t:"Fälligkeit in diesem Monat",
+    otto_venc_b:"{n} Anlage(n) werden in {m} fällig, zusammen {v} brutto und {x} netto nach Steuer. Ab dem Fälligkeitstag verzinst sich der Betrag nicht mehr — die Wiederanlage entscheiden Sie.",
+    otto_m_venc:"Bestand jeder Anlage, auf der Parameterkurve bis zum Fälligkeitsdatum fortgeschrieben. Der Ertrag wird mit dem Satz der Gesamtlaufzeit besteuert, zuzüglich IOF bei Laufzeiten unter 30 Tagen.",
+    otto_ven2_t:"Geld ruht seit der Fälligkeit",
+    otto_ven2_b:"{n} Anlage(n) sind fällig geworden und verzinsen sich nicht mehr: {v} brutto, {x} netto. Bis zur Wiederanlage verliert dieser Betrag jeden Monat gegen die Inflation.",
+    otto_m_ven2:"Anlagen, deren Fälligkeitsdatum vor dem angezeigten Monat liegt und die weder ausgezahlt noch wieder angelegt wurden. Der Bestand bleibt zum Fälligkeitsdatum eingefroren.",
     otto_r_int:"Schuldzinsen pro Monat",
     otto_r_yield:"Vermögensrendite pro Monat",
     otto_r_cat:"Führende Kategorie",
@@ -10370,6 +10403,34 @@ const OTTO=(function(){
     if(m.totalInc<=0&&m.totalExp>0)
       add("entradas","atencao","otto_semrec_t","otto_semrec_b",{},"otto_m_semrec",
           [L("otto_r_inc",fmt(0)),L("otto_r_exp",fmt(m.totalExp))]);
+
+    /* VENCIMENTOS. É a única leitura que aponta para uma DATA e não para
+       uma proporção: dinheiro que vence e não é reaplicado deixa de render
+       sem que nenhuma outra tela avise. Prioritária dentro de Patrimônio —
+       a reserva e a diversificação continuam verdadeiras no mês que vem; o
+       vencimento não espera. */
+    try{
+      if(window.PRO&&PRO.vencDoMes){
+        const V=PRO.vencDoMes(ymStr);
+        const arr=v=>Math.round((v||0)*100)/100;
+        if(V.venc.length)
+          add("patrimonio","atencao","otto_venc_t","otto_venc_b",
+              {n:num(V.venc.length),m:mesLbl,v:fmt(V.tot.bruto),x:fmt(V.tot.liquido)},
+              "otto_m_venc",
+              [L("otto_r_vn",num(V.venc.length)),
+               L("otto_r_vgross",fmt(V.tot.bruto)),
+               L("otto_r_vchg",fmt(arr(V.tot.ir+V.tot.iof))),
+               L("otto_r_vnet",fmt(V.tot.liquido))],true);
+        if(V.over.length)
+          add("patrimonio","atencao","otto_ven2_t","otto_ven2_b",
+              {n:num(V.over.length),v:fmt(V.totOver.bruto),x:fmt(V.totOver.liquido)},
+              "otto_m_ven2",
+              [L("otto_r_vn",num(V.over.length)),
+               L("otto_r_vgross",fmt(V.totOver.bruto)),
+               L("otto_r_vchg",fmt(arr(V.totOver.ir+V.totOver.iof))),
+               L("otto_r_vnet",fmt(V.totOver.liquido))]);
+      }
+    }catch(e){ logErro("OTTO/venc",e); }
 
     /* Concentração de despesa. Só sai quando há lançamentos de verdade no
        mês: num mês projetado a composição por categoria não existe. */
@@ -15641,7 +15702,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.70";
+const APP_VERSION="10.72";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -15739,6 +15800,11 @@ function mesesCompletos(de,ate){
    a poupança credita só no aniversário mensal; rendimento informado à mão
    é convertido de "% ao mês" para a mesma base. */
 function astFatorPeriodo(a,de,ate){
+  /* o papel não rende depois de vencer: a rede de segurança precisa
+     obedecer ao mesmo limite que o motor de séries */
+  try{ if(window.PRO&&PRO.astVencEfetivo){ const v=PRO.astVencEfetivo(a);
+        if(v&&ate&&ate>v) ate=v; } }catch(e){}
+  if(!de||!ate||ate<=de) return 1;
   /* O motor de curvas percorre mês a mês e usa a taxa de cada mês; esta
      versão simples repete a taxa de hoje pelo período inteiro. Onde o
      primeiro existe, ele manda — senão a liquidez projetada e a correção
@@ -16787,7 +16853,56 @@ const PDIC={
   l_f2:["31 a 180 dias","31 to 180 days","31 bis 180 Tage"],
   l_f3:["181 a 360 dias","181 to 360 days","181 bis 360 Tage"],
   l_f4:["1 a 2 anos","1 to 2 years","1 bis 2 Jahre"],
-  l_f5:["Acima de 2 anos","Over 2 years","Über 2 Jahre"]
+  l_f5:["Acima de 2 anos","Over 2 years","Über 2 Jahre"],
+
+  /* — vencimento e resgate — */
+  vc_title:["Vence neste mês","Maturing this month","Fällig in diesem Monat"],
+  vc_over_t:["Vencidas — aguardando reaplicação","Matured — awaiting reinvestment","Fällig — Wiederanlage offen"],
+  vc_over:["Vencida em","Matured on","Fällig am"],
+  vc_due:["Vence em","Matures on","Fällig am"],
+  vc_badge_over:["Vencido","Matured","Fällig"],
+  vc_badge_due:["Vence no mês","Matures this month","Fällig im Monat"],
+  vc_gross:["Montante bruto","Gross amount","Bruttobetrag"],
+  vc_net:["Líquido a receber","Net proceeds","Nettoerlös"],
+  vc_charges:["Encargos","Charges","Abgaben"],
+  vc_frozen:["Sem rendimento desde o vencimento: o montante fica parado até você reaplicá-lo.",
+    "No yield since maturity: the amount sits idle until you reinvest it.",
+    "Seit Fälligkeit keine Verzinsung: der Betrag ruht, bis Sie ihn wieder anlegen."],
+  vc_alert_t:["Você tem aplicações vencendo","You have holdings maturing","Sie haben fällige Anlagen"],
+  vc_see:["Ver","See","Ansehen"],
+  vc_one:["aplicação","holding","Anlage"],
+  vc_many:["aplicações","holdings","Anlagen"],
+  vc_open:["Abrir","Open","Öffnen"],
+  vc_redeem:["Resgatar","Redeem","Auszahlen"],
+  vc_reapply:["Reaplicar","Reinvest","Wiederanlegen"],
+  vc_note:["O bruto é a posição corrigida até a data de vencimento; o líquido já desconta IR e IOF do prazo total. Do dia do vencimento em diante o montante para de render e fica parado até você reaplicá-lo — reaplicar é decisão sua, o app não escolhe um produto no seu lugar. Vencimentos futuros não entram nessa conta: na projeção eles seguem rendendo, na premissa de que serão reaplicados no mesmo produto.",
+    "Gross is the position carried to the maturity date; net already deducts income tax and IOF for the full term. From the maturity day onward the amount stops earning and sits idle until you reinvest it — that call is yours, the app does not pick a product for you. Future maturities are not part of this: in the projection they keep earning, on the assumption they will be rolled into the same product.",
+    "Brutto ist der bis zur Fälligkeit fortgeschriebene Bestand; netto ist bereits um Steuer und IOF der Gesamtlaufzeit gemindert. Ab dem Fälligkeitstag verzinst sich der Betrag nicht mehr und ruht, bis Sie ihn wieder anlegen — das entscheiden Sie, die App wählt kein Produkt für Sie. Künftige Fälligkeiten zählen hier nicht: in der Projektion verzinsen sie sich weiter, unter der Annahme einer Wiederanlage im selben Produkt."],
+
+  rg_when:["Data do resgate","Redemption date","Datum der Auszahlung"],
+  rg_how:["Quanto deseja resgatar","How much to redeem","Wie viel auszahlen"],
+  rg_all:["Tudo","All","Alles"],
+  rg_pos:["Posição na data","Position on that date","Bestand am Stichtag"],
+  rg_val:["Valor resgatado","Amount redeemed","Ausgezahlter Betrag"],
+  rg_gain:["Rendimento no período","Yield in the period","Ertrag im Zeitraum"],
+  rg_net:["Você recebe","You receive","Sie erhalten"],
+  rg_rest:["Saldo remanescente","Remaining balance","Verbleibender Bestand"],
+  rg_reg:["Registrar resgate","Record redemption","Auszahlung buchen"],
+  rg_note:["Registrar baixa o montante da aplicação na data informada, guarda os encargos apurados e reduz o custo na mesma proporção. Daí em diante o patrimônio e o rendimento seguem pelo saldo remanescente.",
+    "Recording removes the amount from the holding on the given date, stores the charges and reduces the cost basis in the same proportion. From there wealth and yield follow the remaining balance.",
+    "Das Buchen entnimmt den Betrag zum angegebenen Datum, speichert die Abgaben und mindert die Anschaffungskosten anteilig. Danach folgen Vermögen und Ertrag dem verbleibenden Bestand."],
+  rg_list:["Resgates registrados","Recorded redemptions","Gebuchte Auszahlungen"],
+  rg_novalue:["Informe o valor do resgate","Enter the amount to redeem","Bitte den Auszahlungsbetrag angeben"],
+  rg_future:["A data do resgate não pode ser futura","The redemption date cannot be in the future","Das Datum darf nicht in der Zukunft liegen"],
+  rg_early:["A data do resgate não pode ser anterior à aplicação","The redemption date cannot precede the investment","Das Datum darf nicht vor der Anlage liegen"],
+  rg_nobal:["Sem saldo disponível nessa data","No balance available on that date","An diesem Stichtag kein Bestand verfügbar"],
+  rg_saved:["Resgate registrado","Redemption recorded","Auszahlung gebucht"],
+  rg_removed:["Resgate excluído","Redemption removed","Auszahlung entfernt"],
+  rg_del_q:["Excluir este resgate?","Remove this redemption?","Diese Auszahlung entfernen?"],
+  rg_after:["A posição informada é posterior a esta data. O app registrou os encargos e ajustou o custo, sem mexer no saldo — ele já não continha esse dinheiro.",
+    "The reported position is later than this date. The app recorded the charges and adjusted the cost basis without touching the balance — it no longer held that money.",
+    "Der gemeldete Bestand ist jünger als dieses Datum. Die App buchte die Abgaben und passte die Kosten an, ohne den Saldo zu ändern — er enthielt dieses Geld bereits nicht mehr."],
+  rg_sim:["Simulação — nada registrado ainda","Simulation — nothing recorded yet","Simulation — noch nichts gebucht"]
 };
 const PIX={pt:0,en:1,de:2};
 function PX(k){ const a=PDIC[k]; if(!a) return k; return a[PIX[LANG]||0]||a[0]; }
@@ -17882,6 +17997,12 @@ function astPro(a){
 function serieFatores(a,ini,fim,pro){
   const p=pro||astPro(a);
   const out=[];
+  /* VENCIMENTO. Um papel com vencimento em março não rende em abril. O
+     motor capitalizava para sempre, e a projeção embutia um rendimento
+     que o papel já não paga. A série para na data de vencimento: dali em
+     diante o montante fica PARADO, à espera de reaplicação. */
+  const _vc=astVencEfetivo(a,p);
+  if(_vc&&fim&&fim>_vc) fim=_vc;
   if(!ini||!fim||fim<=ini) return out;
   const admM=Math.pow(Math.max(0,1-(+p.taxaAdm||0)/100),1/12);
   let cur=ini.slice(0,7); const fimYM=fim.slice(0,7);
@@ -18083,7 +18204,8 @@ function astResgate(a,valor){
   const ganhoTotal=Math.max(0,saldo-custo);
   const prop=saldo>0?valor/saldo:0;
   const ganho=R2(ganhoTotal*prop);
-  const d=dias(p.aplic);
+  /* vencido: o relógio do imposto parou na data do vencimento */
+  const d=astPrazoIR(a,p);
   const aliq=astAliqIR(a,d);
   const iof=(p.trib==="rf"||p.trib.indexOf("fundo")===0)?iofPct(d):0;
   const vIof=R2(ganho*iof/100);
@@ -18112,6 +18234,167 @@ function astDisponivelEm(a,d){ // liquidez em até d dias?
   const dt=astLiquidezData(a);
   if(!dt) return false;
   return dias(today(),dt)<=d;
+}
+
+/* ═══ 5.4 VENCIMENTO E RESGATE ════════════════════════════════════════
+   Duas coisas que o app tratava como se não existissem.
+
+   VENCIMENTO. A data estava no cadastro e não mudava conta nenhuma: a
+   aplicação seguia rendendo indefinidamente na projeção. Agora o
+   rendimento para na data. Do dia seguinte em diante o montante continua
+   no patrimônio, mas como VENCIDO — dinheiro parado, esperando decisão.
+   Quem reaplica é o titular: o app não inventa um produto no lugar dele.
+
+   RESGATE. Havia um simulador que não registrava nada. Agora o resgate é
+   um lançamento com data e valor: o app apura IR e IOF pela regra vigente
+   naquela data, baixa o custo na proporção retirada e segue com a
+   aplicação a partir do saldo remanescente. */
+
+/* Data de vencimento declarada. Vale para qualquer liquidez: um CDB de
+   liquidez diária também tem vencimento, e ele também encerra o papel. */
+function astVencData(a,p){
+  const P=p||(a&&a.pro)||{};
+  const v=String(P.venc||"").slice(0,10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(v)?v:null;
+}
+function astTemVenc(a,p){ return !!astVencData(a,p); }
+/* Vencimento EFETIVO: a data só congela a aplicação depois de chegar. Um
+   vencimento futuro não muda conta nenhuma — a projeção segue rendendo,
+   porque presumir dinheiro parado por anos seria uma premissa que o
+   titular não declarou. O dia do vencimento já é dia vencido. */
+function astVencEfetivo(a,p){
+  const v=astVencData(a,p);
+  return (v&&v<=today())?v:null;
+}
+/* Já venceu na data de referência (padrão: hoje) */
+function astVencido(a,ref){
+  const v=astVencData(a); if(!v) return false;
+  return String(ref||today())>=v;      /* o dia do vencimento já é vencido */
+}
+/* O mês navegado é POSTERIOR ao do vencimento. É aí que a aplicação passa
+   a aparecer como vencida, e não mais como aplicação. No mês do
+   vencimento ela ainda é aplicação — e é quando o aviso aparece. */
+function astVencidoYM(a,ym){
+  const v=astVencEfetivo(a); if(!v) return false;
+  return String(ym||ymNow())>=v.slice(0,7);
+}
+function astVenceNoYM(a,ym){
+  const v=astVencData(a); if(!v) return false;
+  return v.slice(0,7)===String(ym||ymNow());
+}
+/* Fração do mês em que o papel ainda rende: 1 antes do vencimento,
+   proporcional no mês em que ele vence, 0 depois. */
+function astParteRendeMes(a,ym){
+  const v=astVencEfetivo(a); if(!v) return 1;
+  const M=String(ym||ymNow());
+  if(M<v.slice(0,7)) return 1;
+  if(M>v.slice(0,7)) return 0;
+  const q=M.split("-").map(Number);
+  const ult=new Date(q[0],q[1],0).getDate();
+  return Math.max(0,Math.min(1,(+v.slice(8,10)||ult)/ult));
+}
+
+/* Resgates registrados, do mais antigo para o mais novo */
+function astResgates(a,p){
+  const P=p||(a&&a.pro)||{};
+  const L=Array.isArray(P.resgates)?P.resgates:[];
+  return L.filter(r=>r&&r.data&&(+r.valor>0)).slice()
+          .sort((x,y)=>String(x.data).localeCompare(String(y.data)));
+}
+/* Assinatura para as chaves de cache: mudou um resgate, muda a posição */
+function astResgAssin(a,p){
+  return astResgates(a,p).map(r=>r.data+":"+R2(+r.valor||0)).join(",");
+}
+function astResgatadoTotal(a,p){
+  return R2(astResgates(a,p).reduce((s,r)=>s+(+r.valor||0),0));
+}
+
+/* Evolução COM eventos: caminha de resgate em resgate, corrige o trecho e
+   retira o montante na data em que ele saiu. Sem isso o saldo continuaria
+   rendendo sobre dinheiro que já não está lá. */
+function astEvoluirEventos(a,p,de,ate,bal){
+  const evs=astResgates(a,p).filter(r=>r.data>de&&r.data<=ate&&!r.baixado);
+  if(!evs.length) return astEvoluirAte(a,p,de,ate,bal);
+  const tot={valor:R2(bal),correcao:0,aportes:0,comeCotas:0,meses:0,
+             fator:1,estimado:false,serie:[],resgatado:0};
+  let v=bal, cur=de;
+  const passo=(d1,d2,v0)=>{
+    const E=astEvoluirAte(a,p,d1,d2,v0);
+    tot.correcao=R2(tot.correcao+E.correcao); tot.aportes=R2(tot.aportes+E.aportes);
+    tot.comeCotas=R2(tot.comeCotas+E.comeCotas); tot.meses=R2(tot.meses+E.meses);
+    tot.fator*=(E.fator||1); if(E.estimado) tot.estimado=true;
+    tot.serie=tot.serie.concat(E.serie||[]);
+    return E.valor;
+  };
+  evs.forEach(r=>{
+    v=passo(cur,r.data,v);
+    const q=Math.min(v,+r.valor||0);
+    v=R2(Math.max(0,v-q)); tot.resgatado=R2(tot.resgatado+q);
+    cur=r.data;
+  });
+  v=passo(cur,ate,v);
+  tot.valor=R2(v);
+  return tot;
+}
+
+/* Prazo que define a alíquota. Vencido, o relógio do imposto parou na
+   data do vencimento: o dinheiro que ficou parado depois não conta. */
+function astPrazoIR(a,p,ate){
+  const P=p||astPro(a);
+  const v=astVencEfetivo(a,P);
+  const fim=ate||today();
+  return dias(P.aplic,(v&&v<fim)?v:fim);
+}
+
+/* Liquidação de uma aplicação numa data: bruto, encargos e líquido.
+   É a mesma conta do resgate, aplicada ao montante inteiro — e é dela
+   que sai o aviso de vencimento do mês. */
+function astLiquidacao(a,dref){
+  const p=astPro(a);
+  const v=astVencData(a,p);
+  const hj=today();
+  const alvo=dref||((v&&v>hj)?v:hj);
+  const bruto=R2(astValorEm(a,alvo));
+  const custo=Math.min(R2(+p.custo||0),bruto);
+  const ganho=Math.max(0,R2(bruto-custo));
+  const d=astPrazoIR(a,p,alvo);
+  const aliq=astAliqIR(a,d);
+  const iofP=(p.trib==="rf"||String(p.trib||"").indexOf("fundo")===0)?iofPct(d):0;
+  const iof=R2(ganho*iofP/100);
+  const ir=R2(Math.max(0,ganho-iof)*aliq/100);
+  return {data:alvo,venc:v,bruto,custo:R2(custo),ganho,dias:d,aliq,
+          iofPct:iofP,iof,ir,liquido:R2(bruto-ir-iof)};
+}
+
+/* Resgate parcial numa data qualquer: quanto sai líquido e quanto do
+   custo é baixado junto. O custo precisa cair na mesma proporção, senão
+   o lucro tributável do saldo remanescente fica superestimado. */
+function astResgateEm(a,valor,data){
+  const p=astPro(a);
+  const dt=String(data||today()).slice(0,10);
+  const saldo=R2(astValorEm(a,dt));
+  const v=Math.max(0,Math.min(+valor||saldo,saldo));
+  const custoT=Math.min(R2(+p.custo||0),saldo);
+  const prop=saldo>0?v/saldo:0;
+  const custoBaixa=R2(custoT*prop);
+  const ganho=Math.max(0,R2(v-custoBaixa));
+  const d=astPrazoIR(a,p,dt);
+  const aliq=astAliqIR(a,d);
+  const iofP=(p.trib==="rf"||String(p.trib||"").indexOf("fundo")===0)?iofPct(d):0;
+  const iof=R2(ganho*iofP/100);
+  const ir=R2(Math.max(0,ganho-iof)*aliq/100);
+  return {data:dt,saldo,valor:R2(v),bruto:R2(v),custoBaixa,ganho,dias:d,
+          aliq,iofPct:iofP,iof,ir,liquido:R2(v-iof-ir),
+          restante:R2(saldo-v)};
+}
+
+/* As posições são memorizadas por chave; um resgate novo entra em todas
+   as chaves, mas limpar aqui evita depender disso numa tela só. */
+function limparCachesAplic(){
+  try{ Object.keys(AST_CACHE).forEach(k=>delete AST_CACHE[k]); }catch(e){}
+  try{ Object.keys(AST_YM_CACHE).forEach(k=>delete AST_YM_CACHE[k]); }catch(e){}
+  try{ CFP_POS={k:"",v:null}; }catch(e){}
+  try{ window.AST_POS_CACHE=null; }catch(e){}
 }
 
 
@@ -18801,6 +19084,7 @@ function astAtualizacao(a){
      cenário anterior. */
   const chave=[a.id,bal,de,hj,p.idx,p.idxVal,p.aporte,p.fgtsDia,
     fgtsAssinaturaRenda(p),p.taxaAdm,HIST.ts,
+    astVencData(a,p)||"",astResgAssin(a,p),
     MARKET.cdi,MARKET.selic,MARKET.ipca,MARKET.ts,PARAMS.ts].join("|");
   if(AST_CACHE[chave]) return AST_CACHE[chave];
 
@@ -18809,10 +19093,11 @@ function astAtualizacao(a){
     corrigido:false,estimado:false,fator:1};
   if(!(bal>0)||de>=hj){ AST_CACHE[chave]=base; return base; }
 
-  const E=astEvoluirAte(a,p,de,hj,bal);
-  if(!E.meses){ AST_CACHE[chave]=base; return base; }
+  const E=astEvoluirEventos(a,p,de,hj,bal);
+  if(!E.meses&&!E.resgatado){ AST_CACHE[chave]=base; return base; }
   const out={informado:bal,desde:de,dias:Math.max(0,dias(de,hj)),
     valor:E.valor,correcao:E.correcao,aportes:E.aportes,comeCotas:E.comeCotas,
+    resgatado:R2(E.resgatado||0),
     corrigido:E.valor!==R2(bal),
     estimado:E.estimado,
     meses:E.meses,
@@ -18890,12 +19175,13 @@ function astValorEm(a,dataAlvo){
   if(dataAlvo===de) return R2(bal);
   const ck=[a.id,bal,de,dataAlvo,p.idx,p.idxVal,p.aporte,p.fgtsDia,
             fgtsAssinaturaRenda(p),p.taxaAdm,p.taxaPerf,
+            astVencData(a,p)||"",astResgAssin(a,p),
             p.trib,HIST.ts,PARAMS.ts,MARKET.ts].join("|");
   if(AST_YM_CACHE[ck]!==undefined) return AST_YM_CACHE[ck];
   let v=R2(bal);
   try{
     if(dataAlvo>de){
-      v=astEvoluirAte(a,p,de,dataAlvo,bal).valor;
+      v=astEvoluirEventos(a,p,de,dataAlvo,bal).valor;
     }else{
       /* regressão: desfaz a correção do período pelo fator do produto */
       const f=fatorProduto(a,dataAlvo,de,p).fator;
@@ -19238,6 +19524,51 @@ function ensureStyles(){
   .pro-flash{animation:proFlash 1.1s ease 2}
   .liq-tag{background:rgba(0,0,0,.05);border-radius:8px;padding:3px 9px;font-size:10px;
     color:var(--ink-2);white-space:nowrap;display:inline-block}
+  .rg-tag{background:rgba(0,0,0,.05);border-radius:8px;padding:4px 9px;font-size:10.5px;
+    color:var(--ink-2);white-space:nowrap;display:inline-block}
+  #modal-resgate #res-data{width:100%!important;display:block!important;
+    height:38px!important;min-height:38px!important;box-sizing:border-box!important;
+    padding:0 13px!important;border-radius:12px!important;font-size:13px!important;
+    line-height:1.2!important;margin-bottom:clamp(10px,2dvh,18px)!important}
+  /* Aviso de vencimento. A tarja à esquerda é o único ornamento: a cor
+     diz o tom (âmbar para o que vence, terracota para o que já venceu) e
+     o resto é a mesma tipografia das outras fichas. */
+  .vc-box{background:var(--surface);border-radius:16px;padding:13px 15px;margin-bottom:12px;
+    border-left:3px solid #C4863A;box-sizing:border-box}
+  .vc-box.over{border-left-color:#B85A6A}
+  .vc-hd{display:flex;align-items:center;gap:10px;margin-bottom:10px;min-width:0}
+  .vc-hd .tt{font-family:var(--serif);font-style:italic;font-size:16px;color:var(--body);
+    line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .vc-hd .ss{font-size:10.5px;color:var(--ink-3);margin-top:2px;line-height:1.4}
+  .vc-kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+  .vc-kpi{background:rgba(0,0,0,.035);border-radius:11px;padding:8px 10px;min-width:0}
+  .vc-kpi .k{font-size:8.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-3);
+    font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vc-kpi .v{font-family:var(--serif);font-style:italic;font-size:17px;margin-top:2px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vc-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--line);
+    min-width:0}
+  .vc-row .nm{font-size:12.5px;color:var(--body);font-weight:600;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  .vc-row .dt{font-size:10.5px;color:var(--ink-3);margin-top:2px;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  .vc-row .vl{font-size:13px;font-weight:600;color:var(--body);font-variant-numeric:tabular-nums;
+    white-space:nowrap}
+  .vc-row .lq{font-size:10.5px;color:#5A8A4A;white-space:nowrap}
+  .vc-strip{display:flex;align-items:center;gap:10px;background:var(--surface);
+    border-left:3px solid #C4863A;border-radius:16px;padding:12px 14px;margin-bottom:12px;
+    cursor:pointer;box-sizing:border-box}
+  .vc-strip .tt{font-size:13.5px;font-weight:600;color:var(--body);line-height:1.2;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .vc-strip .ss{font-size:10.5px;color:var(--ink-3);margin-top:3px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #modal-vencimento .vc-box{margin-bottom:10px}
+  .vc-acts{display:flex;gap:6px;justify-content:flex-end;padding:0 0 4px}
+  .vc-act{border:1.5px solid var(--line);background:none;color:var(--ink-2);border-radius:20px;
+    min-height:30px;padding:0 13px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;
+    flex-shrink:0}
+  .vc-act.on{border-color:#0F2440;background:#0F2440;color:#fff}
+  .vc-row{cursor:pointer}
   .liq-card{background:var(--surface);border-radius:16px;padding:13px 15px;margin-bottom:9px;
     cursor:pointer;border-left:3px solid var(--accent);box-sizing:border-box}
   /* Ficha de parâmetros. É uma planilha, não um formulário de cadastro: o
@@ -20310,55 +20641,305 @@ function resetFiscal(btn){
   closeOverlay(btn);toast(TR("✓ Tabelas restauradas"));refreshPro();openFiscal();
 }
 
-/* ═══ 11. RESGATE — simulador por aplicação ═══ */
+/* ═══ 11. RESGATE — registro e simulação por aplicação ════════════════
+   Antes isto era só um simulador: dizia o líquido e não guardava nada, de
+   modo que o app nunca sabia que o dinheiro tinha saído. Agora o resgate é
+   um LANÇAMENTO. O titular informa data e montante; o app apura IOF e IR
+   pela regra vigente NAQUELA data, baixa o custo na proporção retirada e a
+   aplicação segue a vida a partir do que sobrou — patrimônio e rendimento
+   dos meses seguintes já sem o dinheiro que saiu. */
+function resgDataMin(a){
+  const p=astPro(a);
+  return String(p.aplic||a.lastUpdate||today()).slice(0,10);
+}
 function openResgate(id){
   const a=ASSETS.find(x=>x.id===id); if(!a) return;
-  const c=gAssetClass(a.class),saldo=astValorAtual(a);
+  ensureStyles();
+  const c=gAssetClass(a.class), p=astPro(a);
+  const vc=astVencData(a,p), vencido=astVencido(a);
   const ov=document.createElement("div");
   ov.className="overlay open";ov.style.zIndex="210";ov.style.alignItems="flex-end";
-  ov.innerHTML=H`<div class="sheet">
+  ov.id="modal-resgate";
+  ov.innerHTML=H`<div class="sheet" style="max-height:92dvh;overflow-y:auto">
     <div class="sheet-handle"></div>
     <button class="sheet-close" onclick="closeOverlay(this)">✕</button>
     <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px">
-      <div style="width:42px;height:42px;border-radius:12px;background:${c.color}18;display:flex;align-items:center;justify-content:center;font-size:20px">${c.emoji}</div>
-      <div><div style="font-family:var(--serif);font-size:19px;color:var(--body)">${a.name}</div>
-      <div style="font-size:11px;color:var(--ink-2)">${catLabel(c)} · ${astLiquidezLabel(a)}</div></div>
+      <div style="width:42px;height:42px;border-radius:12px;background:${c.color}18;display:flex;
+        align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${c.emoji}</div>
+      <div style="min-width:0">
+        <div style="font-family:var(--serif);font-size:19px;color:var(--body);line-height:1.15;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${raw(a.name||"—")}</div>
+        <div style="font-size:11px;color:var(--ink-2);margin-top:2px;overflow:hidden;
+          text-overflow:ellipsis;white-space:nowrap">${raw(catLabel(c))} · ${raw(astLiquidezLabel(a))}</div>
+      </div>
     </div>
-    <label class="f-label">Quanto deseja resgatar</label>
-    <input id="res-val" class="f-amount" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this);PRO.calcResgate('${id}')"/>
+    ${vencido?`<div style="background:rgba(196,134,58,.1);border-left:3px solid #C4863A;
+      border-radius:0 12px 12px 0;padding:10px 13px;margin-bottom:13px">
+      <div style="font-size:11.5px;font-weight:700;color:#C4863A;margin-bottom:3px">${PL("vc_over")} ${raw(brDate(vc))}</div>
+      <div style="font-size:11px;color:var(--ink-2);line-height:1.5">${PL("vc_frozen")}</div></div>`:""}
+
+    <label class="f-label">${PL("rg_when")}</label>
+    <input id="res-data" class="f-input" type="date" value="${today()}"
+      min="${raw(resgDataMin(a))}" max="${today()}" onchange="PRO.calcResgate('${id}')"/>
+
+    <label class="f-label">${PL("rg_how")}</label>
+    <input id="res-val" class="f-amount" type="text" inputmode="decimal" placeholder="0,00"
+      oninput="maskCurrencyInput(this);PRO.calcResgate('${id}')"/>
     <div style="display:flex;gap:5px;margin-bottom:14px">
-      ${[25,50,100].map(p=>`<button onclick="PRO.setResgatePct('${id}',${p})" class="pro-btn" style="flex:1;border:1.5px solid var(--line);background:none;color:var(--ink-2);font-weight:600;cursor:pointer">${p===100?"Tudo":p+"%"}</button>`).join("")}
+      ${[25,50,100].map(q=>`<button onclick="PRO.setResgatePct('${id}',${q})" class="pro-btn"
+        style="flex:1;border:1.5px solid var(--line);background:none;color:var(--ink-2);
+        font-weight:600;cursor:pointer">${q===100?PX("rg_all"):q+"%"}</button>`).join("")}
     </div>
+
     <div id="res-out"></div>
+
+    <button class="pro-btn-lg" onclick="PRO.salvarResgate('${id}',this)"
+      style="width:100%;background:#0F2440;color:#fff;border:none;font-weight:600;cursor:pointer">
+      ${PL("rg_reg")}</button>
+    <div class="pro-note">${PL("rg_note")}</div>
+    <div id="res-hist"></div>
   </div>`;
   document.body.appendChild(ov);
   ov.onclick=e=>{if(e.target===ov)closeOverlay(ov);};
-  setCurrencyInput($("res-val"),saldo);calcResgate(id);
+  const dt=$("res-data");
+  if(dt&&dt.min&&dt.value<dt.min) dt.value=dt.min;
+  setCurrencyInput($("res-val"),astValorAtual(a));
+  calcResgate(id);
 }
-function setResgatePct(id,p){
+function resgDataSel(a){
+  const el=$("res-data");
+  let d=(el&&el.value)?String(el.value).slice(0,10):today();
+  const mn=resgDataMin(a);
+  if(d<mn) d=mn;
+  if(d>today()) d=today();
+  return d;
+}
+function setResgatePct(id,q){
   const a=ASSETS.find(x=>x.id===id);if(!a)return;
-  setCurrencyInput($("res-val"),(astValorAtual(a))*p/100);calcResgate(id);
+  const saldo=R2(astValorEm(a,resgDataSel(a)));
+  setCurrencyInput($("res-val"),saldo*q/100);calcResgate(id);
 }
 function calcResgate(id){
   const a=ASSETS.find(x=>x.id===id);if(!a||!$("res-out"))return;
-  const r=astResgate(a,unmaskCurrency($("res-val")));
+  const dt=resgDataSel(a);
+  const r=astResgateEm(a,unmaskCurrency($("res-val")),dt);
   const p=astPro(a);
+  const de=String(a.lastUpdate||p.aplic||today()).slice(0,10);
+  const L=(lbl,val,cor,forte)=>`<div class="pro-cf${forte?" tot":""}">
+    <span>${lbl}</span><span style="color:${cor||"var(--body)"}">${val}</span></div>`;
   $("res-out").innerHTML=H`
     <div style="background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px"><span style="color:var(--body)">Valor resgatado</span><span>${fmt(r.valor)}</span></div>
-      <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px"><span style="color:var(--body)">Rendimento no período</span><span style="color:#5A8A4A">${fmt(r.ganho)}</span></div>
-      ${r.iof>0?`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px"><span style="color:var(--body)">IOF (${r.iofPct}% · ${r.dias} dias)</span><span style="color:#B85A6A">${SGP("−")}${fmt(r.iof)}</span></div>`:""}
-      <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px"><span style="color:var(--body)">IR (${r.aliq}%)</span><span style="color:#B85A6A">${SGP("−")}${fmt(r.ir)}</span></div>
-      <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;margin-top:6px;border-top:2px solid var(--line)">
-        <span style="font-size:13px;font-weight:700;color:var(--body)">Você recebe</span>
+      ${raw(L(PX("rg_pos"),fmt(r.saldo),"var(--ink-2)"))}
+      ${raw(L(PX("rg_val"),fmt(r.valor)))}
+      ${raw(L(PX("rg_gain"),fmt(r.ganho),"#5A8A4A"))}
+      ${r.iof>0?raw(L("IOF ("+P2(r.iofPct)+"% · "+r.dias+"d)",SGP("−")+fmt(r.iof),"#B85A6A")):""}
+      ${raw(L("IR ("+P2(r.aliq)+"%)",SGP("−")+fmt(r.ir),"#B85A6A"))}
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;
+        margin-top:6px;border-top:2px solid var(--line)">
+        <span style="font-size:13px;font-weight:700;color:var(--body)">${PL("rg_net")}</span>
         <span style="font-family:var(--serif);font-style:italic;font-size:22px;color:#0F2440">${fmt(r.liquido)}</span>
       </div>
+      ${raw(L(PX("rg_rest"),fmt(r.restante),"var(--ink-2)",true))}
     </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px">
-      <span style="background:rgba(0,0,0,.05);border-radius:8px;padding:4px 9px;color:var(--ink-2)">Aplicado há ${r.dias} dias</span>
-      <span style="background:rgba(0,0,0,.05);border-radius:8px;padding:4px 9px;color:var(--ink-2)">Cai em ${brDate(r.disponivel)}</span>
-      ${p.comeCotas?`<span style="background:rgba(0,0,0,.05);border-radius:8px;padding:4px 9px;color:var(--ink-2)">Come-cotas em mai/nov</span>`:""}
+    <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px;margin-bottom:10px">
+      <span class="rg-tag">${PL("rg_sim")}</span>
+      <span class="rg-tag">${raw(brDate(dt))}</span>
+      ${p.comeCotas?`<span class="rg-tag">${raw(TR("Come-cotas em mai/nov"))}</span>`:""}
+    </div>
+    ${dt<=de?`<div class="pro-note" style="margin:0 0 10px">${PL("rg_after")}</div>`:""}`;
+  renderResgHist(id);
+}
+/* percentual com vírgula, sem casas inúteis */
+function P2(v){ return String(R2(+v||0)).replace(".",","); }
+
+/* ── histórico de resgates da aplicação ── */
+function renderResgHist(id){
+  const el=$("res-hist"); if(!el) return;
+  const a=ASSETS.find(x=>x.id===id); if(!a){ el.innerHTML=""; return; }
+  const L=astResgates(a);
+  if(!L.length){ el.innerHTML=""; return; }
+  el.innerHTML=H`
+    <div class="pro-h" style="margin-top:16px"><b>${PL("rg_list")}</b><i></i></div>
+    <div style="background:var(--surface);border-radius:14px;padding:4px 14px 6px">
+      ${raw(L.slice().reverse().map(r=>`<div style="display:flex;align-items:center;gap:10px;
+        padding:9px 0;border-bottom:1px solid var(--line)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12.5px;color:var(--body);font-weight:600">${brDate(r.data)}</div>
+          <div style="font-size:10.5px;color:var(--ink-3);margin-top:2px">
+            IR ${P2(r.aliq||0)}%${(+r.ir||0)>0?" · "+fmt(r.ir):""}${(+r.iof||0)>0?" · IOF "+fmt(r.iof):""}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:13px;font-weight:600;color:var(--body);font-variant-numeric:tabular-nums">${fmt(r.valor)}</div>
+          <div style="font-size:10.5px;color:#5A8A4A">${fmt(r.liquido)}</div>
+        </div>
+        <button onclick="PRO.excluirResgate('${id}','${r.id}')" style="background:none;border:none;
+          color:#C47A5C;font-size:13px;cursor:pointer;flex-shrink:0;padding:4px">🗑️</button>
+      </div>`).join(""))}
     </div>`;
+}
+
+/* ── registrar ─────────────────────────────────────────────────────────
+   O custo cai na mesma proporção do que saiu; sem isso o lucro tributável
+   do saldo remanescente ficaria superestimado no próximo resgate. */
+function salvarResgate(id,btn){
+  const a=ASSETS.find(x=>x.id===id); if(!a) return;
+  const p=astPro(a);
+  const dt=resgDataSel(a);
+  const val=unmaskCurrency($("res-val"));
+  if(!(val>0)){ toast(PX("rg_novalue")); return; }
+  if(dt>today()){ toast(PX("rg_future")); return; }
+  if(dt<resgDataMin(a)){ toast(PX("rg_early")); return; }
+  const r=astResgateEm(a,val,dt);
+  if(!(r.valor>0)){ toast(PX("rg_nobal")); return; }
+  const de=String(a.lastUpdate||p.aplic||today()).slice(0,10);
+  /* a posição informada é posterior ao resgate: a foto já não contém esse
+     dinheiro, e descontá-lo de novo tiraria o mesmo montante duas vezes */
+  const baixado=dt<=de;
+  const reg={id:"rg"+Date.now()+Math.floor(Math.random()*1000),
+    data:dt,valor:r.valor,ganho:r.ganho,ir:r.ir,iof:r.iof,aliq:r.aliq,
+    iofPct:r.iofPct,dias:r.dias,liquido:r.liquido,custoBaixa:r.custoBaixa,baixado};
+  const lista=(Array.isArray(p.resgates)?p.resgates.slice():[]).concat([reg]);
+  a.pro=Object.assign({},a.pro||{},{resgates:lista,
+    custo:R2(Math.max(0,R2(+p.custo||0)-r.custoBaixa)),custoAuto:false});
+  persist(); limparCachesAplic();
+  toast("✓ "+PX("rg_saved")+" · "+fmt(r.liquido));
+  calcResgate(id);
+  try{ if(typeof renderAssets==="function") renderAssets(); }catch(e){}
+  refreshPro();
+}
+function excluirResgate(id,rid){
+  const a=ASSETS.find(x=>x.id===id); if(!a) return;
+  if(!confirm(PX("rg_del_q"))) return;
+  const p=a.pro||{};
+  const L=Array.isArray(p.resgates)?p.resgates:[];
+  const r=L.find(x=>x&&x.id===rid); if(!r) return;
+  a.pro=Object.assign({},p,{resgates:L.filter(x=>x!==r),
+    custo:R2(Math.max(0,R2(+p.custo||0)+(+r.custoBaixa||0)))});
+  persist(); limparCachesAplic();
+  toast("✓ "+PX("rg_removed"));
+  calcResgate(id);
+  try{ if(typeof renderAssets==="function") renderAssets(); }catch(e){}
+  refreshPro();
+}
+
+/* ═══ 11.4 AVISO DE VENCIMENTO ════════════════════════════════════════
+   O que vence no mês navegado e o que já venceu e continua parado. Os dois
+   grupos saem da MESMA liquidação — bruto corrigido até a data, encargos
+   do prazo total, líquido — para que o aviso, a folha de resgate e a
+   projeção nunca contem histórias diferentes. */
+function vencDoMes(ym){
+  const M=String(ym||(typeof activeYMAst==="function"?activeYMAst():ymNow()));
+  const venc=[], over=[];
+  (typeof ASSETS!=="undefined"?ASSETS:[]).forEach(a=>{
+    if(!a||a.virtual) return;
+    const v=astVencData(a); if(!v) return;
+    let q; try{ q=astLiquidacao(a); }catch(e){ return; }
+    if(!(q.bruto>0.01)) return;                 /* já resgatado por inteiro */
+    const o=Object.assign({a,venc:v},q);
+    if(v.slice(0,7)===M) venc.push(o);
+    else if(v.slice(0,7)<M&&astVencEfetivo(a)) over.push(o);
+  });
+  const ord=(x,y)=>String(x.venc).localeCompare(String(y.venc));
+  venc.sort(ord); over.sort(ord);
+  const soma=L=>L.reduce((o,x)=>({bruto:R2(o.bruto+x.bruto),liquido:R2(o.liquido+x.liquido),
+    ir:R2(o.ir+x.ir),iof:R2(o.iof+x.iof)}),{bruto:0,liquido:0,ir:0,iof:0});
+  return {ym:M,venc,over,tot:soma(venc),totOver:soma(over)};
+}
+/* Linha de uma aplicação dentro do aviso */
+function vcLinha(x){
+  const c=gAssetClass(x.a.class);
+  return `<div class="vc-row" onclick="openAssetEdit(${x.a.id})">
+    <div style="width:30px;height:30px;border-radius:9px;background:${c.color}18;display:flex;
+      align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${c.emoji}</div>
+    <div style="flex:1;min-width:0">
+      <div class="nm">${x.a.name||"—"}</div>
+      <div class="dt">${brDate(x.venc)} · ${PX("vc_charges")} ${fmt(R2(x.ir+x.iof))}</div>
+    </div>
+    <div style="text-align:right;flex-shrink:0;min-width:0">
+      <div class="vl">${fmt(x.bruto)}</div>
+      <div class="lq">${fmt(x.liquido)}</div>
+    </div>
+  </div>
+  <div class="vc-acts">
+    <button class="vc-act" onclick="event.stopPropagation();openAssetEdit(${x.a.id})">${PX("vc_open")}</button>
+    <button class="vc-act on" onclick="event.stopPropagation();PRO.openResgate(${x.a.id})">${PX("vc_redeem")}</button>
+  </div>`;
+}
+function vcBloco(titulo,sub,lista,tot,over){
+  return `<div class="vc-box${over?" over":""}">
+    <div class="vc-hd">
+      <div style="flex:1;min-width:0">
+        <div class="tt">${titulo}</div>
+        <div class="ss">${sub}</div>
+      </div>
+    </div>
+    <div class="vc-kpis">
+      <div class="vc-kpi"><div class="k">${PX("vc_gross")}</div>
+        <div class="v" style="color:var(--body)">${fmt(tot.bruto)}</div></div>
+      <div class="vc-kpi"><div class="k">${PX("vc_net")}</div>
+        <div class="v" style="color:#5A8A4A">${fmt(tot.liquido)}</div></div>
+    </div>
+    ${lista.map(vcLinha).join("")}
+  </div>`;
+}
+/* Na tela fica só a tira: uma linha que diz que há vencimento e abre o
+   aviso. O detalhe inteiro — bruto, líquido, encargos e as aplicações que
+   compõem os números — vive no pop-up, onde há espaço para os nomes e
+   para as duas ações de cada linha. */
+const VC_AVISADO={};
+function vcNome(n){ return n+" "+PX(n===1?"vc_one":"vc_many"); }
+function renderVencAviso(){
+  const el=document.getElementById("ast-venc-box"); if(!el) return;
+  ensureStyles();
+  let E; try{ E=vencDoMes(); }catch(e){ el.innerHTML=""; return; }
+  const n=E.venc.length+E.over.length;
+  if(!n){ el.innerHTML=""; return; }
+  const bruto=R2(E.tot.bruto+E.totOver.bruto);
+  el.innerHTML=H`<div class="vc-strip" onclick="PRO.openVencimentos()">
+    <span class="otto-anel"><span class="oi oi-sm oi-round oi-ring oi-investiga" aria-hidden="true"></span></span>
+    <div style="flex:1;min-width:0">
+      <div class="tt">${PL("vc_alert_t")}</div>
+      <div class="ss">${raw(vcNome(n)+" · "+PX("vc_gross")+" "+fmt(bruto))}</div>
+    </div>
+    <span class="vc-act on">${PL("vc_see")}</span>
+  </div>`;
+  /* Abre sozinho na primeira vez que o mês é visitado — é o que faz dele
+     um aviso, e não mais um cartão que se pode atravessar sem ver. Nunca
+     por cima de outra folha aberta: interromper o titular no meio de um
+     resgate seria o oposto de avisar. */
+  if(!VC_AVISADO[E.ym]&&!document.querySelector(".overlay.open")){
+    VC_AVISADO[E.ym]=1;
+    setTimeout(()=>{ try{ if(!document.querySelector(".overlay.open")) openVencimentos(); }catch(e){} },450);
+  }
+}
+function openVencimentos(){
+  let E; try{ E=vencDoMes(); }catch(e){ return; }
+  if(!E.venc.length&&!E.over.length) return;
+  ensureStyles();
+  const mes=(()=>{ try{ return cfMesLabel(E.ym); }catch(e){ return E.ym; } })();
+  const ov=document.createElement("div");
+  ov.className="overlay open"; ov.id="modal-vencimento";
+  ov.style.zIndex="235"; ov.style.alignItems="flex-end";
+  ov.innerHTML=H`<div class="sheet" style="max-height:88dvh;overflow-y:auto">
+    <div class="sheet-handle"></div>
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px">
+      <span class="otto-anel"><span class="oi oi-sm oi-round oi-ring oi-investiga" aria-hidden="true"></span></span>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:var(--serif);font-style:italic;font-size:19px;color:var(--body);line-height:1.15">${PL("vc_alert_t")}</div>
+        <div style="font-size:10.5px;color:var(--ink-3);margin-top:2px">${raw(mes)}</div>
+      </div>
+      <button class="sheet-close" style="position:static;flex-shrink:0" onclick="closeOverlay(this)">✕</button>
+    </div>
+    ${E.venc.length?raw(vcBloco(PX("vc_title")+" · "+mes,
+        vcNome(E.venc.length)+" · "+PX("vc_charges")+" "+fmt(R2(E.tot.ir+E.tot.iof)),
+        E.venc,E.tot,false)):""}
+    ${E.over.length?raw(vcBloco(PX("vc_over_t"),
+        vcNome(E.over.length)+" · "+PX("vc_frozen").split(":")[0],
+        E.over,E.totOver,true)):""}
+    <div class="pro-note">${PL("vc_note")}</div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.onclick=e=>{ if(e.target===ov) closeOverlay(ov); };
 }
 
 /* ═══ 11.5 FLUXO DE CAIXA DA VIDA FINANCEIRA ═══ */
@@ -21141,6 +21722,15 @@ window.showAst=function(v){
   _showAst(v);
 };
 
+/* O aviso de vencimento acompanha a tela inteira de Patrimônio, e não uma
+   aba só: quem abre o Resumo precisa saber que um CDB vence este mês tanto
+   quanto quem abre a lista de Aplicações. */
+const _renderAssetsVc=window.renderAssets;
+if(_renderAssetsVc) window.renderAssets=function(){
+  _renderAssetsVc();
+  try{ renderVencAviso(); }catch(e){}
+};
+
 /* Lista de aplicações enriquecida: liquidez, IR e botão de resgate */
 const _renderAssetList=window.renderAssetList;
 window.renderAssetList=function(){
@@ -21170,7 +21760,23 @@ window.renderAssetList=function(){
       return;
     }
     const p=astPro(a),res=astResgate(a);
+    /* A etiqueta de vencimento vem primeiro: é a informação que muda o que
+       fazer com a aplicação neste mês. Âmbar quando vence, terracota
+       quando já venceu e o dinheiro está parado. */
+    const vcTag=(()=>{
+      const v=astVencData(a,p); if(!v) return "";
+      const M=(typeof activeYMAst==="function")?activeYMAst():ymNow();
+      if(astVencEfetivo(a,p)&&String(M)>=v.slice(0,7))
+        return `<span style="font-size:10px;background:rgba(184,90,106,.14);
+        border-radius:7px;padding:2px 7px;color:#B85A6A;font-weight:700">${PX("vc_badge_over")} ${brDate(v)}</span>`;
+      /* ainda por vencer: âmbar no mês do vencimento, neutra fora dele */
+      const perto=astVenceNoYM(a,M);
+      return `<span style="font-size:10px;background:${perto?"rgba(196,134,58,.16)":"rgba(0,0,0,.05)"};
+        border-radius:7px;padding:2px 7px;color:${perto?"#C4863A":"var(--ink-2)"};
+        font-weight:${perto?"700":"600"}">${PX("vc_due")} ${brDate(v)}</span>`;
+    })();
     const badges=H`<div style="display:flex;gap:5px;flex-wrap:wrap;margin:2px 0 8px">
+      ${raw(vcTag)}
       <span style="font-size:10px;background:rgba(15,36,64,.08);border-radius:7px;padding:2px 7px;color:#0F2440">${astLiquidezLabel(a)}</span>
       <span style="font-size:10px;background:rgba(184,90,106,.1);border-radius:7px;padding:2px 7px;color:#B85A6A">IR ${res.aliq}%${res.iofPct>0?" +IOF":""}</span>
       <span style="font-size:10px;background:rgba(90,138,74,.12);border-radius:7px;padding:2px 7px;color:#5A8A4A">Líq. ${fmt(res.liquido)}</span>
@@ -21800,6 +22406,7 @@ function cfEstadoAplic(){
     const p=astPro(a);
     return {a,p,nome:a.name||"—",saldo:astValorAtual(a),custo:+p.custo||0,
             rate:astLiquidoAM(a)/100,aporte:+p.aporte||0,dias0:dias(p.aplic),
+            venc:astVencEfetivo(a,p),
             fgtsAuto:astEhFgtsAuto(a),fgtsFonte:p.fonteRenda||null,
             fgtsDia:Math.min(31,Math.max(1,+p.fgtsDia||20))};
   });
@@ -21931,9 +22538,20 @@ function cfMes(ym,k,st){
             aliq:rbT>0?R2(irT/rbT*100):0,saving:true,aplicado:R2(x.aplicadoMes)});
         return;
       }
-      const rb=x.saldo*tx;
+      /* ── VENCIMENTO ───────────────────────────────────────────────
+         Só o que JÁ venceu congela. x.venc traz o vencimento efetivo — um
+         papel que vence adiante não entra aqui, e a projeção de longo
+         prazo segue rendendo, como se ele fosse reaplicado no mesmo
+         produto. Vencido, o montante fica parado até o titular decidir.
+         No mês do vencimento o rendimento entra proporcional aos dias. */
+      const parteV=x.venc?astParteRendeMes(x.a,ym):1;
+      if(parteV<=0){ x.vencido=true; return; }
+      x.vencido=false;
+      const rb=x.saldo*tx*parteV;
       let aliq=0;
-      try{ aliq=astAliqIR(x.a,x.dias0+30*k); }catch(err){ aliq=0; }
+      /* o prazo do IR também congela no vencimento */
+      try{ aliq=astAliqIR(x.a, x.venc?dias(x.p.aplic,x.venc):(x.dias0+30*k)); }
+      catch(err){ aliq=0; }
       if(x.p.trib==="isento"||x.p.trib==="fii") aliq=0;
       let rbT=rb;
       /* ── CONTA VINCULADA DE FGTS ────────────────────────────────────
@@ -21983,7 +22601,11 @@ function cfMes(ym,k,st){
          depósito voluntário. Enquanto entrava no rateio, o FGTS recebia
          duas entradas no mesmo mês — o depósito do empregador e uma fatia
          da sobra — e o patrimônio projetado inchava sozinho. */
-      const alvos=st.filter(x=>!x.fgtsAuto);
+      /* Uma aplicação já vencida fica de fora do rateio: aportar num
+         papel encerrado seria inventar um produto que o titular não
+         contratou. A decisão de reaplicar é dele. */
+      const alvos=st.filter(x=>!x.fgtsAuto
+        &&!(x.venc&&String(ym)>=String(x.venc).slice(0,7)));
       if(typeof PROJ!=="undefined"&&PROJ.investir&&alvos.length){
         const sobraMes=R2(R2(inc.liquido)-despesas-dPago-apAportes);
         const sv=alvos.find(x=>x.saving);
@@ -22103,7 +22725,13 @@ function cfChaveDados(){
            JSON.stringify((typeof DEBTS!=="undefined"?DEBTS:[]).map(d=>[d.balance,d.fgts?1:0,d.indexador,d.seguro,d.taxaAdm])),
            JSON.stringify((typeof ASSETS!=="undefined"?ASSETS:[]).map(a=>[a.balance,a.lastUpdate,
              a.class,a.pro&&a.pro.idx,a.pro&&a.pro.idxVal,a.pro&&a.pro.aporte,
-             a.pro&&a.pro.taxaAdm,a.pro&&a.pro.trib])),
+             a.pro&&a.pro.taxaAdm,a.pro&&a.pro.trib,
+             /* vencimento e resgates mudam a posição de todos os meses
+                seguintes: sem eles na chave, a projeção memorizada
+                continuaria capitalizando um papel já encerrado */
+             a.pro&&a.pro.venc,
+             (a.pro&&Array.isArray(a.pro.resgates))
+               ?a.pro.resgates.map(r=>r.data+":"+r.valor).join(","):""])),
            MARKET.ts,
            PARAMS.ts, PARAMS.horizonte, PARAMS.spread,
            JSON.stringify(PARAMS.curva), JSON.stringify(PARAMS.longo),
@@ -24529,6 +25157,11 @@ window.PRO={
   astValorEm,astValorYM,astFimDoMesYM,astEvoluirAte,cfChaveDados,
   toggleRegPick,toggleAstPick,applyIncTypeDefaults,applyAstClassDefaults,
   openFiscal,saveFiscalForm,resetFiscal,toggleIsen,openResgate,calcResgate,setResgatePct,
+  salvarResgate,excluirResgate,renderResgHist,resgDataMin,
+  astVencData,astTemVenc,astVencido,astVencidoYM,astVenceNoYM,astParteRendeMes,
+  astResgates,astResgAssin,astResgatadoTotal,astPrazoIR,astLiquidacao,astResgateEm,
+  astEvoluirEventos,limparCachesAplic,vencDoMes,renderVencAviso,
+  openVencimentos,astVencEfetivo,
   exportProj,refreshRates:()=>fetchMarket(false),
   refreshHistorico:()=>fetchHistorico(false),
   getHist:()=>HIST,
