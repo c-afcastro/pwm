@@ -201,8 +201,15 @@
     }
     input[type="date"]::-webkit-calendar-picker-indicator { opacity: .4; }
     input[type="number"]::-webkit-inner-spin-button { opacity: .2; }
-    ::-webkit-scrollbar { width: 2px; }
-    ::-webkit-scrollbar-thumb { background: var(--line); }
+    /* Nenhuma barra de rolagem em lugar nenhum. O conteúdo cortado na
+       borda já anuncia que há mais, e num aparelho de toque a barra não
+       é alça de nada: não se arrasta, não se clica, só ocupa faixa. */
+    ::-webkit-scrollbar { width: 0; height: 0; display: none; }
+    ::-webkit-scrollbar-track, ::-webkit-scrollbar-thumb { background: transparent; }
+    html, body, .screen, .content, .sheet, .overlay, .nav,
+    [style*="overflow"], [class*="scroll"] {
+      scrollbar-width: none; -ms-overflow-style: none;
+    }
 
     @keyframes up { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
     .up { animation: up .28s ease forwards; }
@@ -329,9 +336,8 @@
     /* trilha de etapas */
     .man-trilha{
       display:flex; gap:6px; overflow-x:auto; padding:0 0 10px;
-      -webkit-overflow-scrolling:touch; scrollbar-width:none;
+      -webkit-overflow-scrolling:touch;
     }
-    .man-trilha::-webkit-scrollbar{ display:none; }
     .man-et{
       flex:0 0 auto; display:flex; align-items:center; gap:6px;
       border:1px solid var(--line); background:var(--surface);
@@ -547,6 +553,28 @@
       color: rgba(255,255,255,.75);
       display: flex; gap: 5px; align-items: center;
     }
+
+    /* ── FAIXAS QUE ROLAM NA HORIZONTAL ──
+       touch-action:pan-x fixa o eixo: dentro delas o navegador só
+       interpreta arrasto horizontal. Sem isso ele decide o eixo pelo
+       ângulo inicial do gesto, e um deslize dois graus torto sobre as
+       abas rola a página inteira — o titular perde o lugar da leitura
+       sem ter pedido nada. */
+    .nav, .man-trilha, .cfp-scroll, .pro-scale,
+    #preview-tab-bar, .rola-x {
+      touch-action: pan-x;
+      overscroll-behavior-x: contain;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .nav::-webkit-scrollbar, .man-trilha::-webkit-scrollbar,
+    .cfp-scroll::-webkit-scrollbar, .pro-scale::-webkit-scrollbar,
+    #preview-tab-bar::-webkit-scrollbar, .rola-x::-webkit-scrollbar {
+      height: 0; width: 0; display: none;
+    }
+    /* Tabelas largas rolam na horizontal, mas são conteúdo, não menu:
+       ali o gesto vertical tem de continuar rolando a página, senão a
+       tabela vira uma armadilha no meio da tela. */
 
     /* ── NAV ── */
     .nav {
@@ -1855,6 +1883,53 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
   if(T.complete&&T.naturalWidth>0) solta();
   else{ T.addEventListener("load",solta); T.addEventListener("error",solta); }
   setTimeout(solta,1500);   /* rede: nunca deixa a abertura presa */
+})();
+
+/* ── REDE DE SEGURANÇA DA ABERTURA ───────────────────────────────────
+   A vinheta é escondida por uma IIFE que vive no meio do maior bloco de
+   script do app. Se qualquer coisa acima dela naquele bloco falhar, a
+   IIFE não chega a rodar, o setTimeout que esconde a vinheta nunca é
+   agendado, e o app fica preso na abertura — sem mensagem, sem saída.
+
+   Esta rede é deliberadamente burra e mora aqui, num bloco de dez linhas
+   que roda antes de todo o resto: não depende de nenhuma função, de
+   nenhuma constante e de nenhum dado. Passados 6 segundos, se a tela de
+   acesso não tiver assumido, ela tira a vinheta do caminho e diz o que
+   houve, porque uma mensagem legível vale mais que uma tela congelada. */
+(function(){
+  var PRIMEIRO=null;
+  window.addEventListener("error",function(ev){
+    if(!PRIMEIRO) PRIMEIRO=(ev&&ev.message)||"erro desconhecido";
+  },true);
+  window.OTTO_BOOT_ERRO=function(){ return PRIMEIRO; };
+  setTimeout(function(){
+    var sp=document.getElementById("splash");
+    if(!sp||sp.style.display==="none") return;
+    var vivo=document.querySelector("#screen-auth,#screen-home");
+    var pronto=vivo&&getComputedStyle(vivo).display!=="none";
+    if(pronto) return;
+    sp.style.display="none";
+    /* tenta o caminho normal uma última vez; se ele é justamente o que
+       falhou, cai no aviso abaixo */
+    try{ if(typeof authShowScreen==="function"){ authShowScreen(); return; } }catch(e){
+      if(!PRIMEIRO) PRIMEIRO=e&&e.message;
+    }
+    var d=document.createElement("div");
+    d.setAttribute("style","position:fixed;inset:0;z-index:9999;display:flex;"
+      +"flex-direction:column;align-items:center;justify-content:center;gap:14px;"
+      +"padding:32px;text-align:center;background:#EFEEE9;color:#2E2C28;"
+      +"font-family:-apple-system,system-ui,sans-serif");
+    d.innerHTML='<div style="font-size:17px;font-weight:600">O app não conseguiu abrir</div>'
+      +'<div style="font-size:13px;line-height:1.6;max-width:300px;color:#6B675F">'
+      +'Seus dados continuam salvos neste aparelho. Recarregue a página; '
+      +'se persistir, envie a mensagem abaixo.</div>'
+      +'<div style="font-size:11px;font-family:ui-monospace,monospace;color:#8A857C;'
+      +'word-break:break-word;max-width:320px">'+String(PRIMEIRO||"sem detalhe")+'</div>'
+      +'<button onclick="location.reload()" style="margin-top:6px;border:none;'
+      +'border-radius:12px;padding:12px 22px;background:#1A3A5C;color:#fff;'
+      +'font-size:14px;font-weight:600">Recarregar</button>';
+    document.body.appendChild(d);
+  },6000);
 })();
 </script>
 
@@ -3719,6 +3794,7 @@ const I18N={
     asset_class:"Classe do ativo",
     name_institution:"Nome / Instituição",
     ast_name_ph:"Ex: CDB Banco X, HGLG11, Tesouro IPCA…",
+    inst_ph:"Ex: Itaú, Nubank, XP…",
     balance_position:"Saldo / Posição atual",
     monthly_yield_label:"Rendimento ao mês (% opcional)",
     pct_month:"% ao mês",
@@ -4628,6 +4704,7 @@ const I18N={
     asset_class:"Asset class",
     name_institution:"Name / Institution",
     ast_name_ph:"E.g.: Treasury bond, ETF, CDB…",
+    inst_ph:"E.g.: Itaú, Nubank, XP…",
     balance_position:"Balance / Current position",
     monthly_yield_label:"Monthly yield (% optional)",
     pct_month:"% per month",
@@ -5537,6 +5614,7 @@ const I18N={
     asset_class:"Anlageklasse",
     name_institution:"Name / Institut",
     ast_name_ph:"Z.B.: Staatsanleihe, ETF, Festgeld…",
+    inst_ph:"Z.B.: Itaú, Nubank, XP…",
     balance_position:"Saldo / Aktuelle Position",
     monthly_yield_label:"Monatsrendite (% optional)",
     pct_month:"% pro Monat",
@@ -13420,14 +13498,12 @@ document.getElementById("modal-rules").addEventListener("click",e=>{
     splash.classList.add("hide");
     setTimeout(()=>{
       splash.style.display="none";
-      montarIdiomas();
-      authShowScreen();
-      if(AUTH_DATA){
-        // login required: do not render the app yet (waits for authLoginSubmit)
-      } else {
-        // first run: no credentials yet — setup screen shown; app renders after creation
-      }
-      applyTranslations();
+      /* Cada passo isolado: montar as bandeiras é enfeite, mostrar a tela
+         de acesso é o app. Um não pode derrubar o outro — era o que
+         acontecia, e a conta caía na tela de abertura. */
+      try{ montarIdiomas(); }catch(e){ console.error("montarIdiomas:",e); }
+      try{ authShowScreen(); }catch(e){ console.error("authShowScreen:",e); }
+      try{ applyTranslations(); }catch(e){ console.error("applyTranslations:",e); }
     },500);
   },Math.max(700,Math.min(4000,(window.OTTO_VIN_ATE||0)-Date.now())));
   /* o tempo sai da própria vinheta: 1,83 s de tira mais um respiro para o
@@ -15534,7 +15610,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.64";
+const APP_VERSION="10.66";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -18838,31 +18914,65 @@ function astProdutoId(a){
   if(p.prod&&PRODUTOS.some(x=>x.id===p.prod)) return p.prod;
   let pro; try{ pro=astPro(a); }catch(e){ pro=p; }
   const cls=a.class, idx=astIdxNorm(pro.idx), trib=pro.trib, liq=pro.liq;
-  /* Classe e indexador são obrigatórios: sem os dois não há produto, só
-     um palpite. Tributação e liquidez desempatam entre CDB e LCI, entre
-     Tesouro Selic e Tesouro IPCA+. */
-  const cand=PRODUTOS.filter(x=>x.cls===cls&&astIdxNorm(x.idx)===idx);
+  /* Só a classe é obrigatória. O indexador PONTUA, não exige: exigi-lo
+     deixava um CDB prefixado sem produto nenhum, porque o CDB de
+     referência está cadastrado como % do CDI. A tributação pesa mais que
+     tudo — é ela que separa CDB de LCI, e nenhum ajuste de remuneração
+     transforma um papel tributado num isento. */
+  const cand=PRODUTOS.filter(x=>x.cls===cls);
   if(!cand.length) return "";
+  /* O nome pesa mais que qualquer combinação de parâmetros: quem escreveu
+     "CDB Santander 2029" já disse qual é o papel, e nenhuma configuração
+     contradiz isso. É o que resgata o CDB prefixado levado ao vencimento,
+     cujos parâmetros são indistinguíveis dos de uma LC ou de um RDB. */
+  const nome=a.name||"";
+  const nota=x=>(x.trib===trib?3:0)+(x.liq===liq?2:0)
+                +(astIdxNorm(x.idx)===idx?2:0)+(prodNoNome(x.id,nome)?4:0);
   let mp=-1;
-  cand.forEach(x=>{ const pts=(x.trib===trib?2:0)+(x.liq===liq?1:0); if(pts>mp) mp=pts; });
-  /* Empatar só na classe e no indexador não basta para dizer "é LCA". */
-  if(mp<2) return "";
-  const topo=cand.filter(x=>((x.trib===trib?2:0)+(x.liq===liq?1:0))===mp);
-  if(topo.length===1) return topo[0].id;
-  /* LCI e LCA têm a MESMA configuração — classe, indexador, isenção e
-     liquidez no vencimento. Nenhum parâmetro as separa, e escolher a
-     primeira da lista rotularia metade das LCAs como LCI. O desempate
-     usa a única evidência que resta e é do próprio titular: o nome que
-     ele deu à aplicação. Sem pista no nome, nada é deduzido — aparecer
-     sob a classe é melhor do que aparecer sob o rótulo errado. */
-  const nome=String(a.name||"").toLowerCase();
-  const porNome=topo.filter(x=>nome.indexOf(x.lbl.toLowerCase().split(" ")[0].split("/")[0])>=0);
-  return porNome.length===1?porNome[0].id:"";
+  cand.forEach(x=>{ const n=nota(x); if(n>mp) mp=n; });
+  /* Piso: tributação mais liquidez, ou o nome sozinho com a tributação.
+     Abaixo disso é palpite, e um rótulo errado é pior que rótulo nenhum. */
+  if(mp<5) return "";
+  const topo=cand.filter(x=>nota(x)===mp);
+  /* Empate remanescente — LCI e LCA sem pista no nome têm exatamente a
+     mesma configuração. Aparecer sob a classe é melhor que sob o rótulo
+     errado. */
+  return topo.length===1?topo[0].id:"";
 }
 function astProdutoLbl(a){
   const id=astProdutoId(a);
   const pr=PRODUTOS.find(x=>x.id===id);
   return pr?pr.lbl:"";
+}
+/* Rótulo cheio: instrumento e remuneração, para quem precisa dos dois —
+   "CDB · prefixado", "CDB · % do CDI". */
+function astProdutoDesc(a){
+  const l=astProdutoLbl(a);
+  if(!l) return "";
+  let idx=""; try{ idx=idxLabel(astPro(a).idx); }catch(e){}
+  return idx?l+" \u00b7 "+idx:l;
+}
+/* Palavras que identificam o instrumento no nome dado pelo titular.
+   Casadas por palavra inteira: "LC" é prefixo de "LCA" e de "LCI", e sem
+   fronteira uma LCA pontuaria como LC. */
+const PROD_CHAVES={
+  cdb:["cdb"], lci:["lci"], lca:["lca"], lc:["lc"], rdb:["rdb"],
+  cri:["cri","cra"], deb:["debenture","debênture","deb"],
+  tselic:["selic"], tipca:["ipca"], tpre:["prefixado","pre"],
+  poup:["poupanca","poupança"], fdi:["fundo di","di"],
+  fmm:["multimercado","multim"], fii:["fii"], acao:["acao","ação","acoes","ações"],
+  fgts:["fgts"]
+};
+function prodNoNome(id,nome){
+  const ch=PROD_CHAVES[id]; if(!ch||!nome) return false;
+  /* Classe explícita em vez de \p{L}: escapes de propriedade Unicode são
+     avaliados na LEITURA do arquivo, então um motor que não os suporte
+     derruba o bloco de script inteiro, não apenas esta função. A faixa
+     abaixo cobre as letras acentuadas do português e do alemão, que é
+     tudo o que um nome de aplicação precisa. */
+  const n=" "+String(nome).toLowerCase()
+    .replace(/[^a-z0-9\u00C0-\u024F]+/g," ")+" ";
+  return ch.some(k=>n.indexOf(" "+k+" ")>=0);
 }
 function aplicarProduto(id){
   const pr=PRODUTOS.find(x=>x.id===id); if(!pr) return;
@@ -19060,7 +19170,8 @@ function ensureStyles(){
   .pro-cf.grand span{font-weight:700}
   .pro-cfh{font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:12px 0 4px}
   .pro-cfh:first-child{margin-top:0}
-  .pro-scale{display:flex;gap:3px;background:rgba(0,0,0,.05);border-radius:20px;padding:3px}
+  .pro-scale{display:flex;gap:3px;background:rgba(0,0,0,.05);border-radius:20px;padding:3px;
+    -webkit-overflow-scrolling:touch}
   .pro-scale button{border:none;background:none;border-radius:16px;padding:0 10px;height:26px;font-size:10.5px;
     font-weight:600;color:var(--ink-3);cursor:pointer;letter-spacing:.3px;white-space:nowrap}
   .pro-scale button.on{background:var(--paper);color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.08)}
@@ -19588,9 +19699,19 @@ function astRecalc(){
   astPreview();
 }
 function toggleAstPick(){AST_OPT_OPEN=!AST_OPT_OPEN;renderAstPro();}
-function setAstIdx(v){AST_PROD="";AST_IDX=v;const I=INDEXADORES.find(x=>x.id===v);if(I&&$("ast-idxval"))$("ast-idxval").value=I.def;renderAstPro();}
-function setAstTrib(v){AST_PROD="";AST_TRIB=v;AST_CC=v.indexOf("fundo")===0;renderAstPro();}
-function setAstLiq(v){AST_PROD="";AST_LIQ=v;renderAstPro();}
+/* Trocar o indexador NÃO desfaz o produto: um CDB prefixado continua
+   sendo um CDB. A escolha rápida pré-preenche os três campos; a partir
+   daí eles são independentes, porque instrumento e remuneração são
+   perguntas diferentes. A tributação é o único ajuste que descaracteriza
+   o instrumento — um papel isento não é um CDB — e por isso é o único que
+   solta o rótulo. */
+function setAstIdx(v){AST_IDX=v;const I=INDEXADORES.find(x=>x.id===v);if(I&&$("ast-idxval"))$("ast-idxval").value=I.def;renderAstPro();}
+function setAstTrib(v){
+  const pr=PRODUTOS.find(x=>x.id===AST_PROD);
+  if(pr&&pr.trib!==v) AST_PROD="";
+  AST_TRIB=v;AST_CC=v.indexOf("fundo")===0;renderAstPro();
+}
+function setAstLiq(v){AST_LIQ=v;renderAstPro();}
 function toggleCC(){AST_CC=!AST_CC;renderAstPro();}
 /* a classe do ativo define indexador, tributação, liquidez e taxas visíveis */
 function applyAstClassDefaults(cls){
@@ -19608,8 +19729,13 @@ function renderAstPro(){
   const isFundo=AST_TRIB.indexOf("fundo")===0;
   const c=gAssetClass(AST_CLASS_CUR());
   const liqTxt=(LIQUIDEZ.find(x=>x.id===AST_LIQ)||{}).lbl||"";
+  const prAtual=PRODUTOS.find(x=>x.id===AST_PROD);
+  /* O instrumento encabeça; a remuneração vem depois. Sem isto o cartão
+     dizia "% do CDI · Renda fixa" tanto para um CDB quanto para uma LCI. */
+  const tt=prAtual?`${prAtual.lbl} · ${idxLabel(AST_IDX)}`
+                  :`${idxLabel(AST_IDX)} · ${tribLabel(AST_TRIB)}`;
   $("ast-sum-card").innerHTML=TR(`<div class="ic" style="background:${c.color}18">${c.emoji}</div>
-    <div style="flex:1;min-width:0"><div class="tt">${idxLabel(AST_IDX)} · ${tribLabel(AST_TRIB)}</div>
+    <div style="flex:1;min-width:0"><div class="tt">${tt}</div>
     <div class="ss">${liqTxt} · ${(TRIBS.find(x=>x.id===AST_TRIB)||{}).hint||""}</div></div>`);
   $("ast-opt-toggle").textContent=TR(AST_OPT_OPEN?"pronto":"ajustar");
   const pc=$("ast-produtos");
@@ -22070,8 +22196,7 @@ function ensureCfStyles(){
   #imp-body td,#imp-body th{padding:5px 3px;white-space:nowrap}
   /* tabelas largas rolam na horizontal em vez de espremer as colunas */
   .cfp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
-  .cfp-scroll::-webkit-scrollbar{height:4px}
-  .cfp-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,.14);border-radius:2px}
+  .cfp-scroll::-webkit-scrollbar{height:0;display:none}
   .cfp-scroll table{table-layout:auto!important;min-width:100%}
   #imp-body .cfp-scroll.larga table{min-width:560px}
   #imp-body .cfp-row{gap:8px}`;
@@ -24319,7 +24444,8 @@ window.PRO={
   liqSetH,liqToggle,astLiqSerie,astComeCotasAte,irPrevidencia,irGanhoCapital,faixaAliq,
   PX,PL,px:PX,proTabsI18n,refreshPro,idxTaxaMes,
   projSetPoup,projPoupPct,projReservaMeses,
-  astProdutoId,astProdutoLbl,
+  astProdutoId,astProdutoLbl,astProdutoDesc,prodNoNome,
+  prodAtual:()=>AST_PROD, ensureAssetPro,
   parHistSetN,parHistAtualizar,histAcumulado
 };
 })();
