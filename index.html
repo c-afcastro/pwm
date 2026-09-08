@@ -3701,6 +3701,7 @@ const I18N={
     paste_empty:"Cole o texto da fatura primeiro.",
     paste_none:"Nenhum lançamento reconhecido no texto.",
     backup_t:"Backup",
+    w_net_lc:"líquidas",
     ast_f_all:"Todas da classe",
     nav_manual:"Manual",
     man_search_ph:"Buscar no manual…",
@@ -4612,6 +4613,7 @@ const I18N={
     paste_empty:"Paste the invoice text first.",
     paste_none:"No transactions recognized in the text.",
     backup_t:"Backup",
+    w_net_lc:"net",
     ast_f_all:"All in class",
     nav_manual:"Manual",
     man_search_ph:"Search the manual…",
@@ -5522,6 +5524,7 @@ const I18N={
     paste_empty:"Füge zuerst den Rechnungstext ein.",
     paste_none:"Keine Buchungen im Text erkannt.",
     backup_t:"Backup",
+    w_net_lc:"netto",
     ast_f_all:"Alle der Klasse",
     nav_manual:"Handbuch",
     man_search_ph:"Im Handbuch suchen…",
@@ -10648,10 +10651,16 @@ function renderHome(){
 
   document.getElementById("home-income-val").textContent=fmt(totalInc);
   document.getElementById("home-income-sub").textContent=incItems.length+" "+t("w_entries");
-  document.getElementById("home-income-x-label").textContent=t("w_balance_lc");
+  /* O cartão mostra bruto em cima e LÍQUIDO embaixo — os dois números que
+     o painel também mostra, com os mesmos nomes. O "saldo" que ficava aqui
+     era bruto menos despesas: ignorava imposto e dívida, e por isso não
+     batia com nada — nem com o fluxo de caixa do cartão ao lado, nem com
+     o demonstrativo. Era um quarto número chamando-se de resultado. */
+  const liquidas=(POS&&isFinite(POS.entLiquidas))?POS.entLiquidas:balance;
+  document.getElementById("home-income-x-label").textContent=t("w_net_lc");
   const incXEl=document.getElementById("home-income-x-val");
-  incXEl.textContent=SGP(balance>=0?"+":"−")+fmt(Math.abs(balance)).replace(/^-/,"");
-  incXEl.style.color=balance>=0?"#9BE8C0":"#FF9B8A";
+  incXEl.textContent=fmt(liquidas);
+  incXEl.style.color=liquidas>=0?"#9BE8C0":"#FF9B8A";
 
   document.getElementById("home-asset-val").textContent=fmt(totalAssets);
   document.getElementById("home-asset-sub").textContent=ASSETS.length+" "+t("w_holdings")
@@ -15627,7 +15636,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.68";
+const APP_VERSION="10.69";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -17300,15 +17309,40 @@ function cashflowForYM(ymStr){
   const entLiq=R2(inc.liquido), saidas=R2(despesas+dv.parcela);
   const caixaOper=R2(entLiq-saidas);
   /* INSS e contribuicoes sao DEDUCOES da base; imposto e apenas o IR. */
-  return {ym:ymStr,tipos,eventos:inc.eventos||[],
+  const base={ym:ymStr,tipos,eventos:inc.eventos||[],
     bruto:R2(inc.bruto),inss:R2(inc.inss),irrf:R2(inc.ir),
     outrasDed:R2(inc.deducoes||0),
     deducoes:R2(inc.inss+(inc.deducoes||0)),impostos:R2(inc.ir),
     entLiquidas:entLiq,fgts:R2(inc.fgts||0),
     despesas,despItens:exps.length,divida:dv,aplic:ap,
+    despReais:despesas,despEstimadas:0,temEstimativa:false,
     saidas,caixaOper,caixaTotal:R2(caixaOper+ap.liquido),
     aliq:inc.bruto>0?R2(inc.ir/inc.bruto*100):0,
     cargaTotal:inc.bruto>0?R2(inc.imposto/inc.bruto*100):0};
+
+  /* ── O FLUXO VEM DO MOTOR, SEMPRE ────────────────────────────────────
+     O cálculo acima ignora a projeção: em meses futuros ele enxerga só o
+     que está lançado, porque lê getExpensesForYM direto. Enquanto ele
+     alimentou o cartão de saúde e o "guardar por mês", a tela inicial e o
+     painel mostraram fluxos diferentes para o mesmo mês — a home sempre
+     mais otimista, por não ver as despesas estimadas.
+
+     O que sobrevive daqui são os eventos de renda e as alíquotas
+     efetivas, que o motor não expõe. Todo o resto passa a ser dele. */
+  let M=null;
+  try{ M=cfPosicaoYM(ymStr); }catch(e){ M=null; }
+  if(!M||!isFinite(M.caixaOper)) return base;
+  return Object.assign(base,{
+    bruto:M.bruto, deducoes:M.deducoes, impostos:M.impostos,
+    entLiquidas:M.entLiquidas, fgts:M.fgts,
+    despesas:M.despesas, despItens:M.despItens,
+    despReais:M.despReais, despEstimadas:M.despEstimadas,
+    temEstimativa:!!M.temEstimativa,
+    divida:M.divida, aplic:M.aplic,
+    saidas:M.saidas, caixaOper:M.caixaOper, caixaTotal:M.caixaTotal,
+    patrimonio:M.patrimonio, dividaSaldo:M.dividaSaldo, pl:M.pl, proj:M.proj,
+    aliq:M.bruto>0?R2(M.impostos/M.bruto*100):0,
+    cargaTotal:M.bruto>0?R2((M.impostos+M.deducoes)/M.bruto*100):0});
 }
 /* Quanto guardar por mês: sobra livre de caixa, priorizando a reserva */
 function sugestaoPoupanca(cf){
@@ -24505,6 +24539,7 @@ window.PRO={
   liqSetH,liqToggle,astLiqSerie,astComeCotasAte,irPrevidencia,irGanhoCapital,faixaAliq,
   PX,PL,px:PX,proTabsI18n,refreshPro,idxTaxaMes,
   projSetPoup,projPoupPct,projReservaMeses,
+  cashflowForYM,sugestaoPoupanca,computeFinMetrics:()=>computeFinMetrics(),
   seloDesp,PROJ,mediaVariaveis,setProjFlag:(k,v)=>{PROJ[k]=v;saveProj();cfLimparCache();},
   astProdutoId,astProdutoLbl,astProdutoDesc,prodNoNome,
   prodAtual:()=>AST_PROD, ensureAssetPro,
