@@ -2234,7 +2234,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <div id="view-list" style="display:none">
       <!-- Search bar -->
       <div style="position:relative;margin-top:12px;margin-bottom:6px">
-        <input id="list-search" type="text" placeholder="🔍 Pesquisar por nome…"
+        <input id="list-search" class="campo-sm" type="text" placeholder="🔍 Pesquisar por nome…"
           data-i18n="search_expense"
           oninput="renderList()"
           style="width:100%;background:var(--surface);border:1px solid var(--line);color:var(--body);border-radius:8px;padding:5px 30px 5px 10px;font-size:11px;box-sizing:border-box"
@@ -2309,7 +2309,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       </div>
       <!-- busca por nome: responde "quanto gastei com X neste período" -->
       <div style="position:relative;margin-top:10px">
-        <input id="hist-search" type="text" class="chart-search"
+        <input id="hist-search" type="text" class="chart-search campo-sm"
           data-i18n="hs_ph" placeholder="🔍 Quanto gastei com…"
           oninput="renderHistSearch()" autocomplete="off" autocorrect="off" spellcheck="false"/>
         <button id="hist-search-clear" onclick="document.getElementById('hist-search').value='';renderHistSearch()"
@@ -2445,7 +2445,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <!-- LANÇAMENTOS TAB -->
     <div id="inc-view-list" style="display:none">
       <div style="position:relative;margin-bottom:6px">
-        <input id="inc-list-search" type="text" placeholder="🔍 Pesquisar receita…" data-i18n="search_income"
+        <input id="inc-list-search" class="campo-sm" type="text" placeholder="🔍 Pesquisar receita…" data-i18n="search_income"
           oninput="renderIncomeList()"
           style="width:100%;background:rgba(26,58,92,.08);border:1px solid rgba(26,58,92,.2);color:var(--body);border-radius:10px;padding:7px 32px 7px 12px;box-sizing:border-box"/>
         <button onclick="document.getElementById('inc-list-search').value='';renderIncomeList()"
@@ -2568,7 +2568,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <!-- APLICAÇÕES TAB -->
     <div id="ast-view-list" style="display:none">
       <div style="position:relative;margin-bottom:6px">
-        <input id="ast-list-search" type="text" placeholder="🔍 Pesquisar aplicação…" data-i18n="search_asset"
+        <input id="ast-list-search" class="campo-sm" type="text" placeholder="🔍 Pesquisar aplicação…" data-i18n="search_asset"
           oninput="renderAssetList()"
           style="width:100%;background:rgba(15,36,64,.08);border:1px solid rgba(15,36,64,.2);color:var(--body);border-radius:10px;padding:7px 32px 7px 12px;box-sizing:border-box"/>
         <button onclick="document.getElementById('ast-list-search').value='';renderAssetList()"
@@ -2691,7 +2691,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <!-- DÍVIDAS TAB (list) -->
     <div id="debt-view-list" style="display:none">
       <div style="position:relative;margin-bottom:6px">
-        <input id="debt-list-search" type="text" placeholder="🔍 Pesquisar dívida…" data-i18n="search_debt"
+        <input id="debt-list-search" class="campo-sm" type="text" placeholder="🔍 Pesquisar dívida…" data-i18n="search_debt"
           oninput="renderDebtList()"
           style="width:100%;background:rgba(110,43,58,.08);border:1px solid rgba(110,43,58,.2);color:var(--body);border-radius:10px;padding:7px 32px 7px 12px;box-sizing:border-box"/>
         <button onclick="document.getElementById('debt-list-search').value='';renderDebtList()"
@@ -2949,12 +2949,12 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <div class="exp-block-title" data-i18n="exp_excel_title">Exportar Excel (.xlsx)</div>
       <div class="exp-block-desc" data-i18n="exp_excel_desc">Gera um único arquivo .xlsx com uma aba por mês + aba de resumo. Funciona 100% offline, sem internet. Abre no Excel, Numbers e Google Sheets.</div>
       <div class="exp-filters">
-        <select class="exp-sel" id="exp-from-month"><option value="" data-i18n="exp_from">De: início</option></select>
-        <select class="exp-sel" id="exp-to-month"><option value="" data-i18n="exp_to">Até: hoje</option></select>
+        <select class="exp-sel campo-sm" id="exp-from-month"><option value="" data-i18n="exp_from">De: início</option></select>
+        <select class="exp-sel campo-sm" id="exp-to-month"><option value="" data-i18n="exp_to">Até: hoje</option></select>
       </div>
       <div class="exp-filters">
-        <select class="exp-sel" id="exp-cat"><option value="all" data-i18n="exp_all_cats">Todas categorias</option></select>
-        <select class="exp-sel" id="exp-type">
+        <select class="exp-sel campo-sm" id="exp-cat"><option value="all" data-i18n="exp_all_cats">Todas categorias</option></select>
+        <select class="exp-sel campo-sm" id="exp-type">
           <option value="all" data-i18n="exp_all_types">Todos os tipos</option>
           <option value="fixed" data-i18n="fixed">Fixos</option>
           <option value="variable" data-i18n="variable">Variáveis</option>
@@ -3473,7 +3473,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       </button>
     </div>
     <div style="position:relative;margin-bottom:10px">
-      <input id="rules-search" type="text" placeholder="🔍 Buscar regra…" data-i18n="search_rule"
+      <input id="rules-search" class="campo-sm" type="text" placeholder="🔍 Buscar regra…" data-i18n="search_rule"
         oninput="renderRulesList()"
         style="width:100%;background:var(--surface);border:1px solid var(--line);color:var(--body);border-radius:10px;padding:7px 32px 7px 12px;font-size:12px;box-sizing:border-box"/>
       <button onclick="document.getElementById('rules-search').value='';renderRulesList()"
@@ -7864,7 +7864,7 @@ function renderGoals(){
     return `<div class="goal-row" style="${!hasCost?'opacity:.5':''}">
       <div class="goal-head">
         <div class="goal-name">${c.emoji} ${catLabel(c)}</div>
-        <input class="goal-input" type="number" min="0" step="10" placeholder="${t('goal')} R$"
+        <input class="goal-input campo-sm" type="number" min="0" step="10" placeholder="${t('goal')} R$"
           value="${g||''}" id="goal-${c.id}" onchange="saveGoal('${c.id}')"/>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:${(g>0||sp>0)?'6px':'0'}">
@@ -8602,7 +8602,12 @@ function addPersonToSplit(personId){
   // if split mode is none, activate pct by default
   if(SSPLIT==="none") selSplit("pct");
   const val=p.defaultPct?String(p.defaultPct):"";
-  splitRows.push({name:p.name,val});
+  /* Ativar o modo já cria uma linha em branco para preencher à mão. Se ela
+     ainda está vazia, é ELA que a pessoa escolhida deve ocupar — empurrar
+     uma segunda linha deixava a primeira em branco para o titular apagar. */
+  const vazia=splitRows.findIndex(r=>!String(r.name||"").trim()&&!String(r.val||"").trim());
+  if(vazia>=0) splitRows[vazia]={name:p.name,val};
+  else splitRows.push({name:p.name,val});
   renderSplitRows();
   // close people modal if open
   document.getElementById("modal-people").classList.remove("open");
@@ -15636,7 +15641,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.69";
+const APP_VERSION="10.70";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -23165,6 +23170,18 @@ function parMarcarAno(el){ el.dataset.dirty="1"; }
 
 function parSelIdx(id){ parLerCurva(); PAR_IDX_SEL=id; renderParams(); }
 function parSetVista(v){ parLerCurva(); PAR_VISTA=v; renderParams(); }
+/* A faixa de abas é reescrita inteira a cada desenho, e o navegador zera a
+   rolagem horizontal junto. Com seis abas numa tela estreita, a última fica
+   fora de vista: dá para tocá-la de raspão, mas depois não dá para ver que
+   ela é a ativa. Rolar até ela devolve a referência. */
+function parAbaAVista(){
+  const fx=document.querySelector("#modal-params .pro-scale");
+  if(!fx) return;
+  const at=fx.querySelector("button.on")||fx.querySelector(".pro-tab.on")||fx.querySelector("[class*=\"on\"]");
+  if(!at||fx.scrollWidth<=fx.clientWidth+2) return;
+  const alvo=at.offsetLeft-(fx.clientWidth-at.offsetWidth)/2;
+  fx.scrollLeft=Math.max(0,Math.min(fx.scrollWidth-fx.clientWidth,alvo));
+}
 function parSetAba(v){
   /* A aba Historico nao tem um unico campo editavel: tentar ler curva ou
      tabela fiscal a partir dela varreria um DOM que nao existe. */
@@ -23577,7 +23594,7 @@ function renderParams(){
         <div class="pro-note" style="margin:8px 0 0">${PL("p_poup_note")}</div>`
       +`<div class="pro-grid" style="margin-top:12px">
           <div class="pro-f"><label>${PL("p_proj_hz")}</label>
-            <select onchange="PRO.projSetMeses(this.value)">
+            <select class="campo-sm" onchange="PRO.projSetMeses(this.value)">
               ${hzOpt(12,PX("p_hz12"))}${hzOpt(24,PX("p_hz24"))}${hzOpt(60,PX("p_hz60"))}${hzOpt(120,PX("p_hz120"))}
             </select></div>
           <div></div>
@@ -23711,7 +23728,7 @@ function renderParams(){
       ${FISCAL.dec13Adiant!==false?`<div class="pro-grid">
         ${parF("dec13AdiantPct",PX("p_13_pct"),FISCAL.dec13AdiantPct)}
         <div class="pro-f"><label>${PX("p_13_mes")}</label>
-          <select data-fkm="dec13AdiantMes">${[...Array(12)].map((_,i)=>
+          <select class="campo-sm" data-fkm="dec13AdiantMes">${[...Array(12)].map((_,i)=>
             `<option value="${i+1}"${(+FISCAL.dec13AdiantMes||11)===i+1?" selected":""}>${MS[i]}</option>`).join("")}</select></div>
       </div>`:""}
       <div class="pro-note">${PX("p_13_hint")}</div>`)}
@@ -23881,7 +23898,7 @@ function renderParams(){
 
       <div class="pro-f" style="margin-bottom:11px">
         <label>${PL("p_th_base")}</label>
-        <select id="th-base" onchange="PRO.temaCustomSet('base',this.value)">
+        <select id="th-base" class="campo-sm" onchange="PRO.temaCustomSet('base',this.value)">
           ${THEMES.map(t=>`<option value="${t.id}"${CUSTOM.base===t.id?" selected":""}>${PX(t.k)}</option>`).join("")}
         </select>
       </div>
@@ -23975,6 +23992,8 @@ function renderParams(){
     ${PAR_ABA==="hist"?"":`<div class="pro-note" style="margin:12px 0 0">${PL("p_live")}</div>
     <button class="pro-btn-lg" onclick="PRO.parSalvar()" style="width:100%;background:var(--accent);color:var(--accent-ink);
       border:none;font-weight:600;cursor:pointer;margin:10px 0 6px">${PL("p_save")}</button>`}`;
+  /* depois do innerHTML, senão a rolagem seria ajustada na faixa antiga */
+  try{ parAbaAVista(); }catch(e){}
 }
 
 /* ═══ 11.11 HISTÓRICO DE POSIÇÕES ════════════════════════════════════
@@ -24543,7 +24562,7 @@ window.PRO={
   seloDesp,PROJ,mediaVariaveis,setProjFlag:(k,v)=>{PROJ[k]=v;saveProj();cfLimparCache();},
   astProdutoId,astProdutoLbl,astProdutoDesc,prodNoNome,
   prodAtual:()=>AST_PROD, ensureAssetPro,
-  parHistSetN,parHistAtualizar,histAcumulado
+  parHistSetN,parHistAtualizar,histAcumulado,parAbaAVista
 };
 })();
 
@@ -24560,7 +24579,7 @@ window.PRO={
 :is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-vidafinanceira,
     #modal-income,#modal-asset,#modal-debt,#modal-debt-payment,#modal-debt-detail,
     #modal-cashflow,#modal-amort-table,#modal-debt-archive)
-  input:not([type=checkbox]):not([type=color]):not([type=file]):not([type=date]):not([type=month]):not(.f-amount):not(.auth-input){
+  input:not([type=checkbox]):not([type=color]):not([type=file]):not([type=date]):not([type=month]):not(.f-amount):not(.auth-input):not(.campo-sm){
   font-size:16px!important;
   line-height:1.2!important;
   padding:10px 12px!important;
@@ -24569,7 +24588,7 @@ window.PRO={
   box-sizing:border-box!important;
 }
 /* campo de busca precisa de espaço para o × */
-:is(#screen-entradas,#screen-patrimonio,#screen-dividas) input[id$="-list-search"]{
+:is(#screen-entradas,#screen-patrimonio,#screen-dividas) input[id$="-list-search"]:not(.campo-sm){
   padding:10px 34px 10px 12px!important;
 }
 /* valor em destaque (serifa) */
@@ -24581,7 +24600,7 @@ window.PRO={
 
 /* ── Dropdowns: uma única altura, seta própria ── */
 :is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-vidafinanceira,
-    #modal-income,#modal-asset,#modal-debt,#modal-cashflow,#modal-amort-table) select{
+    #modal-income,#modal-asset,#modal-debt,#modal-cashflow,#modal-amort-table) select:not(.campo-sm){
   font-size:14px!important;
   line-height:1.2!important;
   height:38px!important;
@@ -25245,6 +25264,48 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
     animation-duration:.01ms!important; animation-iteration-count:1!important;
     transition-duration:.01ms!important; scroll-behavior:auto!important;
   }
+}
+
+/* ══ ESCALA COMPACTA ═══════════════════════════════════════════════════
+   Campos de apoio — buscar, filtrar, declarar uma meta, escolher um mês —
+   não são campos de entrada de dado: são controles. Ocupavam a mesma
+   altura e o mesmo corpo de fonte do campo de valor de um lançamento,
+   porque `input,select,textarea{font-size:16px!important}` lá no topo da
+   folha atropela qualquer tamanho declarado depois.
+
+   Estes seletores carregam um id, para vencer as regras de `ui-std`, que
+   também são !important e também têm id. Sem isso a escala compacta
+   perderia justamente nas três telas onde ela mais faz falta.
+
+   Sobre os 16px: eles existem contra o zoom-ao-focar do Safari no iPhone.
+   Este app declara maximum-scale=1.0 no viewport, que já suprime esse
+   zoom, e <select> nunca o dispara — não tem cursor de texto. */
+:is(#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-dividas,
+    #modal-params,#modal-export,#modal-rules) .campo-sm{
+  font-size:13px!important;
+  line-height:1.2!important;
+  height:34px!important;
+  min-height:34px!important;
+  padding:0 11px!important;
+  border-radius:10px!important;
+  box-sizing:border-box!important;
+}
+/* campo de busca: espaço à direita para o × */
+:is(#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-dividas,
+    #modal-rules) input.campo-sm[id$="search"]{
+  padding:0 30px 0 11px!important;
+}
+/* seletor compacto mantém a seta própria, só menor */
+:is(#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-dividas,
+    #modal-params,#modal-export) select.campo-sm{
+  padding:0 24px 0 11px!important;
+  background-position:right 8px center!important;
+  background-size:9px 6px!important;
+}
+/* o × acompanha a altura menor */
+:is(#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-dividas,
+    #modal-rules) input.campo-sm[id$="search"] ~ button{
+  font-size:14px!important;
 }
 
 </style>
