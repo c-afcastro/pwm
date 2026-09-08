@@ -1156,9 +1156,13 @@
     /* ── OTTO ────────────────────────────────────────────────────────
        Duas peças distintas. A VINHETA é a tira de 22 quadros em que Otto
        aproxima e pisca, 1,83 s a 12 quadros por segundo. O LOGO é a foto
-       parada que fica depois, na tela de acesso. O logo também é o fundo
-       do círculo da vinheta: enquanto a tira carrega, o que se vê já é o
-       Otto, e não um buraco preto. */
+       parada da tela de acesso.
+
+       O logo também é o fundo do círculo da vinheta, mas SÓ como rede:
+       enquanto a tira carrega, o que se vê já é o Otto e não um buraco
+       preto. Ele nunca deve aparecer com a tira no ar — as duas imagens
+       têm enquadramentos diferentes, e trocar uma pela outra no fim da
+       piscadela é o que fazia um segundo Otto saltar na tela. */
     .otto-face {
       position: relative;
       border-radius: 50%;
@@ -1205,28 +1209,41 @@
     /* O recorte da tira sai por MASCARA, e nao por overflow. Recorte por
        overflow num filho que esta se movendo e o que produzia a escadinha
        na beirada; a mascara radial e suavizada pelo proprio compositor. */
+    /* `closest-side` NAO e enfeite. Num gradiente radial as paradas sao
+       porcentagens do raio do GRADIENTE; sem palavra-chave, `circle` usa
+       farthest-corner, que num quadrado de 132px mede 93,3px ate o canto.
+       O antigo `50%` valia 46,7px em vez de 66px: a tira ficava num disco
+       de 71% do diametro e o anel restante revelava a foto parada do
+       fundo, com outro enquadramento. Com closest-side o raio e metade do
+       lado, e a tira cobre o circulo inteiro. */
     #splash-vinheta {
       position: absolute; inset: 0;
       overflow: hidden;
       z-index: 2;
-      -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 calc(50% - 0.6px), rgba(0,0,0,0) 50%);
-              mask-image: radial-gradient(circle at 50% 50%, #000 calc(50% - 0.6px), rgba(0,0,0,0) 50%);
+      -webkit-mask-image: radial-gradient(circle closest-side, #000 calc(100% - 0.6px), rgba(0,0,0,0) 100%);
+              mask-image: radial-gradient(circle closest-side, #000 calc(100% - 0.6px), rgba(0,0,0,0) 100%);
     }
     /* A tira e medida em PORCENTAGEM do circulo, nao em pixels cravados. Com
        numero fixo, qualquer mudanca no diametro desalinhava os quadros e a
-       piscadela saia cortada. 22 quadros = 2200% de largura, e o passo final
-       e -100% da propria tira: steps(22) exibe os quadros 0 a 21. */
+       piscadela saia cortada. 22 quadros = 2200% de largura.
+
+       O deslocamento final e -21/22, e NAO -100%. Com `steps(n, end)` o
+       progresso 1 devolve n/n: a -100% a tira inteira sai do circulo e o
+       que aparece e o fundo — a foto parada, que tem outro enquadramento.
+       A piscadela terminava e um segundo Otto saltava por cima. Parando em
+       21/22 com 21 degraus, a animacao percorre os quadros 0 a 21 e
+       congela no ultimo: o fim da vinheta e o proprio ultimo quadro. */
     #splash-tira {
       width: 2200%; height: 100%;
       max-width: none; display: block;
       image-rendering: -webkit-optimize-contrast;
-      animation: ottoPisca 1.833s steps(22) forwards;
+      animation: ottoPisca 1.833s steps(21) forwards;
       animation-play-state: paused;   /* o script solta quando a tira carrega */
     }
     #splash-tira.rodando { animation-play-state: running; }
     @keyframes ottoPisca {
       from { transform: translateX(0) }
-      to   { transform: translateX(-100%) }
+      to   { transform: translateX(-95.4545%) }   /* 21 de 22 quadros */
     }
     @media (prefers-reduced-motion: reduce) {
       #splash-vinheta { display: none }
@@ -15610,7 +15627,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.66";
+const APP_VERSION="10.67";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
