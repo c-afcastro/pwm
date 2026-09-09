@@ -6618,6 +6618,9 @@ function authPersist(){ localStorage.setItem(AUTH_KEY, JSON.stringify(AUTH_DATA)
 /* Show the auth screen in setup or login mode depending on whether credentials exist */
 function authShowScreen(){
   showScreen("auth");
+  /* sair leva o Otto junto: o botão flutuante não sobrevive ao logout */
+  try{ AUTH_OK=false; }catch(e){}
+  try{ window.OTTO&&OTTO.sincFab&&OTTO.sincFab(); }catch(e){}
   if(!AUTH_DATA){
     document.getElementById("auth-setup").style.display="block";
     document.getElementById("auth-login").style.display="none";
@@ -10563,6 +10566,10 @@ const OTTO=(function(){
      Some quando não há o que dizer — um botão que abre uma folha vazia
      ensina o titular a não tocar nele. */
   function alvoFab(){
+    /* antes do acesso não há titular a quem falar */
+    try{ if(typeof AUTH_OK!=="undefined"&&!AUTH_OK) return null; }catch(e){}
+    const auth=document.getElementById("screen-auth");
+    if(auth&&auth.classList.contains("active")) return null;
     const tela=(typeof SCREEN!=="undefined")?SCREEN:"home";
     if(tela!=="home"&&VISTA[tela]) return {tipo:"racional",sec:tela};
     if(tela==="home"&&LISTA.length) return {tipo:"painel"};
@@ -15713,7 +15720,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.75";
+const APP_VERSION="10.76";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -16886,6 +16893,8 @@ const PDIC={
   vc_ignored:["Aviso dispensado","Notice dismissed","Hinweis ausgeblendet"],
   vc_ignored_n:["com aviso dispensado","with the notice dismissed","mit ausgeblendetem Hinweis"],
   vc_restore:["Mostrar novamente","Show again","Wieder anzeigen"],
+  vc_restored:["Aviso restaurado","Notice restored","Hinweis wiederhergestellt"],
+  vc_ignored_tag:["aviso dispensado","notice dismissed","Hinweis aus"],
   vc_out:["fora do patrimônio","out of net worth","nicht im Vermögen"],
   vc_no_redeem:["Aplicação vencida: a liquidação já ocorreu no vencimento. Cadastre a nova aplicação.",
     "Matured holding: settlement already happened at maturity. Register the new holding.",
@@ -20873,6 +20882,12 @@ function vcIgnorar(id){
   vcRedesenhar();
   toast("✓ "+PX("vc_ignored"));
 }
+function vcRestaurar(id){
+  const a=(typeof ASSETS!=="undefined"?ASSETS:[]).find(x=>x.id===id); if(!a) return;
+  delete VC_IGN[vcChave(a)]; vcIgnSalvar();
+  vcRedesenhar();
+  toast("✓ "+PX("vc_restored"));
+}
 function vcRestaurarMes(){
   let E; try{ E=vencDoMes(); }catch(e){ return; }
   E.ign.forEach(x=>{ delete VC_IGN[vcChave(x.a,x.venc)]; });
@@ -20967,15 +20982,11 @@ function renderVencAviso(){
   ensureStyles();
   let E; try{ E=vencDoMes(); }catch(e){ el.innerHTML=""; return; }
   const n=E.venc.length+E.over.length;
-  /* Tudo dispensado: some o aviso e fica só o caminho de volta — uma linha
-     apagada, sem retrato e sem tarja. Deixar de avisar não pode virar
-     deixar de existir: o titular precisa poder rever o que dispensou. */
-  if(!n){
-    el.innerHTML=E.ign.length?H`<div class="vc-undo">
-      <span>${raw(vcNome(E.ign.length)+" "+PX("vc_ignored_n"))}</span>
-      <button onclick="PRO.vcRestaurarMes()">${PL("vc_restore")}</button></div>`:"";
-    return;
-  }
+  /* Nada pendente: a caixa fica vazia e o conteúdo sobe. Sem linha
+     residual — ela seria o mesmo aviso em voz baixa, ocupando o espaço
+     que o titular acabou de pedir de volta. Quem quiser rever o que
+     dispensou toca na etiqueta da própria aplicação, na lista. */
+  if(!n){ el.innerHTML=""; return; }
   const bruto=R2(E.tot.bruto+E.totOver.bruto);
   el.innerHTML=H`<div class="vc-strip" onclick="PRO.openVencimentos()">
     <span class="otto-anel"><span class="oi oi-sm oi-round oi-ring oi-investiga" aria-hidden="true"></span></span>
@@ -21861,14 +21872,17 @@ window.renderAssetList=function(){
     const vcTag=(()=>{
       const v=astVencData(a,p); if(!v) return "";
       const M=(typeof activeYMAst==="function")?activeYMAst():ymNow();
+      const disp=vcIgnorado(a,v);
+      const volta=disp?` onclick="event.stopPropagation();PRO.vcRestaurar(${a.id})" title="${PX("vc_restore")}"`:"";
+      const sufixo=disp?" · "+PX("vc_ignored_tag"):"";
       if(astVencEfetivo(a,p)&&String(M)>=v.slice(0,7))
-        return `<span style="font-size:10px;background:rgba(184,90,106,.14);
-        border-radius:7px;padding:2px 7px;color:#B85A6A;font-weight:700">${PX("vc_badge_over")} ${brDate(v)} · ${PX("vc_out")}</span>`;
+        return `<span${volta} style="font-size:10px;background:rgba(184,90,106,.14);
+        border-radius:7px;padding:2px 7px;color:#B85A6A;font-weight:700${disp?";cursor:pointer;opacity:.72":""}">${PX("vc_badge_over")} ${brDate(v)} · ${PX("vc_out")}${sufixo}</span>`;
       /* ainda por vencer: âmbar no mês do vencimento, neutra fora dele */
       const perto=astVenceNoYM(a,M);
-      return `<span style="font-size:10px;background:${perto?"rgba(196,134,58,.16)":"rgba(0,0,0,.05)"};
+      return `<span${volta} style="font-size:10px;background:${perto?"rgba(196,134,58,.16)":"rgba(0,0,0,.05)"};
         border-radius:7px;padding:2px 7px;color:${perto?"#C4863A":"var(--ink-2)"};
-        font-weight:${perto?"700":"600"}">${PX("vc_due")} ${brDate(v)}</span>`;
+        font-weight:${perto?"700":"600"}${disp?";cursor:pointer;opacity:.72":""}">${PX("vc_due")} ${brDate(v)}${sufixo}</span>`;
     })();
     const badges=H`<div style="display:flex;gap:5px;flex-wrap:wrap;margin:2px 0 8px">
       ${raw(vcTag)}
@@ -25265,7 +25279,7 @@ window.PRO={
   astResgates,astResgAssin,astResgatadoTotal,astPrazoIR,astLiquidacao,astResgateEm,
   astEvoluirEventos,limparCachesAplic,vencDoMes,renderVencAviso,
   openVencimentos,astVencEfetivo,vcAbrir,vcResgatar,vcNova,vcFechar,
-  vcIgnorar,vcRestaurarMes,vcIgnorado,vcRedesenhar,
+  vcIgnorar,vcRestaurar,vcRestaurarMes,vcIgnorado,vcRedesenhar,
   exportProj,refreshRates:()=>fetchMarket(false),
   refreshHistorico:()=>fetchHistorico(false),
   getHist:()=>HIST,
