@@ -9778,7 +9778,7 @@ function renderAssetList(){
     const bal=astValAst(a),y=R2c(astTaxaAst(a)),monthRend=bal*y/100;
     const noMesLista=activeYMAst()===cym();
     return `<div style="background:var(--surface);border-radius:14px;padding:12px;margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+      <div onclick="PRO.openAplicacao(${a.virtual?"'"+a.id+"'":a.id})" style="cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
         <div style="display:flex;gap:10px;align-items:center;min-width:0">
           <div style="width:36px;height:36px;border-radius:10px;background:${c.color}18;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">${c.emoji}</div>
           <div style="min-width:0">
@@ -15720,7 +15720,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.76";
+const APP_VERSION="10.77";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -16886,6 +16886,45 @@ const PDIC={
   vc_frozen:["Já liquidada: saiu do patrimônio e não rende mais. Cadastre a nova aplicação com o montante que voltou para a conta.",
     "Already settled: out of net worth and no longer earning. Register the new holding with the amount returned to your account.",
     "Bereits abgerechnet: nicht mehr im Vermögen und ohne Verzinsung. Legen Sie die neue Anlage mit dem zurückgeflossenen Betrag an."],
+  ap_charac:["Características","Details","Merkmale"],
+  ap_horiz:["Horizonte exibido","Horizon shown","Angezeigter Zeitraum"],
+  ap_all:["Tudo","All","Alles"],
+  ap_only_hist:["Só histórico","History only","Nur Historie"],
+  ap_bench:["Rendimento contra o índice","Return against the index","Rendite gegen den Index"],
+  ap_asset:["Aplicação","Holding","Anlage"],
+  ap_of_index:["do índice","of the index","des Index"],
+  ap_of:["do","of","des"],
+  ap_pre:["Prefixado","Fixed rate","Festzins"],
+  ap_manual:["Taxa manual","Manual rate","Manueller Satz"],
+  ap_idx:["Indexador","Index","Indexierung"],
+  ap_trib:["Tributação","Taxation","Besteuerung"],
+  ap_liq:["Liquidez","Liquidity","Liquidität"],
+  ap_prod:["Produto","Product","Produkt"],
+  ap_inst:["Instituição","Institution","Institut"],
+  ap_aplic_em:["Aplicado em","Invested on","Angelegt am"],
+  ap_pos_em:["Posição informada em","Position reported on","Bestand gemeldet am"],
+  ap_venc:["Vencimento","Maturity","Fälligkeit"],
+  ap_adm:["Taxa de administração","Management fee","Verwaltungsgebühr"],
+  ap_perf:["Taxa de performance","Performance fee","Erfolgsgebühr"],
+  ap_aporte:["Aporte mensal","Monthly contribution","Monatliche Einzahlung"],
+  ap_cc:["Come-cotas","Semi-annual tax","Halbjährliche Steuer"],
+  ap_cc_yes:["Maio e novembro","May and November","Mai und November"],
+  ap_none:["Sem vencimento","No maturity","Ohne Fälligkeit"],
+  ap_t_rf:["Renda fixa · tabela regressiva","Fixed income · regressive table","Festverzinslich · degressive Tabelle"],
+  ap_t_isento:["Isento de IR","Income-tax exempt","Steuerfrei"],
+  ap_t_flp:["Fundo de longo prazo","Long-term fund","Langfristfonds"],
+  ap_t_fcp:["Fundo de curto prazo","Short-term fund","Kurzfristfonds"],
+  ap_t_fii:["FII · 20% sobre ganho","REIT · 20% on gains","REIT · 20% auf Gewinne"],
+  ap_t_acoes:["Ações · 15% sobre ganho","Stocks · 15% on gains","Aktien · 15% auf Gewinne"],
+  ap_hist_res:["Histórico de resgates","Redemption history","Auszahlungshistorie"],
+  ap_no_res:["Nenhum resgate registrado nesta aplicação.","No redemption recorded for this holding.","Für diese Anlage wurde keine Auszahlung gebucht."],
+  ap_res_tot:["Total resgatado","Total redeemed","Insgesamt ausgezahlt"],
+  ap_edit:["Editar","Edit","Bearbeiten"],
+  ap_redeem:["Registrar resgate","Record redemption","Auszahlung buchen"],
+  ap_bench_note:["O retorno da aplicação entra pelo valor por unidade de capital — saldo dividido pelo total aportado —, de modo que aportes novos não sejam lidos como rentabilidade. O índice acumula mês a mês pela curva dos parâmetros; a faixa sombreada é projeção.",
+    "The holding's return is measured per unit of invested capital — balance divided by total contributed — so that new contributions are not read as performance. The index compounds month by month from the parameter curve; the shaded band is projection.",
+    "Die Rendite der Anlage wird je Einheit eingesetzten Kapitals gemessen — Bestand geteilt durch Gesamteinzahlung —, damit neue Einzahlungen nicht als Wertentwicklung gelesen werden. Der Index verzinst sich monatlich nach der Parameterkurve; der schattierte Bereich ist Projektion."],
+
   vc_alert_t:["Você tem aplicações vencendo","You have holdings maturing","Sie haben fällige Anlagen"],
   vc_see:["Ver","See","Ansehen"],
   vc_new:["Nova aplicação","New holding","Neue Anlage"],
@@ -21161,6 +21200,62 @@ function renderCashFlow(){
 
 /* ═══ 11.7 ACOMPANHAMENTO DE RENDIMENTOS — aba e ficha por aplicação ═══ */
 let REND_HORIZ=12, REND_ID=null;
+/* ── FICHA DA APLICAÇÃO ───────────────────────────────────────────────
+   O horizonte tem DOIS lados. Só o futuro era escolhível, e o passado vinha
+   sempre inteiro: uma aplicação de seis anos abria com setenta e duas
+   linhas antes da primeira que interessava. Agora o titular recorta os dois
+   lados, e a mesma janela vale para o gráfico, para a comparação com o
+   índice e para a tabela — três leituras do mesmo período, e não três
+   períodos diferentes na mesma folha. */
+let APL_PAST=12;                    /* meses de histórico exibidos; 0 = tudo */
+let APL_BENCH="cdi";                /* índice de comparação */
+const APL_BENCHS=[["cdi","CDI"],["selic","Selic"],["ipca","IPCA"],
+                  ["poupanca","p_savings"],["igpm","IGP-M"]];
+function setAplPast(n){
+  APL_PAST=n;
+  try{ if(document.getElementById("rend-body")) renderRendimento(); }catch(e){}
+}
+function setAplBench(k){
+  APL_BENCH=String(k||"cdi");
+  try{ if(document.getElementById("rend-body")) renderRendimento(); }catch(e){}
+}
+function aplBenchLabel(k){
+  const it=APL_BENCHS.find(x=>x[0]===k);
+  if(!it) return String(k||"").toUpperCase();
+  return it[1].indexOf("_")>0?PX(it[1]):it[1];
+}
+/* Recorte do histórico. Os pontos futuros nunca são cortados: quem escolhe
+   quantos meses projetar é o outro seletor. */
+function aplJanela(e){
+  const pts=e.pontos||[];
+  if(!APL_PAST||pts.length<3) return pts;
+  const lim=addMonths(e.hoje,-APL_PAST);
+  const rec=pts.filter(x=>x.futuro||x.data>=lim);
+  return rec.length>=2?rec:pts.slice(-2);
+}
+/* Retorno acumulado dentro da janela, em porcentagem, para a aplicação e
+   para o índice de comparação.
+
+   A aplicação entra pelo VALOR POR UNIDADE DE CAPITAL — saldo dividido pelo
+   total aportado — e não pelo saldo puro. Sem isso, um aporte mensal
+   apareceria como rentabilidade, e a aplicação venceria qualquer índice só
+   por receber dinheiro novo. */
+function aplComparativo(pts,bench){
+  const u=x=>((+x.aportado||0)>0)?(x.saldo/x.aportado):1;
+  const u0=u(pts[0])||1;
+  const ativo=pts.map(x=>R2((u(x)/u0-1)*100));
+  const idx=[0]; let f=1;
+  for(let i=1;i<pts.length;i++){
+    let t=0;
+    try{ t=idxTaxaMes(bench,pts[i].ym)/100; }catch(e){ t=0; }
+    if(!isFinite(t)) t=0;
+    f*=(1+t);
+    idx.push(R2((f-1)*100));
+  }
+  const n=pts.length-1;
+  const rel=(idx[n]>0.0001)?R2(ativo[n]/idx[n]*100):null;
+  return {ativo,idx,fimAtivo:ativo[n],fimIdx:idx[n],rel};
+}
 /* AQUI ESTAVA O SEGUNDO BUG. Os três botões de horizonte vivem DENTRO da
    ficha de uma aplicação, mas o clique redesenhava a ABA de rendimentos —
    que sequer lê REND_HORIZ. O estado mudava e a tela não: os botões
@@ -21253,13 +21348,27 @@ function renderRendimentos(){
 }
 
 /* ── Ficha individual: evolução mês a mês ── */
+/* A ficha sai da frente antes de abrir edição ou resgate: duas folhas
+   empilhadas deixam a de baixo inacessível. */
+function aplFechar(){
+  const m=document.getElementById("modal-rend");
+  if(m){ try{ closeOverlay(m); }catch(e){ m.remove(); } }
+}
+function aplEditar(id){ aplFechar(); setTimeout(()=>{ try{ openAssetEdit(id); }catch(e){} },210); }
+function aplResgatar(id){ aplFechar(); setTimeout(()=>{ try{ openResgate(id); }catch(e){} },210); }
+function openAplicacao(id){ return openRendimento(id); }
 function openRendimento(id){
-  const a=ASSETS.find(x=>x.id===id); if(!a) return;
+  /* a aplicação simulada da projeção não vive em ASSETS: ela é montada pela
+     lista, e o extrato dela é outra folha — a dos lotes de sobra */
+  let a=ASSETS.find(x=>x.id===id);
+  if(!a){ try{ a=astBaseLista().find(x=>String(x.id)===String(id)); }catch(e){} }
+  if(!a) return;
+  if(a.virtual){ try{ return openSavingExtrato(); }catch(e){ return; } }
   REND_ID=id;
   const ov=document.createElement("div");
   ov.className="overlay open"; ov.style.zIndex="210"; ov.style.alignItems="flex-end";
   ov.id="modal-rend";
-  ov.innerHTML=H`<div class="sheet">
+  ov.innerHTML=H`<div class="sheet" style="max-height:92dvh;overflow-y:auto">
     <div class="sheet-handle"></div>
     <button class="sheet-close" onclick="closeOverlay(this)">✕</button>
     <div id="rend-body"></div>
@@ -21273,24 +21382,85 @@ function renderRendimento(){
   ensureStyles();
   const c=gAssetClass(a.class), p=astPro(a);
   const e=astEvolucao(a,REND_HORIZ);
+  const jan=aplJanela(e);
+  const cmp=aplComparativo(jan,APL_BENCH);
   const GRN="#5A8A4A", RED="#B85A6A", NAV="#0F2440";
   const R=(lbl,val,cls,color)=>`<div class="pro-cf ${cls||""}"><span>${lbl}</span>`+
     `<span style="color:${color||"var(--body)"}">${val}</span></div>`;
-  const hz=n=>`<button type="button" class="${REND_HORIZ===n?"on":""}" onclick="PRO.setRendHoriz(${n})">${n===0?"Só histórico":"+"+n+"m"}</button>`;
+  const hz=n=>`<button type="button" class="${REND_HORIZ===n?"on":""}" onclick="PRO.setRendHoriz(${n})">${n===0?PX("ap_only_hist"):"+"+n+"m"}</button>`;
+  const pz=n=>`<button type="button" class="${APL_PAST===n?"on":""}" onclick="PRO.setAplPast(${n})">${n===0?PX("ap_all"):"−"+n+"m"}</button>`;
+  const bz=k=>`<button type="button" class="${APL_BENCH===k?"on":""}" onclick="PRO.setAplBench('${k}')">${aplBenchLabel(k)}</button>`;
+
+  /* ── características: o que a aplicação É, antes do que ela rendeu ── */
+  const idxLbl=(()=>{
+    const v=String(p.idxVal||0).replace(".",",");
+    switch(astIdxNorm(p.idx)){
+      case "cdi_pct":     return v+"% "+PX("ap_of")+" CDI";
+      case "cdi_spread":  return "CDI + "+v+"% a.a.";
+      case "ipca_spread": return "IPCA + "+v+"% a.a.";
+      case "pre":         return PX("ap_pre")+" "+v+"% a.a.";
+      case "poupanca":    return PX("p_savings");
+      default:            return PX("ap_manual");
+    }
+  })();
+  const tribLbl={rf:"ap_t_rf",isento:"ap_t_isento",fundoLP:"ap_t_flp",
+                 fundoCP:"ap_t_fcp",fii:"ap_t_fii",acoes:"ap_t_acoes"}[p.trib];
+  const linhaC=(k,v)=>v?`<div class="pro-cf"><span>${k}</span><span>${v}</span></div>`:"";
+  const carac=[
+    linhaC(PX("ap_prod"),astProdutoLbl(a)||catLabel(c)),
+    linhaC(PX("ap_inst"),a.instituicao||""),
+    linhaC(PX("ap_idx"),idxLbl),
+    linhaC(PX("ap_trib"),tribLbl?PX(tribLbl):""),
+    linhaC(PX("ap_liq"),astLiquidezLabel(a)),
+    linhaC(PX("ap_aplic_em"),brDate(e.inicio)),
+    linhaC(PX("ap_venc"),astVencData(a,p)?brDate(astVencData(a,p))
+      +(astVencEfetivo(a,p)?" · "+PX("vc_badge_over"):""):PX("ap_none")),
+    linhaC(PX("ap_pos_em"),brDate(e.posData)),
+    (+p.taxaAdm>0)?linhaC(PX("ap_adm"),String(p.taxaAdm).replace(".",",")+"% a.a."):"",
+    (+p.taxaPerf>0)?linhaC(PX("ap_perf"),String(p.taxaPerf).replace(".",",")+"%"):"",
+    (+p.aporte>0)?linhaC(PX("ap_aporte"),fmt(p.aporte)):"",
+    e.comeCotas?linhaC(PX("ap_cc"),PX("ap_cc_yes")):""
+  ].join("");
+
+  /* ── resgates já registrados ── */
+  const resg=astResgates(a);
+  const blocoResg=resg.length
+    ?`<div style="background:var(--surface);border-radius:14px;padding:4px 14px 6px;margin-bottom:12px">
+        ${resg.slice().reverse().map(r=>`<div style="display:flex;align-items:center;gap:10px;
+          padding:9px 0;border-bottom:1px solid var(--line)">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12.5px;color:var(--body);font-weight:600">${brDate(r.data)}</div>
+            <div style="font-size:10.5px;color:var(--ink-3);margin-top:2px">IR ${String(R2(r.aliq||0)).replace(".",",")}%${
+              (+r.ir||0)>0?" · "+fmt(r.ir):""}${(+r.iof||0)>0?" · IOF "+fmt(r.iof):""}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:13px;font-weight:600;color:var(--body)">${fmt(r.valor)}</div>
+            <div style="font-size:10.5px;color:${GRN}">${fmt(r.liquido)}</div>
+          </div>
+        </div>`).join("")}
+        <div style="font-size:10px;color:var(--ink-3);padding:8px 0 2px;line-height:1.5">
+          ${PX("ap_res_tot")} ${fmt(astResgatadoTotal(a))}</div>
+      </div>`
+    :`<div class="info-card" style="background:rgba(15,36,64,.06);color:#0F2440;margin-bottom:12px">${PX("ap_no_res")}</div>`;
   const provHoje=astProvisao(a,Math.max(0,e.ganho),e.diasCorridos);
 
   /* tabela: últimos meses e os projetados */
-  const pts=e.pontos.filter((x,i)=>{
-    if(i===0) return false;                       // a aplicacao em si nao e um mes
-    const prox=e.pontos[i+1];
+  const pts=jan.filter((x,i)=>{
+    if(i===0&&x.data===e.inicio) return false;    // a aplicacao em si nao e um mes
+    const prox=jan[i+1];
     return !(prox&&prox.data===e.hoje&&x.ym===prox.ym); // evita mes duplicado antes de "Hoje"
   });
-  const linhas=pts.slice(Math.max(0,pts.length-24));
+  const linhas=pts;
   $("rend-body").innerHTML=H`
     <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px">
       <div style="width:42px;height:42px;border-radius:12px;background:${c.color}18;display:flex;align-items:center;justify-content:center;font-size:20px">${c.emoji}</div>
       <div style="min-width:0"><div style="font-family:var(--serif);font-size:19px;color:var(--body)">${raw(a.name)}</div>
       <div style="font-size:11px;color:var(--ink-2)">${catLabel(c)} · aplicado em ${brDate(e.inicio)} · ${e.diasCorridos} dias</div></div>
+    </div>
+
+    <div class="sec-label">${PL("ap_charac")}</div>
+    <div style="background:var(--surface);border-radius:14px;padding:10px 15px;margin-bottom:12px">
+      ${raw(carac)}
     </div>
 
     <div style="background:${NAV};border-radius:16px;padding:15px 17px;color:#fff;margin-bottom:12px">
@@ -21309,6 +21479,10 @@ function renderRendimento(){
         Indexador acumulou ${String(e.fator.pct).replace(".",",")}% no período${e.fator.temEstimativa?" · "+String(e.fator.estimado).replace(".",",")+" meses estimados":""}.</div>
     </div>
 
+    <div class="sec-label">${PL("ap_horiz")}</div>
+    <div class="pro-chips" style="margin:0 0 6px">
+      <div class="pro-scale" id="apl-pz">${pz(6)}${pz(12)}${pz(24)}${pz(0)}</div>
+    </div>
     <div class="pro-chips" style="margin:0 0 8px">
       <div class="pro-scale" id="rend-hz">${hz(0)}${hz(12)}${hz(36)}</div>
     </div>
@@ -21320,6 +21494,37 @@ function renderRendimento(){
         <span><b style="color:${GRN}">━</b> líquido após IR</span>
         <span><b style="color:var(--ink-4)">┈</b> aplicado</span>
       </div>
+    </div>
+
+    <div class="sec-label">${PL("ap_bench")}</div>
+    <div class="pro-chips" style="margin:0 0 8px">
+      <div class="pro-scale" id="apl-bz">${raw(APL_BENCHS.map(x=>bz(x[0])).join(""))}</div>
+    </div>
+    <div style="background:var(--surface);border-radius:14px;padding:12px 14px 10px;margin-bottom:12px">
+      <div style="display:flex;gap:10px;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+        <div style="min-width:0">
+          <div style="font-size:8.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-3);font-weight:700">${PL("ap_asset")}</div>
+          <div style="font-family:var(--serif);font-style:italic;font-size:19px;color:${NAV}">${
+            (cmp.fimAtivo>=0?"+":"−")+String(Math.abs(cmp.fimAtivo)).replace(".",",")}%</div>
+        </div>
+        <div style="min-width:0;text-align:center">
+          <div style="font-size:8.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-3);font-weight:700">${raw(aplBenchLabel(APL_BENCH))}</div>
+          <div style="font-family:var(--serif);font-style:italic;font-size:19px;color:#7A93AE">${
+            (cmp.fimIdx>=0?"+":"−")+String(Math.abs(cmp.fimIdx)).replace(".",",")}%</div>
+        </div>
+        <div style="min-width:0;text-align:right">
+          <div style="font-size:8.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-3);font-weight:700">${PL("ap_of_index")}</div>
+          <div style="font-family:var(--serif);font-style:italic;font-size:19px;color:${
+            cmp.rel===null?"var(--ink-3)":(cmp.rel>=100?GRN:RED)}">${
+            cmp.rel===null?"—":String(cmp.rel).replace(".",",")+"%"}</div>
+        </div>
+      </div>
+      <canvas id="apl-bench" style="width:100%;display:block"></canvas>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:6px;font-size:9.5px;color:var(--ink-2);flex-wrap:wrap">
+        <span><b style="color:${NAV}">━</b> ${PL("ap_asset")}</span>
+        <span><b style="color:#7A93AE">┈</b> ${raw(aplBenchLabel(APL_BENCH))}</span>
+      </div>
+      <div style="font-size:9.5px;color:var(--ink-3);margin-top:7px;line-height:1.5">${PL("ap_bench_note")}</div>
     </div>
 
     <div class="sec-label">Posição de hoje</div>
@@ -21369,14 +21574,52 @@ function renderRendimento(){
       </table>
       <div style="font-size:9.5px;color:var(--ink-3);margin-top:6px;line-height:1.5">${e.aporte>0?"Saldo do mês = saldo anterior + aporte + rendimento. ":""}Líquido = saldo menos a provisão de IR e IOF daquele prazo. Linhas claras são projeção.${e.comeCotas?" O ponto vermelho marca o come-cotas.":""}</div>
     </div>
-    <div style="display:flex;gap:6px">
+    <div class="sec-label">${PL("ap_hist_res")}</div>
+    ${raw(blocoResg)}
+
+    <div style="display:flex;gap:6px;margin-bottom:8px">
       <button class="pro-btn-lg" onclick="PRO.exportRendimento(${a.id})" style="flex:1;background:none;border:1.5px solid var(--line);color:var(--ink-2);font-weight:600;cursor:pointer">⬇️ CSV</button>
-      <button class="pro-btn-lg" onclick="PRO.openResgate(${a.id})" style="flex:1;background:${NAV};color:#fff;border:none;font-weight:600;cursor:pointer">💰 Simular resgate</button>
-    </div>`;
-  drawRendChart(e);
+      <button class="pro-btn-lg" onclick="PRO.aplEditar(${a.id})" style="flex:1;background:none;border:1.5px solid var(--line);color:var(--ink-2);font-weight:600;cursor:pointer">✏️ ${PL("ap_edit")}</button>
+    </div>
+    <button class="pro-btn-lg" onclick="PRO.aplResgatar(${a.id})" style="width:100%;background:${NAV};color:#fff;border:none;font-weight:600;cursor:pointer">💰 ${PL("ap_redeem")}</button>`;
+  drawRendChart(Object.assign({},e,{pontos:jan}));
+  drawAplBench(jan,cmp);
+  const pzb=$("apl-pz");
+  if(pzb) [...pzb.children].forEach(b=>b.classList.toggle("on",
+    b.getAttribute("onclick").indexOf("("+APL_PAST+")")>=0));
   const hzb=$("rend-hz");
   if(hzb) [...hzb.children].forEach(b=>b.classList.toggle("on",
     b.getAttribute("onclick").indexOf("("+REND_HORIZ+")")>=0));
+}
+
+/* Duas curvas em porcentagem, partindo do zero: é a única forma de pôr
+   lado a lado uma aplicação de R$ 300 mil e um índice — em reais elas não
+   se comparam, em retorno acumulado sim. */
+function drawAplBench(pts,cmp){
+  const c=$("apl-bench"); if(!c||pts.length<2) return;
+  const W=Math.max(200,c.parentElement.offsetWidth-28), H=140, dpr=window.devicePixelRatio||1;
+  c.width=W*dpr;c.height=H*dpr;c.style.width=W+"px";c.style.height=H+"px";
+  const ctx=c.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  const pad={l:4,r:4,t:12,b:16}, cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
+  const vals=cmp.ativo.concat(cmp.idx).concat([0]);
+  const mn=Math.min(...vals), mx=Math.max(...vals), rg=(mx-mn)||1;
+  const X=i=>pad.l+(i/(pts.length-1))*cW;
+  const Y=v=>pad.t+cH-((v-mn)/rg)*cH;
+  const iFut=pts.findIndex(p=>p.futuro);
+  if(iFut>0){ ctx.fillStyle="rgba(0,0,0,.035)";
+    ctx.fillRect(X(iFut),pad.t,X(pts.length-1)-X(iFut),cH); }
+  /* linha do zero: o ponto de partida da janela */
+  if(mn<0&&mx>0){ ctx.setLineDash([2,3]);ctx.strokeStyle="#B9B4AB";ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pad.l,Y(0));ctx.lineTo(W-pad.r,Y(0));ctx.stroke();ctx.setLineDash([]); }
+  const linha=(arr,cor,tracejada)=>{
+    ctx.setLineDash(tracejada?[4,3]:[]);
+    ctx.strokeStyle=cor;ctx.lineWidth=tracejada?1.4:2;ctx.beginPath();
+    arr.forEach((v,i)=>{ i?ctx.lineTo(X(i),Y(v)):ctx.moveTo(X(i),Y(v)); });
+    ctx.stroke();ctx.setLineDash([]);
+  };
+  linha(cmp.idx,"#7A93AE",true);
+  linha(cmp.ativo,"#0F2440",false);
+  ctx.fillStyle="var(--ink-3)";
 }
 
 function drawRendChart(e){
@@ -25273,6 +25516,7 @@ window.PRO={
   astAtualizacao,astValorAtual,materializarPosicoes,
   astValorEm,astValorYM,astFimDoMesYM,astEvoluirAte,cfChaveDados,
   toggleRegPick,toggleAstPick,applyIncTypeDefaults,applyAstClassDefaults,
+  openAplicacao,aplEditar,aplResgatar,aplFechar,setAplPast,setAplBench,aplJanela,aplComparativo,
   openFiscal,saveFiscalForm,resetFiscal,toggleIsen,openResgate,calcResgate,setResgatePct,
   salvarResgate,excluirResgate,renderResgHist,resgDataMin,
   astVencData,astTemVenc,astVencido,astVencidoYM,astVenceNoYM,astParteRendeMes,
