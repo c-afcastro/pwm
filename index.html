@@ -4327,6 +4327,8 @@ const I18N={
     irpf_note:"O relatório é auxiliar e não substitui os informes oficiais. Confira cada enquadramento. Abrirá em nova aba para salvar como PDF.",
     irpf_generate:"Gerar relatório (PDF)",
     irpf_popup_blocked:"Pop-up bloqueado — relatório baixado como HTML",
+    irpf_wip_tag:"Em construção",
+    irpf_wip_body:"O informe ainda não está redondo. O enquadramento de cada ficha precisa fechar com os informes oficiais das instituições antes de virar um relatório em que dá para confiar na hora de declarar — e um relatório errado é pior do que relatório nenhum. Os dados continuam todos aqui: rendimentos, bens e dívidas, ano a ano. O informe volta quando estiver certo.",
     csv_col_month:"Mês",
     csv_col_payment:"Parcela",
     csv_col_interest:"Juros",
@@ -5248,6 +5250,8 @@ const I18N={
     irpf_note:"This is an auxiliary report and does not replace official statements. Check each classification. It will open in a new tab to save as PDF.",
     irpf_generate:"Generate report (PDF)",
     irpf_popup_blocked:"Pop-up blocked — report downloaded as HTML",
+    irpf_wip_tag:"Under construction",
+    irpf_wip_body:"The report is not sound yet. Each field's classification has to reconcile with the official statements from the institutions before it becomes something you can rely on when filing — and a wrong report is worse than no report. The data is all still here: income, assets and debts, year by year. The report returns when it is right.",
     csv_col_month:"Month",
     csv_col_payment:"Installment",
     csv_col_interest:"Interest",
@@ -6169,6 +6173,8 @@ const I18N={
     irpf_note:"Dies ist ein Hilfsbericht und ersetzt keine offiziellen Belege. Prüfe jede Zuordnung. Öffnet sich in einem neuen Tab zum Speichern als PDF.",
     irpf_generate:"Bericht erstellen (PDF)",
     irpf_popup_blocked:"Pop-up blockiert — Bericht als HTML heruntergeladen",
+    irpf_wip_tag:"In Arbeit",
+    irpf_wip_body:"Der Bericht ist noch nicht ausgereift. Die Zuordnung jedes Feldes muss mit den offiziellen Bescheinigungen der Institute übereinstimmen, bevor man sich bei der Erklärung darauf verlassen kann — und ein falscher Bericht ist schlimmer als gar keiner. Die Daten bleiben alle hier: Einkünfte, Vermögen und Schulden, Jahr für Jahr. Der Bericht kommt zurück, wenn er stimmt.",
     csv_col_month:"Monat",
     csv_col_payment:"Rate",
     csv_col_interest:"Zinsen",
@@ -11009,7 +11015,11 @@ function renderFinLife(){
     <button onclick="openIRPFReport()" style="width:100%;display:flex;align-items:center;gap:12px;background:var(--surface);border:none;border-radius:14px;padding:14px 16px;margin-bottom:12px;cursor:pointer;text-align:left">
       <div style="width:40px;height:40px;border-radius:11px;background:rgba(46,90,62,.1);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0">🧾</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;color:var(--body)">${t("irpf_btn_title")}</div>
+        <div style="display:flex;align-items:center;gap:6px;min-width:0">
+          <span style="font-size:13px;font-weight:600;color:var(--body)">${t("irpf_btn_title")}</span>
+          <span style="flex-shrink:0;font-size:8.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+            color:#C4863A;background:rgba(196,134,58,.16);border-radius:5px;padding:2px 6px">${t("irpf_wip_tag")}</span>
+        </div>
         <div style="font-size:11px;color:var(--ink-2)">${t("irpf_btn_sub")}</div>
       </div>
       <span style="font-size:16px;color:var(--ink-2)">→</span>
@@ -11362,17 +11372,20 @@ function openBackupSheet(){
 }
 
 function openIRPFReport(){
-  const years=irpfAvailableYears();
   const ov=document.createElement("div");
   ov.className="overlay open"; ov.style.zIndex="200";
   ov.innerHTML='<div class="sheet"><div class="sheet-handle"></div>'+
     '<button class="sheet-close" onclick="closeOverlay(this)">✕</button>'+
-    '<div style="font-family:var(--serif);font-size:20px;color:var(--body);margin-bottom:4px">'+t("irpf_title")+'</div>'+
-    '<div style="font-size:12px;color:var(--ink-2);margin-bottom:16px;line-height:1.5">'+t("irpf_desc")+'</div>'+
-    '<label class="f-label">'+t("irpf_year")+'</label>'+
-    '<select id="irpf-year-sel" class="f-input" style="margin-bottom:8px">'+years.map(y=>'<option value="'+y+'">'+y+'</option>').join("")+'</select>'+
-    '<div style="font-size:11px;color:var(--ink-4);line-height:1.5;margin-bottom:16px">'+t("irpf_note")+'</div>'+
-    '<button onclick="generateIRPFReport(document.getElementById(\'irpf-year-sel\').value);closeOverlay(this)" style="width:100%;background:var(--accent);color:var(--accent-ink);border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:600;cursor:pointer">📄 '+t("irpf_generate")+'</button></div>';
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">'+
+      '<span class="oi oi-ring oi-obras" style="width:46px;height:46px;flex-shrink:0" role="img" aria-label="Otto"></span>'+
+      '<div style="min-width:0">'+
+        '<div style="font-family:var(--serif);font-size:20px;color:var(--body);line-height:1.15">'+t("irpf_title")+'</div>'+
+        '<div style="font-size:10.5px;color:#C4863A;font-weight:700;letter-spacing:.4px;margin-top:3px">'+t("irpf_wip_tag")+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:var(--surface);border-left:3px solid #C4863A;border-radius:0 14px 14px 0;'+
+      'padding:13px 15px;font-size:12px;color:var(--ink-2);line-height:1.6">'+t("irpf_wip_body")+'</div>'+
+    '</div>';
   document.body.appendChild(ov);
   ov.onclick=e=>{ if(e.target===ov) closeOverlay(ov); };
 }
@@ -15720,7 +15733,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.77";
+const APP_VERSION="10.78";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -16921,6 +16934,9 @@ const PDIC={
   ap_res_tot:["Total resgatado","Total redeemed","Insgesamt ausgezahlt"],
   ap_edit:["Editar","Edit","Bearbeiten"],
   ap_redeem:["Registrar resgate","Record redemption","Auszahlung buchen"],
+  ap_venc_note:["Aplicação vencida: a curva e a tabela terminam no vencimento, em",
+    "Matured holding: the curve and the table end at maturity, on",
+    "Fällige Anlage: Kurve und Tabelle enden mit der Fälligkeit am"],
   ap_bench_note:["O retorno da aplicação entra pelo valor por unidade de capital — saldo dividido pelo total aportado —, de modo que aportes novos não sejam lidos como rentabilidade. O índice acumula mês a mês pela curva dos parâmetros; a faixa sombreada é projeção.",
     "The holding's return is measured per unit of invested capital — balance divided by total contributed — so that new contributions are not read as performance. The index compounds month by month from the parameter curve; the shaded band is projection.",
     "Die Rendite der Anlage wird je Einheit eingesetzten Kapitals gemessen — Bestand geteilt durch Gesamteinzahlung —, damit neue Einzahlungen nicht als Wertentwicklung gelesen werden. Der Index verzinst sich monatlich nach der Parameterkurve; der schattierte Bereich ist Projektion."],
@@ -21227,7 +21243,22 @@ function aplBenchLabel(k){
 /* Recorte do histórico. Os pontos futuros nunca são cortados: quem escolhe
    quantos meses projetar é o outro seletor. */
 function aplJanela(e){
-  const pts=e.pontos||[];
+  let pts=e.pontos||[];
+  /* VENCIDA: a curva morre no dia do vencimento. Prolongá-la até hoje, com
+     o saldo congelado, desenhava uma reta que não é rendimento nenhum — e
+     projetar meses à frente seria pior ainda: sugeriria que o papel ainda
+     trabalha. O último ponto é o do vencimento, com o valor liquidado. */
+  const vc=e.asset?astVencEfetivo(e.asset):null;
+  if(vc){
+    const cut=pts.filter(x=>x.data<=vc);
+    const ult=cut[cut.length-1];
+    if(ult&&ult.data<vc){
+      const fim=pts.filter(x=>!x.futuro).pop()||pts[pts.length-1];
+      cut.push(Object.assign({},fim,{data:vc,ym:ymOf(vc),futuro:false,m:cut.length,
+        rendMes:R2(fim.saldo-ult.saldo)}));
+    }
+    pts=cut.length>=2?cut:pts.slice(0,2);
+  }
   if(!APL_PAST||pts.length<3) return pts;
   const lim=addMonths(e.hoje,-APL_PAST);
   const rec=pts.filter(x=>x.futuro||x.data>=lim);
@@ -21381,7 +21412,9 @@ function renderRendimento(){
   const a=ASSETS.find(x=>x.id===REND_ID); if(!a||!$("rend-body")) return;
   ensureStyles();
   const c=gAssetClass(a.class), p=astPro(a);
-  const e=astEvolucao(a,REND_HORIZ);
+  /* vencida não projeta: o horizonte futuro simplesmente não se aplica */
+  const vencEf=astVencEfetivo(a,p);
+  const e=astEvolucao(a,vencEf?0:REND_HORIZ);
   const jan=aplJanela(e);
   const cmp=aplComparativo(jan,APL_BENCH);
   const GRN="#5A8A4A", RED="#B85A6A", NAV="#0F2440";
@@ -21483,9 +21516,11 @@ function renderRendimento(){
     <div class="pro-chips" style="margin:0 0 6px">
       <div class="pro-scale" id="apl-pz">${pz(6)}${pz(12)}${pz(24)}${pz(0)}</div>
     </div>
-    <div class="pro-chips" style="margin:0 0 8px">
+    ${vencEf
+      ?`<div class="pro-note" style="margin:0 0 10px">${PX("ap_venc_note")} ${brDate(vencEf)}.</div>`
+      :`<div class="pro-chips" style="margin:0 0 8px">
       <div class="pro-scale" id="rend-hz">${hz(0)}${hz(12)}${hz(36)}</div>
-    </div>
+    </div>`}
     <div style="background:var(--surface);border-radius:14px;padding:12px 14px 8px;margin-bottom:12px">
       <canvas id="rend-chart" style="width:100%;display:block"></canvas>
       <div style="display:flex;gap:10px;justify-content:center;margin-top:6px;font-size:9.5px;color:var(--ink-2);flex-wrap:wrap">
