@@ -15733,7 +15733,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.78";
+const APP_VERSION="10.79";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -16966,6 +16966,11 @@ const PDIC={
   rg_when:["Data do resgate","Redemption date","Datum der Auszahlung"],
   rg_how:["Quanto deseja resgatar","How much to redeem","Wie viel auszahlen"],
   rg_all:["Tudo","All","Alles"],
+  rg_enc:["Encargo de resgate antecipado","Early redemption charge","Vorfälligkeitsentgelt"],
+  rg_enc_s:["Encargo","Charge","Entgelt"],
+  rg_enc_note:["Deságio, multa ou taxa de saída cobrada por resgatar antes do vencimento. Não é imposto: é cláusula do contrato, então o valor vem do extrato ou da lâmina do produto. Deixe zerado se não houver.",
+    "Discount, penalty or exit fee charged for redeeming before maturity. It is not a tax but a contract clause, so the amount comes from your statement or the product sheet. Leave it at zero if there is none.",
+    "Abschlag, Strafe oder Ausstiegsgebühr für eine Auszahlung vor Fälligkeit. Keine Steuer, sondern eine Vertragsklausel — der Betrag stammt aus dem Auszug oder dem Produktblatt. Bei Nichtvorhandensein auf null lassen."],
   rg_pos:["Posição na data","Position on that date","Bestand am Stichtag"],
   rg_val:["Valor resgatado","Amount redeemed","Ausgezahlter Betrag"],
   rg_gain:["Rendimento no período","Yield in the period","Ertrag im Zeitraum"],
@@ -18453,7 +18458,7 @@ function astLiquidacao(a,dref){
 /* Resgate parcial numa data qualquer: quanto sai líquido e quanto do
    custo é baixado junto. O custo precisa cair na mesma proporção, senão
    o lucro tributável do saldo remanescente fica superestimado. */
-function astResgateEm(a,valor,data){
+function astResgateEm(a,valor,data,encargo){
   const p=astPro(a);
   const dt=String(data||today()).slice(0,10);
   const saldo=R2(astValorEm(a,dt));
@@ -18467,8 +18472,11 @@ function astResgateEm(a,valor,data){
   const iofP=(p.trib==="rf"||String(p.trib||"").indexOf("fundo")===0)?iofPct(d):0;
   const iof=R2(ganho*iofP/100);
   const ir=R2(Math.max(0,ganho-iof)*aliq/100);
+  /* o encargo nunca pode passar do que resta depois dos impostos: uma
+     cláusula não confisca mais do que existe */
+  const enc=Math.max(0,Math.min(R2(+encargo||0),R2(v-iof-ir)));
   return {data:dt,saldo,valor:R2(v),bruto:R2(v),custoBaixa,ganho,dias:d,
-          aliq,iofPct:iofP,iof,ir,liquido:R2(v-iof-ir),
+          aliq,iofPct:iofP,iof,ir,encargo:enc,liquido:R2(v-iof-ir-enc),
           restante:R2(saldo-v)};
 }
 
@@ -20742,12 +20750,16 @@ function resetFiscal(btn){
    pela regra vigente NAQUELA data, baixa o custo na proporção retirada e a
    aplicação segue a vida a partir do que sobrou — patrimônio e rendimento
    dos meses seguintes já sem o dinheiro que saiu. */
+function resgAtivo(id){
+  if(id&&typeof id==="object") return id;
+  return (typeof ASSETS!=="undefined"?ASSETS:[]).find(x=>String(x.id)===String(id))||null;
+}
 function resgDataMin(a){
   const p=astPro(a);
   return String(p.aplic||a.lastUpdate||today()).slice(0,10);
 }
 function openResgate(id){
-  const a=ASSETS.find(x=>x.id===id); if(!a) return;
+  const a=resgAtivo(id); if(!a) return;
   /* Vencida não tem o que resgatar: a liquidação já aconteceu na data de
      vencimento e o dinheiro voltou para a conta. O caminho é cadastrar a
      aplicação nova, e é isso que o aviso oferece. */
@@ -20789,6 +20801,11 @@ function openResgate(id){
         font-weight:600;cursor:pointer">${q===100?PX("rg_all"):q+"%"}</button>`).join("")}
     </div>
 
+    <label class="f-label">${PL("rg_enc")}</label>
+    <input id="res-enc" class="f-amount" type="text" inputmode="decimal" placeholder="0,00"
+      oninput="maskCurrencyInput(this);PRO.calcResgate('${id}')"/>
+    <div class="pro-note" style="margin:-4px 0 14px">${PL("rg_enc_note")}</div>
+
     <div id="res-out"></div>
 
     <button class="pro-btn-lg" onclick="PRO.salvarResgate('${id}',this)"
@@ -20802,6 +20819,7 @@ function openResgate(id){
   const dt=$("res-data");
   if(dt&&dt.min&&dt.value<dt.min) dt.value=dt.min;
   setCurrencyInput($("res-val"),astValorAtual(a));
+  setCurrencyInput($("res-enc"),0);
   calcResgate(id);
 }
 function resgDataSel(a){
@@ -20813,14 +20831,17 @@ function resgDataSel(a){
   return d;
 }
 function setResgatePct(id,q){
-  const a=ASSETS.find(x=>x.id===id);if(!a)return;
+  const a=resgAtivo(id);if(!a)return;
   const saldo=R2(astValorEm(a,resgDataSel(a)));
-  setCurrencyInput($("res-val"),saldo*q/100);calcResgate(id);
+  setCurrencyInput($("res-val"),saldo*q/100);
+  calcResgate(id);
 }
+/* encargo informado na folha, se houver campo */
+function resgEncargo(){ return $("res-enc")?unmaskCurrency($("res-enc")):0; }
 function calcResgate(id){
-  const a=ASSETS.find(x=>x.id===id);if(!a||!$("res-out"))return;
+  const a=resgAtivo(id);if(!a||!$("res-out"))return;
   const dt=resgDataSel(a);
-  const r=astResgateEm(a,unmaskCurrency($("res-val")),dt);
+  const r=astResgateEm(a,unmaskCurrency($("res-val")),dt,resgEncargo());
   const p=astPro(a);
   const de=String(a.lastUpdate||p.aplic||today()).slice(0,10);
   const L=(lbl,val,cor,forte)=>`<div class="pro-cf${forte?" tot":""}">
@@ -20832,6 +20853,7 @@ function calcResgate(id){
       ${raw(L(PX("rg_gain"),fmt(r.ganho),"#5A8A4A"))}
       ${r.iof>0?raw(L("IOF ("+P2(r.iofPct)+"% · "+r.dias+"d)",SGP("−")+fmt(r.iof),"#B85A6A")):""}
       ${raw(L("IR ("+P2(r.aliq)+"%)",SGP("−")+fmt(r.ir),"#B85A6A"))}
+      ${r.encargo>0?raw(L(PX("rg_enc"),SGP("−")+fmt(r.encargo),"#B85A6A")):""}
       <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;
         margin-top:6px;border-top:2px solid var(--line)">
         <span style="font-size:13px;font-weight:700;color:var(--body)">${PL("rg_net")}</span>
@@ -20853,7 +20875,7 @@ function P2(v){ return String(R2(+v||0)).replace(".",","); }
 /* ── histórico de resgates da aplicação ── */
 function renderResgHist(id){
   const el=$("res-hist"); if(!el) return;
-  const a=ASSETS.find(x=>x.id===id); if(!a){ el.innerHTML=""; return; }
+  const a=resgAtivo(id); if(!a){ el.innerHTML=""; return; }
   const L=astResgates(a);
   if(!L.length){ el.innerHTML=""; return; }
   el.innerHTML=H`
@@ -20864,7 +20886,8 @@ function renderResgHist(id){
         <div style="flex:1;min-width:0">
           <div style="font-size:12.5px;color:var(--body);font-weight:600">${brDate(r.data)}</div>
           <div style="font-size:10.5px;color:var(--ink-3);margin-top:2px">
-            IR ${P2(r.aliq||0)}%${(+r.ir||0)>0?" · "+fmt(r.ir):""}${(+r.iof||0)>0?" · IOF "+fmt(r.iof):""}</div>
+            IR ${P2(r.aliq||0)}%${(+r.ir||0)>0?" · "+fmt(r.ir):""}${(+r.iof||0)>0?" · IOF "+fmt(r.iof):""}${
+              (+r.encargo||0)>0?" · "+PX("rg_enc_s")+" "+fmt(r.encargo):""}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-size:13px;font-weight:600;color:var(--body);font-variant-numeric:tabular-nums">${fmt(r.valor)}</div>
@@ -20880,14 +20903,14 @@ function renderResgHist(id){
    O custo cai na mesma proporção do que saiu; sem isso o lucro tributável
    do saldo remanescente ficaria superestimado no próximo resgate. */
 function salvarResgate(id,btn){
-  const a=ASSETS.find(x=>x.id===id); if(!a) return;
+  const a=resgAtivo(id); if(!a) return;
   const p=astPro(a);
   const dt=resgDataSel(a);
   const val=unmaskCurrency($("res-val"));
   if(!(val>0)){ toast(PX("rg_novalue")); return; }
   if(dt>today()){ toast(PX("rg_future")); return; }
   if(dt<resgDataMin(a)){ toast(PX("rg_early")); return; }
-  const r=astResgateEm(a,val,dt);
+  const r=astResgateEm(a,val,dt,resgEncargo());
   if(!(r.valor>0)){ toast(PX("rg_nobal")); return; }
   const de=String(a.lastUpdate||p.aplic||today()).slice(0,10);
   /* a posição informada é posterior ao resgate: a foto já não contém esse
@@ -20895,7 +20918,8 @@ function salvarResgate(id,btn){
   const baixado=dt<=de;
   const reg={id:"rg"+Date.now()+Math.floor(Math.random()*1000),
     data:dt,valor:r.valor,ganho:r.ganho,ir:r.ir,iof:r.iof,aliq:r.aliq,
-    iofPct:r.iofPct,dias:r.dias,liquido:r.liquido,custoBaixa:r.custoBaixa,baixado};
+    iofPct:r.iofPct,dias:r.dias,encargo:r.encargo,liquido:r.liquido,
+    custoBaixa:r.custoBaixa,baixado};
   const lista=(Array.isArray(p.resgates)?p.resgates.slice():[]).concat([reg]);
   a.pro=Object.assign({},a.pro||{},{resgates:lista,
     custo:R2(Math.max(0,R2(+p.custo||0)-r.custoBaixa)),custoAuto:false});
@@ -20906,7 +20930,7 @@ function salvarResgate(id,btn){
   refreshPro();
 }
 function excluirResgate(id,rid){
-  const a=ASSETS.find(x=>x.id===id); if(!a) return;
+  const a=resgAtivo(id); if(!a) return;
   if(!confirm(PX("rg_del_q"))) return;
   const p=a.pro||{};
   const L=Array.isArray(p.resgates)?p.resgates:[];
@@ -21464,7 +21488,8 @@ function renderRendimento(){
           <div style="flex:1;min-width:0">
             <div style="font-size:12.5px;color:var(--body);font-weight:600">${brDate(r.data)}</div>
             <div style="font-size:10.5px;color:var(--ink-3);margin-top:2px">IR ${String(R2(r.aliq||0)).replace(".",",")}%${
-              (+r.ir||0)>0?" · "+fmt(r.ir):""}${(+r.iof||0)>0?" · IOF "+fmt(r.iof):""}</div>
+              (+r.ir||0)>0?" · "+fmt(r.ir):""}${(+r.iof||0)>0?" · IOF "+fmt(r.iof):""}${
+              (+r.encargo||0)>0?" · "+PX("rg_enc_s")+" "+fmt(r.encargo):""}</div>
           </div>
           <div style="text-align:right;flex-shrink:0">
             <div style="font-size:13px;font-weight:600;color:var(--body)">${fmt(r.valor)}</div>
@@ -25553,7 +25578,7 @@ window.PRO={
   toggleRegPick,toggleAstPick,applyIncTypeDefaults,applyAstClassDefaults,
   openAplicacao,aplEditar,aplResgatar,aplFechar,setAplPast,setAplBench,aplJanela,aplComparativo,
   openFiscal,saveFiscalForm,resetFiscal,toggleIsen,openResgate,calcResgate,setResgatePct,
-  salvarResgate,excluirResgate,renderResgHist,resgDataMin,
+  salvarResgate,excluirResgate,renderResgHist,resgDataMin,resgAtivo,resgEncargo,
   astVencData,astTemVenc,astVencido,astVencidoYM,astVenceNoYM,astParteRendeMes,
   astResgates,astResgAssin,astResgatadoTotal,astPrazoIR,astLiquidacao,astResgateEm,
   astEvoluirEventos,limparCachesAplic,vencDoMes,renderVencAviso,
