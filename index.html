@@ -15713,7 +15713,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.74";
+const APP_VERSION="10.75";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -16882,6 +16882,10 @@ const PDIC={
   vc_alert_t:["Você tem aplicações vencendo","You have holdings maturing","Sie haben fällige Anlagen"],
   vc_see:["Ver","See","Ansehen"],
   vc_new:["Nova aplicação","New holding","Neue Anlage"],
+  vc_ignore:["Ignorar","Dismiss","Ausblenden"],
+  vc_ignored:["Aviso dispensado","Notice dismissed","Hinweis ausgeblendet"],
+  vc_ignored_n:["com aviso dispensado","with the notice dismissed","mit ausgeblendetem Hinweis"],
+  vc_restore:["Mostrar novamente","Show again","Wieder anzeigen"],
   vc_out:["fora do patrimônio","out of net worth","nicht im Vermögen"],
   vc_no_redeem:["Aplicação vencida: a liquidação já ocorreu no vencimento. Cadastre a nova aplicação.",
     "Matured holding: settlement already happened at maturity. Register the new holding.",
@@ -19588,6 +19592,12 @@ function ensureStyles(){
     cursor:pointer;white-space:nowrap;flex-shrink:0;box-sizing:border-box;
     -webkit-appearance:none;appearance:none}
   .vc-act.on{border-color:#0F2440;background:#0F2440;color:#fff}
+  .vc-act.ghost{border-color:transparent;color:var(--ink-3);padding:0 9px}
+  /* o caminho de volta não é um aviso: uma linha, sem tarja e sem peso */
+  .vc-undo{display:flex;align-items:center;gap:8px;justify-content:space-between;
+    padding:8px 2px 10px;font-size:10.5px;color:var(--ink-3);line-height:1.4}
+  .vc-undo button{background:none;border:none;padding:0;font-size:10.5px;font-weight:700;
+    color:#0F2440;cursor:pointer;text-decoration:underline;flex-shrink:0}
   .vc-row{cursor:pointer}
   .liq-card{background:var(--surface);border-radius:16px;padding:13px 15px;margin-bottom:9px;
     cursor:pointer;border-left:3px solid var(--accent);box-sizing:border-box}
@@ -20846,6 +20856,38 @@ function excluirResgate(id,rid){
   refreshPro();
 }
 
+/* ── Avisos dispensados ───────────────────────────────────────────────
+   Um titular que já decidiu o que fazer com um vencimento não precisa ser
+   lembrado dele a cada visita. A chave inclui a DATA: mudou o vencimento
+   da aplicação, é outro evento, e o aviso volta — dispensar uma vez não
+   pode calar um vencimento futuro que o titular ainda nem viu. */
+const VC_IGN_KEY="gastos_v2_venc_ign";
+let VC_IGN=(()=>{ try{ return JSON.parse(localStorage.getItem(VC_IGN_KEY)||"{}")||{}; }
+                  catch(e){ return {}; } })();
+function vcIgnSalvar(){ try{ localStorage.setItem(VC_IGN_KEY,JSON.stringify(VC_IGN)); }catch(e){} }
+function vcChave(a,v){ return String(a&&a.id)+"|"+String(v||astVencData(a)||""); }
+function vcIgnorado(a,v){ return !!VC_IGN[vcChave(a,v)]; }
+function vcIgnorar(id){
+  const a=(typeof ASSETS!=="undefined"?ASSETS:[]).find(x=>x.id===id); if(!a) return;
+  VC_IGN[vcChave(a)]=1; vcIgnSalvar();
+  vcRedesenhar();
+  toast("✓ "+PX("vc_ignored"));
+}
+function vcRestaurarMes(){
+  let E; try{ E=vencDoMes(); }catch(e){ return; }
+  E.ign.forEach(x=>{ delete VC_IGN[vcChave(x.a,x.venc)]; });
+  vcIgnSalvar();
+  vcRedesenhar(true);
+}
+/* Redesenha a tira e, se o aviso estiver aberto, o próprio aviso */
+function vcRedesenhar(reabrir){
+  const aberto=!!document.getElementById("modal-vencimento");
+  vcFechar();
+  try{ if(typeof renderAssets==="function") renderAssets(); }catch(e){}
+  if(aberto||reabrir) setTimeout(()=>{ try{ openVencimentos(); }catch(e){} },160);
+  try{ refreshPro(); }catch(e){}
+}
+
 /* ═══ 11.4 AVISO DE VENCIMENTO ════════════════════════════════════════
    O que vence no mês navegado e o que já venceu e continua parado. Os dois
    grupos saem da MESMA liquidação — bruto corrigido até a data, encargos
@@ -20853,21 +20895,25 @@ function excluirResgate(id,rid){
    projeção nunca contem histórias diferentes. */
 function vencDoMes(ym){
   const M=String(ym||(typeof activeYMAst==="function"?activeYMAst():ymNow()));
-  const venc=[], over=[];
+  const venc=[], over=[], ign=[];
   (typeof ASSETS!=="undefined"?ASSETS:[]).forEach(a=>{
     if(!a||a.virtual) return;
     const v=astVencData(a); if(!v) return;
     let q; try{ q=astLiquidacao(a); }catch(e){ return; }
     if(!(q.bruto>0.01)) return;                 /* já resgatado por inteiro */
     const o=Object.assign({a,venc:v},q);
-    if(v.slice(0,7)===M) venc.push(o);
-    else if(v.slice(0,7)<M&&astVencEfetivo(a)) over.push(o);
+    const noMes=(v.slice(0,7)===M);
+    const passado=(v.slice(0,7)<M&&astVencEfetivo(a));
+    if(!noMes&&!passado) return;
+    if(vcIgnorado(a,v)) ign.push(o);
+    else if(noMes) venc.push(o);
+    else over.push(o);
   });
   const ord=(x,y)=>String(x.venc).localeCompare(String(y.venc));
-  venc.sort(ord); over.sort(ord);
+  venc.sort(ord); over.sort(ord); ign.sort(ord);
   const soma=L=>L.reduce((o,x)=>({bruto:R2(o.bruto+x.bruto),liquido:R2(o.liquido+x.liquido),
     ir:R2(o.ir+x.ir),iof:R2(o.iof+x.iof)}),{bruto:0,liquido:0,ir:0,iof:0});
-  return {ym:M,venc,over,tot:soma(venc),totOver:soma(over)};
+  return {ym:M,venc,over,ign,tot:soma(venc),totOver:soma(over),totIgn:soma(ign)};
 }
 /* Linha de uma aplicação dentro do aviso */
 function vcLinha(x){
@@ -20886,6 +20932,7 @@ function vcLinha(x){
     </div>
   </div>
   <div class="vc-acts">
+    <button class="vc-act ghost" onclick="event.stopPropagation();PRO.vcIgnorar(${x.a.id})">${PX("vc_ignore")}</button>
     <button class="vc-act" onclick="event.stopPropagation();PRO.vcAbrir(${x.a.id})">${PX("vc_open")}</button>
     ${fim
       ?`<button class="vc-act on" onclick="event.stopPropagation();PRO.vcNova()">${PX("vc_new")}</button>`
@@ -20920,7 +20967,15 @@ function renderVencAviso(){
   ensureStyles();
   let E; try{ E=vencDoMes(); }catch(e){ el.innerHTML=""; return; }
   const n=E.venc.length+E.over.length;
-  if(!n){ el.innerHTML=""; return; }
+  /* Tudo dispensado: some o aviso e fica só o caminho de volta — uma linha
+     apagada, sem retrato e sem tarja. Deixar de avisar não pode virar
+     deixar de existir: o titular precisa poder rever o que dispensou. */
+  if(!n){
+    el.innerHTML=E.ign.length?H`<div class="vc-undo">
+      <span>${raw(vcNome(E.ign.length)+" "+PX("vc_ignored_n"))}</span>
+      <button onclick="PRO.vcRestaurarMes()">${PL("vc_restore")}</button></div>`:"";
+    return;
+  }
   const bruto=R2(E.tot.bruto+E.totOver.bruto);
   el.innerHTML=H`<div class="vc-strip" onclick="PRO.openVencimentos()">
     <span class="otto-anel"><span class="oi oi-sm oi-round oi-ring oi-investiga" aria-hidden="true"></span></span>
@@ -20973,6 +21028,9 @@ function openVencimentos(){
     ${E.over.length?raw(vcBloco(PX("vc_over_t"),
         vcNome(E.over.length)+" · "+PX("vc_frozen").split(":")[0],
         E.over,E.totOver,true)):""}
+    ${E.ign.length?H`<div class="vc-undo">
+      <span>${raw(vcNome(E.ign.length)+" "+PX("vc_ignored_n"))}</span>
+      <button onclick="PRO.vcRestaurarMes()">${PL("vc_restore")}</button></div>`:""}
     <div class="pro-note">${PL("vc_note")}</div>
   </div>`;
   document.body.appendChild(ov);
@@ -25207,6 +25265,7 @@ window.PRO={
   astResgates,astResgAssin,astResgatadoTotal,astPrazoIR,astLiquidacao,astResgateEm,
   astEvoluirEventos,limparCachesAplic,vencDoMes,renderVencAviso,
   openVencimentos,astVencEfetivo,vcAbrir,vcResgatar,vcNova,vcFechar,
+  vcIgnorar,vcRestaurarMes,vcIgnorado,vcRedesenhar,
   exportProj,refreshRates:()=>fetchMarket(false),
   refreshHistorico:()=>fetchHistorico(false),
   getHist:()=>HIST,
