@@ -9461,6 +9461,16 @@ function astPosMapAst(){
   return map;
 }
 /* Valor de uma aplicação no mês que a tela está exibindo */
+/* Vencida: fora da carteira. Um único predicado, consultado por todos os
+   somatórios da tela — a alternativa seria repetir a regra em sete lugares
+   e descobrir na sétima tela que um deles ficou para trás. */
+function astVencidaFora(a){
+  try{ return !!(a&&!a.virtual&&window.PRO&&PRO.astVencEfetivo&&PRO.astVencEfetivo(a)); }
+  catch(e){ return false; }
+}
+/* Valor que ENTRA no patrimônio (zero se venceu) — distinto de astValAst,
+   que continua devolvendo a posição para exibir no cartão da aplicação. */
+function astValPatr(a){ return astVencidaFora(a)?0:astValAst(a); }
 function astValAst(a){
   if(!a) return 0;
   if(a.virtual) return parseFloat(a.balance)||0;
@@ -9588,9 +9598,9 @@ function renderAssets(){
   populateAstClassFilter();
   const FA=assetsFiltrados();
   /* Tudo aqui é a posição do MÊS EXIBIDO, não a de hoje */
-  const total=FA.reduce((s,a)=>s+astValAst(a),0);
-  const monthYield=FA.reduce((s,a)=>s+(astValAst(a)*astTaxaAst(a)/100),0);
-  const rendAcum=FA.reduce((s,a)=>s+astRendAcum(a),0);
+  const total=FA.reduce((s,a)=>s+astValPatr(a),0);
+  const monthYield=FA.reduce((s,a)=>s+(astValPatr(a)*astTaxaAst(a)/100),0);
+  const rendAcum=FA.reduce((s,a)=>s+(astVencidaFora(a)?0:astRendAcum(a)),0);
   const noMes=activeYMAst()===cym();
   /* A variação do mês é rendimento MAIS a sobra reinvestida. Antes só o
      rendimento aparecia, e a diferença entre um mês e o outro não fechava
@@ -9628,8 +9638,8 @@ function renderAssets(){
 /* ── RESUMO TAB ── */
 function renderAssetsDash(){
   const BASE=astBaseLista();
-  const total=BASE.reduce((s,a)=>s+astValAst(a),0);
-  const monthYield=BASE.reduce((s,a)=>s+(astValAst(a)*astTaxaAst(a)/100),0);
+  const total=BASE.reduce((s,a)=>s+astValPatr(a),0);
+  const monthYield=BASE.reduce((s,a)=>s+(astValPatr(a)*astTaxaAst(a)/100),0);
   const goalTotal=Object.values(astGoals).reduce((s,v)=>s+(parseFloat(v)||0),0);
   const avgYield=total>0?(monthYield/total*100):0;
 
@@ -9643,7 +9653,7 @@ function renderAssetsDash(){
 
   // allocation bars — clickable to filter list
   const byClass={};
-  ASSETS.forEach(a=>{byClass[a.class]=(byClass[a.class]||0)+astValAst(a);});
+  ASSETS.forEach(a=>{byClass[a.class]=(byClass[a.class]||0)+astValPatr(a);});
   const classes=ASSET_CLASSES.map(c=>({...c,total:byClass[c.id]||0})).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
   const mx=Math.max(...classes.map(c=>c.total),1);
   const byClassEl=document.getElementById("assets-by-class");
@@ -9664,10 +9674,11 @@ function renderAssetsDash(){
   // top positions
   const topEl=document.getElementById("ast-top-list");
   if(!topEl) return;
-  const top=[...ASSETS].sort((a,b)=>astValAst(b)-astValAst(a)).slice(0,5);
+  const top=ASSETS.filter(a=>!astVencidaFora(a))
+    .sort((a,b)=>astValPatr(b)-astValPatr(a)).slice(0,5);
   topEl.innerHTML=top.length?top.map(a=>{
     const c=gAssetClass(a.class);
-    const bal=astValAst(a);
+    const bal=astValPatr(a);
     const pct=total>0?(bal/total*100):0;
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.1)">
       <div style="display:flex;gap:10px;align-items:center;min-width:0">
@@ -9807,7 +9818,7 @@ function renderAssetList(){
 /* ── HISTÓRICO TAB ── */
 function saveAssetSnapshot(){
   const ymKey=activeYMAst();
-  const total=ASSETS.reduce((s,a)=>s+astValAst(a),0);
+  const total=ASSETS.reduce((s,a)=>s+astValPatr(a),0);
   if(total===0){toast(t("toast_no_asset_balance"));return;}
   ASSET_SNAPSHOTS[ymKey]=parseFloat(total.toFixed(2));
   persist();
@@ -9887,7 +9898,7 @@ function deleteAssetSnapshot(ymKey){
 
 /* ── METAS TAB ── */
 function renderAstGoals(){
-  const total=ASSETS.reduce((s,a)=>s+astValAst(a),0);
+  const total=ASSETS.reduce((s,a)=>s+astValPatr(a),0);
   const goalTotal=Object.values(astGoals).reduce((s,v)=>s+(parseFloat(v)||0),0);
   const over=goalTotal>0&&total>=goalTotal;
   const summEl=document.getElementById("ast-goals-summary");
@@ -9902,7 +9913,7 @@ function renderAstGoals(){
       <div style="font-size:11px;color:${over?"var(--green)":"var(--ink-2)"};margin-top:4px;text-align:right">${over?t("goal_reached"):fmt(goalTotal-total)+" "+t("to_goal")}</div>`:""}
     </div>`;
   const byClass={};
-  ASSETS.forEach(a=>{byClass[a.class]=(byClass[a.class]||0)+astValAst(a);});
+  ASSETS.forEach(a=>{byClass[a.class]=(byClass[a.class]||0)+astValPatr(a);});
   const goalsEl=document.getElementById("ast-goals-list");
   if(goalsEl) goalsEl.innerHTML=ASSET_CLASSES.map(c=>{
     const got=byClass[c.id]||0,g=parseFloat(astGoals[c.id])||0,ov=g>0&&got>=g;
@@ -15702,7 +15713,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.72";
+const APP_VERSION="10.74";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -16857,7 +16868,7 @@ const PDIC={
 
   /* — vencimento e resgate — */
   vc_title:["Vence neste mês","Maturing this month","Fällig in diesem Monat"],
-  vc_over_t:["Vencidas — aguardando reaplicação","Matured — awaiting reinvestment","Fällig — Wiederanlage offen"],
+  vc_over_t:["Vencidas — fora do patrimônio","Matured — out of net worth","Fällig — nicht im Vermögen"],
   vc_over:["Vencida em","Matured on","Fällig am"],
   vc_due:["Vence em","Matures on","Fällig am"],
   vc_badge_over:["Vencido","Matured","Fällig"],
@@ -16865,11 +16876,16 @@ const PDIC={
   vc_gross:["Montante bruto","Gross amount","Bruttobetrag"],
   vc_net:["Líquido a receber","Net proceeds","Nettoerlös"],
   vc_charges:["Encargos","Charges","Abgaben"],
-  vc_frozen:["Sem rendimento desde o vencimento: o montante fica parado até você reaplicá-lo.",
-    "No yield since maturity: the amount sits idle until you reinvest it.",
-    "Seit Fälligkeit keine Verzinsung: der Betrag ruht, bis Sie ihn wieder anlegen."],
+  vc_frozen:["Já liquidada: saiu do patrimônio e não rende mais. Cadastre a nova aplicação com o montante que voltou para a conta.",
+    "Already settled: out of net worth and no longer earning. Register the new holding with the amount returned to your account.",
+    "Bereits abgerechnet: nicht mehr im Vermögen und ohne Verzinsung. Legen Sie die neue Anlage mit dem zurückgeflossenen Betrag an."],
   vc_alert_t:["Você tem aplicações vencendo","You have holdings maturing","Sie haben fällige Anlagen"],
   vc_see:["Ver","See","Ansehen"],
+  vc_new:["Nova aplicação","New holding","Neue Anlage"],
+  vc_out:["fora do patrimônio","out of net worth","nicht im Vermögen"],
+  vc_no_redeem:["Aplicação vencida: a liquidação já ocorreu no vencimento. Cadastre a nova aplicação.",
+    "Matured holding: settlement already happened at maturity. Register the new holding.",
+    "Fällige Anlage: die Abrechnung erfolgte bereits bei Fälligkeit. Legen Sie die neue Anlage an."],
   vc_one:["aplicação","holding","Anlage"],
   vc_many:["aplicações","holdings","Anlagen"],
   vc_open:["Abrir","Open","Öffnen"],
@@ -19526,10 +19542,12 @@ function ensureStyles(){
     color:var(--ink-2);white-space:nowrap;display:inline-block}
   .rg-tag{background:rgba(0,0,0,.05);border-radius:8px;padding:4px 9px;font-size:10.5px;
     color:var(--ink-2);white-space:nowrap;display:inline-block}
-  #modal-resgate #res-data{width:100%!important;display:block!important;
+  #modal-resgate #res-data{width:100%!important;display:flex!important;
+    align-items:center!important;
     height:38px!important;min-height:38px!important;box-sizing:border-box!important;
     padding:0 13px!important;border-radius:12px!important;font-size:13px!important;
-    line-height:1.2!important;margin-bottom:clamp(10px,2dvh,18px)!important}
+    line-height:normal!important;margin-bottom:clamp(10px,2dvh,18px)!important}
+  #modal-resgate #res-data::-webkit-datetime-edit{padding:0!important;line-height:normal!important}
   /* Aviso de vencimento. A tarja à esquerda é o único ornamento: a cor
      diz o tom (âmbar para o que vence, terracota para o que já venceu) e
      o resto é a mesma tipografia das outras fichas. */
@@ -19564,9 +19582,11 @@ function ensureStyles(){
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #modal-vencimento .vc-box{margin-bottom:10px}
   .vc-acts{display:flex;gap:6px;justify-content:flex-end;padding:0 0 4px}
-  .vc-act{border:1.5px solid var(--line);background:none;color:var(--ink-2);border-radius:20px;
-    min-height:30px;padding:0 13px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;
-    flex-shrink:0}
+  .vc-act{display:inline-flex;align-items:center;justify-content:center;
+    border:1.5px solid var(--line);background:none;color:var(--ink-2);border-radius:20px;
+    height:30px;min-height:30px;padding:0 13px;font-size:11px;font-weight:600;line-height:1;
+    cursor:pointer;white-space:nowrap;flex-shrink:0;box-sizing:border-box;
+    -webkit-appearance:none;appearance:none}
   .vc-act.on{border-color:#0F2440;background:#0F2440;color:#fff}
   .vc-row{cursor:pointer}
   .liq-card{background:var(--surface);border-radius:16px;padding:13px 15px;margin-bottom:9px;
@@ -20654,6 +20674,10 @@ function resgDataMin(a){
 }
 function openResgate(id){
   const a=ASSETS.find(x=>x.id===id); if(!a) return;
+  /* Vencida não tem o que resgatar: a liquidação já aconteceu na data de
+     vencimento e o dinheiro voltou para a conta. O caminho é cadastrar a
+     aplicação nova, e é isso que o aviso oferece. */
+  if(astVencEfetivo(a)){ toast(PX("vc_no_redeem")); return; }
   ensureStyles();
   const c=gAssetClass(a.class), p=astPro(a);
   const vc=astVencData(a,p), vencido=astVencido(a);
@@ -20848,7 +20872,8 @@ function vencDoMes(ym){
 /* Linha de uma aplicação dentro do aviso */
 function vcLinha(x){
   const c=gAssetClass(x.a.class);
-  return `<div class="vc-row" onclick="openAssetEdit(${x.a.id})">
+  const fim=!!astVencEfetivo(x.a);
+  return `<div class="vc-row" onclick="PRO.vcAbrir(${x.a.id})">
     <div style="width:30px;height:30px;border-radius:9px;background:${c.color}18;display:flex;
       align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${c.emoji}</div>
     <div style="flex:1;min-width:0">
@@ -20861,8 +20886,10 @@ function vcLinha(x){
     </div>
   </div>
   <div class="vc-acts">
-    <button class="vc-act" onclick="event.stopPropagation();openAssetEdit(${x.a.id})">${PX("vc_open")}</button>
-    <button class="vc-act on" onclick="event.stopPropagation();PRO.openResgate(${x.a.id})">${PX("vc_redeem")}</button>
+    <button class="vc-act" onclick="event.stopPropagation();PRO.vcAbrir(${x.a.id})">${PX("vc_open")}</button>
+    ${fim
+      ?`<button class="vc-act on" onclick="event.stopPropagation();PRO.vcNova()">${PX("vc_new")}</button>`
+      :`<button class="vc-act on" onclick="event.stopPropagation();PRO.vcResgatar(${x.a.id})">${PX("vc_redeem")}</button>`}
   </div>`;
 }
 function vcBloco(titulo,sub,lista,tot,over){
@@ -20912,6 +20939,16 @@ function renderVencAviso(){
     setTimeout(()=>{ try{ if(!document.querySelector(".overlay.open")) openVencimentos(); }catch(e){} },450);
   }
 }
+/* O aviso precisa sair da frente antes de abrir a aplicação: duas folhas
+   empilhadas deixavam a de baixo inacessível, e era justamente a que o
+   titular tinha pedido. */
+function vcFechar(){
+  const m=document.getElementById("modal-vencimento");
+  if(m){ try{ closeOverlay(m); }catch(e){ m.remove(); } }
+}
+function vcAbrir(id){ vcFechar(); setTimeout(()=>{ try{ openAssetEdit(id); }catch(e){} },210); }
+function vcResgatar(id){ vcFechar(); setTimeout(()=>{ try{ openResgate(id); }catch(e){} },210); }
+function vcNova(){ vcFechar(); setTimeout(()=>{ try{ openAsset(); }catch(e){} },210); }
 function openVencimentos(){
   let E; try{ E=vencDoMes(); }catch(e){ return; }
   if(!E.venc.length&&!E.over.length) return;
@@ -21687,7 +21724,7 @@ window.saveAsset=function(){
       pro.custoAuto=true;
       pro.custo=astCustoRegressivo(target,pro);
     }
-    target.pro=pro;
+    target.pro=Object.assign({},target.pro||{},pro);
     target.yieldPct=R2(astLiquidoAM(target));   // mantém o núcleo coerente
     persist();
   }
@@ -21768,7 +21805,7 @@ window.renderAssetList=function(){
       const M=(typeof activeYMAst==="function")?activeYMAst():ymNow();
       if(astVencEfetivo(a,p)&&String(M)>=v.slice(0,7))
         return `<span style="font-size:10px;background:rgba(184,90,106,.14);
-        border-radius:7px;padding:2px 7px;color:#B85A6A;font-weight:700">${PX("vc_badge_over")} ${brDate(v)}</span>`;
+        border-radius:7px;padding:2px 7px;color:#B85A6A;font-weight:700">${PX("vc_badge_over")} ${brDate(v)} · ${PX("vc_out")}</span>`;
       /* ainda por vencer: âmbar no mês do vencimento, neutra fora dele */
       const perto=astVenceNoYM(a,M);
       return `<span style="font-size:10px;background:${perto?"rgba(196,134,58,.16)":"rgba(0,0,0,.05)"};
@@ -22661,14 +22698,22 @@ function cfMes(ym,k,st){
      que somam o número da tela inicial. Uma máquina só, um número só. */
   const apSaldos={};
   let saldoPatr=0;
-  if(proj&&st) st.forEach(x=>{ saldoPatr+=x.saldo; apSaldos[x.a.id]=R2(x.saldo); });
+  /* A posição por aplicação continua sendo devolvida mesmo para a vencida
+     — é o número que o aviso mostra e que serve de referência ao novo
+     cadastro. O que ela não faz mais é somar no patrimônio. */
+  const foraPatr=x=>{ try{ return !!astVencEfetivo(x); }catch(e){ return false; } };
+  if(proj&&st) st.forEach(x=>{
+    apSaldos[x.a.id]=R2(x.saldo);
+    if(!foraPatr(x.a)) saldoPatr+=x.saldo;
+  });
   else (typeof ASSETS!=="undefined"?ASSETS:[]).forEach(x=>{
     /* mês corrente: hoje, que é fato. Meses passados: a posição regredida
        pela curva do próprio produto, e não o saldo de hoje repetido. */
     let v=0;
     try{ v=(k<0)?astValorYM(x,ym):astValorAtual(x); }
     catch(e){ v=parseFloat(x&&x.balance)||0; }
-    apSaldos[x.id]=R2(v); saldoPatr+=v;
+    apSaldos[x.id]=R2(v);
+    if(!foraPatr(x)) saldoPatr+=v;
   });
 
   const entLiq=R2(inc.liquido);
@@ -25161,7 +25206,7 @@ window.PRO={
   astVencData,astTemVenc,astVencido,astVencidoYM,astVenceNoYM,astParteRendeMes,
   astResgates,astResgAssin,astResgatadoTotal,astPrazoIR,astLiquidacao,astResgateEm,
   astEvoluirEventos,limparCachesAplic,vencDoMes,renderVencAviso,
-  openVencimentos,astVencEfetivo,
+  openVencimentos,astVencEfetivo,vcAbrir,vcResgatar,vcNova,vcFechar,
   exportProj,refreshRates:()=>fetchMarket(false),
   refreshHistorico:()=>fetchHistorico(false),
   getHist:()=>HIST,
