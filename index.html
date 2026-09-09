@@ -15733,7 +15733,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.79";
+const APP_VERSION="10.80";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -16966,6 +16966,16 @@ const PDIC={
   rg_when:["Data do resgate","Redemption date","Datum der Auszahlung"],
   rg_how:["Quanto deseja resgatar","How much to redeem","Wie viel auszahlen"],
   rg_all:["Tudo","All","Alles"],
+  ap_days:["dias","days","Tage"],
+  rg_band:["Faixa de","Band of","Stufe von"],
+  rg_band_over:["acima de","over","über"],
+  rg_band_src:["tabela de IR nos Parâmetros","income-tax table in Parameters","Steuertabelle in den Parametern"],
+  rg_band_next:["Em","In","In"],
+  rg_band_to:["a alíquota cai para","the rate drops to","sinkt der Satz auf"],
+  rg_sim_fut:["Data futura — simulação","Future date — simulation","Zukünftiges Datum — Simulation"],
+  rg_fut_note:["Data à frente de hoje: serve para simular a mudança de faixa do IR, mas não pode ser registrada. Para gravar o resgate, escolha uma data até hoje.",
+    "A date ahead of today: useful to simulate the change of tax band, but it cannot be recorded. To record the redemption, pick a date up to today.",
+    "Ein Datum nach heute: nützlich, um den Wechsel der Steuerstufe zu simulieren, aber nicht buchbar. Für die Buchung ein Datum bis heute wählen."],
   rg_enc:["Encargo de resgate antecipado","Early redemption charge","Vorfälligkeitsentgelt"],
   rg_enc_s:["Encargo","Charge","Entgelt"],
   rg_enc_note:["Deságio, multa ou taxa de saída cobrada por resgatar antes do vencimento. Não é imposto: é cláusula do contrato, então o valor vem do extrato ou da lâmina do produto. Deixe zerado se não houver.",
@@ -18714,15 +18724,37 @@ function astEvolucao(a,mesesFuturos){
 }
 
 /* Próxima faixa da tabela regressiva e quanto falta para alcançá-la */
-function astProxFaixaIR(a,d){
-  const p=astPro(a);
-  if(p.trib==="isento"||p.trib==="fii"||p.trib==="acoes"||p.trib==="cripto") return null;
-  const marcos=(p.trib==="fundoCP")?[181]:[181,361,721];
+function astTabelaIR(a,p){
+  const P=p||astPro(a);
+  if(P.trib==="isento"||P.trib==="fii"||P.trib==="acoes"||P.trib==="cripto") return null;
+  const tab=(P.trib==="fundoCP")?FISCAL.irCP:FISCAL.irRF;
+  return (Array.isArray(tab)&&tab.length)?tab:null;
+}
+/* Faixa da tabela em que o prazo cai — é o que torna a alíquota do resgate
+   conferível: o titular vê o número e de onde ele veio. */
+function astFaixaIR(a,d){
+  const tab=astTabelaIR(a); if(!tab) return null;
+  let de=1;
+  for(const r of tab){
+    const ate=+r.ate||0;
+    if(d<=ate) return {de,ate,aliq:+r.aliq,ultima:ate>=1e9};
+    de=ate+1;
+  }
+  const u=tab[tab.length-1];
+  return {de,ate:+u.ate||0,aliq:+u.aliq,ultima:true};
+}
+function astProxFaixaIR(a,d,ref){
+  const tab=astTabelaIR(a); if(!tab) return null;
+  const atual=astAliqIR(a,d);
+  const marcos=tab.map(r=>(+r.ate||0)+1)
+                  .filter(x=>x>1&&x<1e8)
+                  .sort((x,y)=>x-y);
   for(const mk of marcos){
     if(d<mk){
-      const alvo=(p.trib==="fundoCP")?irFundoCurto(mk):irRendaFixa(mk);
-      return {dias:mk-d, data:addDays(today(),mk-d), aliq:alvo,
-              de:astAliqIR(a,d)};
+      const alvo=astAliqIR(a,mk);
+      /* só é notícia se a espera de fato baratear o imposto */
+      if(alvo<atual) return {dias:mk-d, data:addDays(ref||today(),mk-d),
+                             aliq:alvo, de:atual};
     }
   }
   return null;
@@ -20790,7 +20822,8 @@ function openResgate(id){
 
     <label class="f-label">${PL("rg_when")}</label>
     <input id="res-data" class="f-input" type="date" value="${today()}"
-      min="${raw(resgDataMin(a))}" max="${today()}" onchange="PRO.calcResgate('${id}')"/>
+      min="${raw(resgDataMin(a))}" max="${raw(addDays(today(),3650))}"
+      onchange="PRO.calcResgate('${id}')"/>
 
     <label class="f-label">${PL("rg_how")}</label>
     <input id="res-val" class="f-amount" type="text" inputmode="decimal" placeholder="0,00"
@@ -20827,7 +20860,6 @@ function resgDataSel(a){
   let d=(el&&el.value)?String(el.value).slice(0,10):today();
   const mn=resgDataMin(a);
   if(d<mn) d=mn;
-  if(d>today()) d=today();
   return d;
 }
 function setResgatePct(id,q){
@@ -20846,13 +20878,22 @@ function calcResgate(id){
   const de=String(a.lastUpdate||p.aplic||today()).slice(0,10);
   const L=(lbl,val,cor,forte)=>`<div class="pro-cf${forte?" tot":""}">
     <span>${lbl}</span><span style="color:${cor||"var(--body)"}">${val}</span></div>`;
+  const futuro=dt>today();
+  /* De onde saiu a alíquota: a faixa da tabela dos Parâmetros em que o
+     prazo caiu, e quando a próxima faixa começa contando desta data. */
+  const fx=astFaixaIR(a,r.dias), prox=astProxFaixaIR(a,r.dias,dt);
+  const faixaTxt=fx?`<div class="pro-note" style="margin:0 0 8px">${
+    PX("rg_band")} ${fx.ultima?PX("rg_band_over")+" "+(fx.de-1):fx.de+"–"+fx.ate} ${
+    PX("ap_days")} · ${P2(fx.aliq)}% · ${PX("rg_band_src")}${
+    prox?"<br>"+PX("rg_band_next")+" "+prox.dias+" "+PX("ap_days")+" ("+brDate(prox.data)+") "
+        +PX("rg_band_to")+" "+P2(prox.aliq)+"%.":""}</div>`:"";
   $("res-out").innerHTML=H`
     <div style="background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:10px">
       ${raw(L(PX("rg_pos"),fmt(r.saldo),"var(--ink-2)"))}
       ${raw(L(PX("rg_val"),fmt(r.valor)))}
       ${raw(L(PX("rg_gain"),fmt(r.ganho),"#5A8A4A"))}
       ${r.iof>0?raw(L("IOF ("+P2(r.iofPct)+"% · "+r.dias+"d)",SGP("−")+fmt(r.iof),"#B85A6A")):""}
-      ${raw(L("IR ("+P2(r.aliq)+"%)",SGP("−")+fmt(r.ir),"#B85A6A"))}
+      ${raw(L("IR ("+P2(r.aliq)+"% · "+r.dias+" "+PX("ap_days")+")",SGP("−")+fmt(r.ir),"#B85A6A"))}
       ${r.encargo>0?raw(L(PX("rg_enc"),SGP("−")+fmt(r.encargo),"#B85A6A")):""}
       <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;
         margin-top:6px;border-top:2px solid var(--line)">
@@ -20861,12 +20902,14 @@ function calcResgate(id){
       </div>
       ${raw(L(PX("rg_rest"),fmt(r.restante),"var(--ink-2)",true))}
     </div>
+    ${raw(faixaTxt)}
     <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:11px;margin-bottom:10px">
-      <span class="rg-tag">${PL("rg_sim")}</span>
+      <span class="rg-tag">${futuro?PL("rg_sim_fut"):PL("rg_sim")}</span>
       <span class="rg-tag">${raw(brDate(dt))}</span>
       ${p.comeCotas?`<span class="rg-tag">${raw(TR("Come-cotas em mai/nov"))}</span>`:""}
     </div>
-    ${dt<=de?`<div class="pro-note" style="margin:0 0 10px">${PL("rg_after")}</div>`:""}`;
+    ${futuro?`<div class="info-card" style="background:rgba(196,134,58,.12);color:#7A5A22;margin:0 0 10px">${PL("rg_fut_note")}</div>`:""}
+    ${(!futuro&&dt<=de)?`<div class="pro-note" style="margin:0 0 10px">${PL("rg_after")}</div>`:""}`;
   renderResgHist(id);
 }
 /* percentual com vírgula, sem casas inúteis */
@@ -25581,6 +25624,7 @@ window.PRO={
   salvarResgate,excluirResgate,renderResgHist,resgDataMin,resgAtivo,resgEncargo,
   astVencData,astTemVenc,astVencido,astVencidoYM,astVenceNoYM,astParteRendeMes,
   astResgates,astResgAssin,astResgatadoTotal,astPrazoIR,astLiquidacao,astResgateEm,
+  astFaixaIR,astTabelaIR,astProxFaixaIR,
   astEvoluirEventos,limparCachesAplic,vencDoMes,renderVencAviso,
   openVencimentos,astVencEfetivo,vcAbrir,vcResgatar,vcNova,vcFechar,
   vcIgnorar,vcRestaurar,vcRestaurarMes,vcIgnorado,vcRedesenhar,
