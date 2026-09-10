@@ -15752,7 +15752,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.83";
+const APP_VERSION="10.84";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -17279,14 +17279,20 @@ function fgtsParteDoMes(ymS,dia){
 /* Marca de patrimônio de FGTS gerado por uma renda: conta vinculada, que
    recebe UM depósito por mês e não aceita reaplicação de sobra. */
 function astEhFgtsAuto(a){
-  return !!(a&&a.class==="fgts"&&a.pro&&a.pro.fonteRenda);
+  if(!(a&&a.class==="fgts"&&a.pro)) return false;
+  /* Conta de FGTS cadastrada à mão no Patrimônio também é conta vinculada:
+     quem deposita é o empregador. Antes só a conta criada pela renda era
+     reconhecida — a cadastrada à mão virava aplicação comum, com aporte
+     fixo o ano inteiro e descontado do caixa do titular. */
+  return !!(a.pro.fonteRenda||(+a.pro.aporte||0)>0);
 }
 /* Assinatura da renda que origina o FGTS. Entra nas chaves de cache: mexer
    no salário, ligar o 13º ou mudar o mês de férias tem de invalidar a
    posição projetada da conta vinculada, ou a tela devolve o cenário
    anterior sem avisar. */
 function fgtsAssinaturaRenda(p){
-  if(!p||!p.fonteRenda) return "";
+  if(!p) return "";
+  if(!p.fonteRenda) return p.contaFgts?("clt:"+(+p.aporte||0)+"~"+fgtsAssinaturaCLT()):"";
   try{
     const inc=(typeof INCOME!=="undefined"?INCOME:[])
       .find(x=>String(x.id)===String(p.fonteRenda));
@@ -17294,6 +17300,42 @@ function fgtsAssinaturaRenda(p){
     return [inc.amount,inc.date,inc.recurUntil||"",
             JSON.stringify(inc.pro||{})].join("~");
   }catch(e){ return ""; }
+}
+/* Assinatura dos salários CLT: é deles que sai a sazonalidade do depósito
+   de uma conta de FGTS sem vínculo explícito com a renda. */
+function fgtsAssinaturaCLT(){
+  try{
+    let fts=0; try{ fts=FISCAL.ts||0; }catch(e){}
+    return (typeof INCOME!=="undefined"?INCOME:[])
+      .filter(x=>incCaps(x.type).fgts)
+      .map(x=>[x.id,x.amount,x.date,x.recurUntil||"",JSON.stringify(x.pro||{})].join("~"))
+      .join("^")+"|"+fts;
+  }catch(e){ return ""; }
+}
+/* Fator do mês sobre o depósito normal: (bruto CLT do mês, incluindo 13º e
+   terço de férias) ÷ (bruto do salário normal). Em novembro, com
+   adiantamento de 50%, vale 1,5; no mês de férias, 1,33; nos demais, 1. */
+function fgtsFatorMes(ym,eventos){
+  const calc=evs=>{ let nor=0,tot=0;
+    (evs||[]).forEach(e=>{
+      if(!e||!e.inc||!e.p||e.p.regime!=="clt"||!incCaps(e.inc.type).fgts) return;
+      const b=+e.bruto||0; tot+=b; if(e.tipo==="normal") nor+=b; });
+    return nor>0?tot/nor:1; };
+  if(eventos&&eventos.length!==undefined) return calc(eventos);
+  const ck="fator|"+ym+"|"+fgtsAssinaturaCLT();
+  if(FGTS_MES_CACHE[ck]!==undefined) return FGTS_MES_CACHE[ck];
+  let f=1; try{ f=calc(incomeEventsForYM(ym)); }catch(e){ f=1; }
+  return (FGTS_MES_CACHE[ck]=f);
+}
+/* Depósito de uma conta de FGTS num mês — ÚNICA porta de entrada.
+   Vinculada à renda: soma dos eventos de FGTS daquele salário.
+   Cadastrada à mão: o depósito informado × o fator do mês. */
+function fgtsDepositoConta(p,ym,eventos){
+  if(!p) return 0;
+  if(p.fonteRenda) return Math.max(0,fgtsDepositoMes(p.fonteRenda,ym,eventos,p));
+  const ap=+p.aporte||0;
+  if(!(ap>0)) return 0;
+  return R2(ap*fgtsFatorMes(ym,eventos));
 }
 /* ── DEPÓSITO DE FGTS DE UM MÊS ───────────────────────────────────────
    O depósito não é o mesmo número todo mês. Em novembro entra o FGTS do
@@ -18135,7 +18177,8 @@ function astPro(a){
   /* CONTA VINCULADA DE FGTS: a taxa é regra dos Parâmetros, não atributo
      da ficha. A ficha guardava a taxa do dia em que a renda foi salva, e
      mudar o rendimento do FGTS nos Parâmetros não movia a projeção. */
-  if(a&&a.class==="fgts"&&p.fonteRenda){
+  if(a&&a.class==="fgts"){
+    p.contaFgts=true;
     let tx=3;
     try{ if(+FISCAL.fgtsTaxa>0) tx=+FISCAL.fgtsTaxa; }catch(e){}
     p.idx="pre"; p.idxVal=tx; p.trib="isento";
@@ -18633,7 +18676,7 @@ function astEvolucao(a,mesesFuturos){
      repetia o depósito do salário doze vezes e divergia do Patrimônio. */
   const fgAuto=astEhFgtsAuto(a);
   const fgDia=Math.min(31,Math.max(1,+p.fgtsDia||20));
-  const depMes=ym=>fgAuto?Math.max(0,fgtsDepositoMes(p.fonteRenda,ym,null,p)):aporte;
+  const depMes=ym=>fgAuto?fgtsDepositoConta(p,ym,null):aporte;
   /* rendimento do depósito: só a fração do mês que corre do dia dele */
   const depRend=(dep,ym,f)=>fgAuto&&dep>0?dep*Math.max(0,f-1)*fgtsParteDoMes(ym,fgDia):0;
   const temAporte=fgAuto||aporte>0;
@@ -18972,8 +19015,7 @@ function fgtsDepositoProjetado(ym,fallback){
   if(!ats.length) return R2(+fallback||0);
   let v=0;
   ats.forEach(a=>{const p=astPro(a);
-    if(astEhFgtsAuto(a)) v+=Math.max(0,fgtsDepositoMes(p.fonteRenda,ym,null,p));
-    else v+=(+p.aporte||0);});
+    v+=astEhFgtsAuto(a)?fgtsDepositoConta(p,ym,null):(+p.aporte||0);});
   return R2(v);
 }
 
@@ -19347,7 +19389,6 @@ function astEvoluirAte(a,p,de,ate,bal){
      renda (padrão 20) e rende só a fração do mês que sobra dali. Uma
      entrada por mês, nunca duas. */
   const fgDia=astEhFgtsAuto(a)?Math.min(31,Math.max(1,+p.fgtsDia||20)):0;
-  const fgFonte=fgDia>0?p.fonteRenda:null;
   const cc=!!p.comeCotas&&String(p.trib||"").indexOf("fundo")===0;
   const aliqCC=(p.trib==="fundoCP")?FISCAL.irFundoCP:FISCAL.irFundoLP;
   let v=bal, rend=0, apo=0, imp=0;
@@ -19359,7 +19400,7 @@ function astEvoluirAte(a,p,de,ate,bal){
         /* 13º e terço de férias também recolhem FGTS: o depósito do mês é
            a soma dos eventos daquele mês, não o percentual do salário
            repetido doze vezes. */
-        const dep=fgtsDepositoMes(fgFonte,r.ym,null,p);
+        const dep=fgtsDepositoConta(p,r.ym,null);
         if(dep>0){
           const g=dep*Math.max(0,r.f-1)*fgtsParteDoMes(r.ym,fgDia);
           v+=dep+g; apo+=dep; rend+=g;
@@ -21608,6 +21649,9 @@ function renderRendimento(){
   /* vencida não projeta: o horizonte futuro simplesmente não se aplica */
   const vencEf=astVencEfetivo(a,p);
   const e=astEvolucao(a,vencEf?0:REND_HORIZ);
+  /* na tabela mês a mês o "R$" vai no cabeçalho: cinco colunas com o
+     símbolo em cada célula não cabem na largura de um celular */
+  const nr=v=>String(fmt(v)).replace(/R\$[\s\u00a0]*/,"");
   const jan=aplJanela(e);
   const cmp=aplComparativo(jan,APL_BENCH);
   const GRN="#5A8A4A", RED="#B85A6A", NAV="#0F2440";
@@ -21784,21 +21828,21 @@ function renderRendimento(){
 
     <div class="sec-label">Evolução mês a mês</div>
     <div style="background:var(--surface);border-radius:14px;padding:4px 12px 10px;margin-bottom:12px">
-      <table style="width:100%;border-collapse:collapse;font-size:10.5px;table-layout:fixed">
+      <table style="width:100%;border-collapse:collapse;font-size:10.5px;table-layout:fixed;font-variant-numeric:tabular-nums">
         <thead><tr style="color:var(--ink-3);text-align:right">
-          <th style="padding:7px 3px;text-align:left;font-weight:600;width:${e.aporte>0?"18%":"22%"}">Mês</th>
-          <th style="padding:7px 3px;font-weight:600;width:${e.aporte>0?"24%":"28%"}">Saldo</th>
-          ${e.aporte>0?`<th style="padding:7px 3px;font-weight:600;width:18%">${e.fgAuto?"Depósito":"Aporte"}</th>`:""}
-          <th style="padding:7px 3px;font-weight:600;width:${e.aporte>0?"20%":"24%"}">Rend.</th>
-          <th style="padding:7px 3px;font-weight:600;width:${e.aporte>0?"20%":"26%"}">Líquido</th>
+          <th style="padding:7px 3px;text-align:left;font-weight:600;white-space:nowrap;width:${e.aporte>0?"16%":"18%"}">Mês · R$</th>
+          <th style="padding:7px 3px;font-weight:600;width:${e.aporte>0?"23%":"28%"}">Saldo</th>
+          ${e.aporte>0?`<th style="padding:7px 3px;font-weight:600;width:19%">${e.fgAuto?"Depósito":"Aporte"}</th>`:""}
+          <th style="padding:7px 3px;font-weight:600;width:${e.aporte>0?"16%":"22%"}">Rend.</th>
+          <th style="padding:7px 3px;font-weight:600;width:${e.aporte>0?"26%":"32%"}">Líquido</th>
         </tr></thead>
         <tbody>${linhas.map((x,i)=>`<tr style="border-top:1px solid var(--line);${x.futuro?"opacity:.5":""}${x.data===e.hoje?";background:rgba(15,36,64,.05)":""}">
           <td style="padding:5px 3px;text-align:left;color:var(--body);white-space:nowrap">${x.data===e.hoje?"<b>Hoje</b>":MS[mesOf(x.data)-1]+"/"+x.ym.slice(2,4)}${x.comeCotas>0?" <span style='color:#B85A6A'>•</span>":""}</td>
-          <td style="padding:5px 3px;text-align:right;color:var(--body)">${fmt(x.saldo)}</td>
+          <td style="padding:5px 3px;text-align:right;color:var(--body);white-space:nowrap">${nr(x.saldo)}</td>
           ${e.aporte>0?`<td style="padding:5px 3px;text-align:right;color:var(--ink-2)">${(()=>{
-            const ap=i>0?x.aportado-linhas[i-1].aportado:0; return ap>0.005?fmt(ap):"—";})()}</td>`:""}
-          <td style="padding:5px 3px;text-align:right;color:${GRN}">${fmt(x.rendMes)}</td>
-          <td style="padding:5px 3px;text-align:right;color:${NAV};font-weight:600">${fmt(x.liquido)}</td>
+            const ap=i>0?x.aportado-linhas[i-1].aportado:0; return ap>0.005?nr(ap):"—";})()}</td>`:""}
+          <td style="padding:5px 3px;text-align:right;color:${GRN};white-space:nowrap">${nr(x.rendMes)}</td>
+          <td style="padding:5px 3px;text-align:right;color:${NAV};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:clip">${nr(x.liquido)}</td>
         </tr>`).join("")}</tbody>
       </table>
       <div style="font-size:9.5px;color:var(--ink-3);margin-top:6px;line-height:1.5">${e.fgAuto?"Saldo do mês = saldo anterior + depósito + rendimento. No mês do 13º e no mês de férias o depósito inclui o FGTS dessas verbas. ":(e.aporte>0?"Saldo do mês = saldo anterior + aporte + rendimento. ":"")}Líquido = saldo menos a provisão de IR e IOF daquele prazo. Linhas claras são projeção.${e.comeCotas?" O ponto vermelho marca o come-cotas.":""}</div>
@@ -23174,7 +23218,7 @@ function cfMes(ym,k,st){
         /* os eventos do mês já foram apurados acima: o depósito sai deles,
            e por isso 13º e férias engordam a conta vinculada nos meses
            certos, exatamente como aparecem no fluxo de caixa */
-        const dep=Math.max(0,fgtsDepositoMes(x.fgtsFonte,ym,inc.eventos,x.p));
+        const dep=fgtsDepositoConta(x.p,ym,inc.eventos);
         x.saldo=R2(x.saldo+rb);
         if(dep>0){
           const g=dep*tx*fgtsParteDoMes(ym,x.fgtsDia);
@@ -25523,7 +25567,7 @@ function impSerie(){
       const rb=saldo*rate;
       let dep=0, rendDep=0;
       if(fgAuto){
-        dep=Math.max(0,fgtsDepositoMes(p.fonteRenda,ym,null,p));
+        dep=fgtsDepositoConta(p,ym,null);
         rendDep=dep*rate*fgtsParteDoMes(ym,fgDia);
       }
       let aliq=0; try{ aliq=astAliqIR(a,d0+30*k); }catch(e){}
@@ -25843,7 +25887,7 @@ window.PRO={
   diasUteis,duPeriodo,ehDiaUtil,astPro,serieFatores,
   /* leitura da regra de FGTS: dia do depósito e reconhecimento da conta
      vinculada. Exposto para diagnóstico e para os testes de projeção. */
-  incPro,fgtsDe,fgtsParteDoMes,astEhFgtsAuto,fgtsDepositoMes,
+  incPro,fgtsDe,fgtsParteDoMes,astEhFgtsAuto,fgtsDepositoMes,fgtsDepositoConta,fgtsFatorMes,
   openFgts,setFgtsModo,toggleFgtsRepetir,toggleFgtsPatr,fgtsCalc,salvarFgts,limparFgts,
   debtScheduleFGTS,fgtsComparativo,fgtsModosComparados,debtParcelaEfetiva,fgtsPlano,
   fgtsCronograma,debtMesFGTS,fgtsPlanoTemFonte,fgtsDisponivel,fgtsModo,FGTS_MODOS,
