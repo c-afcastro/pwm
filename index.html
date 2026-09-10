@@ -15733,7 +15733,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.80";
+const APP_VERSION="10.81";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -16651,9 +16651,9 @@ const PDIC={
     "The month's leftover cash becomes a holding instead of vanishing from the projection.",
     "Der Monatsüberschuss wird angelegt, statt aus der Projektion zu verschwinden."],
   p_proj_sv:["Concentrar no CDB Saving","Concentrate in the savings CD","Im Spar-Festgeld bündeln"],
-  p_proj_sv_h:["Toda a sobra vai para uma aplicação única indexada ao CDI, aportada no 1º dia útil do mês seguinte. Desligado, a sobra é rateada pela carteira que já existe.",
-    "All surplus goes into a single CDI-linked holding, deposited on the first business day of the following month. Off, the surplus is spread across the existing portfolio.",
-    "Der gesamte Überschuss fließt in eine einzige CDI-gebundene Anlage, eingezahlt am ersten Werktag des Folgemonats. Aus: Der Überschuss wird auf das bestehende Portfolio verteilt."],
+  p_proj_sv_h:["Toda a sobra vai para uma aplicação única, no perfil que você definir abaixo, aportada no 1º dia útil do mês seguinte. Desligado, a sobra é rateada pela carteira que já existe.",
+    "All surplus goes into a single holding, under the profile you set below, deposited on the first business day of the following month. Off, the surplus is spread across the existing portfolio.",
+    "Der gesamte Überschuss fließt in eine einzige Anlage nach dem unten gesetzten Profil, eingezahlt am ersten Werktag des Folgemonats. Aus: Der Überschuss wird auf das bestehende Portfolio verteilt."],
   p_proj_rt:["Ratear proporcional ao saldo","Spread in proportion to balance","Anteilig zum Bestand verteilen"],
   p_proj_rt_h:["Preserva a composição da carteira. Desligado, toda a sobra vai para a aplicação de maior taxa e uma classe sozinha incha.",
     "Keeps the portfolio mix intact. Off, all surplus goes to the highest-yielding holding and one class swells alone.",
@@ -16694,8 +16694,27 @@ const PDIC={
   /* — extrato do CDB Saving — */
   p_sav_open:["Extrato","Statement","Auszug"],
   p_sav_title:["Extrato do CDB Saving","Savings CD statement","Auszug Spar-Festgeld"],
-  p_sav_src1:["taxa herdada da carteira","rate inherited from the portfolio","Satz aus dem Portfolio"],
-  p_sav_src0:["padrão, sem CDB cadastrado","default, no CD on file","Standard, kein Festgeld erfasst"],
+  p_sav_src1:["taxa definida nos Parâmetros","rate set in Parameters","Satz in den Parametern"],
+  p_sav_src0:["taxa ainda não definida","rate not set yet","Satz noch nicht gesetzt"],
+  p_sav_cfg:["Perfil da aplicação","Holding profile","Anlageprofil"],
+  p_sav_req:["Preencher","Required","Erforderlich"],
+  p_sav_done:["Definido","Set","Gesetzt"],
+  p_sav_pos:["Pós-fixado","Floating","Variabel"],
+  p_sav_pre:["Prefixado","Fixed","Fest"],
+  p_sav_rate_l:["Taxa contratada","Contracted rate","Vereinbarter Satz"],
+  p_sav_inst_l:["Instituição","Institution","Institut"],
+  p_sav_inst_p:["opcional","optional","optional"],
+  p_sav_u_pos:["do CDI","of CDI","des CDI"],
+  p_sav_u_pre:["a.a.","p.a.","p. a."],
+  p_sav_un_pos:["% CDI","% CDI","% CDI"],
+  p_sav_un_pre:["% a.a.","% p.a.","% p. a."],
+  p_sav_use:["Usar a da carteira:","Use the portfolio's:","Aus dem Portfolio:"],
+  p_sav_warn:["Enquanto a taxa não for preenchida, a projeção trabalha com 100% do CDI. Informe o produto onde a sobra vai realmente cair: pós-fixado, em percentual do CDI, ou prefixado, em percentual ao ano.",
+    "Until the rate is filled in, the projection runs at 100% of the CDI. Enter the product the surplus will actually go into: floating, as a percentage of the CDI, or fixed, as a percentage per year.",
+    "Solange kein Satz eingetragen ist, rechnet die Projektion mit 100% des CDI. Geben Sie das Produkt an, in das der Überschuss tatsächlich fließt: variabel als Prozentsatz des CDI oder fest als Prozentsatz pro Jahr."],
+  p_sav_ok:["A sobra de cada mês é aplicada neste perfil no 1º dia útil do mês seguinte, e o IR é provisionado lote a lote pela tabela regressiva.",
+    "Each month's surplus is invested under this profile on the first business day of the following month, and tax is provisioned lot by lot under the regressive table.",
+    "Der Überschuss jedes Monats wird nach diesem Profil am ersten Werktag des Folgemonats angelegt; die Steuer wird los für los nach der degressiven Tabelle zurückgestellt."],
   p_sav_note:["Toque em um mês para ver de onde veio o aporte e como se formou o rendimento.",
     "Tap a month to see where the deposit came from and how the yield was formed.",
     "Auf einen Monat tippen, um Herkunft der Einzahlung und Bildung der Rendite zu sehen."],
@@ -19539,6 +19558,17 @@ let PROJ=(()=>{try{return Object.assign({meses:24,investir:true,mediaVar:true,co
      já existem. Campo novo de propósito: quem já tinha configuração salva
      recebe o CDB Saving sem precisar mexer em nada. */
   sobraModo:"saving",
+  /* PERFIL DA APLICAÇÃO DE SOBRA — inputado pelo titular, não deduzido da
+     carteira. Varrer os CDBs cadastrados e adotar o de maior taxa era um
+     chute educado: o produto onde a sobra vai cair é decisão de quem
+     investe, e um CDB antigo de 120% do CDI não está mais aberto para
+     aporte novo. Com a aplicação de sobra ligada, o preenchimento é
+     obrigatório — enquanto a taxa não vier, a ficha diz em voz alta que a
+     premissa é provisória. */
+  savTipo:"pos",   /* "pos" = percentual do CDI · "pre" = % a.a. prefixado */
+  savPct:null,     /* percentual do CDI, quando pós-fixado */
+  savPre:null,     /* percentual ao ano, quando prefixado */
+  savInst:"",      /* instituição — entra no rótulo, não no cálculo */
   /* Quanto da renda LIQUIDA o titular pretende guardar por mes. Era 20%
      cravado dentro de sugestaoPoupanca: um numero de cartilha, que nao
      serve para quem tem renda variavel nem para quem esta amortizando
@@ -19719,6 +19749,12 @@ function ensureStyles(){
     border:1.5px solid var(--line);border-radius:10px;height:38px;padding:0 10px;
     box-sizing:border-box;min-width:0;transition:border-color .15s}
   #par-body .par-inp:focus-within{border-color:#1A3A5C}
+  /* PENDÊNCIA VISÍVEL NO CAMPO. Um parágrafo de aviso no pé do bloco é
+     fácil de pular; a borda âmbar diz onde está a falta. */
+  #par-body .sav-pend .par-inp{border-color:rgba(176,128,36,.5);
+    background:rgba(191,140,42,.05)}
+  #par-body .sav-pend .par-inp input::placeholder{color:#BCA277;opacity:1}
+  #par-body .par-inp input::placeholder{color:var(--ink-4);opacity:.75}
   /* O app trava a fonte de todo input em 16px para o Safari não dar zoom ao
      focar. Aqui o viewport já bloqueia o zoom (maximum-scale=1), e a ficha
      precisa caber dezenas de números por tela — então a regra cede, e só
@@ -20531,8 +20567,8 @@ function renderProj(){
             <div style="font-size:9px;letter-spacing:1.4px;text-transform:uppercase;color:var(--ink-2);font-weight:600">Destino da sobra</div>
             <div style="font-size:14px;font-weight:600;color:var(--body);margin-top:2px">🏦 CDB Saving</div>
             <div style="font-size:11px;color:var(--ink-2);margin-top:2px;line-height:1.5">
-              ${String(pf.pct).replace(".",",")}% do CDI${pf.instituicao?" · "+raw(pf.instituicao):""}
-              · ${pf.origem==="carteira"?"taxa herdada da carteira":"padrão, sem CDB cadastrado"}
+              ${raw(cdbSavingTaxaTxt(pf))}${pf.instituicao?" · "+raw(pf.instituicao):""}
+              · ${pf.origem==="usuario"?PL("p_sav_src1"):PL("p_sav_src0")}
             </div>
             <div style="font-size:10.5px;color:var(--ink-4);margin-top:5px;line-height:1.5">
               Aplicada no 1º dia útil do mês seguinte ao fechamento. IR provisionado lote a lote.
@@ -20543,6 +20579,9 @@ function renderProj(){
             <div style="font-family:var(--serif);font-style:italic;font-size:19px;color:#0F2440">${fmt((ult.saving)||0)}</div>
           </div>
         </div>
+        ${pf.origem==="usuario"?"":`<div style="margin-top:11px;background:rgba(191,140,42,.13);
+          border-radius:11px;padding:9px 11px;font-size:10.5px;color:#8A5F16;line-height:1.55">
+          ${PL("p_sav_warn")}</div>`}
       </div>`;})():""}
 
     <div style="background:#0F2440;border-radius:18px;padding:18px 20px;color:#fff;margin-bottom:12px;position:relative;overflow:hidden">
@@ -22637,8 +22676,9 @@ function primeiroDiaUtilYM(ym){
   return iso(1);
 }
 
-/* O produto que o titular já usa manda na simulação */
-function cdbSavingPerfil(){
+/* SUGESTÃO, não decisão. Varre a carteira atrás do CDB pós-fixado de maior
+   taxa apenas para oferecer um ponto de partida ao campo. */
+function cdbSavingCarteira(){
   let melhor=null;
   (typeof ASSETS!=="undefined"?ASSETS:[]).forEach(a=>{
     if(a.class!=="fixed_income"&&a.class!=="treasury") return;
@@ -22649,10 +22689,28 @@ function cdbSavingPerfil(){
     if(!melhor||v>melhor.pct)
       melhor={pct:v,inst:String(a.instituicao||"").trim(),ref:a.name||""};
   });
-  return melhor
-    ?{pct:melhor.pct,instituicao:melhor.inst,ref:melhor.ref,origem:"carteira"}
-    :{pct:100,instituicao:"",ref:"",origem:"padrao"};
+  return melhor;
 }
+/* Perfil em vigor. origem "usuario" quando os campos foram preenchidos;
+   "vazio" quando a aplicação de sobra está ligada e ninguém preencheu — e
+   aí a projeção roda com 100% do CDI só para não travar, com aviso na
+   tela de Parâmetros e no cartão da Projeção. */
+function cdbSavingPerfil(){
+  const t=(PROJ.savTipo==="pre")?"pre":"pos";
+  const bruto=(t==="pre")?PROJ.savPre:PROJ.savPct;
+  const v=+bruto, lim=(t==="pre")?100:300;
+  const ok=(bruto!==null&&bruto!==undefined&&bruto!=="")
+           &&isFinite(v)&&v>0&&v<=lim;
+  const inst=String(PROJ.savInst||"").trim();
+  return ok
+    ?{tipo:t,pct:(t==="pos"?v:0),preAA:(t==="pre"?v:0),taxa:v,
+      instituicao:inst,ref:"",origem:"usuario"}
+    :{tipo:"pos",pct:100,preAA:0,taxa:100,
+      instituicao:inst,ref:"",origem:"vazio"};
+}
+function cdbSavingCfgOk(){ return cdbSavingPerfil().origem==="usuario"; }
+/* Pendência só existe com a aplicação de sobra efetivamente ligada */
+function cdbSavingPendente(){ return cdbSavingLigado()&&!cdbSavingCfgOk(); }
 
 /* Aplicação sintética. Não entra em ASSETS: existe só dentro da projeção,
    pelo mesmo motivo que uma parcela futura não vira lançamento. */
@@ -22662,7 +22720,9 @@ function cdbSavingAsset(){
     id:CDB_SAVING_ID, class:"fixed_income", virtual:true, perfil:perf,
     name:"CDB Saving", instituicao:perf.instituicao,
     balance:0, yieldPct:0, lastUpdate:today(),
-    pro:{idx:"cdi_pct",idxVal:perf.pct,trib:"rf",liq:"d1",liqDias:1,
+    pro:{idx:(perf.tipo==="pre"?"pre":"cdi_pct"),
+         idxVal:(perf.tipo==="pre"?perf.preAA:perf.pct),
+         trib:"rf",liq:"d1",liqDias:1,
          taxaAdm:0,taxaPerf:0,benchPerf:"cdi",comeCotas:false,
          aplic:today(),venc:"",carencia:"",aporte:0,
          custoAuto:false,custo:0,dy:0}
@@ -22673,10 +22733,18 @@ function cdbSavingLigado(){
                  &&(PROJ.sobraModo||"saving")==="saving"); }
   catch(e){ return false; }
 }
-/* Rótulo curto para as telas: "CDB Saving · 102% CDI · Banco X" */
+/* Taxa por extenso, na unidade do tipo escolhido e no idioma da tela */
+function cdbSavingTaxaTxt(p){
+  const q=p||cdbSavingPerfil();
+  const num=v=>String(v).replace(".",(LANG==="pt")?",":".");
+  return (q.tipo==="pre")
+    ?num(q.preAA)+"% "+PX("p_sav_u_pre")
+    :num(q.pct)+"% "+PX("p_sav_u_pos");
+}
+/* Rótulo curto para as telas: "CDB Saving · 102% do CDI · Banco X" */
 function cdbSavingRotulo(){
   const p=cdbSavingPerfil();
-  return "CDB Saving · "+String(p.pct).replace(".",",")+"% CDI"
+  return "CDB Saving · "+cdbSavingTaxaTxt(p)
        +(p.instituicao?" · "+p.instituicao:"");
 }
 
@@ -24333,6 +24401,33 @@ function projSetPoup(){
          if(isFinite(n)&&n>=0&&n<=60) PROJ.reservaMeses=n; }
   projAplicar();
 }
+/* ── perfil da aplicação de sobra ──────────────────────────────────────
+   Três campos e nenhum palpite: tipo, taxa e instituição. Trocar o tipo
+   não apaga o outro valor — quem experimenta pré e volta para pós
+   reencontra o que havia digitado. */
+function projSetSavTipo(t){
+  PROJ.savTipo=(t==="pre")?"pre":"pos";
+  projAplicar();
+}
+function projSetSaving(){
+  const r=document.getElementById("par-sav-taxa");
+  const i=document.getElementById("par-sav-inst");
+  if(r){
+    const v=parNum(r.value);
+    const lim=(PROJ.savTipo==="pre")?100:300;
+    const ok=(v!==null&&isFinite(v)&&v>0&&v<=lim)?v:null;
+    if(PROJ.savTipo==="pre") PROJ.savPre=ok; else PROJ.savPct=ok;
+  }
+  if(i) PROJ.savInst=String(i.value||"").trim().slice(0,40);
+  projAplicar();
+}
+/* Atalho: adota o CDB de maior taxa já cadastrado como ponto de partida */
+function projSavDaCarteira(){
+  const c=cdbSavingCarteira(); if(!c) return;
+  PROJ.savTipo="pos"; PROJ.savPct=c.pct;
+  if(!String(PROJ.savInst||"").trim()) PROJ.savInst=c.inst||"";
+  projAplicar();
+}
 function projSetMeses(v){
   const n=parseInt(v,10);
   if(n>0) PROJ.meses=n;
@@ -24660,12 +24755,64 @@ function renderParams(){
       <div style="font-size:10.5px;color:var(--ink-3);line-height:1.5;margin-top:3px">${hint}</div>
     </div>${swP(k,on,fn)}</div>`;
   const savOn=(PROJ.sobraModo||"saving")==="saving";
+  /* ═══ PERFIL DA APLICAÇÃO DE SOBRA ═══
+     A aplicação onde a sobra cai é escolha do titular, não dedução de um
+     produto antigo da carteira. Com a chave ligada os campos são
+     obrigatórios; enquanto a taxa não vier, o bloco fica em âmbar e a
+     projeção roda com 100% do CDI, dizendo que é provisório. */
+  const savEsc=v=>String(v==null?"":v)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;");
+  const savBox=()=>{
+    const pf=cdbSavingPerfil();
+    const pre=(PROJ.savTipo==="pre");
+    const val=pre?PROJ.savPre:PROJ.savPct;
+    const txt=(val===null||val===undefined||val==="")?"":String(val).replace(".",",");
+    const sug=cdbSavingCarteira();
+    const falta=pf.origem!=="usuario";
+    const seg=(id,lbl,on)=>`<button type="button" class="${on?"on":""}"
+      onclick="PRO.projSetSavTipo('${id}')">${lbl}</button>`;
+    return `<div class="${falta?"sav-pend":""}" style="padding:12px 0 3px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;flex-wrap:wrap">
+        <span style="font-size:9px;letter-spacing:1.4px;text-transform:uppercase;
+          font-weight:700;color:${falta?"#8A5F16":"var(--ink-3)"}">${PL("p_sav_cfg")}</span>
+        <span style="font-size:9.5px;font-weight:700;letter-spacing:.5px;white-space:nowrap;
+          background:${falta?"rgba(191,140,42,.16)":"rgba(90,138,74,.15)"};
+          color:${falta?"#8A5F16":"#3F6B33"};border-radius:999px;padding:2px 9px">${
+          falta?PL("p_sav_req"):PL("p_sav_done")}</span>
+      </div>
+      <div class="pro-scale" style="margin-bottom:10px;width:fit-content;max-width:100%">
+        ${seg("pos",PL("p_sav_pos"),!pre)}${seg("pre",PL("p_sav_pre"),pre)}
+      </div>
+      <div class="pro-grid">
+        <div class="pro-f"><label>${PL("p_sav_rate_l")}</label>
+          <div class="par-inp"><input id="par-sav-taxa" type="text" inputmode="decimal"
+            value="${txt}" placeholder="${pre?"12,50":"100"}"
+            oninput="PRO.parMask(this)" onchange="PRO.projSetSaving()"
+            onblur="PRO.projSetSaving()"/><span class="par-un">${
+            pre?PL("p_sav_un_pre"):PL("p_sav_un_pos")}</span></div></div>
+        <div class="pro-f"><label>${PL("p_sav_inst_l")}</label>
+          <div class="par-inp"><input id="par-sav-inst" type="text" autocomplete="off"
+            value="${raw(savEsc(PROJ.savInst))}" placeholder="${PL("p_sav_inst_p")}"
+            onchange="PRO.projSetSaving()" onblur="PRO.projSetSaving()"/></div></div>
+      </div>
+      ${sug?`<div style="margin-top:9px">
+        <span class="pro-pill" style="cursor:pointer"
+          onclick="PRO.projSavDaCarteira()">↧ ${PL("p_sav_use")} ${
+          raw(String(sug.pct).replace(".",(LANG==="pt")?",":".")+"% "+PX("p_sav_u_pos")
+              +(sug.inst?" · "+savEsc(sug.inst):""))}</span>
+      </div>`:""}
+      <div class="pro-note" style="margin:10px 0 0${falta?";color:#8A5F16":""}">${
+        falta?PL("p_sav_warn"):PL("p_sav_ok")}</div>
+    </div>`;
+  };
   const hzOpt=(v,l)=>`<option value="${v}"${(+PROJ.meses||24)===v?" selected":""}>${l}</option>`;
   const premissas=`
     <div class="sec-label">${PL("p_proj")}</div>
     ${parBox(
       rowP(PL("p_proj_inv"),PL("p_proj_inv_h"),!!PROJ.investir,"investir")
       +(PROJ.investir?rowP(PL("p_proj_sv"),PL("p_proj_sv_h"),savOn,"sobraModo"):"")
+      +((PROJ.investir&&savOn)?savBox():"")
       +((PROJ.investir&&!savOn)?rowP(PL("p_proj_rt"),PL("p_proj_rt_h"),
           PROJ.sobraDestino!=="melhor","sobraDestino"):"")
       +rowP(PL("p_proj_mv"),PL("p_proj_mv_h"),!!PROJ.mediaVar,"mediaVar")
@@ -25634,6 +25781,8 @@ window.PRO={
   fatorIndice,fatorProduto,serieFatores,indiceMes,histCobertura,mesesEntre,
   cfg:()=>PROJ,setProj:(k,v)=>{PROJ[k]=v;projAplicar();},
   projToggle,projSetMeses,cdbSavingExtrato,openSavingExtrato,savExpandir,
+  projSetSavTipo,projSetSaving,projSavDaCarteira,
+  cdbSavingPerfil,cdbSavingCarteira,cdbSavingTaxaTxt,cdbSavingCfgOk,cdbSavingPendente,
   temaEscolher:id=>{ try{ temaAplicar(id,true); }catch(e){} },
   temaCustomSet:(campo,valor)=>{
     if(campo==="ac") CUSTOM.ac=hexOk(valor);
