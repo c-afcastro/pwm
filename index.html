@@ -15752,7 +15752,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.82";
+const APP_VERSION="10.83";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -16170,6 +16170,9 @@ const TXD={
 "acima":["above","über"],
 "abaixo":["below","unter"],
 "Rend.":["Return","Ertrag"],
+"Aporte</th>":["Contribution</th>","Einzahlung</th>"],
+"Saldo do mês = saldo anterior + aporte + rendimento. ":["Month balance = previous balance + contribution + return. ","Monatssaldo = Vorsaldo + Einzahlung + Ertrag. "],
+"Saldo do mês = saldo anterior + depósito + rendimento. No mês do 13º e no mês de férias o depósito inclui o FGTS dessas verbas. ":["Month balance = previous balance + deposit + return. In the 13th-salary and holiday months the deposit also includes FGTS on those payments. ","Monatssaldo = Vorsaldo + Einzahlung + Ertrag. Im Monat des 13. Gehalts und im Urlaubsmonat enthält die Einzahlung auch den FGTS auf diese Zahlungen. "],
 "Saldo":["Balance","Saldo"],
 "aplicados · taxa":["invested · rate","angelegt · Satz"],
 "Aporte mensal programado":["Scheduled monthly contribution","Geplante Monatseinzahlung"],
@@ -16289,6 +16292,8 @@ const TXD={
 "Saldo hoje (R$)":["Balance today (R$)","Guthaben heute (R$)"],
 "Depósito do empregador em conta vinculada: não sofre INSS nem IRRF e não entra no caixa livre do mês.":["Employer deposit into a restricted account: no INSS, no income tax, and it never reaches the month's free cash.","Arbeitgebereinzahlung auf ein gebundenes Konto: keine INSS, keine Lohnsteuer, und der Betrag fließt nie in die freie Liquidität des Monats."],
 "É um depósito por mês, no dia ":["One deposit a month, on day ","Eine Einzahlung pro Monat, am Tag "],
+" do bruto, rendendo ":[" of gross pay, earning "," vom Bruttolohn, Verzinsung "],
+"No mês do 13º e no mês de férias o depósito inclui o FGTS dessas verbas, pela regra de 13º dos Parâmetros. ":["In the 13th-salary and holiday months the deposit also includes FGTS on those payments, following the 13th-salary rule in Parameters. ","Im Monat des 13. Gehalts und im Urlaubsmonat enthält die Einzahlung auch den FGTS auf diese Zahlungen, gemäß der Regel zum 13. Gehalt in den Parametern. "],
 ", e o rendimento corre só a partir dele. Percentual e rendimento definidos nos Parâmetros › Renda. ":[", and it only starts earning from that day. Rate and yield are set in Parameters › Income. ",", und die Verzinsung läuft erst ab diesem Tag. Satz und Verzinsung stehen unter Parameter › Einkommen. "],
 "Dia 2ª":["2nd day","Tag 2."],
 "1ª parcela %":["1st instalment %","1. Rate %"],
@@ -17143,6 +17148,9 @@ const saveFiscal=()=>{
   try{ AST_CACHE&&Object.keys(AST_CACHE).forEach(k=>delete AST_CACHE[k]); }catch(e){}
   try{ Object.keys(AST_VAL_CACHE).forEach(k=>delete AST_VAL_CACHE[k]); }catch(e){}
   try{ Object.keys(FGTS_SCH_CACHE).forEach(k=>delete FGTS_SCH_CACHE[k]); }catch(e){}
+  /* 13º, férias e FGTS mudam o depósito projetado da conta vinculada: a
+     posição por mês também precisa ser refeita */
+  try{ limparCachesAplic(); }catch(e){}
   try{ cfLimparCache(); }catch(e){}
 };
 
@@ -17304,7 +17312,7 @@ function fgtsDepositoMes(fonteId,ymStr,eventos,pro){
     return R2(x); };
   /* quem já apurou os eventos do mês passa a lista: nada é recalculado */
   if(eventos&&eventos.length!==undefined) return soma(eventos);
-  const ck=alvo+"|"+ymStr+"|"+(FISCAL.fgtsPct||8)+"|"
+  const ck=alvo+"|"+ymStr+"|"+(FISCAL.fgtsPct||8)+"|"+(FISCAL.ts||0)+"|"
           +fgtsAssinaturaRenda(pro||{fonteRenda:alvo});
   if(FGTS_MES_CACHE[ck]!==undefined) return FGTS_MES_CACHE[ck];
   let v=0;
@@ -18124,6 +18132,14 @@ function astPro(a){
   /* Sem valor aplicado informado, o app o deduz por regressão a partir do
      saldo atual, da taxa do produto e do tempo decorrido. */
   if(p.custoAuto||!(+p.custo>0)) p.custo=astCustoRegressivo(a,p);
+  /* CONTA VINCULADA DE FGTS: a taxa é regra dos Parâmetros, não atributo
+     da ficha. A ficha guardava a taxa do dia em que a renda foi salva, e
+     mudar o rendimento do FGTS nos Parâmetros não movia a projeção. */
+  if(a&&a.class==="fgts"&&p.fonteRenda){
+    let tx=3;
+    try{ if(+FISCAL.fgtsTaxa>0) tx=+FISCAL.fgtsTaxa; }catch(e){}
+    p.idx="pre"; p.idxVal=tx; p.trib="isento";
+  }
   return p;
 }
 
@@ -18611,6 +18627,16 @@ function astEvolucao(a,mesesFuturos){
   const atz=astAtualizacao(a);            /* posição informada + correção */
   const real=atz.valor;                   /* valor de hoje */
   const aporte=+p.aporte||0;
+  /* Conta vinculada de FGTS: o depósito não é o mesmo todo mês. 13º
+     (adiantamento e 2ª parcela, pela regra dos Parâmetros) e terço de
+     férias também recolhem FGTS no mês em que são pagos. A evolução
+     repetia o depósito do salário doze vezes e divergia do Patrimônio. */
+  const fgAuto=astEhFgtsAuto(a);
+  const fgDia=Math.min(31,Math.max(1,+p.fgtsDia||20));
+  const depMes=ym=>fgAuto?Math.max(0,fgtsDepositoMes(p.fonteRenda,ym,null,p)):aporte;
+  /* rendimento do depósito: só a fração do mês que corre do dia dele */
+  const depRend=(dep,ym,f)=>fgAuto&&dep>0?dep*Math.max(0,f-1)*fgtsParteDoMes(ym,fgDia):0;
+  const temAporte=fgAuto||aporte>0;
   const diasHoje=Math.max(0,dias(inicio,hoje));
   const mesesHoje=mesesEntre(inicio,hoje);
   const decorridos=Math.max(0,Math.floor(mesesHoje));
@@ -18623,13 +18649,17 @@ function astEvolucao(a,mesesFuturos){
   /* Caminho pelos índices efetivamente observados no período */
   const S=serieFatores(a,inicio,hoje,p);
   const FT=fatorProduto(a,inicio,hoje,p);
+  /* depósitos acumulados na série: depAc[k] = soma dos meses 1..k */
+  const depAc=[0];
+  for(let j=1;j<S.length;j++) depAc[j]=depAc[j-1]+(temAporte?depMes(S[j].ym):0);
   const modelaAte=(k)=>{                       // saldo modelado até o mês k da série
     let sal=custo;
-    for(let j=0;j<k;j++){ sal=sal*S[j].f; if(j>0&&aporte>0) sal+=aporte; }
+    for(let j=0;j<k;j++){ sal=sal*S[j].f;
+      if(j>0&&temAporte){ const dp=depMes(S[j].ym); sal+=dp+depRend(dp,S[j].ym,S[j].f); } }
     return sal;
   };
   const modeloHoje=modelaAte(S.length);
-  const aportHoje=R2(custo+aporte*Math.max(0,S.length-1));
+  const aportHoje=R2(custo+(S.length>1?depAc[S.length-1]:0));
   const infor=parseFloat(a.balance)||0;
   const posData=(a.lastUpdate&&a.lastUpdate>inicio)?a.lastUpdate:inicio;
   const ancorado=posData>inicio;
@@ -18664,7 +18694,8 @@ function astEvolucao(a,mesesFuturos){
         }
       }
       sal=sal*fj;
-      if(j>0&&aporte>0){ sal+=aporte; aportadoAc+=aporte; }
+      if(j>0&&temAporte){ const dp=depMes(S[j].ym);
+        sal+=dp+depRend(dp,S[j].ym,fj); aportadoAc+=dp; }
       if(comeCotas&&j>0&&FISCAL.comeCotasMeses.indexOf(mesOf(S[j].ym+"-15"))>=0){
         const d=R2(Math.max(0,(sal-aportadoAc)*aliqCC/100-ccAcum));
         if(d>0){ sal-=d; ccAcum=R2(ccAcum+d); }
@@ -18696,7 +18727,8 @@ function astEvolucao(a,mesesFuturos){
     const data=m===0?inicio:addMonths(inicio,m);
     const d=Math.max(0,dias(inicio,data));
     const t=mesesEntre(inicio,data);
-    const aport=R2(custo+aporte*Math.floor(t));
+    const nt=Math.max(0,Math.min(S.length-1,Math.floor(t)));
+    const aport=R2(custo+(temAporte?(depAc[nt]||0):0));
     /* quantos meses da série já correram até esta data */
     let k=0; while(k<S.length&&S[k].ate<=data) k++;
     const kk=Math.min(k,S.length);
@@ -18726,10 +18758,13 @@ function astEvolucao(a,mesesFuturos){
        sozinho, porque a curva é uma função escada. */
     let iM=iAM;
     try{ const t2=astLiquidoAM(a,ymOf(data))/100; if(isFinite(t2)) iM=t2; }catch(e){}
-    const rend=saldo*iM;
-    saldo=saldo+rend+aporte;
-    modelo=modelo*(1+iM)+aporte;
-    aportado=aportado+aporte;
+    const ymP=ymOf(data);
+    const dep=temAporte?depMes(ymP):0;
+    const rendDep=depRend(dep,ymP,1+iM);
+    const rend=saldo*iM+rendDep;
+    saldo=saldo+rend+dep;
+    modelo=modelo*(1+iM)+dep+rendDep;
+    aportado=aportado+dep;
     let cc=0;
     if(comeCotas&&FISCAL.comeCotasMeses.indexOf(mesOf(data))>=0){
       const aliqCC=(p.trib==="fundoCP")?FISCAL.irFundoCP:FISCAL.irFundoLP;
@@ -18743,6 +18778,7 @@ function astEvolucao(a,mesesFuturos){
   const atual=pts.filter(x=>!x.futuro).pop()||pts[0];
   return {
     asset:a, inicio, hoje, custo, aporte,
+    fgAuto, depHoje:R2(temAporte?depMes(ymOf(hoje)):0),
     real:R2(valorHoje), saldoInformado:R2(infor), posData, atualizacao:atz, ancorado,
     curto:mesesPos<1,
     retornoPeriodo:custo>0?R2((valorHoje/custo-1)*100):0,
@@ -18885,6 +18921,7 @@ function fgtsPlano(d){
   if(!FGTS_MODOS.some(m=>m.id===p.modo)) p.modo="prazo";
   p.pct=Math.min(FGTS_LIM_ABAT,Math.max(1,p.pct||FGTS_LIM_ABAT));
   p.saldoPatrimonio=f.saldo; p.aporte=f.aporte; p.taxaFgts=f.taxaAM; p.temAtivo=f.temAtivo;
+  p.depAssin=f.assin||"";
   return p;
 }
 function fgtsModo(id){ return FGTS_MODOS.find(m=>m.id===id)||FGTS_MODOS[2]; }
@@ -18915,12 +18952,29 @@ function fgtsSaldoPatrimonio(){
 }
 function fgtsFonte(){
   const ats=fgtsAtivos();
-  if(!ats.length) return {saldo:0,aporte:0,taxaAM:0,temAtivo:false};
-  let saldo=0,aporte=0,taxa=0;
+  if(!ats.length) return {saldo:0,aporte:0,taxaAM:0,temAtivo:false,assin:""};
+  let saldo=0,aporte=0,taxa=0; const ass=[];
   ats.forEach(a=>{const p=astPro(a);
     saldo+=astValorAtual(a); aporte+=(+p.aporte||0);
-    taxa=Math.max(taxa,astLiquidoAM(a));});
-  return {saldo:R2(saldo),aporte:R2(aporte),taxaAM:R2(taxa),temAtivo:true};
+    taxa=Math.max(taxa,astLiquidoAM(a));
+    ass.push([a.id,p.aporte||0,p.fonteRenda||"",fgtsAssinaturaRenda(p)].join("~"));});
+  let fts=0; try{ fts=FISCAL.ts||0; }catch(e){}
+  return {saldo:R2(saldo),aporte:R2(aporte),taxaAM:R2(taxa),temAtivo:true,
+          assin:ass.join("^")+"|"+fts};
+}
+/* Depósito que entra na conta vinculada num mês. A conta alimentada por
+   um salário CLT recebe a soma dos eventos de FGTS daquele mês — salário,
+   13º e terço de férias, pela regra dos Parâmetros; um FGTS cadastrado à
+   mão segue o aporte declarado. Sem nenhum FGTS no Patrimônio, vale o
+   aporte informado no plano. */
+function fgtsDepositoProjetado(ym,fallback){
+  const ats=fgtsAtivos();
+  if(!ats.length) return R2(+fallback||0);
+  let v=0;
+  ats.forEach(a=>{const p=astPro(a);
+    if(astEhFgtsAuto(a)) v+=Math.max(0,fgtsDepositoMes(p.fonteRenda,ym,null,p));
+    else v+=(+p.aporte||0);});
+  return R2(v);
 }
 
 /* ═══ CORREÇÃO MONETÁRIA DO SALDO DEVEDOR ═════════════════════════════
@@ -18992,6 +19046,9 @@ function debtScheduleFGTS(d,plano){
 
   let saldoPat=usaPat?(+P.saldoPatrimonio||0):0;
   const aporte=usaPat?(+P.aporte||0):0;
+  /* o depósito do mês i (1 = mês corrente) muda em novembro, dezembro e no
+     mês de férias: 13º e terço constitucional também recolhem FGTS */
+  const depI=i=>usaPat?fgtsDepositoProjetado(ymAdd(ymNow(),i-1),aporte):0;
   const taxaF=usaPat?((+P.taxaFgts||0)/100):0;
 
   const base=R2(+P.valor||0);        // valor declarado (0 = todo o saldo)
@@ -19030,8 +19087,9 @@ function debtScheduleFGTS(d,plano){
     if(usaPat&&i>1){
       saldoPat=R2(saldoPat*(1+taxaF));
       retido=R2(retido*(1+taxaF));
-      if(travadoAte>=i){ retido=R2(retido+aporte); }
-      else { saldoPat=R2(saldoPat+aporte+retido); retido=0; }
+      const depM=depI(i);
+      if(travadoAte>=i){ retido=R2(retido+depM); }
+      else { saldoPat=R2(saldoPat+depM+retido); retido=0; }
     }
 
     let usoMes=0, evento="", corrMes=0;
@@ -19204,7 +19262,7 @@ function fgtsCronograma(d){
   const P=fgtsPlano(d);
   const chave=[debtBalance(d),d.term,d.rate,d.amortSystem,d.monthlyPayment,
     P.on,P.modo,P.ym,P.valor,P.pct,P.repetir,P.usarPatrimonio,
-    P.saldoPatrimonio,P.aporte,P.taxaFgts].join("|");
+    P.saldoPatrimonio,P.aporte,P.taxaFgts,P.depAssin||""].join("|");
   const c=FGTS_SCH_CACHE[d.id];
   if(c&&c.k===chave) return c.v;
   const v=fgtsPlanoTemFonte(P)?debtScheduleFGTS(d,P):null;
@@ -19338,7 +19396,7 @@ function astValorEm(a,dataAlvo){
   const ck=[a.id,bal,de,dataAlvo,p.idx,p.idxVal,p.aporte,p.fgtsDia,
             fgtsAssinaturaRenda(p),p.taxaAdm,p.taxaPerf,
             astVencData(a,p)||"",astResgAssin(a,p),
-            p.trib,HIST.ts,PARAMS.ts,MARKET.ts].join("|");
+            p.trib,HIST.ts,PARAMS.ts,MARKET.ts,(FISCAL.ts||0)].join("|");
   if(AST_YM_CACHE[ck]!==undefined) return AST_YM_CACHE[ck];
   let v=R2(bal);
   try{
@@ -20052,7 +20110,7 @@ function incNotasFiscais(){
   box("inc-nota-excl",PX("p_excl"), pc(FISCAL.exclAliq));
   const fg=$("inc-nota-fgts");
   const diaFg=Math.min(31,Math.max(1,+($("inc-fgts-dia")?.value||20)));
-  if(fg) fg.innerHTML=H`<b style="color:var(--body)">FGTS ${raw(pc(FISCAL.fgtsPct))} do bruto, rendendo ${raw(pc(FISCAL.fgtsTaxa))} a.a.</b> · Depósito do empregador em conta vinculada: não sofre INSS nem IRRF e não entra no caixa livre do mês. É um depósito por mês, no dia ${raw(diaFg)}, e o rendimento corre só a partir dele. Percentual e rendimento definidos nos Parâmetros › Renda. ${raw(link)}`;
+  if(fg) fg.innerHTML=H`<b style="color:var(--body)">FGTS ${raw(pc(FISCAL.fgtsPct))} do bruto, rendendo ${raw(pc(FISCAL.fgtsTaxa))} a.a.</b> · Depósito do empregador em conta vinculada: não sofre INSS nem IRRF e não entra no caixa livre do mês. É um depósito por mês, no dia ${raw(diaFg)}, e o rendimento corre só a partir dele. Percentual e rendimento definidos nos Parâmetros › Renda. No mês do 13º e no mês de férias o depósito inclui o FGTS dessas verbas, pela regra de 13º dos Parâmetros. ${raw(link)}`;
 }
 function collectIncPro(){
   return {regime:INC_REGIME,
@@ -21701,7 +21759,7 @@ function renderRendimento(){
     <div class="sec-label">Posição de hoje</div>
     <div style="background:var(--surface);border-radius:14px;padding:12px 15px;margin-bottom:12px">
       ${R("Montante aplicado",fmt(e.custo),"","var(--ink-2)")}
-      ${e.aporte>0?R("Aporte mensal",fmt(e.aporte),"sub","var(--ink-2)"):""}
+      ${e.fgAuto?R("Depósito do mês",fmt(e.depHoje),"sub","var(--ink-2)"):(e.aporte>0?R("Aporte mensal",fmt(e.aporte),"sub","var(--ink-2)"):"")}
       ${e.aporte>0?R("(=) Total aportado",fmt(e.aportado),"sub","var(--ink-2)"):""}
       ${R(e.ancorado?"Saldo informado":"Valor de hoje pela taxa",fmt(e.real),"",NAV)}
       ${R("(=) Rendimento bruto",SGP(e.ganho>=0?"+":"−")+fmt(Math.abs(e.ganho)),"tot",GRN)}
@@ -21730,7 +21788,7 @@ function renderRendimento(){
         <thead><tr style="color:var(--ink-3);text-align:right">
           <th style="padding:7px 3px;text-align:left;font-weight:600;width:${e.aporte>0?"18%":"22%"}">Mês</th>
           <th style="padding:7px 3px;font-weight:600;width:${e.aporte>0?"24%":"28%"}">Saldo</th>
-          ${e.aporte>0?`<th style="padding:7px 3px;font-weight:600;width:18%">Aporte</th>`:""}
+          ${e.aporte>0?`<th style="padding:7px 3px;font-weight:600;width:18%">${e.fgAuto?"Depósito":"Aporte"}</th>`:""}
           <th style="padding:7px 3px;font-weight:600;width:${e.aporte>0?"20%":"24%"}">Rend.</th>
           <th style="padding:7px 3px;font-weight:600;width:${e.aporte>0?"20%":"26%"}">Líquido</th>
         </tr></thead>
@@ -21743,7 +21801,7 @@ function renderRendimento(){
           <td style="padding:5px 3px;text-align:right;color:${NAV};font-weight:600">${fmt(x.liquido)}</td>
         </tr>`).join("")}</tbody>
       </table>
-      <div style="font-size:9.5px;color:var(--ink-3);margin-top:6px;line-height:1.5">${e.aporte>0?"Saldo do mês = saldo anterior + aporte + rendimento. ":""}Líquido = saldo menos a provisão de IR e IOF daquele prazo. Linhas claras são projeção.${e.comeCotas?" O ponto vermelho marca o come-cotas.":""}</div>
+      <div style="font-size:9.5px;color:var(--ink-3);margin-top:6px;line-height:1.5">${e.fgAuto?"Saldo do mês = saldo anterior + depósito + rendimento. No mês do 13º e no mês de férias o depósito inclui o FGTS dessas verbas. ":(e.aporte>0?"Saldo do mês = saldo anterior + aporte + rendimento. ":"")}Líquido = saldo menos a provisão de IR e IOF daquele prazo. Linhas claras são projeção.${e.comeCotas?" O ponto vermelho marca o come-cotas.":""}</div>
     </div>
     <div class="sec-label">${PL("ap_hist_res")}</div>
     ${raw(blocoResg)}
