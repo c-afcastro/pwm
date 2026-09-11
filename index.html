@@ -3718,6 +3718,9 @@ const I18N={
     backup_t:"Backup",
     w_net_lc:"líquidas",
     ast_f_all:"Todas da classe",
+    ast_f_venc:"Vencidas",
+    ast_venc_hd:"Vencidas — fora do patrimônio",
+    ast_venc_none:"Nenhuma aplicação vencida.",
     nav_manual:"Manual",
     man_search_ph:"Buscar no manual…",
     vis_hide:"Ocultar os valores",
@@ -4642,6 +4645,9 @@ const I18N={
     backup_t:"Backup",
     w_net_lc:"net",
     ast_f_all:"All in class",
+    ast_f_venc:"Matured",
+    ast_venc_hd:"Matured — out of net worth",
+    ast_venc_none:"No matured holdings.",
     nav_manual:"Manual",
     man_search_ph:"Search the manual…",
     vis_hide:"Hide the amounts",
@@ -5565,6 +5571,9 @@ const I18N={
     backup_t:"Backup",
     w_net_lc:"netto",
     ast_f_all:"Alle der Klasse",
+    ast_f_venc:"Fällige",
+    ast_venc_hd:"Fällig — nicht im Vermögen",
+    ast_venc_none:"Keine fälligen Anlagen.",
     nav_manual:"Handbuch",
     man_search_ph:"Im Handbuch suchen…",
     vis_hide:"Beträge ausblenden",
@@ -9647,7 +9656,7 @@ function renderAssets(){
       ${astChipMesAst()}
       ${aporteProj>0?`<div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">💰 ${t("ast_contrib")} ${fmt(aporteProj)}</div>`:""}
       ${(noMes&&rendAcum>0)?`<div style="background:rgba(127,228,160,.18);border-radius:20px;padding:3px 10px;font-size:11px;color:#CFF3DA">⏱ ${SGP("+")}${fmt(rendAcum)} ${t("since_position")}</div>`:""}
-      ${(FA.length<astBaseLista().length)?`<div style="background:rgba(255,255,255,.18);border-radius:20px;padding:3px 10px;font-size:11px">🔍 ${t("w_filtered")}</div>`:""}
+      ${(FA.length<astBaseLista().filter(a=>!astVencidaFora(a)).length)?`<div style="background:rgba(255,255,255,.18);border-radius:20px;padding:3px 10px;font-size:11px">🔍 ${t("w_filtered")}</div>`:""}
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">${FA.length} ${t("w_holdings")}</div>
     </div>`;
   if(AST_V==="dashboard") renderAssetsDash();
@@ -9727,7 +9736,9 @@ function populateAstClassFilter(){
   const atual=sel.value;
   const base=(typeof astBaseLista==="function")?astBaseLista():ASSETS;
   const nClasse={}, nProd={};
+  let nVenc=0;
   base.forEach(a=>{
+    if(astVencidaFora(a)){ nVenc++; return; }
     nClasse[a.class]=(nClasse[a.class]||0)+1;
     const pd=(typeof PRO!=="undefined"&&PRO.astProdutoId)?PRO.astProdutoId(a):"";
     if(pd) nProd[pd]=(nProd[pd]||0)+1;
@@ -9747,6 +9758,7 @@ function populateAstClassFilter(){
        +prods.map(p=>`<option value="prod:${p.id}">${PRO.TR?PRO.TR(p.lbl):p.lbl} (${nProd[p.id]})</option>`).join("")
        +`</optgroup>`;
   });
+  if(nVenc) html+=`<option value="venc">⏳ ${t("ast_f_venc")} (${nVenc})</option>`;
   sel.innerHTML=html;
   /* Preserva a escolha ao redesenhar; se o produto sumiu da carteira,
      volta para "todas" em vez de filtrar por algo que não existe. */
@@ -9772,13 +9784,29 @@ function renderAssetList(){
   {const i=items.findIndex(astEhSaving); if(i>0) items.unshift(items.splice(i,1)[0]);}
   const el=document.getElementById("assets-list");
   if(!el) return;
+  /* Vencidas: abaixo de todas, numa seção recolhida por padrão. Com o
+     filtro "Vencidas" ativo, a lista inteira já é delas e a seção some. */
+  const soVenc=instFiltroAtivo("ast-class-filter")==="venc";
+  let venc=soVenc?[]:assetsVencidasInst();
+  if(q) venc=venc.filter(a=>(a.name||"").toLowerCase().includes(q));
+  venc.sort((a,b)=>(a.name||"").localeCompare(b.name||"","pt-BR"));
+  const nAtivas=items.length;
+  if(window.AST_VENC_ABERTO) items=items.concat(venc);
   /* A lista enriquecida do módulo PRO (liquidez, IR, resgate) casa cartão a
      cartão com esta ordem. Recalculá-la lá desalinhava as etiquetas quando o
      filtro por instituição ou a ordenação por valor do mês mudavam: cada
      cartão recebia os dados da aplicação errada. A ordem passa a ser
      publicada aqui, e o PRO apenas a consome. */
   window.AST_LIST_ORDER=items;
-  el.innerHTML=items.length?items.map(a=>{
+  const vencHd=venc.length?`<div data-sep="1" onclick="window.AST_VENC_ABERTO=!window.AST_VENC_ABERTO;renderAssetList()"
+      style="display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;margin:14px 0 8px;padding:9px 12px;border-radius:12px;background:rgba(184,90,106,.08);border:1px solid rgba(184,90,106,.18)">
+      <span style="font-size:12px;font-weight:700;color:#B85A6A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">⏳ ${t("ast_venc_hd")}</span>
+      <span style="flex-shrink:0;display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;font-weight:700;color:#B85A6A;background:rgba(184,90,106,.14);border-radius:10px;padding:1px 8px">${venc.length}</span>
+        <span style="font-size:12px;color:#B85A6A;display:inline-block;transform:rotate(${window.AST_VENC_ABERTO?180:0}deg)">▾</span>
+      </span>
+    </div>`:"";
+  const card=a=>{
     const c=gAssetClass(a.class);
     /* A etiqueta do produto só aparece quando o nome não a diz. "CDB
        Banco A" e "Tesouro IPCA+ 2035" já se identificam sozinhos, e
@@ -9833,7 +9861,10 @@ function renderAssetList(){
         <button style="background:none;border:none;color:var(--ink-2);font-size:12px;cursor:pointer" onclick="openAssetEdit(${a.id})">✏️</button>
         <button style="background:none;border:none;color:#C47A5C;font-size:12px;cursor:pointer" onclick="confirmDelAsset(${a.id})">🗑️</button>`}
       </div>
-    </div>`;}).join(""):`<div style="color:var(--ink-2);font-size:12px;padding:16px 0;text-align:center">${t("no_ast_found")}</div>`;
+    </div>`;};
+  const vazio=`<div style="color:var(--ink-2);font-size:12px;padding:16px 0;text-align:center">${t(soVenc?"ast_venc_none":"no_ast_found")}</div>`;
+  el.innerHTML=(nAtivas?items.slice(0,nAtivas).map(card).join(""):(venc.length?"":vazio))
+    +vencHd+items.slice(nAtivas).map(card).join("");
 }
 
 /* ── HISTÓRICO TAB ── */
@@ -13831,9 +13862,19 @@ function assetsFiltrados(){
   const cl=instFiltroAtivo("ast-class-filter");
   return astBaseLista().filter(a=>{
     if(inst&&instDe(a)!==inst) return false;
+    /* Vencida não é carteira: some do filtro normal e só volta quando o
+       titular pede por ela, no filtro próprio ou na seção ao pé da lista. */
+    if(cl==="venc") return astVencidaFora(a);
+    if(astVencidaFora(a)) return false;
     if(cl&&!astCasaFiltro(a,cl)) return false;
     return true;
   });
+}
+/* Vencidas que respeitam o filtro de instituição — alimentam a seção
+   recolhível no fim da lista e a contagem do seletor. */
+function assetsVencidasInst(){
+  const inst=instFiltroAtivo("ast-inst-filter");
+  return ASSETS.filter(a=>astVencidaFora(a)&&(!inst||instDe(a)===inst));
 }
 /* "prod:lca" filtra pelo produto, "cls:fixed_income" pela classe inteira.
    Um valor sem prefixo é de um backup antigo, quando o seletor guardava
@@ -15752,7 +15793,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.84";
+const APP_VERSION="10.85";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -22358,7 +22399,8 @@ const _renderAssetList=window.renderAssetList;
 window.renderAssetList=function(){
   _renderAssetList();
   const el=$("assets-list");if(!el)return;
-  const cards=el.children;
+  /* o cabeçalho das vencidas não é cartão: fica fora do casamento por índice */
+  const cards=[...el.children].filter(c=>!c.dataset||!c.dataset.sep);
   /* a MESMA ordem que o núcleo acabou de desenhar — inclusive o filtro por
      instituição e a ordenação pelo valor do mês exibido */
   let items=Array.isArray(window.AST_LIST_ORDER)?window.AST_LIST_ORDER.slice():[...ASSETS];
