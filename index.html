@@ -15793,7 +15793,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.85";
+const APP_VERSION="10.86";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -17021,9 +17021,9 @@ const PDIC={
   ap_venc_note:["Aplicação vencida: a curva e a tabela terminam no vencimento, em",
     "Matured holding: the curve and the table end at maturity, on",
     "Fällige Anlage: Kurve und Tabelle enden mit der Fälligkeit am"],
-  ap_bench_note:["O retorno da aplicação entra pelo valor por unidade de capital — saldo dividido pelo total aportado —, de modo que aportes novos não sejam lidos como rentabilidade. O índice acumula mês a mês pela curva dos parâmetros; a faixa sombreada é projeção.",
-    "The holding's return is measured per unit of invested capital — balance divided by total contributed — so that new contributions are not read as performance. The index compounds month by month from the parameter curve; the shaded band is projection.",
-    "Die Rendite der Anlage wird je Einheit eingesetzten Kapitals gemessen — Bestand geteilt durch Gesamteinzahlung —, damit neue Einzahlungen nicht als Wertentwicklung gelesen werden. Der Index verzinst sich monatlich nach der Parameterkurve; der schattierte Bereich ist Projektion."],
+  ap_bench_note:["O retorno da aplicação é ponderado no tempo: em cada passo o aporte do período sai do saldo antes da divisão, de modo que dinheiro novo não seja lido como rentabilidade. O índice acumula pelo mesmo intervalo de datas da aplicação — meses fechados pelo dado do Banco Central, o restante pela curva dos parâmetros —, com as pontas proporcionais em dias úteis. A faixa sombreada é projeção.",
+    "The holding's return is time-weighted: at each step the period's contribution is removed from the balance before dividing, so new money is not read as performance. The index compounds over the same date range as the holding — closed months from Central Bank data, the rest from the parameter curve — with partial months prorated by business days. The shaded band is projection.",
+    "Die Rendite der Anlage ist zeitgewichtet: In jedem Schritt wird die Einzahlung der Periode vor der Division vom Bestand abgezogen, damit neues Geld nicht als Wertentwicklung gelesen wird. Der Index verzinst sich über denselben Zeitraum wie die Anlage — abgeschlossene Monate nach den Daten der Zentralbank, der Rest nach der Parameterkurve —, Teilmonate anteilig nach Bankarbeitstagen. Der schattierte Bereich ist Projektion."],
 
   vc_alert_t:["Você tem aplicações vencendo","You have holdings maturing","Sie haben fällige Anlagen"],
   vc_see:["Ver","See","Ansehen"],
@@ -18795,10 +18795,15 @@ function astEvolucao(a,mesesFuturos){
     ?taxaImplicita(custo,infor,mesesPos,aporte):iAM;
 
   const pts=[];
-  const push=(data,d,aportado,saldo,modelo,rendMes,cc,futuro)=>{
+  /* dataSaldo: a data A QUE O SALDO DO PONTO SE REFERE. O ponto histórico
+     é rotulado pelo aniversário da aplicação (dia 9), mas o saldo vem da
+     série de fatores, que fecha em dia 1º: o ponto de 09/10 carrega o
+     saldo de 01/10. Sem registrar isso, qualquer comparação contra um
+     índice mede um intervalo que a aplicação não viveu. */
+  const push=(data,d,aportado,saldo,modelo,rendMes,cc,futuro,dataSaldo)=>{
     const ganho=R2(Math.max(0,saldo-aportado));
     const prov=astProvisao(a,ganho,d);
-    pts.push({data,ym:ymOf(data),dias:d,futuro,m:pts.length,
+    pts.push({data,dataSaldo:dataSaldo||data,ym:ymOf(data),dias:d,futuro,m:pts.length,
       aportado:R2(aportado),saldo:R2(saldo),modelo:R2(modelo),
       rendMes:R2(rendMes),rendAcum:ganho,comeCotas:R2(cc),
       iofPct:prov.iofPct,iof:prov.iof,aliq:prov.aliq,ir:prov.ir,
@@ -18810,18 +18815,23 @@ function astEvolucao(a,mesesFuturos){
   for(let m=0;m<=decorridos;m++){
     const data=m===0?inicio:addMonths(inicio,m);
     const d=Math.max(0,dias(inicio,data));
-    const t=mesesEntre(inicio,data);
-    const nt=Math.max(0,Math.min(S.length-1,Math.floor(t)));
-    const aport=R2(custo+(temAporte?(depAc[nt]||0):0));
     /* quantos meses da série já correram até esta data */
     let k=0; while(k<S.length&&S[k].ate<=data) k++;
     const kk=Math.min(k,S.length);
+    /* APORTADO E SALDO NA MESMA RÉGUA. O saldo vinha de saldoAte[kk] — que
+       contém os depósitos dos baldes 1..kk−1 —, e o aportado vinha de
+       floor(mesesEntre), um depósito à frente. O ponto nascia com mais
+       capital do que o saldo tinha recebido, e toda medida de rentabilidade
+       que divide um pelo outro saía para baixo. */
+    const nt=Math.max(0,Math.min(S.length-1,kk-1));
+    const aport=R2(custo+(temAporte?(depAc[nt]||0):0));
     const modelo=R2(modelaAte(k));
     let saldo=R2(saldoAte[kk]);
     const cc=R2((ccAte[kk]||0)-ccPago);
     ccPago=R2(ccAte[kk]||0);
     const ant=pts.length?pts[pts.length-1].saldo:custo;
-    push(data,d,aport,saldo,modelo,m?saldo-ant:0,cc,false);
+    const dSal=(kk<=0)?inicio:((S[kk-1]&&S[kk-1].ate<data)?S[kk-1].ate:data);
+    push(data,d,aport,saldo,modelo,m?saldo-ant:0,cc,false,dSal);
   }
   /* ponto de hoje, para a curva fechar no saldo informado */
   const ultH=pts[pts.length-1];
@@ -21546,16 +21556,96 @@ function aplJanela(e){
    total aportado — e não pelo saldo puro. Sem isso, um aporte mensal
    apareceria como rentabilidade, e a aplicação venceria qualquer índice só
    por receber dinheiro novo. */
+/* Fator acumulado de um índice entre duas datas, na MESMA régua que
+   serieFatores() usa para a aplicação: baldes de mês civil, pontas
+   proporcionais em dias úteis fechados à esquerda — duPeriodo, e não
+   diasUteis, que conta (de,ate] e devolve outro número quando a ponta cai
+   em fim de semana ou feriado. Comparar duas curvas medidas por réguas
+   diferentes era o resíduo que sobrava depois de acertar o calendário. */
+function aplFatorIdx(idx,ini,fim){
+  if(!ini||!fim||fim<=ini) return 1;
+  let f=1, cur=ini.slice(0,7); const fimYM=fim.slice(0,7);
+  let guard=0;
+  while(cur<=fimYM&&guard++<1500){
+    const [y,m]=cur.split("-").map(Number);
+    const ini1=cur+"-01", prox=ymAdd(cur,1)+"-01";
+    const ultimo=new Date(y,m,0).getDate();
+    const de=(ini>ini1)?ini:ini1;
+    const ate=(fim<prox)?fim:prox;
+    let parte;
+    if(idx!=="poupanca"){
+      const duMes=duPeriodo(ini1,prox);
+      parte=duMes>0?Math.max(0,duPeriodo(de,ate))/duMes:0;
+    }else{
+      parte=Math.max(0,dias(de,ate))/ultimo;
+    }
+    if(parte>0){
+      let t=0;
+      try{ t=indiceMes(idx,cur)/100; }catch(e){ t=0; }
+      if(!isFinite(t)) t=0;
+      f*=Math.pow(1+t,parte);
+    }
+    cur=ymAdd(cur,1);
+  }
+  return (isFinite(f)&&f>0)?f:1;
+}
+/* AQUI ESTAVA O BUG DOS 97% DO CDI. O índice era acumulado pelo RÓTULO do
+   mês de cada ponto — um mês cheio por ponto —, e não pelo tempo que de
+   fato correu entre um ponto e o seguinte. Duas consequências, ambas
+   contra a aplicação:
+
+   1. O ponto de "hoje" e o último aniversário caem no MESMO mês. Setembro
+      era cobrado duas vezes do índice (dois meses cheios de CDI) contra os
+      doze dias que a aplicação realmente rendeu — sozinho, mais de um
+      ponto percentual de desvantagem.
+   2. O saldo do ponto de 09/10 é o saldo de 01/10, mas o índice cobrava o
+      mês de OUTUBRO inteiro nesse passo. A curva do ativo andava um mês
+      atrás do próprio rótulo, e o índice, no rótulo.
+
+   Agora o índice acumula por fatorIndice() entre as datas a que os saldos
+   se referem — o MESMO motor que a série de fatores da aplicação usa, com
+   as pontas proporcionais em dias úteis (base 252) e a mesma precedência
+   de dados: BCB no mês fechado, curva dos Parâmetros daí em diante. Uma
+   aplicação de 100% do CDI passa a marcar 100% do CDI. */
 function aplComparativo(pts,bench){
-  const u=x=>((+x.aportado||0)>0)?(x.saldo/x.aportado):1;
-  const u0=u(pts[0])||1;
-  const ativo=pts.map(x=>R2((u(x)/u0-1)*100));
+  /* SEGUNDO VIÉS, o das aplicações com aporte. O retorno entrava por
+     saldo/aportado — "valor por unidade de capital". O denominador sobe no
+     instante do aporte e o dinheiro novo só rende do mês seguinte em
+     diante: cada aporte DERRUBAVA a rentabilidade medida, e uma conta de
+     FGTS ou um CDB com aporte mensal aparecia rendendo 80% do índice
+     enquanto rendia 100%. Agora o retorno é ponderado no tempo (TWR): em
+     cada passo, o aporte do período sai do saldo final antes da divisão,
+     de modo que só o rendimento entre no numerador. Sem aporte a conta é
+     idêntica à anterior. */
+  const ativo=[0]; { let f=1;
+    for(let i=1;i<pts.length;i++){
+      const ant=+pts[i-1].saldo||0;
+      const ap=(+pts[i].aportado||0)-(+pts[i-1].aportado||0);
+      let r=1;
+      if(ant>0){ const x=((+pts[i].saldo||0)-ap)/ant; if(isFinite(x)&&x>0) r=x; }
+      f*=r; ativo.push(R2((f-1)*100));
+    }
+  }
+  const dt=x=>x.dataSaldo||x.data;
   const idx=[0]; let f=1;
   for(let i=1;i<pts.length;i++){
-    let t=0;
-    try{ t=idxTaxaMes(bench,pts[i].ym)/100; }catch(e){ t=0; }
-    if(!isFinite(t)) t=0;
-    f*=(1+t);
+    let g=1;
+    try{
+      if(pts[i].futuro){
+        /* No trecho PROJETADO a aplicação rende um mês civil cheio por
+           passo — é assim que astEvolucao projeta. O índice acompanha pela
+           mesma régua; medi-lo em dias úteis aqui reintroduziria, com sinal
+           trocado, a diferença entre base 252 e base 12 que o histórico
+           acabou de eliminar. */
+        const t=idxTaxaMes(bench,pts[i].ym)/100;
+        g=isFinite(t)?(1+t):1;
+      }else{
+        const de=dt(pts[i-1]), ate=dt(pts[i]);
+        if(ate>de) g=aplFatorIdx(bench,de,ate);
+      }
+    }catch(e){ g=1; }
+    if(!isFinite(g)||g<=0) g=1;
+    f*=g;
     idx.push(R2((f-1)*100));
   }
   const n=pts.length-1;
