@@ -15793,7 +15793,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.86";
+const APP_VERSION="10.87";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -16988,6 +16988,8 @@ const PDIC={
   ap_all:["Tudo","All","Alles"],
   ap_only_hist:["Só histórico","History only","Nur Historie"],
   ap_bench:["Rendimento contra o índice","Return against the index","Rendite gegen den Index"],
+  ap_rate_row:["Em taxa equivalente ao mês","In equivalent monthly rate","In äquivalenter Monatsrate"],
+  ap_pm:["a.m.","p.m.","p.M."],
   ap_asset:["Aplicação","Holding","Anlage"],
   ap_of_index:["do índice","of the index","des Index"],
   ap_of:["do","of","des"],
@@ -17021,9 +17023,9 @@ const PDIC={
   ap_venc_note:["Aplicação vencida: a curva e a tabela terminam no vencimento, em",
     "Matured holding: the curve and the table end at maturity, on",
     "Fällige Anlage: Kurve und Tabelle enden mit der Fälligkeit am"],
-  ap_bench_note:["O retorno da aplicação é ponderado no tempo: em cada passo o aporte do período sai do saldo antes da divisão, de modo que dinheiro novo não seja lido como rentabilidade. O índice acumula pelo mesmo intervalo de datas da aplicação — meses fechados pelo dado do Banco Central, o restante pela curva dos parâmetros —, com as pontas proporcionais em dias úteis. A faixa sombreada é projeção.",
-    "The holding's return is time-weighted: at each step the period's contribution is removed from the balance before dividing, so new money is not read as performance. The index compounds over the same date range as the holding — closed months from Central Bank data, the rest from the parameter curve — with partial months prorated by business days. The shaded band is projection.",
-    "Die Rendite der Anlage ist zeitgewichtet: In jedem Schritt wird die Einzahlung der Periode vor der Division vom Bestand abgezogen, damit neues Geld nicht als Wertentwicklung gelesen wird. Der Index verzinst sich über denselben Zeitraum wie die Anlage — abgeschlossene Monate nach den Daten der Zentralbank, der Rest nach der Parameterkurve —, Teilmonate anteilig nach Bankarbeitstagen. Der schattierte Bereich ist Projektion."],
+  ap_bench_note:["A primeira linha compara os ACUMULADOS do período: é quanto a aplicação entregou a mais, em reais, sobre o índice. Como o spread capitaliza junto com o principal, um papel de 115% do CDI marca mais de 115% aqui, e tanto mais quanto maior o prazo. A segunda linha compara as TAXAS EQUIVALENTES ao mês, e devolve o contrato: 115% do CDI marca 115% em qualquer horizonte. O retorno da aplicação é ponderado no tempo — o aporte do período sai do saldo antes da divisão, de modo que dinheiro novo não seja lido como rentabilidade. O índice acumula pelo mesmo intervalo de datas da aplicação, meses fechados pelo dado do Banco Central e o restante pela curva dos parâmetros, com as pontas proporcionais em dias úteis. A faixa sombreada é projeção.",
+    "The first row compares the period's CUMULATIVE returns: how much more, in money, the holding delivered over the index. Because the spread compounds along with the principal, a 115%-of-CDI paper reads above 115% here, and the longer the horizon the further it drifts. The second row compares the EQUIVALENT MONTHLY RATES, which gives the contract back: 115% of CDI reads 115% at any horizon. The holding's return is time-weighted — the period's contribution is removed from the balance before dividing, so new money is not read as performance. The index compounds over the same date range as the holding, closed months from Central Bank data and the rest from the parameter curve, with partial months prorated by business days. The shaded band is projection.",
+    "Die erste Zeile vergleicht die KUMULIERTEN Renditen des Zeitraums: wie viel mehr die Anlage in Geld gegenüber dem Index erbracht hat. Da sich der Aufschlag zusammen mit dem Kapital verzinst, zeigt ein Papier mit 115% des CDI hier mehr als 115% — und umso mehr, je länger die Laufzeit. Die zweite Zeile vergleicht die ÄQUIVALENTEN MONATSRATEN und gibt den Vertrag zurück: 115% des CDI zeigen 115% bei jedem Horizont. Die Rendite der Anlage ist zeitgewichtet — die Einzahlung der Periode wird vor der Division vom Bestand abgezogen, damit neues Geld nicht als Wertentwicklung gelesen wird. Der Index verzinst sich über denselben Zeitraum wie die Anlage, abgeschlossene Monate nach den Daten der Zentralbank und der Rest nach der Parameterkurve, Teilmonate anteilig nach Bankarbeitstagen. Der schattierte Bereich ist Projektion."],
 
   vc_alert_t:["Você tem aplicações vencendo","You have holdings maturing","Sie haben fällige Anlagen"],
   vc_see:["Ver","See","Ansehen"],
@@ -21650,7 +21652,27 @@ function aplComparativo(pts,bench){
   }
   const n=pts.length-1;
   const rel=(idx[n]>0.0001)?R2(ativo[n]/idx[n]*100):null;
-  return {ativo,idx,fimAtivo:ativo[n],fimIdx:idx[n],rel};
+  /* DUAS LEITURAS, E ELAS NÃO SÃO A MESMA COISA.
+
+     `rel` é a razão dos ACUMULADOS: quanto a mais, em reais, a aplicação
+     entregou sobre o índice no período. Um papel de 115% do CDI marca 116%
+     em doze meses e 121% em cinco anos — não porque o contrato mudou, mas
+     porque o spread capitaliza junto com o principal.
+
+     `relTaxa` é a razão das TAXAS EQUIVALENTES ao mês. Essa devolve o
+     contrato: 115% do CDI marca 115,0% em qualquer horizonte. É a leitura
+     que responde "o papel está pagando o que prometeu?", enquanto a outra
+     responde "quanto isso rendeu a mais?". */
+  const nm=(()=>{
+    try{ const m=mesesEntre(dt(pts[0]),dt(pts[n])); return (isFinite(m)&&m>0.02)?m:0; }
+    catch(e){ return 0; }
+  })();
+  const eqAM=v=>(nm>0&&(1+v/100)>0)?(Math.pow(1+v/100,1/nm)-1)*100:null;
+  const amAtivo=eqAM(ativo[n]), amIdx=eqAM(idx[n]);
+  const relTaxa=(amAtivo!==null&&amIdx!==null&&amIdx>0.0001)?R2(amAtivo/amIdx*100):null;
+  return {ativo,idx,fimAtivo:ativo[n],fimIdx:idx[n],rel,
+    meses:R2(nm),amAtivo:amAtivo===null?null:Math.round(amAtivo*1000)/1000,
+    amIdx:amIdx===null?null:Math.round(amIdx*1000)/1000,relTaxa};
 }
 /* AQUI ESTAVA O SEGUNDO BUG. Os três botões de horizonte vivem DENTRO da
    ficha de uma aplicação, mas o clique redesenhava a ABA de rendimentos —
@@ -21921,6 +21943,18 @@ function renderRendimento(){
           <div style="font-family:var(--serif);font-style:italic;font-size:19px;color:${
             cmp.rel===null?"var(--ink-3)":(cmp.rel>=100?GRN:RED)}">${
             cmp.rel===null?"—":String(cmp.rel).replace(".",",")+"%"}</div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--line);margin:0 0 9px;padding-top:8px">
+        <div style="font-size:8.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-bottom:3px">${PL("ap_rate_row")}</div>
+        <div style="display:flex;gap:10px;justify-content:space-between;align-items:baseline">
+          <div style="min-width:0;font-family:var(--serif);font-style:italic;font-size:15px;color:${NAV}">${
+            cmp.amAtivo===null?"—":cmp.amAtivo.toFixed(3).replace(".",",")+"% "+PX("ap_pm")}</div>
+          <div style="min-width:0;text-align:center;font-family:var(--serif);font-style:italic;font-size:15px;color:#7A93AE">${
+            cmp.amIdx===null?"—":cmp.amIdx.toFixed(3).replace(".",",")+"% "+PX("ap_pm")}</div>
+          <div style="min-width:0;text-align:right;font-family:var(--serif);font-style:italic;font-size:15px;color:${
+            cmp.relTaxa===null?"var(--ink-3)":(cmp.relTaxa>=100?GRN:RED)}">${
+            cmp.relTaxa===null?"—":String(cmp.relTaxa).replace(".",",")+"%"}</div>
         </div>
       </div>
       <canvas id="apl-bench" style="width:100%;display:block"></canvas>
