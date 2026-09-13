@@ -15793,7 +15793,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.86";
+const APP_VERSION="10.88";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -17085,7 +17085,23 @@ const PDIC={
   rg_after:["A posição informada é posterior a esta data. O app registrou os encargos e ajustou o custo, sem mexer no saldo — ele já não continha esse dinheiro.",
     "The reported position is later than this date. The app recorded the charges and adjusted the cost basis without touching the balance — it no longer held that money.",
     "Der gemeldete Bestand ist jünger als dieses Datum. Die App buchte die Abgaben und passte die Kosten an, ohne den Saldo zu ändern — er enthielt dieses Geld bereits nicht mehr."],
-  rg_sim:["Simulação — nada registrado ainda","Simulation — nothing recorded yet","Simulation — noch nichts gebucht"]
+  rg_sim:["Simulação — nada registrado ainda","Simulation — nothing recorded yet","Simulation — noch nichts gebucht"],
+
+  /* — bruto x líquido: o que o número digitado significa — */
+  rg_cost:["(−) Custo do valor resgatado","(−) Cost basis of the amount redeemed","(−) Kostenanteil des Betrags"],
+  rg_md_b:["Bruto","Gross","Brutto"],
+  rg_md_l:["Líquido","Net","Netto"],
+  rg_md_bs:["sai da aplicação","leaves the holding","aus der Anlage"],
+  rg_md_ls:["cai na conta","lands in the account","aufs Konto"],
+  rg_md_bn:["O valor acima é o que SAI da aplicação. O IR é descontado dele, então você recebe menos do que digitou.",
+    "The amount above is what LEAVES the holding. Tax comes out of it, so you receive less than you typed.",
+    "Der Betrag oben verlässt die ANLAGE. Die Steuer wird davon abgezogen, Sie erhalten also weniger."],
+  rg_md_ln:["O valor acima é o que CAI NA CONTA. O app calcula quanto precisa sair da aplicação para sobrar isso depois do IR — é a convenção do app do banco, onde o imposto é debitado por cima do resgate pedido.",
+    "The amount above is what LANDS IN THE ACCOUNT. The app works out how much must leave the holding so that this is left after tax — the convention used by bank apps, where tax is debited on top of the requested redemption.",
+    "Der Betrag oben landet AUF DEM KONTO. Die App ermittelt, wie viel der Anlage entnommen werden muss, damit dies nach Steuern übrig bleibt — die Konvention der Bank-Apps, bei der die Steuer zusätzlich belastet wird."],
+  rg_md_cap:["O saldo não cobre esse valor líquido: o resgate foi limitado ao saldo inteiro.",
+    "The balance cannot cover that net amount: the redemption was capped at the whole balance.",
+    "Der Bestand deckt diesen Nettobetrag nicht: Die Auszahlung wurde auf den vollen Bestand begrenzt."]
 };
 const PIX={pt:0,en:1,de:2};
 function PX(k){ const a=PDIC[k]; if(!a) return k; return a[PIX[LANG]||0]||a[0]; }
@@ -21008,8 +21024,10 @@ function resgDataMin(a){
   const p=astPro(a);
   return String(p.aplic||a.lastUpdate||today()).slice(0,10);
 }
+let RESG_ID=null;
 function openResgate(id){
   const a=resgAtivo(id); if(!a) return;
+  RESG_ID=id;
   /* Vencida não tem o que resgatar: a liquidação já aconteceu na data de
      vencimento e o dinheiro voltou para a conta. O caminho é cadastrar a
      aplicação nova, e é isso que o aviso oferece. */
@@ -21046,11 +21064,20 @@ function openResgate(id){
     <label class="f-label">${PL("rg_how")}</label>
     <input id="res-val" class="f-amount" type="text" inputmode="decimal" placeholder="0,00"
       oninput="maskCurrencyInput(this);PRO.calcResgate('${id}')"/>
-    <div style="display:flex;gap:5px;margin-bottom:14px">
+    <div style="display:flex;gap:5px;margin-bottom:8px">
       ${[25,50,100].map(q=>`<button onclick="PRO.setResgatePct('${id}',${q})" class="pro-btn"
         style="flex:1;border:1.5px solid var(--line);background:none;color:var(--ink-2);
         font-weight:600;cursor:pointer">${q===100?PX("rg_all"):q+"%"}</button>`).join("")}
     </div>
+    <div style="display:flex;gap:5px;margin-bottom:6px">
+      ${["bruto","liquido"].map(m=>`<button id="rg-md-${m}" onclick="PRO.setResgModo('${m}')"
+        class="pro-btn" style="flex:1;border:1.5px solid var(--line);background:none;
+        cursor:pointer;line-height:1.25;padding:9px 6px">
+        <span style="font-weight:700;font-size:12.5px">${PX(m==="bruto"?"rg_md_b":"rg_md_l")}</span>
+        <span style="font-size:10px;margin-left:5px;opacity:.85">${PX(m==="bruto"?"rg_md_bs":"rg_md_ls")}</span>
+      </button>`).join("")}
+    </div>
+    <div class="pro-note" id="rg-md-note" style="margin:0 0 14px"></div>
 
     <label class="f-label">${PL("rg_enc")}</label>
     <input id="res-enc" class="f-amount" type="text" inputmode="decimal" placeholder="0,00"
@@ -21069,8 +21096,10 @@ function openResgate(id){
   ov.onclick=e=>{if(e.target===ov)closeOverlay(ov);};
   const dt=$("res-data");
   if(dt&&dt.min&&dt.value<dt.min) dt.value=dt.min;
+  RESG_MODO="bruto";
   setCurrencyInput($("res-val"),astValorAtual(a));
   setCurrencyInput($("res-enc"),0);
+  renderResgModo();
   calcResgate(id);
 }
 function resgDataSel(a){
@@ -21082,16 +21111,74 @@ function resgDataSel(a){
 }
 function setResgatePct(id,q){
   const a=resgAtivo(id);if(!a)return;
+  RESG_MODO="bruto"; renderResgModo();
   const saldo=R2(astValorEm(a,resgDataSel(a)));
   setCurrencyInput($("res-val"),saldo*q/100);
   calcResgate(id);
 }
 /* encargo informado na folha, se houver campo */
 function resgEncargo(){ return $("res-enc")?unmaskCurrency($("res-enc")):0; }
+
+/* ── BRUTO x LÍQUIDO ────────────────────────────────────────────────────
+   O app do banco e este app perguntam a mesma coisa com sentidos opostos.
+   No Santander, "valor do resgate R$ 10.000" é o que CAI NA CONTA: o IR é
+   debitado por cima e a aplicação perde 10.286. Aqui o número digitado era
+   sempre o que SAI da aplicação, e o IR saía de dentro dele — mesma regra,
+   mesma alíquota, base de cálculo menor, e o imposto ficava R$ 8 abaixo do
+   extrato num resgate de 10 mil. Não era erro de tributação: era o que o
+   número significa. Agora o titular escolhe, e a simulação reproduz a tela
+   do banco sem ajuste nenhum.
+
+   Com g = rendimento/valor (constante, porque custo e saldo caem na mesma
+   proporção), aliq e iofPct fixos pelo prazo:
+       líquido = V·[1 − g·iofPct − g·(1−iofPct)·aliq] − encargo
+   ⇒   V = (líquido + encargo) / k,   k = 1 − g·iofPct − g·(1−iofPct)·aliq  */
+let RESG_MODO="bruto";
+function setResgModo(m){
+  RESG_MODO=(m==="liquido")?"liquido":"bruto";
+  renderResgModo();
+  if(RESG_ID!=null) calcResgate(RESG_ID);
+}
+function renderResgModo(){
+  ["bruto","liquido"].forEach(m=>{
+    const b=$("rg-md-"+m); if(!b) return;
+    const on=(RESG_MODO===m);
+    b.style.background=on?"var(--accent)":"none";
+    b.style.borderColor=on?"var(--accent)":"var(--line)";
+    b.style.color=on?"var(--accent-ink)":"var(--ink-2)";
+  });
+  /* PL() devolve texto blindado para o template H; num innerHTML solto o
+     marcador vazaria na tela. Aqui o texto entra como texto mesmo. */
+  const n=$("rg-md-note");
+  if(n) n.textContent=PX(RESG_MODO==="liquido"?"rg_md_ln":"rg_md_bn");
+}
+/* Valor que efetivamente sai da aplicação, já resolvido o modo. */
+function resgBruto(a,dt,enc){
+  const v=$("res-val")?unmaskCurrency($("res-val")):0;
+  if(RESG_MODO!=="liquido"||!(v>0)) return v;
+  const saldo=R2(astValorEm(a,dt));
+  if(!(saldo>0)) return v;
+  const probe=astResgateEm(a,saldo,dt,0);
+  const g=(probe.valor>0)?(probe.ganho/probe.valor):0;
+  const aliq=(+probe.aliq||0)/100, iofP=(+probe.iofPct||0)/100;
+  const k=1-g*iofP-g*(1-iofP)*aliq;
+  if(!(k>0)) return v;
+  return Math.min(saldo,R2((v+(+enc||0))/k));
+}
+/* o líquido pedido não cabe no saldo: a folha avisa em vez de mentir */
+function resgTeto(a,dt,enc){
+  if(RESG_MODO!=="liquido") return false;
+  const v=$("res-val")?unmaskCurrency($("res-val")):0;
+  if(!(v>0)) return false;
+  const saldo=R2(astValorEm(a,dt));
+  return saldo>0 && resgBruto(a,dt,enc)>=saldo-0.005 && v>0;
+}
 function calcResgate(id){
   const a=resgAtivo(id);if(!a||!$("res-out"))return;
   const dt=resgDataSel(a);
-  const r=astResgateEm(a,unmaskCurrency($("res-val")),dt,resgEncargo());
+  const enc=resgEncargo();
+  const r=astResgateEm(a,resgBruto(a,dt,enc),dt,enc);
+  const teto=resgTeto(a,dt,enc);
   const p=astPro(a);
   const de=String(a.lastUpdate||p.aplic||today()).slice(0,10);
   const L=(lbl,val,cor,forte)=>`<div class="pro-cf${forte?" tot":""}">
@@ -21109,6 +21196,7 @@ function calcResgate(id){
     <div style="background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:10px">
       ${raw(L(PX("rg_pos"),fmt(r.saldo),"var(--ink-2)"))}
       ${raw(L(PX("rg_val"),fmt(r.valor)))}
+      ${raw(L(PX("rg_cost"),SGP("−")+fmt(r.custoBaixa),"var(--ink-2)"))}
       ${raw(L(PX("rg_gain"),fmt(r.ganho),"#5A8A4A"))}
       ${r.iof>0?raw(L("IOF ("+P2(r.iofPct)+"% · "+r.dias+"d)",SGP("−")+fmt(r.iof),"#B85A6A")):""}
       ${raw(L("IR ("+P2(r.aliq)+"% · "+r.dias+" "+PX("ap_days")+")",SGP("−")+fmt(r.ir),"#B85A6A"))}
@@ -21127,6 +21215,7 @@ function calcResgate(id){
       ${p.comeCotas?`<span class="rg-tag">${raw(TR("Come-cotas em mai/nov"))}</span>`:""}
     </div>
     ${futuro?`<div class="info-card" style="background:rgba(196,134,58,.12);color:#7A5A22;margin:0 0 10px">${PL("rg_fut_note")}</div>`:""}
+    ${teto?`<div class="info-card" style="background:rgba(196,134,58,.12);color:#7A5A22;margin:0 0 10px">${PL("rg_md_cap")}</div>`:""}
     ${(!futuro&&dt<=de)?`<div class="pro-note" style="margin:0 0 10px">${PL("rg_after")}</div>`:""}`;
   renderResgHist(id);
 }
@@ -21167,7 +21256,7 @@ function salvarResgate(id,btn){
   const a=resgAtivo(id); if(!a) return;
   const p=astPro(a);
   const dt=resgDataSel(a);
-  const val=unmaskCurrency($("res-val"));
+  const val=resgBruto(a,dt,resgEncargo());
   if(!(val>0)){ toast(PX("rg_novalue")); return; }
   if(dt>today()){ toast(PX("rg_future")); return; }
   if(dt<resgDataMin(a)){ toast(PX("rg_early")); return; }
@@ -26034,6 +26123,7 @@ window.PRO={
   openAplicacao,aplEditar,aplResgatar,aplFechar,setAplPast,setAplBench,aplJanela,aplComparativo,
   openFiscal,saveFiscalForm,resetFiscal,toggleIsen,openResgate,calcResgate,setResgatePct,
   salvarResgate,excluirResgate,renderResgHist,resgDataMin,resgAtivo,resgEncargo,
+  setResgModo,renderResgModo,resgBruto,resgModo:()=>RESG_MODO,
   astVencData,astTemVenc,astVencido,astVencidoYM,astVenceNoYM,astParteRendeMes,
   astResgates,astResgAssin,astResgatadoTotal,astPrazoIR,astLiquidacao,astResgateEm,
   astFaixaIR,astTabelaIR,astProxFaixaIR,
