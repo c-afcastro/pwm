@@ -2861,9 +2861,12 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <button class="sheet-close" id="btn-add-close">✕</button>
     <div class="sheet-title" id="form-title" data-i18n="new_expense">Novo gasto</div>
 
+    <div data-wz="desc">
     <label class="f-label" data-i18n="description">Descrição</label>
     <input id="f-desc" class="f-input" placeholder="Ex: Almoço, Conta de luz…" data-i18n="desc_placeholder"/>
 
+    </div>
+    <div data-wz="amount">
     <label class="f-label" data-i18n="currency_amount">Moeda & Valor</label>
     <div style="display:flex;gap:6px;margin-bottom:6px;min-width:0">
       <div id="currency-picker" style="display:flex;gap:2px;background:var(--surface);border-radius:12px;padding:3px;flex-shrink:0">
@@ -2894,6 +2897,8 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       </div>
     </div>
 
+    </div>
+    <div data-wz="split">
     <label class="f-label" data-i18n="split">Rateio</label>
     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
       <button class="recur-btn active" data-split="none"  onclick="selSplit('none')" data-i18n="no_split">Sem rateio</button>
@@ -2911,15 +2916,21 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <div id="split-summary" style="margin-top:8px;font-size:11px;color:var(--muted);text-align:right"></div>
     </div>
 
+    </div>
+    <div data-wz="date">
     <label class="f-label" data-i18n="start_date">Data inicial</label>
     <input id="f-date" class="f-input" type="date"/>
 
+    </div>
+    <div data-wz="type">
     <label class="f-label" data-i18n="type">Tipo</label>
     <div class="type-row">
       <button class="type-btn t-var" id="type-variable" onclick="selectType('variable')" data-i18n="type_variable">⚡ Variável</button>
       <button class="type-btn" id="type-fixed" onclick="selectType('fixed')" data-i18n="type_fixed">📌 Fixo</button>
     </div>
 
+    </div>
+    <div data-wz="recur">
     <label class="f-label" data-i18n="recurrence">Recorrência</label>
     <div class="recur-row" id="recur-row">
       <button class="recur-btn active" data-recur="none"    onclick="selRecur('none')" data-i18n="none">Nenhuma</button>
@@ -2943,9 +2954,12 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       </div>
     </div>
 
+    </div>
+    <div data-wz="cat">
     <label class="f-label" data-i18n="category">Categoria</label>
     <div class="cat-grid" id="cat-grid"></div>
 
+    </div>
     <div class="f-actions">
       <button class="btn-cancel-f" id="btn-cancel" data-i18n="cancel">Cancelar</button>
       <button class="btn-primary" id="btn-save" data-i18n="add">Adicionar</button>
@@ -3107,18 +3121,27 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <button class="sheet-close" onclick="document.getElementById('modal-income').classList.remove('open')">✕</button>
     <div class="form-title" id="income-form-title" data-i18n="new_income">Nova entrada</div>
 
+    <div data-wz="tipo">
     <label class="f-label" data-i18n="income_type">Tipo de entrada</label>
     <div class="cat-grid" id="income-type-grid" style="grid-template-columns:repeat(4,1fr)"></div>
 
+    </div>
+    <div data-wz="desc">
     <label class="f-label" data-i18n="description">Descrição</label>
     <input id="inc-desc" class="f-input" placeholder="Ex: Salário empresa X, Aluguel apto…" data-i18n="inc_desc_ph"/>
 
+    </div>
+    <div data-wz="amount">
     <label class="f-label" data-i18n="amount">Valor</label>
     <input id="inc-amount" class="f-amount" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this)"/>
 
+    </div>
+    <div data-wz="date">
     <label class="f-label" data-i18n="date">Data</label>
     <input id="inc-date" class="f-input" type="date"/>
 
+    </div>
+    <div data-wz="recur">
     <label class="f-label" data-i18n="recurrence">Recorrência</label>
     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">
       <button class="recur-btn active" data-increc="none" onclick="selIncRecur('none')" data-i18n="once_single">Único</button>
@@ -3130,6 +3153,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <input id="inc-recur-until" class="f-input" type="month" style="margin-bottom:0"/>
     </div>
 
+    </div>
     <div class="f-actions" style="margin-top:8px">
       <button class="btn-cancel-f" onclick="document.getElementById('modal-income').classList.remove('open')" data-i18n="cancel">Cancelar</button>
       <button class="btn-primary" style="background:#1A3A5C" onclick="saveIncome()" id="inc-save" data-i18n="add">Adicionar</button>
@@ -3145,27 +3169,37 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <button class="sheet-close" onclick="document.getElementById('modal-asset').classList.remove('open')">✕</button>
     <div class="form-title" id="asset-form-title" data-i18n="new_asset">Nova aplicação</div>
 
+    <div data-wz="cls">
     <label class="f-label" data-i18n="asset_class">Classe do ativo</label>
     <div class="cat-grid" id="asset-class-grid" style="grid-template-columns:repeat(4,1fr)"></div>
 
+    </div>
+    <div data-wz="nome">
     <label class="f-label" data-i18n="name_institution">Nome / Instituição</label>
     <input id="ast-name" class="f-input" placeholder="Ex: CDB Banco X, HGLG11, Tesouro IPCA…" data-i18n="ast_name_ph"/>
 
     <label class="f-label" data-i18n="institution">Instituição financeira</label>
     <input id="ast-inst" class="f-input" list="lista-instituicoes" placeholder="Ex: Itaú, Nubank, XP…" data-i18n="inst_ph"/>
 
+    </div>
+    <div data-wz="saldo">
     <label class="f-label" data-i18n="balance_position">Saldo / Posição atual</label>
     <input id="ast-balance" class="f-amount" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this)"/>
 
+    </div>
+    <div data-wz="rend">
     <label class="f-label" data-i18n="monthly_yield_label">Rendimento ao mês (% opcional)</label>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:clamp(10px,2dvh,18px)">
       <input id="ast-yield" class="f-input" type="number" step="0.01" min="0" placeholder="Ex: 0,9" style="width:90px;margin-bottom:0"/>
       <span style="font-size:13px;color:var(--ink-2)" data-i18n="pct_month">% ao mês</span>
     </div>
 
+    </div>
+    <div data-wz="dtpos">
     <label class="f-label" data-i18n="position_date">Data da posição (opcional)</label>
     <input id="ast-date" class="f-input" type="date"/>
 
+    </div>
     <div class="f-actions" style="margin-top:8px">
       <button class="btn-cancel-f" onclick="document.getElementById('modal-asset').classList.remove('open')" data-i18n="cancel">Cancelar</button>
       <button class="btn-primary" style="background:#0F2440" onclick="saveAsset()" id="ast-save" data-i18n="add">Adicionar</button>
@@ -3181,26 +3215,32 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <button class="sheet-close" onclick="document.getElementById('modal-debt').classList.remove('open')">✕</button>
     <div style="font-family:var(--serif);font-size:22px;color:var(--body);margin-bottom:14px" id="debt-form-title" data-i18n="new_debt">Nova dívida</div>
 
+    <div data-wz="tipo">
     <label class="f-label" data-i18n="debt_type">Tipo de dívida</label>
     <div class="cat-grid" id="debt-type-grid" style="grid-template-columns:repeat(4,1fr)"></div>
 
+    </div>
+    <div data-wz="nome">
     <label class="f-label" data-i18n="debt_name">Nome / Identificação</label>
     <input id="debt-name" class="f-input" placeholder="Ex: Financiamento apto, Empréstimo do João…" data-i18n="debt_name_ph"/>
 
-    <div id="df-creditor">
+    </div>
+    <div id="df-creditor" data-wz="cred">
       <label class="f-label" data-i18n="debt_creditor">Credor (opcional)</label>
       <input id="debt-creditor" class="f-input" placeholder="Ex: Banco X, João…" data-i18n="debt_creditor_ph"/>
     </div>
 
+    <div data-wz="saldo">
     <label class="f-label" data-i18n="debt_balance">Saldo devedor atual</label>
     <input id="debt-balance" class="f-input" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this);updateDebtEstimate()"/>
 
-    <div id="df-principal">
+    </div>
+    <div id="df-principal" data-wz="orig">
       <label class="f-label" data-i18n="debt_principal">Valor original (opcional)</label>
       <input id="debt-principal" class="f-input" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this);updateDebtEstimate()"/>
     </div>
 
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px" data-wz="juros">
       <div id="df-rate" style="flex:1">
         <label class="f-label" data-i18n="debt_rate">Juros</label>
         <input id="debt-rate" class="f-input" type="text" inputmode="decimal" placeholder="0,0" style="margin-bottom:6px" oninput="maskDecimalInput(this);updateDebtEstimate()"/>
@@ -3215,7 +3255,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       </div>
     </div>
 
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px" data-wz="prazo">
       <div id="df-term" style="flex:1">
         <label class="f-label" data-i18n="debt_term">Parcelas restantes</label>
         <input id="debt-term" class="f-input" type="number" step="1" min="0" placeholder="Ex: 36" oninput="updateDebtEstimate()"/>
@@ -3227,7 +3267,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     </div>
 
     <!-- Amortization system selector -->
-    <div id="debt-amort-row" style="display:none;margin-top:4px">
+    <div id="debt-amort-row" data-wz="amort" style="display:none;margin-top:4px">
       <label class="f-label" data-i18n="amort_system">Sistema de amortização</label>
       <div style="display:flex;gap:4px">
         <button type="button" id="amort-price" onclick="selAmortSys('price')" class="rate-type-btn active" data-i18n="amort_price">Price (parcela fixa)</button>
@@ -3236,7 +3276,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     </div>
 
     <!-- Encargos mensais que o banco soma ao boleto -->
-    <div id="debt-encargos-row" style="display:none;margin-top:8px">
+    <div id="debt-encargos-row" data-wz="enc" style="display:none;margin-top:8px">
       <label class="f-label" data-i18n="debt_charges">Encargos mensais do contrato</label>
       <div style="display:flex;gap:8px">
         <div style="flex:1">
@@ -3252,14 +3292,14 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     </div>
 
     <!-- Indexador do saldo devedor (financiamento) -->
-    <div id="debt-index-row" style="display:none;margin-top:8px">
+    <div id="debt-index-row" data-wz="idx" style="display:none;margin-top:8px">
       <label class="f-label" data-i18n="debt_indexer">Indexador do saldo devedor</label>
       <div style="display:flex;gap:4px;flex-wrap:wrap" id="debt-index-btns"></div>
       <div id="debt-index-hint" style="font-size:10.5px;color:var(--ink-3);line-height:1.55;margin-top:6px"></div>
     </div>
 
     <!-- Live estimate (financing) -->
-    <div id="debt-estimate" style="display:none;background:rgba(110,43,58,.07);border:1px solid rgba(110,43,58,.18);border-radius:14px;padding:13px 15px;margin-top:8px"></div>
+    <div id="debt-estimate" data-wz="est" style="display:none;background:rgba(110,43,58,.07);border:1px solid rgba(110,43,58,.18);border-radius:14px;padding:13px 15px;margin-top:8px"></div>
 
     <div class="f-actions" style="margin-top:10px">
       <button class="btn-cancel-f" onclick="document.getElementById('modal-debt').classList.remove('open')" data-i18n="cancel">Cancelar</button>
@@ -3551,6 +3591,79 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 ══════════════════════════════════════════ */
 const I18N={
   pt:{
+    err_valid_value:"Informe um valor válido",
+    err_income_date:"Informe a data de início desta renda",
+    wz_step:"Etapa",
+    wz_back:"Voltar",
+    wz_next:"Continuar",
+    wz_save:"Salvar",
+    wz_full:"Ver formulário completo",
+    wz_guided:"Voltar ao passo a passo",
+    wz_rev_hint:"Confira os dados antes de gravar.",
+    wz_empty:"—",
+    wz_exp_cat_r:"Categoria",
+    wz_exp_cat_t:"Onde este gasto se encaixa",
+    wz_exp_cat_n:"A categoria define o agrupamento nos relatórios e na projeção de despesas.",
+    wz_exp_val_r:"Valor",
+    wz_exp_val_t:"Descrição e valor",
+    wz_exp_val_n:"Valor negativo registra estorno ou reembolso.",
+    wz_exp_when_r:"Quando",
+    wz_exp_when_t:"Data e natureza do gasto",
+    wz_exp_when_n:"Fixo entra na projeção mês a mês; variável entra pela média dos últimos meses.",
+    wz_exp_rep_r:"Repetição",
+    wz_exp_rep_t:"Recorrência e rateio",
+    wz_exp_rep_n:"Sem recorrência, o gasto vale apenas no mês da data informada.",
+    wz_exp_rev_r:"Revisão",
+    wz_exp_rev_t:"Confira antes de salvar",
+    wz_exp_rev_n:"Tudo pode ser editado depois na lista de gastos.",
+    wz_inc_tipo_r:"Tipo",
+    wz_inc_tipo_t:"Que tipo de entrada é esta",
+    wz_inc_tipo_n:"O tipo já sugere a tributação e a recorrência típicas dessa renda.",
+    wz_inc_val_r:"Valor",
+    wz_inc_val_t:"Descrição e valor bruto",
+    wz_inc_val_n:"Informe o valor bruto: o líquido é calculado pelo app.",
+    wz_inc_quando_r:"Datas",
+    wz_inc_quando_t:"Início e recorrência",
+    wz_inc_quando_n:"A data de início ancora a projeção; sem data de fim, a vigência é indefinida.",
+    wz_inc_trib_r:"Detalhes",
+    wz_inc_trib_t:"Tributação, benefícios e vigência",
+    wz_inc_trib_n:"13º, férias e FGTS entram na projeção do ano quando marcados.",
+    wz_inc_rev_r:"Fluxo",
+    wz_inc_rev_t:"Revise o fluxo de caixa",
+    wz_inc_rev_n:"O primeiro toque revisa o fluxo; o segundo confirma a gravação.",
+    wz_ast_cls_r:"Classe",
+    wz_ast_cls_t:"Classe do ativo",
+    wz_ast_cls_n:"A classe define a tributação e a liquidez padrão do produto.",
+    wz_ast_ident_r:"Identificação",
+    wz_ast_ident_t:"Nome e instituição",
+    wz_ast_ident_n:"Use um nome que você reconheça no extrato da instituição.",
+    wz_ast_pos_r:"Posição",
+    wz_ast_pos_t:"Saldo e data da posição",
+    wz_ast_pos_n:"A data da posição é o ponto de partida da projeção do patrimônio.",
+    wz_ast_det_r:"Produto",
+    wz_ast_det_t:"Indexador, taxas e aportes",
+    wz_ast_det_n:"O indexador substitui o rendimento fixo ao mês e segue a curva dos Parâmetros.",
+    wz_ast_rev_r:"Projeção",
+    wz_ast_rev_t:"Confira a projeção da aplicação",
+    wz_ast_rev_n:"O aporte mensal é o que transforma saldo parado em patrimônio crescente.",
+    wz_debt_tipo_r:"Tipo",
+    wz_debt_tipo_t:"Tipo de dívida",
+    wz_debt_tipo_n:"O tipo define quais campos o contrato exige.",
+    wz_debt_ident_r:"Identificação",
+    wz_debt_ident_t:"Nome e credor",
+    wz_debt_ident_n:"Um nome curto e o credor bastam para reconhecer o contrato depois.",
+    wz_debt_saldo_r:"Saldo",
+    wz_debt_saldo_t:"Saldo devedor e valor original",
+    wz_debt_saldo_n:"O saldo devedor é a base de toda a amortização.",
+    wz_debt_cond_r:"Condições",
+    wz_debt_cond_t:"Juros, prazo e sistema",
+    wz_debt_cond_n:"Price mantém a parcela fixa; SAC reduz a parcela mês a mês.",
+    wz_debt_enc_r:"Encargos",
+    wz_debt_enc_t:"Encargos e indexador",
+    wz_debt_enc_n:"Seguros e taxa de administração somam ao boleto e não amortizam a dívida.",
+    wz_debt_rev_r:"Revisão",
+    wz_debt_rev_t:"Confira antes de salvar",
+    wz_debt_rev_n:"A estimativa acima usa saldo, juros e prazo informados.",
     save_new_link:"Salvar novo link",
     people_title:"Pessoas para rateio",
     people_help:"Cadastre pessoas da família ou recorrentes para usar rapidamente no rateio.",
@@ -4478,6 +4591,79 @@ const I18N={
     otto_m_rend:"Razão entre o rendimento das aplicações no mês e a despesa do mesmo mês.",
   },
   en:{
+    err_valid_value:"Enter a valid amount",
+    err_income_date:"Enter the start date for this income",
+    wz_step:"Step",
+    wz_back:"Back",
+    wz_next:"Continue",
+    wz_save:"Save",
+    wz_full:"Show full form",
+    wz_guided:"Back to guided mode",
+    wz_rev_hint:"Check the data before saving.",
+    wz_empty:"—",
+    wz_exp_cat_r:"Category",
+    wz_exp_cat_t:"Where this expense belongs",
+    wz_exp_cat_n:"The category drives report grouping and the expense projection.",
+    wz_exp_val_r:"Amount",
+    wz_exp_val_t:"Description and amount",
+    wz_exp_val_n:"A negative amount records a refund or reimbursement.",
+    wz_exp_when_r:"When",
+    wz_exp_when_t:"Date and nature of the expense",
+    wz_exp_when_n:"Fixed goes into the projection every month; variable goes in as an average.",
+    wz_exp_rep_r:"Repeat",
+    wz_exp_rep_t:"Recurrence and split",
+    wz_exp_rep_n:"Without recurrence, the expense applies only to the month of the date.",
+    wz_exp_rev_r:"Review",
+    wz_exp_rev_t:"Check before saving",
+    wz_exp_rev_n:"Everything can be edited later from the expense list.",
+    wz_inc_tipo_r:"Type",
+    wz_inc_tipo_t:"What kind of income is this",
+    wz_inc_tipo_n:"The type suggests the usual taxation and recurrence for this income.",
+    wz_inc_val_r:"Amount",
+    wz_inc_val_t:"Description and gross amount",
+    wz_inc_val_n:"Enter the gross amount: the app computes the net.",
+    wz_inc_quando_r:"Dates",
+    wz_inc_quando_t:"Start and recurrence",
+    wz_inc_quando_n:"The start date anchors the projection; with no end date it runs indefinitely.",
+    wz_inc_trib_r:"Details",
+    wz_inc_trib_t:"Taxation, benefits and term",
+    wz_inc_trib_n:"13th salary, vacation bonus and FGTS enter the yearly projection when enabled.",
+    wz_inc_rev_r:"Cash flow",
+    wz_inc_rev_t:"Review the cash flow",
+    wz_inc_rev_n:"The first tap reviews the flow; the second one saves it.",
+    wz_ast_cls_r:"Class",
+    wz_ast_cls_t:"Asset class",
+    wz_ast_cls_n:"The class sets the default taxation and liquidity for the product.",
+    wz_ast_ident_r:"Identity",
+    wz_ast_ident_t:"Name and institution",
+    wz_ast_ident_n:"Use a name you will recognise on the statement.",
+    wz_ast_pos_r:"Position",
+    wz_ast_pos_t:"Balance and position date",
+    wz_ast_pos_n:"The position date is the starting point of the net-worth projection.",
+    wz_ast_det_r:"Product",
+    wz_ast_det_t:"Index, fees and contributions",
+    wz_ast_det_n:"The index replaces the flat monthly yield and follows the Parameters curve.",
+    wz_ast_rev_r:"Projection",
+    wz_ast_rev_t:"Check the projection",
+    wz_ast_rev_n:"Monthly contributions are what turn an idle balance into growing wealth.",
+    wz_debt_tipo_r:"Type",
+    wz_debt_tipo_t:"Debt type",
+    wz_debt_tipo_n:"The type defines which contract fields are required.",
+    wz_debt_ident_r:"Identity",
+    wz_debt_ident_t:"Name and creditor",
+    wz_debt_ident_n:"A short name and the creditor are enough to recognise the contract later.",
+    wz_debt_saldo_r:"Balance",
+    wz_debt_saldo_t:"Outstanding balance and original amount",
+    wz_debt_saldo_n:"The outstanding balance is the basis for all amortization.",
+    wz_debt_cond_r:"Terms",
+    wz_debt_cond_t:"Interest, term and system",
+    wz_debt_cond_n:"Price keeps the instalment flat; SAC lowers it month by month.",
+    wz_debt_enc_r:"Charges",
+    wz_debt_enc_t:"Charges and index",
+    wz_debt_enc_n:"Insurance and admin fees add to the bill and do not amortize the debt.",
+    wz_debt_rev_r:"Review",
+    wz_debt_rev_t:"Check before saving",
+    wz_debt_rev_n:"The estimate above uses the balance, interest and term entered.",
     save_new_link:"Save new link",
     people_title:"People for split",
     people_help:"Add family members or frequent contacts for quick split use.",
@@ -5404,6 +5590,79 @@ const I18N={
     otto_m_rend:"Ratio of the holdings' yield for the month to the same month's spending.",
   },
   de:{
+    err_valid_value:"Bitte einen gültigen Betrag eingeben",
+    err_income_date:"Bitte das Startdatum dieser Einnahme angeben",
+    wz_step:"Schritt",
+    wz_back:"Zurück",
+    wz_next:"Weiter",
+    wz_save:"Speichern",
+    wz_full:"Vollständiges Formular",
+    wz_guided:"Zurück zur Schritt-für-Schritt-Ansicht",
+    wz_rev_hint:"Prüfen Sie die Daten vor dem Speichern.",
+    wz_empty:"—",
+    wz_exp_cat_r:"Kategorie",
+    wz_exp_cat_t:"Wohin diese Ausgabe gehört",
+    wz_exp_cat_n:"Die Kategorie steuert die Gruppierung in den Berichten und in der Ausgabenprognose.",
+    wz_exp_val_r:"Betrag",
+    wz_exp_val_t:"Beschreibung und Betrag",
+    wz_exp_val_n:"Ein negativer Betrag erfasst eine Rückerstattung.",
+    wz_exp_when_r:"Wann",
+    wz_exp_when_t:"Datum und Art der Ausgabe",
+    wz_exp_when_n:"Fix fließt jeden Monat in die Prognose; variabel über den Durchschnitt.",
+    wz_exp_rep_r:"Wiederholung",
+    wz_exp_rep_t:"Wiederholung und Aufteilung",
+    wz_exp_rep_n:"Ohne Wiederholung gilt die Ausgabe nur im Monat des Datums.",
+    wz_exp_rev_r:"Prüfung",
+    wz_exp_rev_t:"Vor dem Speichern prüfen",
+    wz_exp_rev_n:"Alles lässt sich später in der Ausgabenliste bearbeiten.",
+    wz_inc_tipo_r:"Art",
+    wz_inc_tipo_t:"Um welche Einnahme handelt es sich",
+    wz_inc_tipo_n:"Die Art schlägt die übliche Besteuerung und Wiederholung vor.",
+    wz_inc_val_r:"Betrag",
+    wz_inc_val_t:"Beschreibung und Bruttobetrag",
+    wz_inc_val_n:"Bruttobetrag eingeben: den Nettobetrag berechnet die App.",
+    wz_inc_quando_r:"Termine",
+    wz_inc_quando_t:"Beginn und Wiederholung",
+    wz_inc_quando_n:"Das Startdatum verankert die Prognose; ohne Enddatum läuft sie unbefristet.",
+    wz_inc_trib_r:"Details",
+    wz_inc_trib_t:"Besteuerung, Leistungen und Laufzeit",
+    wz_inc_trib_n:"13. Gehalt, Urlaubsgeld und FGTS fließen bei Auswahl in die Jahresprognose.",
+    wz_inc_rev_r:"Cashflow",
+    wz_inc_rev_t:"Cashflow prüfen",
+    wz_inc_rev_n:"Der erste Tipp prüft den Fluss, der zweite speichert.",
+    wz_ast_cls_r:"Klasse",
+    wz_ast_cls_t:"Anlageklasse",
+    wz_ast_cls_n:"Die Klasse legt Besteuerung und Liquidität des Produkts fest.",
+    wz_ast_ident_r:"Bezeichnung",
+    wz_ast_ident_t:"Name und Institut",
+    wz_ast_ident_n:"Verwenden Sie einen Namen, den Sie im Auszug wiedererkennen.",
+    wz_ast_pos_r:"Bestand",
+    wz_ast_pos_t:"Saldo und Stichtag",
+    wz_ast_pos_n:"Der Stichtag ist der Ausgangspunkt der Vermögensprognose.",
+    wz_ast_det_r:"Produkt",
+    wz_ast_det_t:"Index, Gebühren und Einzahlungen",
+    wz_ast_det_n:"Der Index ersetzt die feste Monatsrendite und folgt der Parameterkurve.",
+    wz_ast_rev_r:"Prognose",
+    wz_ast_rev_t:"Prognose der Anlage prüfen",
+    wz_ast_rev_n:"Monatliche Einzahlungen machen aus einem ruhenden Saldo wachsendes Vermögen.",
+    wz_debt_tipo_r:"Art",
+    wz_debt_tipo_t:"Art der Schuld",
+    wz_debt_tipo_n:"Die Art bestimmt, welche Vertragsfelder nötig sind.",
+    wz_debt_ident_r:"Bezeichnung",
+    wz_debt_ident_t:"Name und Gläubiger",
+    wz_debt_ident_n:"Ein kurzer Name und der Gläubiger reichen zur späteren Zuordnung.",
+    wz_debt_saldo_r:"Saldo",
+    wz_debt_saldo_t:"Restschuld und ursprünglicher Betrag",
+    wz_debt_saldo_n:"Die Restschuld ist die Grundlage der gesamten Tilgung.",
+    wz_debt_cond_r:"Konditionen",
+    wz_debt_cond_t:"Zinsen, Laufzeit und System",
+    wz_debt_cond_n:"Price hält die Rate konstant; SAC senkt sie Monat für Monat.",
+    wz_debt_enc_r:"Nebenkosten",
+    wz_debt_enc_t:"Nebenkosten und Index",
+    wz_debt_enc_n:"Versicherungen und Verwaltungsgebühr erhöhen die Rate und tilgen nicht.",
+    wz_debt_rev_r:"Prüfung",
+    wz_debt_rev_t:"Vor dem Speichern prüfen",
+    wz_debt_rev_n:"Die Schätzung oben nutzt Saldo, Zins und Laufzeit.",
     save_new_link:"Neuen Link speichern",
     people_title:"Personen für Aufteilung",
     people_help:"Familienmitglieder oder häufige Kontakte für schnelle Aufteilung hinzufügen.",
@@ -15793,7 +16052,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.88";
+const APP_VERSION="10.89";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -20008,7 +20267,7 @@ const CF_K={dia:1/30.4375,mes:1,ano:12};
 const CF_SUF={dia:"/dia",mes:"/mês",ano:"/ano"};
 
 function incomeProHTML(){
-  return H`<div id="inc-pro">
+  return H`<div id="inc-pro"><div data-wz="trib">
     <div class="pro-h"><b>Tributação</b><i></i><u id="inc-reg-toggle" onclick="PRO.toggleRegPick()">alterar</u></div>
     <div class="pro-pick" id="inc-reg-card"></div>
     <div id="inc-reg-chips" class="pro-chips" style="display:none"></div>
@@ -20088,6 +20347,8 @@ function incomeProHTML(){
     </div>
     <div class="pro-note">O valor informado acima é o valor daquele mês de referência. O reajuste é aplicado inteiro no mês escolhido — sem rateio proporcional — e a partir dali vale o valor novo. Sem data de fim, a vigência é indefinida. Escolhido um índice, ele manda: o reajuste passa a ser o acumulado de doze meses fechado no mês anterior ao aniversário, colhido da curva dos Parâmetros — e o percentual ao lado é ignorado.</div>
 
+    </div>
+    <div data-wz="prev">
     <div class="pro-h" style="margin-top:20px"><b>Fluxo de caixa desta entrada</b><i></i></div>
     <div class="pro-chips" style="margin-top:0;margin-bottom:10px">
       <div class="pro-scale" id="inc-cf-scale">
@@ -20097,6 +20358,7 @@ function incomeProHTML(){
       </div>
     </div>
     <div id="inc-preview" class="pro-prev" style="background:rgba(26,58,92,.06);border:1px solid rgba(26,58,92,.15)"></div>
+    </div>
   </div>`;
 }
 let PRO_FORM_LANG=null;
@@ -20350,7 +20612,7 @@ const idxFieldLabel=id=>({cdi_pct:"% do CDI",cdi_spread:"CDI + (% a.a.)",ipca_sp
   pre:"Taxa prefixada (% a.a.)",variavel:"Rentabilidade (% a.m.)"})[id]||"Taxa contratada";
 
 function assetProHTML(){
-  return H`<div id="ast-pro">
+  return H`<div id="ast-pro"><div data-wz="det">
     <div class="pro-h" style="margin-top:0"><b>Escolha rápida</b><i></i></div>
     <div class="pro-chips" id="ast-produtos" style="margin-top:0;margin-bottom:4px">
       ${PRODUTOS.map(p=>`<span class="pro-pill" data-prod="${p.id}" onclick="PRO.aplicarProduto('${p.id}')">${p.lbl}</span>`).join("")}
@@ -20407,7 +20669,10 @@ function assetProHTML(){
       </div>
     </div>
 
+    </div>
+    <div data-wz="prev">
     <div id="ast-preview" class="pro-prev" style="background:rgba(15,36,64,.05);border:1px solid rgba(15,36,64,.15)"></div>
+    </div>
   </div>`;
 }
 function ensureAssetPro(){
@@ -26912,5 +27177,330 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
 }
 
 </style>
+
+<style id="wz-css">
+/* ══════════════════════════════════════════════════════════════
+   PREENCHIMENTO POR ETAPAS  (wizard guiado dos quatro cadastros)
+   Nada aqui move campo de lugar: os grupos [data-wz] continuam
+   dentro da própria folha e só alternam visibilidade. Por isso
+   todo o CSS já existente dos modais segue valendo.
+   ══════════════════════════════════════════════════════════════ */
+.wz-off{ display:none!important; }
+
+.wz-head{ margin:-2px 0 14px; }
+.wz-trail{ display:flex; gap:4px; align-items:center; margin-bottom:10px;
+  overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px; scrollbar-width:none; }
+.wz-trail::-webkit-scrollbar{ display:none; }
+.wz-pill{ display:flex; align-items:center; gap:5px; flex:0 0 auto;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink-3);
+  border-radius:20px; padding:5px 10px 5px 5px; font-size:10px; font-weight:500;
+  letter-spacing:.2px; white-space:nowrap; cursor:default; font-family:var(--sans);
+  transition:background .18s, border-color .18s, color .18s; }
+.wz-pill b{ font-size:9px; width:15px; height:15px; border-radius:50%;
+  background:var(--line); color:var(--paper); display:flex; align-items:center;
+  justify-content:center; font-weight:700; flex:0 0 auto; }
+.wz-pill.done{ color:var(--ink-2); cursor:pointer; }
+.wz-pill.done b{ background:var(--wz-ac,var(--accent)); color:#fff; opacity:.55; }
+.wz-pill.now{ background:var(--surface); border-color:var(--wz-ac,var(--accent)); color:var(--wz-ac,var(--accent)); }
+.wz-pill.now b{ background:var(--wz-ac,var(--accent)); color:#fff; }
+.wz-prog{ height:3px; border-radius:2px; background:var(--line); overflow:hidden; }
+.wz-prog i{ display:block; height:100%; width:0; border-radius:2px;
+  background:var(--wz-ac,var(--accent)); transition:width .32s cubic-bezier(.22,.9,.32,1); }
+.wz-tt{ display:flex; align-items:center; gap:10px; margin-top:13px; }
+.wz-tt .wz-tx{ min-width:0; flex:1; }
+.wz-tt b{ display:block; font-family:var(--serif); font-style:italic; font-weight:400;
+  font-size:19px; line-height:1.2; color:var(--body); }
+.wz-tt small{ display:block; font-size:9px; letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--ink-3); margin-top:4px; font-weight:600; }
+
+.wz-in{ animation:wzIn .28s cubic-bezier(.22,.9,.32,1) backwards; }
+@keyframes wzIn{ from{ opacity:0; transform:translateY(9px); } }
+
+.wz-foot{ margin-top:18px; }
+.wz-nota{ font-size:10.5px; line-height:1.6; color:var(--ink-2); background:var(--surface);
+  border-left:2px solid var(--wz-ac,var(--accent)); border-radius:0 10px 10px 0;
+  padding:9px 12px; margin-bottom:12px; }
+.wz-btns{ display:flex; gap:8px; }
+.wz-b{ flex:1; border-radius:12px; padding:12px 10px; font-family:var(--sans);
+  font-size:13px; font-weight:500; cursor:pointer; box-sizing:border-box;
+  border:1.5px solid var(--line); background:none; color:var(--ink-2);
+  transition:border-color .18s, background .18s, transform .18s; }
+.wz-b:active{ transform:translateY(1px); }
+.wz-b.wz-next{ flex:1.7; font-weight:600; color:#fff;
+  background:var(--wz-ac,var(--accent)); border-color:var(--wz-ac,var(--accent)); }
+.wz-b[disabled]{ opacity:.35; pointer-events:none; }
+.wz-alt{ display:block; width:100%; margin-top:11px; background:none; border:none;
+  color:var(--ink-3); font-size:10.5px; letter-spacing:.2px; cursor:pointer;
+  font-family:var(--sans); text-decoration:underline; text-underline-offset:3px; }
+
+.wz-rev{ border:1px solid var(--line); border-radius:14px; background:var(--paper);
+  padding:2px 14px; margin-bottom:6px; }
+.wz-rev .wz-r{ display:flex; justify-content:space-between; align-items:baseline; gap:14px;
+  padding:10px 0; border-top:1px solid var(--line); }
+.wz-rev .wz-r:first-child{ border-top:none; }
+.wz-rev .wz-r span{ font-size:9px; letter-spacing:1.4px; text-transform:uppercase;
+  color:var(--ink-3); font-weight:600; flex:0 0 auto; }
+.wz-rev .wz-r b{ font-size:12.5px; font-weight:500; color:var(--body); text-align:right;
+  min-width:0; overflow-wrap:anywhere; }
+</style>
+<script id="wz-js">
+/* ══════════════════════════════════════════════════════════════
+   PREENCHIMENTO POR ETAPAS — despesas, entradas, patrimônio e dívidas
+   O motor não cria formulário novo: ele conduz o formulário que já
+   existe, uma etapa por tela, escondendo os grupos [data-wz] que não
+   pertencem à etapa atual. Salvar chama exatamente a mesma função de
+   sempre, então cálculo, projeção e persistência não mudam.
+   ══════════════════════════════════════════════════════════════ */
+(function(){
+  const $=id=>document.getElementById(id);
+  const T=k=>{ try{ return t(k); }catch(e){ return k; } };
+  const gv=id=>{ const e=$(id); return e?String(e.value||"").trim():""; };
+  const dash=v=>(v===""||v==null)?T("wz_empty"):v;
+  const pick=gid=>{ const g=$(gid); if(!g) return ""; const b=g.querySelector(".cat-btn.active .lbl");
+    return b?b.textContent.trim():""; };
+  const num=id=>{ try{ return unmaskCurrency($(id)); }catch(e){ return NaN; } };
+  /* a grade de categorias do gasto marca a seleção só por estilo, sem classe */
+  const catNome=()=>{ try{ const c=CATS.find(x=>x.id===SC); return c?String(catLabel(c)).trim():""; }
+    catch(e){ return pick("cat-grid"); } };
+
+  const WZ={ flow:null, idx:0, full:false, seen:0 };
+
+  const FLOWS={
+    exp:{ modal:"modal-add", title:"form-title", saveBtn:"btn-save", del:"btn-destroy",
+      ac:"var(--accent)", save:()=>window.handleSave(),
+      steps:[
+        {k:"cat",  g:["cat"]},
+        {k:"val",  g:["desc","amount"], req:()=>{
+            const d=gv("f-desc"), v=num("f-amount");
+            return (d && !isNaN(v) && v!==0)?null:T("err_fill_desc_val"); } },
+        {k:"when", g:["date","type"]},
+        {k:"rep",  g:["recur","split"]},
+        {k:"rev",  g:["__rev"], rev:true}
+      ],
+      rev:()=>[
+        [T("category"), dash(catNome())],
+        [T("description"), dash(gv("f-desc"))],
+        [T("amount"), dash((typeof SCUR!=="undefined"?SCUR+" ":"")+gv("f-amount"))],
+        [T("start_date"), dash(gv("f-date"))],
+        [T("type"), T(ST==="fixed"?"type_fixed":"type_variable")],
+        [T("recurrence"), T(SR==="none"?"none":SR)],
+        [T("split"), T(SSPLIT==="none"?"no_split":(SSPLIT==="pct"?"split_pct":"split_value"))]
+      ] },
+
+    inc:{ modal:"modal-income", title:"income-form-title", saveBtn:"inc-save", del:"inc-destroy",
+      ac:"#1A3A5C", save:()=>window.saveIncome(),
+      steps:[
+        {k:"tipo",   g:["tipo"]},
+        {k:"val",    g:["desc","amount"], req:()=>{
+            const v=num("inc-amount");
+            return (!isNaN(v)&&v>0)?null:T("err_valid_value"); } },
+        {k:"quando", g:["date","recur"], req:()=>gv("inc-date")?null:T("err_income_date") },
+        {k:"trib",   g:["trib"]},
+        {k:"rev",    g:["prev","__rev"], rev:true}
+      ],
+      rev:()=>[
+        [T("income_type"), dash(pick("income-type-grid"))],
+        [T("description"), dash(gv("inc-desc"))],
+        [T("amount"), dash(gv("inc-amount"))],
+        [T("date"), dash(gv("inc-date"))],
+        [T("recurrence"), T(typeof INC_REC!=="undefined"&&INC_REC!=="none"?INC_REC:"once_single")]
+      ] },
+
+    ast:{ modal:"modal-asset", title:"asset-form-title", saveBtn:"ast-save", del:"ast-destroy",
+      ac:"#0F2440", save:()=>window.saveAsset(),
+      steps:[
+        {k:"cls",   g:["cls"]},
+        {k:"ident", g:["nome"], req:()=>gv("ast-name")?null:T("err_ast_name") },
+        {k:"pos",   g:["saldo","dtpos","rend"]},
+        {k:"det",   g:["det"]},
+        {k:"rev",   g:["prev","__rev"], rev:true}
+      ],
+      rev:()=>[
+        [T("asset_class"), dash(pick("asset-class-grid"))],
+        [T("name_institution"), dash(gv("ast-name"))],
+        [T("institution"), dash(gv("ast-inst"))],
+        [T("balance_position"), dash(gv("ast-balance"))],
+        [T("position_date"), dash(gv("ast-date"))]
+      ] },
+
+    debt:{ modal:"modal-debt", title:"debt-form-title", saveBtn:"debt-save", del:"debt-destroy",
+      ac:"#6E2B3A", save:()=>window.saveDebt(),
+      steps:[
+        {k:"tipo",  g:["tipo"]},
+        {k:"ident", g:["nome","cred"], req:()=>gv("debt-name")?null:T("err_debt_fill") },
+        {k:"saldo", g:["saldo","orig"], req:()=>{
+            const v=num("debt-balance");
+            return isNaN(v)?T("err_debt_fill"):null; } },
+        {k:"cond",  g:["juros","prazo","amort","est"]},
+        {k:"enc",   g:["enc","idx"]},
+        {k:"rev",   g:["est","__rev"], rev:true}
+      ],
+      rev:()=>[
+        [T("debt_type"), dash(pick("debt-type-grid"))],
+        [T("debt_name"), dash(gv("debt-name"))],
+        [T("debt_creditor"), dash(gv("debt-creditor"))],
+        [T("debt_balance"), dash(gv("debt-balance"))],
+        [T("debt_rate"), dash(gv("debt-rate")+(gv("debt-rate")?(DEBT_RATE_TYPE==="year"?"% a.a.":"% a.m."):""))],
+        [T("debt_term"), dash(gv("debt-term"))],
+        [T("debt_due_day"), dash(gv("debt-dueday"))]
+      ] }
+  };
+
+  /* ── esqueleto: cabeçalho, resumo e rodapé dentro da própria folha ── */
+  function chrome(f){
+    const modal=$(f.modal); if(!modal) return null;
+    const sheet=modal.querySelector(".sheet"); if(!sheet) return null;
+    const acts=sheet.querySelector(".f-actions"); if(!acts) return null;
+
+    let head=sheet.querySelector(".wz-head");
+    if(!head){
+      head=document.createElement("div"); head.className="wz-head";
+      head.innerHTML='<div class="wz-trail"></div><div class="wz-prog"><i></i></div>'+
+        '<div class="wz-tt"><div class="wz-tx"><b></b><small></small></div></div>';
+      const ttl=$(f.title);
+      if(ttl&&ttl.parentNode) ttl.parentNode.insertBefore(head, ttl.nextSibling);
+      else sheet.insertBefore(head, sheet.firstChild);
+    }
+    let rev=sheet.querySelector(".wz-rev");
+    if(!rev){ rev=document.createElement("div"); rev.className="wz-rev"; rev.setAttribute("data-wz","__rev"); }
+    let foot=sheet.querySelector(".wz-foot");
+    if(!foot){
+      foot=document.createElement("div"); foot.className="wz-foot";
+      foot.innerHTML='<div class="wz-nota"></div>'+
+        '<div class="wz-btns"><button type="button" class="wz-b wz-back"></button>'+
+        '<button type="button" class="wz-b wz-next"></button></div>'+
+        '<button type="button" class="wz-alt"></button>';
+      foot.querySelector(".wz-back").addEventListener("click",()=>go(-1));
+      foot.querySelector(".wz-next").addEventListener("click",next);
+      foot.querySelector(".wz-alt").addEventListener("click",toggleFull);
+    }
+    /* o bloco PRO é reinserido antes de .f-actions a cada troca de idioma:
+       reposicionar resumo e rodapé garante que eles fiquem sempre por último */
+    acts.parentNode.insertBefore(rev, acts);
+    acts.parentNode.insertBefore(foot, acts);
+    sheet.style.setProperty("--wz-ac", f.ac);
+    return {sheet, head, foot, rev, acts};
+  }
+
+  function render(){
+    const f=FLOWS[WZ.flow]; if(!f) return;
+    const c=chrome(f); if(!c) return;
+    const st=f.steps[WZ.idx], n=f.steps.length;
+
+    /* grupos: só os da etapa aparecem */
+    const alvo=WZ.full?null:(st.g||[]);
+    c.sheet.querySelectorAll("[data-wz]").forEach(el=>{
+      const on=WZ.full||alvo.indexOf(el.getAttribute("data-wz"))>=0;
+      el.classList.toggle("wz-off",!on);
+    });
+    c.head.classList.toggle("wz-off",WZ.full);
+    c.foot.classList.toggle("wz-off",WZ.full);
+    c.acts.classList.toggle("wz-off",!WZ.full);
+    const del=$(f.del);
+    if(del) del.classList.toggle("wz-off", !WZ.full && !(st.rev && del.style.display!=="none"));
+
+    if(WZ.full){
+      const alt=c.sheet.querySelector(".wz-alt");
+      if(alt){ alt.classList.remove("wz-off"); alt.textContent=T("wz_guided"); }
+      c.foot.classList.remove("wz-off");
+      c.foot.querySelector(".wz-nota").classList.add("wz-off");
+      c.foot.querySelector(".wz-btns").classList.add("wz-off");
+      return;
+    }
+    c.foot.querySelector(".wz-nota").classList.remove("wz-off");
+    c.foot.querySelector(".wz-btns").classList.remove("wz-off");
+
+    /* trilha */
+    const trail=c.head.querySelector(".wz-trail");
+    trail.innerHTML=f.steps.map((x,i)=>
+      '<button type="button" class="wz-pill'+(i===WZ.idx?" now":(i<WZ.idx?" done":""))+
+      '" data-i="'+i+'"><b>'+(i+1)+'</b>'+T("wz_"+WZ.flow+"_"+x.k+"_r")+'</button>').join("");
+    trail.querySelectorAll(".wz-pill.done").forEach(b=>
+      b.addEventListener("click",()=>{ WZ.idx=+b.dataset.i; render(); }));
+    const now=trail.querySelector(".wz-pill.now");
+    if(now&&now.scrollIntoView) try{ now.scrollIntoView({block:"nearest",inline:"center"}); }catch(e){}
+
+    c.head.querySelector(".wz-prog i").style.width=Math.round((WZ.idx+1)/n*100)+"%";
+    c.head.querySelector(".wz-tt b").textContent=T("wz_"+WZ.flow+"_"+st.k+"_t");
+    c.head.querySelector(".wz-tt small").textContent=T("wz_step")+" "+(WZ.idx+1)+"/"+n;
+    c.foot.querySelector(".wz-nota").textContent=T("wz_"+WZ.flow+"_"+st.k+"_n");
+
+    const back=c.foot.querySelector(".wz-back"), nx=c.foot.querySelector(".wz-next");
+    back.textContent=T("wz_back"); back.disabled=WZ.idx===0;
+    nx.textContent=st.rev?($(f.saveBtn)?$(f.saveBtn).textContent:T("wz_save")):T("wz_next");
+    const alt=c.foot.querySelector(".wz-alt"); alt.textContent=T("wz_full");
+
+    /* resumo */
+    if(st.rev){
+      let rows=[];
+      try{ rows=f.rev()||[]; }catch(e){ rows=[]; }
+      c.rev.innerHTML=rows.map(r=>'<div class="wz-r"><span>'+r[0]+'</span><b>'+
+        String(r[1]).replace(/</g,"&lt;")+'</b></div>').join("");
+    }
+    if(WZ.flow==="debt"){ try{ updateDebtEstimate(); }catch(e){} }
+
+    /* entrada em cascata dos grupos visíveis */
+    let k=0;
+    c.sheet.querySelectorAll("[data-wz]:not(.wz-off)").forEach(el=>{
+      el.classList.remove("wz-in"); void el.offsetWidth;
+      el.style.animationDelay=(k++*45)+"ms"; el.classList.add("wz-in");
+    });
+    c.sheet.scrollTop=0;
+  }
+
+  function go(d){
+    const f=FLOWS[WZ.flow]; if(!f) return;
+    const i=WZ.idx+d;
+    if(i<0||i>=f.steps.length) return;
+    WZ.idx=i; render();
+  }
+
+  function next(){
+    const f=FLOWS[WZ.flow]; if(!f) return;
+    const st=f.steps[WZ.idx];
+    if(st.req){
+      let err=null; try{ err=st.req(); }catch(e){ err=null; }
+      if(err){ try{ toast(err); }catch(e){} return; }
+    }
+    if(st.rev){
+      try{ f.save(); }catch(e){ try{ console.error(e); }catch(_){} return; }
+      /* entradas gravam em dois toques: o rótulo vem do botão original */
+      const m=$(f.modal);
+      if(m&&m.classList.contains("open")){
+        const b=$(f.saveBtn);
+        const nx=m.querySelector(".wz-next");
+        if(b&&nx) nx.textContent=b.textContent;
+        render();
+      }
+      return;
+    }
+    go(1);
+  }
+
+  function toggleFull(){ WZ.full=!WZ.full; render(); }
+
+  function start(flow){
+    WZ.flow=flow; WZ.idx=0; WZ.full=false;
+    try{ render(); }catch(e){ try{ console.error(e); }catch(_){} }
+  }
+
+  /* ── engate nos pontos de entrada existentes ── */
+  function hook(name,flow){
+    const orig=window[name];
+    if(typeof orig!=="function") return;
+    window[name]=function(){
+      const r=orig.apply(this,arguments);
+      try{ start(flow); }catch(e){}
+      return r;
+    };
+  }
+  hook("openAdd","exp");       hook("openEdit","exp");
+  hook("openIncome","inc");    hook("openIncomeEdit","inc");
+  hook("openAsset","ast");     hook("openAssetEdit","ast");
+  hook("openDebt","debt");
+
+  window.WZ_DEBUG=WZ;
+})();
+</script>
 </body>
 </html>
