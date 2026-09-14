@@ -3591,6 +3591,15 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 ══════════════════════════════════════════ */
 const I18N={
   pt:{
+    wz_inc_prev_r:"Fluxo",
+    wz_inc_prev_t:"Revise o fluxo de caixa",
+    wz_inc_prev_n:"O fluxo mostra mês a mês o que essa entrada gera em caixa.",
+    wz_ast_proj_r:"Projeção",
+    wz_ast_proj_t:"Confira a projeção da aplicação",
+    wz_ast_proj_n:"O aporte mensal é o que transforma saldo parado em patrimônio crescente.",
+    wz_debt_est_r:"Estimativa",
+    wz_debt_est_t:"Estimativa da parcela",
+    wz_debt_est_n:"A estimativa usa saldo, juros e prazo informados.",
     wz_exp_rat_r:"Rateio",
     wz_exp_rat_t:"Dividir com outras pessoas",
     wz_exp_rat_n:"Use o rateio quando só parte do valor é sua.",
@@ -3623,7 +3632,7 @@ const I18N={
     wz_exp_rep_r:"Repetição",
     wz_exp_rep_t:"Com que frequência se repete",
     wz_exp_rep_n:"Sem recorrência, o gasto vale apenas no mês da data informada.",
-    wz_exp_rev_r:"Revisão",
+    wz_exp_rev_r:"Resumo",
     wz_exp_rev_t:"Confira antes de salvar",
     wz_exp_rev_n:"Tudo pode ser editado depois na lista de gastos.",
     wz_inc_tipo_r:"Tipo",
@@ -3638,8 +3647,8 @@ const I18N={
     wz_inc_trib_r:"Detalhes",
     wz_inc_trib_t:"Tributação e benefícios",
     wz_inc_trib_n:"13º, férias e FGTS entram na projeção do ano quando marcados.",
-    wz_inc_rev_r:"Fluxo",
-    wz_inc_rev_t:"Revise o fluxo de caixa",
+    wz_inc_rev_r:"Resumo",
+    wz_inc_rev_t:"Confira antes de salvar",
     wz_inc_rev_n:"O primeiro toque revisa o fluxo; o segundo confirma a gravação.",
     wz_ast_cls_r:"Classe",
     wz_ast_cls_t:"Classe do ativo",
@@ -3653,9 +3662,9 @@ const I18N={
     wz_ast_det_r:"Produto",
     wz_ast_det_t:"Produto e indexador",
     wz_ast_det_n:"O indexador substitui o rendimento fixo ao mês e segue a curva dos Parâmetros.",
-    wz_ast_rev_r:"Projeção",
-    wz_ast_rev_t:"Confira a projeção da aplicação",
-    wz_ast_rev_n:"O aporte mensal é o que transforma saldo parado em patrimônio crescente.",
+    wz_ast_rev_r:"Resumo",
+    wz_ast_rev_t:"Confira antes de salvar",
+    wz_ast_rev_n:"Tudo pode ser ajustado depois na lista de aplicações.",
     wz_debt_tipo_r:"Tipo",
     wz_debt_tipo_t:"Tipo de dívida",
     wz_debt_tipo_n:"O tipo define quais campos o contrato exige.",
@@ -3671,9 +3680,9 @@ const I18N={
     wz_debt_enc_r:"Encargos",
     wz_debt_enc_t:"Encargos e indexador",
     wz_debt_enc_n:"Seguros e taxa de administração somam ao boleto e não amortizam a dívida.",
-    wz_debt_rev_r:"Revisão",
+    wz_debt_rev_r:"Resumo",
     wz_debt_rev_t:"Confira antes de salvar",
-    wz_debt_rev_n:"A estimativa acima usa saldo, juros e prazo informados.",
+    wz_debt_rev_n:"Tudo pode ser ajustado depois na lista de dívidas.",
     save_new_link:"Salvar novo link",
     people_title:"Pessoas para rateio",
     people_help:"Cadastre pessoas da família ou recorrentes para usar rapidamente no rateio.",
@@ -4601,6 +4610,15 @@ const I18N={
     otto_m_rend:"Razão entre o rendimento das aplicações no mês e a despesa do mesmo mês.",
   },
   en:{
+    wz_inc_prev_r:"Cash flow",
+    wz_inc_prev_t:"Review the cash flow",
+    wz_inc_prev_n:"The flow shows month by month what this income generates in cash.",
+    wz_ast_proj_r:"Projection",
+    wz_ast_proj_t:"Check the projection",
+    wz_ast_proj_n:"Monthly contributions are what turn an idle balance into growing wealth.",
+    wz_debt_est_r:"Estimate",
+    wz_debt_est_t:"Instalment estimate",
+    wz_debt_est_n:"The estimate uses the balance, interest and term entered.",
     wz_exp_rat_r:"Split",
     wz_exp_rat_t:"Split with other people",
     wz_exp_rat_n:"Use the split when only part of the amount is yours.",
@@ -4648,8 +4666,8 @@ const I18N={
     wz_inc_trib_r:"Details",
     wz_inc_trib_t:"Taxation and benefits",
     wz_inc_trib_n:"13th salary, vacation bonus and FGTS enter the yearly projection when enabled.",
-    wz_inc_rev_r:"Cash flow",
-    wz_inc_rev_t:"Review the cash flow",
+    wz_inc_rev_r:"Summary",
+    wz_inc_rev_t:"Check before saving",
     wz_inc_rev_n:"The first tap reviews the flow; the second one saves it.",
     wz_ast_cls_r:"Class",
     wz_ast_cls_t:"Asset class",
@@ -4663,9 +4681,9 @@ const I18N={
     wz_ast_det_r:"Product",
     wz_ast_det_t:"Product and index",
     wz_ast_det_n:"The index replaces the flat monthly yield and follows the Parameters curve.",
-    wz_ast_rev_r:"Projection",
-    wz_ast_rev_t:"Check the projection",
-    wz_ast_rev_n:"Monthly contributions are what turn an idle balance into growing wealth.",
+    wz_ast_rev_r:"Summary",
+    wz_ast_rev_t:"Check before saving",
+    wz_ast_rev_n:"Everything can be adjusted later in the asset list.",
     wz_debt_tipo_r:"Type",
     wz_debt_tipo_t:"Debt type",
     wz_debt_tipo_n:"The type defines which contract fields are required.",
@@ -4683,7 +4701,7 @@ const I18N={
     wz_debt_enc_n:"Insurance and admin fees add to the bill and do not amortize the debt.",
     wz_debt_rev_r:"Review",
     wz_debt_rev_t:"Check before saving",
-    wz_debt_rev_n:"The estimate above uses the balance, interest and term entered.",
+    wz_debt_rev_n:"Everything can be adjusted later in the debt list.",
     save_new_link:"Save new link",
     people_title:"People for split",
     people_help:"Add family members or frequent contacts for quick split use.",
@@ -5610,6 +5628,15 @@ const I18N={
     otto_m_rend:"Ratio of the holdings' yield for the month to the same month's spending.",
   },
   de:{
+    wz_inc_prev_r:"Cashflow",
+    wz_inc_prev_t:"Cashflow prüfen",
+    wz_inc_prev_n:"Der Fluss zeigt Monat für Monat, was diese Einnahme an Kasse bringt.",
+    wz_ast_proj_r:"Prognose",
+    wz_ast_proj_t:"Prognose der Anlage prüfen",
+    wz_ast_proj_n:"Monatliche Einzahlungen machen aus einem ruhenden Saldo wachsendes Vermögen.",
+    wz_debt_est_r:"Schätzung",
+    wz_debt_est_t:"Ratenschätzung",
+    wz_debt_est_n:"Die Schätzung nutzt Saldo, Zins und Laufzeit.",
     wz_exp_rat_r:"Aufteilung",
     wz_exp_rat_t:"Mit anderen teilen",
     wz_exp_rat_n:"Nutzen Sie die Aufteilung, wenn nur ein Teil des Betrags Ihrer ist.",
@@ -5657,8 +5684,8 @@ const I18N={
     wz_inc_trib_r:"Details",
     wz_inc_trib_t:"Besteuerung und Leistungen",
     wz_inc_trib_n:"13. Gehalt, Urlaubsgeld und FGTS fließen bei Auswahl in die Jahresprognose.",
-    wz_inc_rev_r:"Cashflow",
-    wz_inc_rev_t:"Cashflow prüfen",
+    wz_inc_rev_r:"Zusammenfassung",
+    wz_inc_rev_t:"Vor dem Speichern prüfen",
     wz_inc_rev_n:"Der erste Tipp prüft den Fluss, der zweite speichert.",
     wz_ast_cls_r:"Klasse",
     wz_ast_cls_t:"Anlageklasse",
@@ -5672,9 +5699,9 @@ const I18N={
     wz_ast_det_r:"Produkt",
     wz_ast_det_t:"Produkt und Index",
     wz_ast_det_n:"Der Index ersetzt die feste Monatsrendite und folgt der Parameterkurve.",
-    wz_ast_rev_r:"Prognose",
-    wz_ast_rev_t:"Prognose der Anlage prüfen",
-    wz_ast_rev_n:"Monatliche Einzahlungen machen aus einem ruhenden Saldo wachsendes Vermögen.",
+    wz_ast_rev_r:"Zusammenfassung",
+    wz_ast_rev_t:"Vor dem Speichern prüfen",
+    wz_ast_rev_n:"Alles lässt sich später in der Anlagenliste anpassen.",
     wz_debt_tipo_r:"Art",
     wz_debt_tipo_t:"Art der Schuld",
     wz_debt_tipo_n:"Die Art bestimmt, welche Vertragsfelder nötig sind.",
@@ -5692,7 +5719,7 @@ const I18N={
     wz_debt_enc_n:"Versicherungen und Verwaltungsgebühr erhöhen die Rate und tilgen nicht.",
     wz_debt_rev_r:"Prüfung",
     wz_debt_rev_t:"Vor dem Speichern prüfen",
-    wz_debt_rev_n:"Die Schätzung oben nutzt Saldo, Zins und Laufzeit.",
+    wz_debt_rev_n:"Alles lässt sich später in der Schuldenliste anpassen.",
     save_new_link:"Neuen Link speichern",
     people_title:"Personen für Aufteilung",
     people_help:"Familienmitglieder oder häufige Kontakte für schnelle Aufteilung hinzufügen.",
@@ -16082,7 +16109,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.93";
+const APP_VERSION="10.94";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -27229,8 +27256,11 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
 .sheet.wz-sheet{ padding-bottom:6px; }
 html.wz-lock, html.wz-lock body{ overflow:hidden!important; overscroll-behavior:none; }
 html.wz-lock body{ touch-action:none; }
-.overlay.open{ overscroll-behavior:contain; }
-.overlay.open .sheet{ overscroll-behavior:contain; touch-action:pan-y; }
+/* a rolagem para no limite: o "sobe e desce" era o elástico do
+   WebKit encadeando com o scroll do fundo */
+.overlay.open{ overscroll-behavior:none; }
+.overlay.open .sheet{ overscroll-behavior:none; touch-action:pan-y; }
+.wz-trail{ overscroll-behavior-x:none; }
 
 /* o cabeçalho e o rodapé ficam colados às bordas da folha: a trilha,
    o título e os botões continuam à mão mesmo quando o conteúdo da
@@ -27245,7 +27275,7 @@ html.wz-lock body{ touch-action:none; }
    borda superior era cortada pela caixa de rolagem */
 .wz-trail{ display:flex; gap:5px; align-items:center; margin-bottom:12px;
   overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch;
-  padding:5px 2px 6px; margin-top:-5px; scrollbar-width:none; }
+  padding:5px 14px 6px 2px; margin-top:-5px; scroll-behavior:smooth; scrollbar-width:none; }
 .wz-trail::-webkit-scrollbar{ display:none; }
 .wz-pill{ display:flex; align-items:center; gap:5px; flex:0 0 auto;
   border:1px solid var(--line); background:var(--surface); color:var(--ink-3);
@@ -27437,7 +27467,8 @@ html.wz-lock body{ touch-action:none; }
         {k:"quando", ic:"cal",   g:["date","recur"], req:()=>gv("inc-date")?null:T("err_income_date") },
         {k:"trib",   ic:"pct",   g:["trib"]},
         {k:"vig",    ic:"clock", g:["vig"]},
-        {k:"rev",    ic:"trend", g:["prev","__rev"], rev:true}
+        {k:"prev",   ic:"trend", g:["prev"]},
+        {k:"rev",    ic:"check", g:["__rev"], rev:true}
       ],
       rev:()=>[
         [T("income_type"), dash(pick("income-type-grid"))],
@@ -27455,7 +27486,8 @@ html.wz-lock body{ touch-action:none; }
         {k:"pos",   ic:"coins",   g:["saldo","dtpos","rend"]},
         {k:"det",    ic:"sliders", g:["det"]},
         {k:"prazos", ic:"clock",   g:["prazos"]},
-        {k:"rev",    ic:"trend",   g:["prev","__rev"], rev:true}
+        {k:"proj",   ic:"trend",   g:["prev"]},
+        {k:"rev",    ic:"check",   g:["__rev"], rev:true}
       ],
       rev:()=>[
         [T("asset_class"), dash(pick("asset-class-grid"))],
@@ -27475,7 +27507,8 @@ html.wz-lock body{ touch-action:none; }
             return isNaN(v)?T("err_debt_fill"):null; } },
         {k:"cond",  ic:"pct",     g:["juros","prazo","amort"]},
         {k:"enc",   ic:"receipt", g:["enc","idx"]},
-        {k:"rev",   ic:"check",   g:["est","__rev"], rev:true}
+        {k:"est",   ic:"trend",   g:["est"]},
+        {k:"rev",   ic:"check",   g:["__rev"], rev:true}
       ],
       rev:()=>[
         [T("debt_type"), dash(pick("debt-type-grid"))],
@@ -27550,6 +27583,18 @@ html.wz-lock body{ touch-action:none; }
     return i;
   }
 
+  /* o chip da etapa em curso fica centrado na trilha; sem isso o
+     último chip ficava escondido fora da área visível */
+  function focarChip(trail){
+    if(!trail) return;
+    const now=trail.querySelector(".wz-pill.now"); if(!now) return;
+    const max=trail.scrollWidth-trail.clientWidth;
+    if(max<=0) return;
+    const alvo=now.offsetLeft-(trail.clientWidth-now.offsetWidth)/2;
+    const x=Math.max(0,Math.min(alvo,max));
+    try{ trail.scrollTo({left:x,behavior:"smooth"}); }catch(e){ trail.scrollLeft=x; }
+  }
+
   /* atualiza só o que depende do preenchimento — sem redesenhar a etapa */
   function vivo(){
     const f=FLOWS[WZ.flow]; if(!f||WZ.full) return;
@@ -27566,6 +27611,7 @@ html.wz-lock body{ touch-action:none; }
       const marca=p.querySelector("b");
       if(marca) marca.textContent=(i<WZ.idx&&!erroDe(f,i))?"✓":(i+1);
     });
+    focarChip(modal.querySelector(".wz-trail"));
   }
 
   function render(){
@@ -27610,6 +27656,7 @@ html.wz-lock body{ touch-action:none; }
       WZ.dir=i>WZ.idx?1:-1; WZ.idx=i; render();
     }));
 
+    requestAnimationFrame(()=>focarChip(trail));
     c.head.querySelector(".wz-prog i").style.width=Math.round((WZ.idx+1)/n*100)+"%";
 
     const ic=c.head.querySelector(".wz-ic");
