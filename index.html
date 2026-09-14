@@ -16052,7 +16052,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.89";
+const APP_VERSION="10.90";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -27187,6 +27187,14 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
    ══════════════════════════════════════════════════════════════ */
 .wz-off{ display:none!important; }
 
+/* ── trava de rolagem do fundo ──
+   com a folha aberta, o fundo não rola: o movimento por trás do
+   formulário tirava o foco e, no iPhone, roubava o toque do campo */
+html.wz-lock, html.wz-lock body{ overflow:hidden!important; overscroll-behavior:none; }
+html.wz-lock body{ touch-action:none; }
+.overlay.open{ overscroll-behavior:contain; }
+.overlay.open .sheet{ overscroll-behavior:contain; touch-action:pan-y; }
+
 .wz-head{ margin:-2px 0 14px; }
 .wz-trail{ display:flex; gap:4px; align-items:center; margin-bottom:10px;
   overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px; scrollbar-width:none; }
@@ -27195,40 +27203,71 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
   border:1px solid var(--line); background:var(--surface); color:var(--ink-3);
   border-radius:20px; padding:5px 10px 5px 5px; font-size:10px; font-weight:500;
   letter-spacing:.2px; white-space:nowrap; cursor:default; font-family:var(--sans);
-  transition:background .18s, border-color .18s, color .18s; }
+  transition:background .2s, border-color .2s, color .2s, transform .2s; }
 .wz-pill b{ font-size:9px; width:15px; height:15px; border-radius:50%;
   background:var(--line); color:var(--paper); display:flex; align-items:center;
-  justify-content:center; font-weight:700; flex:0 0 auto; }
+  justify-content:center; font-weight:700; flex:0 0 auto; transition:background .2s, transform .2s; }
 .wz-pill.done{ color:var(--ink-2); cursor:pointer; }
-.wz-pill.done b{ background:var(--wz-ac,var(--accent)); color:#fff; opacity:.55; }
-.wz-pill.now{ background:var(--surface); border-color:var(--wz-ac,var(--accent)); color:var(--wz-ac,var(--accent)); }
-.wz-pill.now b{ background:var(--wz-ac,var(--accent)); color:#fff; }
-.wz-prog{ height:3px; border-radius:2px; background:var(--line); overflow:hidden; }
-.wz-prog i{ display:block; height:100%; width:0; border-radius:2px;
-  background:var(--wz-ac,var(--accent)); transition:width .32s cubic-bezier(.22,.9,.32,1); }
-.wz-tt{ display:flex; align-items:center; gap:10px; margin-top:13px; }
+.wz-pill.done b{ background:var(--wz-ac,var(--accent)); color:#fff; opacity:.6; }
+.wz-pill.done:active{ transform:scale(.95); }
+.wz-pill.now{ background:var(--surface); border-color:var(--wz-ac,var(--accent));
+  color:var(--wz-ac,var(--accent)); transform:translateY(-1px); }
+.wz-pill.now b{ background:var(--wz-ac,var(--accent)); color:#fff; animation:wzPop .34s cubic-bezier(.2,1.3,.4,1); }
+@keyframes wzPop{ from{ transform:scale(.4); } 60%{ transform:scale(1.18); } to{ transform:scale(1); } }
+
+.wz-prog{ height:3px; border-radius:2px; background:var(--line); overflow:hidden; position:relative; }
+.wz-prog i{ display:block; height:100%; width:0; border-radius:2px; position:relative;
+  background:var(--wz-ac,var(--accent)); transition:width .38s cubic-bezier(.22,.9,.32,1); }
+.wz-prog i::after{ content:""; position:absolute; inset:0; border-radius:2px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);
+  transform:translateX(-100%); animation:wzShine 1.5s ease-in-out .15s 1; }
+@keyframes wzShine{ to{ transform:translateX(100%); } }
+
+.wz-tt{ display:flex; align-items:center; gap:11px; margin-top:13px; }
 .wz-tt .wz-tx{ min-width:0; flex:1; }
 .wz-tt b{ display:block; font-family:var(--serif); font-style:italic; font-weight:400;
   font-size:19px; line-height:1.2; color:var(--body); }
 .wz-tt small{ display:block; font-size:9px; letter-spacing:1.6px; text-transform:uppercase;
   color:var(--ink-3); margin-top:4px; font-weight:600; }
 
-.wz-in{ animation:wzIn .28s cubic-bezier(.22,.9,.32,1) backwards; }
-@keyframes wzIn{ from{ opacity:0; transform:translateY(9px); } }
+/* ── Otto da etapa: halo pulsante + entrada com balanço ── */
+.wz-ic{ position:relative; flex:0 0 auto; width:46px; height:46px;
+  box-shadow:0 0 0 1px var(--line), 0 3px 10px rgba(0,0,0,.07);
+  animation:wzIcIn .46s cubic-bezier(.2,1.25,.35,1) backwards; }
+.wz-ic::before{ content:""; position:absolute; inset:-5px; border-radius:50%;
+  border:1.5px solid var(--wz-ac,var(--accent)); opacity:0; animation:wzHalo 2.6s ease-out .35s infinite; }
+@keyframes wzIcIn{ from{ opacity:0; transform:scale(.55) rotate(-10deg); } }
+@keyframes wzHalo{ 0%{ opacity:.45; transform:scale(.9); } 55%{ opacity:0; transform:scale(1.18); } 100%{ opacity:0; } }
+.wz-ic.wz-done{ animation:wzIcDone .5s cubic-bezier(.2,1.3,.4,1); }
+@keyframes wzIcDone{ 40%{ transform:scale(1.12) rotate(4deg); } }
+
+/* ── troca de etapa: entrada em cascata, com direção ── */
+.wz-in{ animation:wzIn .3s cubic-bezier(.22,.9,.32,1) backwards; }
+.wz-back-dir .wz-in{ animation-name:wzInBack; }
+@keyframes wzIn{ from{ opacity:0; transform:translate3d(16px,6px,0); } }
+@keyframes wzInBack{ from{ opacity:0; transform:translate3d(-16px,6px,0); } }
 
 .wz-foot{ margin-top:18px; }
-.wz-nota{ font-size:10.5px; line-height:1.6; color:var(--ink-2); background:var(--surface);
-  border-left:2px solid var(--wz-ac,var(--accent)); border-radius:0 10px 10px 0;
-  padding:9px 12px; margin-bottom:12px; }
+.wz-nota{ position:relative; font-size:10.5px; line-height:1.6; color:var(--ink-2);
+  background:var(--surface); border-left:2px solid var(--wz-ac,var(--accent));
+  border-radius:0 10px 10px 0; padding:9px 12px 9px 34px; margin-bottom:12px;
+  animation:wzIn .34s cubic-bezier(.22,.9,.32,1) .08s backwards; }
+.wz-nota::before{ content:""; position:absolute; left:9px; top:8px; width:18px; height:18px;
+  border-radius:50%; background-size:cover; background-position:center; opacity:.95; }
 .wz-btns{ display:flex; gap:8px; }
 .wz-b{ flex:1; border-radius:12px; padding:12px 10px; font-family:var(--sans);
-  font-size:13px; font-weight:500; cursor:pointer; box-sizing:border-box;
-  border:1.5px solid var(--line); background:none; color:var(--ink-2);
-  transition:border-color .18s, background .18s, transform .18s; }
-.wz-b:active{ transform:translateY(1px); }
+  font-size:13px; font-weight:500; cursor:pointer; box-sizing:border-box; position:relative;
+  border:1.5px solid var(--line); background:none; color:var(--ink-2); overflow:hidden;
+  transition:border-color .18s, background .18s, transform .12s, box-shadow .18s; }
+.wz-b:active{ transform:translateY(1px) scale(.99); }
 .wz-b.wz-next{ flex:1.7; font-weight:600; color:#fff;
-  background:var(--wz-ac,var(--accent)); border-color:var(--wz-ac,var(--accent)); }
+  background:var(--wz-ac,var(--accent)); border-color:var(--wz-ac,var(--accent));
+  box-shadow:0 3px 12px -4px var(--wz-ac,var(--accent)); }
+.wz-b.wz-next.wz-final{ animation:wzReady .5s cubic-bezier(.2,1.3,.4,1); }
+@keyframes wzReady{ 45%{ transform:scale(1.035); } }
 .wz-b[disabled]{ opacity:.35; pointer-events:none; }
+.wz-b.wz-shake{ animation:wzShake .38s ease; }
+@keyframes wzShake{ 25%{ transform:translateX(-5px);} 50%{ transform:translateX(5px);} 75%{ transform:translateX(-3px);} }
 .wz-alt{ display:block; width:100%; margin-top:11px; background:none; border:none;
   color:var(--ink-3); font-size:10.5px; letter-spacing:.2px; cursor:pointer;
   font-family:var(--sans); text-decoration:underline; text-underline-offset:3px; }
@@ -27236,12 +27275,17 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
 .wz-rev{ border:1px solid var(--line); border-radius:14px; background:var(--paper);
   padding:2px 14px; margin-bottom:6px; }
 .wz-rev .wz-r{ display:flex; justify-content:space-between; align-items:baseline; gap:14px;
-  padding:10px 0; border-top:1px solid var(--line); }
+  padding:10px 0; border-top:1px solid var(--line);
+  animation:wzIn .3s cubic-bezier(.22,.9,.32,1) backwards; }
 .wz-rev .wz-r:first-child{ border-top:none; }
 .wz-rev .wz-r span{ font-size:9px; letter-spacing:1.4px; text-transform:uppercase;
   color:var(--ink-3); font-weight:600; flex:0 0 auto; }
 .wz-rev .wz-r b{ font-size:12.5px; font-weight:500; color:var(--body); text-align:right;
   min-width:0; overflow-wrap:anywhere; }
+
+@media (prefers-reduced-motion: reduce){
+  .wz-in,.wz-nota,.wz-ic,.wz-rev .wz-r,.wz-prog i::after,.wz-pill.now b{ animation:none!important; }
+}
 </style>
 <script id="wz-js">
 /* ══════════════════════════════════════════════════════════════
@@ -27263,19 +27307,19 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
   const catNome=()=>{ try{ const c=CATS.find(x=>x.id===SC); return c?String(catLabel(c)).trim():""; }
     catch(e){ return pick("cat-grid"); } };
 
-  const WZ={ flow:null, idx:0, full:false, seen:0 };
+  const WZ={ flow:null, idx:0, full:false, dir:1 };
 
   const FLOWS={
     exp:{ modal:"modal-add", title:"form-title", saveBtn:"btn-save", del:"btn-destroy",
       ac:"var(--accent)", save:()=>window.handleSave(),
       steps:[
-        {k:"cat",  g:["cat"]},
-        {k:"val",  g:["desc","amount"], req:()=>{
+        {k:"cat",  ic:"oi-checklist",   g:["cat"]},
+        {k:"val",  ic:"oi-caixa",       g:["desc","amount"], req:()=>{
             const d=gv("f-desc"), v=num("f-amount");
             return (d && !isNaN(v) && v!==0)?null:T("err_fill_desc_val"); } },
-        {k:"when", g:["date","type"]},
-        {k:"rep",  g:["recur","split"]},
-        {k:"rev",  g:["__rev"], rev:true}
+        {k:"when", ic:"oi-planejamento",g:["date","type"]},
+        {k:"rep",  ic:"oi-controle",    g:["recur","split"]},
+        {k:"rev",  ic:"oi-aprovado",    g:["__rev"], rev:true}
       ],
       rev:()=>[
         [T("category"), dash(catNome())],
@@ -27290,13 +27334,13 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
     inc:{ modal:"modal-income", title:"income-form-title", saveBtn:"inc-save", del:"inc-destroy",
       ac:"#1A3A5C", save:()=>window.saveIncome(),
       steps:[
-        {k:"tipo",   g:["tipo"]},
-        {k:"val",    g:["desc","amount"], req:()=>{
+        {k:"tipo",   ic:"oi-areceber",   g:["tipo"]},
+        {k:"val",    ic:"oi-caixa",      g:["desc","amount"], req:()=>{
             const v=num("inc-amount");
             return (!isNaN(v)&&v>0)?null:T("err_valid_value"); } },
-        {k:"quando", g:["date","recur"], req:()=>gv("inc-date")?null:T("err_income_date") },
-        {k:"trib",   g:["trib"]},
-        {k:"rev",    g:["prev","__rev"], rev:true}
+        {k:"quando", ic:"oi-planejamento",g:["date","recur"], req:()=>gv("inc-date")?null:T("err_income_date") },
+        {k:"trib",   ic:"oi-governanca", g:["trib"]},
+        {k:"rev",    ic:"oi-projecoes",  g:["prev","__rev"], rev:true}
       ],
       rev:()=>[
         [T("income_type"), dash(pick("income-type-grid"))],
@@ -27309,11 +27353,11 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
     ast:{ modal:"modal-asset", title:"asset-form-title", saveBtn:"ast-save", del:"ast-destroy",
       ac:"#0F2440", save:()=>window.saveAsset(),
       steps:[
-        {k:"cls",   g:["cls"]},
-        {k:"ident", g:["nome"], req:()=>gv("ast-name")?null:T("err_ast_name") },
-        {k:"pos",   g:["saldo","dtpos","rend"]},
-        {k:"det",   g:["det"]},
-        {k:"rev",   g:["prev","__rev"], rev:true}
+        {k:"cls",   ic:"oi-crescimento", g:["cls"]},
+        {k:"ident", ic:"oi-escrita",     g:["nome"], req:()=>gv("ast-name")?null:T("err_ast_name") },
+        {k:"pos",   ic:"oi-caixa",       g:["saldo","dtpos","rend"]},
+        {k:"det",   ic:"oi-analise",     g:["det"]},
+        {k:"rev",   ic:"oi-projecoes",   g:["prev","__rev"], rev:true}
       ],
       rev:()=>[
         [T("asset_class"), dash(pick("asset-class-grid"))],
@@ -27326,14 +27370,14 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
     debt:{ modal:"modal-debt", title:"debt-form-title", saveBtn:"debt-save", del:"debt-destroy",
       ac:"#6E2B3A", save:()=>window.saveDebt(),
       steps:[
-        {k:"tipo",  g:["tipo"]},
-        {k:"ident", g:["nome","cred"], req:()=>gv("debt-name")?null:T("err_debt_fill") },
-        {k:"saldo", g:["saldo","orig"], req:()=>{
+        {k:"tipo",  ic:"oi-credito",   g:["tipo"]},
+        {k:"ident", ic:"oi-escrita",   g:["nome","cred"], req:()=>gv("debt-name")?null:T("err_debt_fill") },
+        {k:"saldo", ic:"oi-caixa",     g:["saldo","orig"], req:()=>{
             const v=num("debt-balance");
             return isNaN(v)?T("err_debt_fill"):null; } },
-        {k:"cond",  g:["juros","prazo","amort","est"]},
-        {k:"enc",   g:["enc","idx"]},
-        {k:"rev",   g:["est","__rev"], rev:true}
+        {k:"cond",  ic:"oi-simulacao", g:["juros","prazo","amort","est"]},
+        {k:"enc",   ic:"oi-custos",    g:["enc","idx"]},
+        {k:"rev",   ic:"oi-checklist", g:["est","__rev"], rev:true}
       ],
       rev:()=>[
         [T("debt_type"), dash(pick("debt-type-grid"))],
@@ -27356,7 +27400,7 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
     if(!head){
       head=document.createElement("div"); head.className="wz-head";
       head.innerHTML='<div class="wz-trail"></div><div class="wz-prog"><i></i></div>'+
-        '<div class="wz-tt"><div class="wz-tx"><b></b><small></small></div></div>';
+        '<div class="wz-tt"><span class="oi wz-ic"></span><div class="wz-tx"><b></b><small></small></div></div>';
       const ttl=$(f.title);
       if(ttl&&ttl.parentNode) ttl.parentNode.insertBefore(head, ttl.nextSibling);
       else sheet.insertBefore(head, sheet.firstChild);
@@ -27382,10 +27426,23 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
     return {sheet, head, foot, rev, acts};
   }
 
+  /* o Otto da nota é o mesmo da dica, e muda para o de etapa concluída na revisão */
+  function ottoUrl(cls){
+    try{
+      const p=document.createElement("span"); p.className="oi "+cls;
+      p.style.position="absolute"; p.style.opacity="0"; document.body.appendChild(p);
+      const u=getComputedStyle(p).backgroundImage; p.remove(); return u;
+    }catch(e){ return ""; }
+  }
+  const OTTO_CACHE={};
+  const otto=cls=>(OTTO_CACHE[cls]||(OTTO_CACHE[cls]=ottoUrl(cls)));
+
   function render(){
     const f=FLOWS[WZ.flow]; if(!f) return;
     const c=chrome(f); if(!c) return;
     const st=f.steps[WZ.idx], n=f.steps.length;
+
+    c.sheet.classList.toggle("wz-back-dir", WZ.dir<0);
 
     /* grupos: só os da etapa aparecem */
     const alvo=WZ.full?null:(st.g||[]);
@@ -27394,19 +27451,18 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
       el.classList.toggle("wz-off",!on);
     });
     c.head.classList.toggle("wz-off",WZ.full);
-    c.foot.classList.toggle("wz-off",WZ.full);
     c.acts.classList.toggle("wz-off",!WZ.full);
     const del=$(f.del);
     if(del) del.classList.toggle("wz-off", !WZ.full && !(st.rev && del.style.display!=="none"));
 
     if(WZ.full){
-      const alt=c.sheet.querySelector(".wz-alt");
-      if(alt){ alt.classList.remove("wz-off"); alt.textContent=T("wz_guided"); }
       c.foot.classList.remove("wz-off");
       c.foot.querySelector(".wz-nota").classList.add("wz-off");
       c.foot.querySelector(".wz-btns").classList.add("wz-off");
+      c.foot.querySelector(".wz-alt").textContent=T("wz_guided");
       return;
     }
+    c.foot.classList.remove("wz-off");
     c.foot.querySelector(".wz-nota").classList.remove("wz-off");
     c.foot.querySelector(".wz-btns").classList.remove("wz-off");
 
@@ -27414,28 +27470,36 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
     const trail=c.head.querySelector(".wz-trail");
     trail.innerHTML=f.steps.map((x,i)=>
       '<button type="button" class="wz-pill'+(i===WZ.idx?" now":(i<WZ.idx?" done":""))+
-      '" data-i="'+i+'"><b>'+(i+1)+'</b>'+T("wz_"+WZ.flow+"_"+x.k+"_r")+'</button>').join("");
+      '" data-i="'+i+'"><b>'+(i<WZ.idx?"✓":(i+1))+'</b>'+T("wz_"+WZ.flow+"_"+x.k+"_r")+'</button>').join("");
     trail.querySelectorAll(".wz-pill.done").forEach(b=>
-      b.addEventListener("click",()=>{ WZ.idx=+b.dataset.i; render(); }));
+      b.addEventListener("click",()=>{ WZ.dir=-1; WZ.idx=+b.dataset.i; render(); }));
     const now=trail.querySelector(".wz-pill.now");
     if(now&&now.scrollIntoView) try{ now.scrollIntoView({block:"nearest",inline:"center"}); }catch(e){}
 
     c.head.querySelector(".wz-prog i").style.width=Math.round((WZ.idx+1)/n*100)+"%";
+    const ic=c.head.querySelector(".wz-ic");
+    ic.className="oi wz-ic "+(st.ic||"oi-dica");
+    ic.style.animation="none"; void ic.offsetWidth; ic.style.animation="";
     c.head.querySelector(".wz-tt b").textContent=T("wz_"+WZ.flow+"_"+st.k+"_t");
     c.head.querySelector(".wz-tt small").textContent=T("wz_step")+" "+(WZ.idx+1)+"/"+n;
-    c.foot.querySelector(".wz-nota").textContent=T("wz_"+WZ.flow+"_"+st.k+"_n");
+
+    const nota=c.foot.querySelector(".wz-nota");
+    nota.textContent=T("wz_"+WZ.flow+"_"+st.k+"_n");
+    _paintNota(otto(st.rev?"oi-bomtrabalho":"oi-dica"));
 
     const back=c.foot.querySelector(".wz-back"), nx=c.foot.querySelector(".wz-next");
     back.textContent=T("wz_back"); back.disabled=WZ.idx===0;
     nx.textContent=st.rev?($(f.saveBtn)?$(f.saveBtn).textContent:T("wz_save")):T("wz_next");
-    const alt=c.foot.querySelector(".wz-alt"); alt.textContent=T("wz_full");
+    nx.classList.toggle("wz-final",!!st.rev);
+    if(st.rev){ nx.style.animation="none"; void nx.offsetWidth; nx.style.animation=""; }
+    c.foot.querySelector(".wz-alt").textContent=T("wz_full");
 
     /* resumo */
     if(st.rev){
       let rows=[];
       try{ rows=f.rev()||[]; }catch(e){ rows=[]; }
-      c.rev.innerHTML=rows.map(r=>'<div class="wz-r"><span>'+r[0]+'</span><b>'+
-        String(r[1]).replace(/</g,"&lt;")+'</b></div>').join("");
+      c.rev.innerHTML=rows.map((r,i)=>'<div class="wz-r" style="animation-delay:'+(i*40)+'ms"><span>'+
+        r[0]+'</span><b>'+String(r[1]).replace(/</g,"&lt;")+'</b></div>').join("");
     }
     if(WZ.flow==="debt"){ try{ updateDebtEstimate(); }catch(e){} }
 
@@ -27443,24 +27507,37 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
     let k=0;
     c.sheet.querySelectorAll("[data-wz]:not(.wz-off)").forEach(el=>{
       el.classList.remove("wz-in"); void el.offsetWidth;
-      el.style.animationDelay=(k++*45)+"ms"; el.classList.add("wz-in");
+      el.style.animationDelay=(k++*50)+"ms"; el.classList.add("wz-in");
     });
     c.sheet.scrollTop=0;
+  }
+
+  /* o ::before da nota recebe o Otto por variável inline */
+  function _paintNota(url){
+    let st=document.getElementById("wz-nota-img");
+    if(!st){ st=document.createElement("style"); st.id="wz-nota-img"; document.head.appendChild(st); }
+    st.textContent=".wz-nota::before{ background-image:"+(url||"none")+"; }";
   }
 
   function go(d){
     const f=FLOWS[WZ.flow]; if(!f) return;
     const i=WZ.idx+d;
     if(i<0||i>=f.steps.length) return;
-    WZ.idx=i; render();
+    WZ.dir=d; WZ.idx=i; render();
   }
 
   function next(){
     const f=FLOWS[WZ.flow]; if(!f) return;
     const st=f.steps[WZ.idx];
+    const nx=$(f.modal).querySelector(".wz-next");
     if(st.req){
       let err=null; try{ err=st.req(); }catch(e){ err=null; }
-      if(err){ try{ toast(err); }catch(e){} return; }
+      if(err){
+        try{ toast(err); }catch(e){}
+        if(nx){ nx.classList.remove("wz-shake"); void nx.offsetWidth; nx.classList.add("wz-shake"); }
+        try{ navigator.vibrate&&navigator.vibrate(18); }catch(e){}
+        return;
+      }
     }
     if(st.rev){
       try{ f.save(); }catch(e){ try{ console.error(e); }catch(_){} return; }
@@ -27468,19 +27545,21 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
       const m=$(f.modal);
       if(m&&m.classList.contains("open")){
         const b=$(f.saveBtn);
-        const nx=m.querySelector(".wz-next");
         if(b&&nx) nx.textContent=b.textContent;
         render();
       }
       return;
     }
+    const ic=$(f.modal).querySelector(".wz-ic");
+    if(ic){ ic.classList.remove("wz-done"); void ic.offsetWidth; ic.classList.add("wz-done"); }
+    try{ navigator.vibrate&&navigator.vibrate(8); }catch(e){}
     go(1);
   }
 
-  function toggleFull(){ WZ.full=!WZ.full; render(); }
+  function toggleFull(){ WZ.full=!WZ.full; WZ.dir=1; render(); }
 
   function start(flow){
-    WZ.flow=flow; WZ.idx=0; WZ.full=false;
+    WZ.flow=flow; WZ.idx=0; WZ.full=false; WZ.dir=1;
     try{ render(); }catch(e){ try{ console.error(e); }catch(_){} }
   }
 
@@ -27498,6 +27577,46 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
   hook("openIncome","inc");    hook("openIncomeEdit","inc");
   hook("openAsset","ast");     hook("openAssetEdit","ast");
   hook("openDebt","debt");
+
+  /* o botão "+" de gastos foi ligado por addEventListener com a função
+     original: o listener guardou a referência antiga e não passava pelo
+     passo a passo. Trocar o nó limpa o listener e religa pelo global. */
+  (function religarNovoGasto(){
+    const b=document.getElementById("btn-open-add");
+    if(!b) return;
+    const c=b.cloneNode(true);
+    b.parentNode.replaceChild(c,b);
+    c.addEventListener("click",()=>{ try{ window.openAdd(); }catch(e){} });
+  })();
+
+  /* ── trava de rolagem do fundo enquanto houver folha aberta ── */
+  (function travarFundo(){
+    const html=document.documentElement;
+    let on=false;
+    function sync(){
+      const aberto=!!document.querySelector(".overlay.open");
+      if(aberto===on) return;
+      on=aberto;
+      html.classList.toggle("wz-lock",aberto);
+    }
+    try{
+      new MutationObserver(sync).observe(document.body,
+        {subtree:true, attributes:true, attributeFilter:["class"]});
+    }catch(e){}
+    /* no iOS o overflow:hidden não segura o arrasto: barra o toque que
+       não nasceu dentro de uma área rolável da própria folha */
+    document.addEventListener("touchmove",function(ev){
+      if(!on) return;
+      let el=ev.target;
+      while(el&&el!==document.body){
+        if(el.classList&&(el.classList.contains("sheet")||el.classList.contains("wz-trail")
+           ||el.scrollHeight>el.clientHeight+2&&/auto|scroll/.test(getComputedStyle(el).overflowY))) return;
+        el=el.parentElement;
+      }
+      ev.preventDefault();
+    },{passive:false});
+    sync();
+  })();
 
   window.WZ_DEBUG=WZ;
 })();
