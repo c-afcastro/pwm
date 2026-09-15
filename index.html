@@ -2553,6 +2553,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <button class="nav-btn" data-astview="list" onclick="showAst('list')" style="color:var(--ink-2)" data-i18n="ast_tab_list">Aplicações</button>
     <button class="nav-btn" data-astview="history" onclick="showAst('history')" style="color:var(--ink-2)" data-i18n="ast_tab_history">Histórico</button>
     <button class="nav-btn" data-astview="goals" onclick="showAst('goals')" style="color:var(--ink-2)" data-i18n="ast_tab_goals">Metas</button>
+    <button class="nav-btn" data-astview="dcf" onclick="showAst('dcf')" style="color:var(--ink-2)" data-i18n="ast_tab_dcf">Simulador</button>
   </div>
 
   <div class="content" id="ast-content" style="padding:16px 16px 100px">
@@ -2628,6 +2629,9 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
         Defina metas de alocação por classe. Acompanhe se sua carteira está balanceada conforme o planejado.
       </div>
     </div>
+
+    <!-- SIMULADOR DCF -->
+    <div id="ast-view-dcf" style="display:none"></div>
 
   </div>
 </div><!-- end screen-patrimonio -->
@@ -3226,8 +3230,8 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
     </div>
     <div id="df-creditor" data-wz="cred">
-      <label class="f-label" data-i18n="debt_creditor">Credor (opcional)</label>
-      <input id="debt-creditor" class="f-input" placeholder="Ex: Banco X, João…" data-i18n="debt_creditor_ph"/>
+      <label class="f-label" data-i18n="debt_creditor">Credor / Instituição financeira</label>
+      <input id="debt-creditor" class="f-input" list="lista-instituicoes" placeholder="Ex: Itaú, Nubank, XP…" data-i18n="debt_creditor_ph"/>
     </div>
 
     <div data-wz="saldo">
@@ -3731,6 +3735,7 @@ const I18N={
     ast_tab_list:"Aplicações",
     ast_tab_history:"Histórico",
     ast_tab_goals:"Metas",
+    ast_tab_dcf:"Simulador",
     total:"Total",
     goal:"Meta",
     goal_total:"Meta total",
@@ -4250,8 +4255,8 @@ const I18N={
     debt_type:"Tipo de dívida",
     debt_name:"Nome / Identificação",
     debt_name_ph:"Ex: Financiamento apto, Empréstimo do João…",
-    debt_creditor:"Credor (opcional)",
-    debt_creditor_ph:"Ex: Banco X, João…",
+    debt_creditor:"Credor / Instituição financeira",
+    debt_creditor_ph:"Ex: Itaú, Nubank, XP…",
     debt_balance:"Saldo devedor atual",
     debt_principal:"Valor original (opcional)",
     debt_rate:"Juros",
@@ -4750,6 +4755,7 @@ const I18N={
     ast_tab_list:"Holdings",
     ast_tab_history:"History",
     ast_tab_goals:"Goals",
+    ast_tab_dcf:"Simulator",
     total:"Total",
     goal:"Goal",
     goal_total:"Total goal",
@@ -5268,8 +5274,8 @@ const I18N={
     debt_type:"Debt type",
     debt_name:"Name / Label",
     debt_name_ph:"E.g.: Home loan, Loan from John…",
-    debt_creditor:"Creditor (optional)",
-    debt_creditor_ph:"E.g.: Bank X, John…",
+    debt_creditor:"Creditor / financial institution",
+    debt_creditor_ph:"E.g.: Itaú, Nubank, XP…",
     debt_balance:"Current balance",
     debt_principal:"Original amount (optional)",
     debt_rate:"Interest",
@@ -5768,6 +5774,7 @@ const I18N={
     ast_tab_list:"Anlagen",
     ast_tab_history:"Verlauf",
     ast_tab_goals:"Ziele",
+    ast_tab_dcf:"Simulator",
     total:"Gesamt",
     goal:"Ziel",
     goal_total:"Gesamtziel",
@@ -6286,8 +6293,8 @@ const I18N={
     debt_type:"Schuldenart",
     debt_name:"Name / Bezeichnung",
     debt_name_ph:"Z.B.: Immobilienkredit, Darlehen von Max…",
-    debt_creditor:"Gläubiger (optional)",
-    debt_creditor_ph:"Z.B.: Bank X, Max…",
+    debt_creditor:"Gläubiger / Finanzinstitut",
+    debt_creditor_ph:"Z. B.: Itaú, Nubank, XP…",
     debt_balance:"Aktueller Saldo",
     debt_principal:"Ursprungsbetrag (optional)",
     debt_rate:"Zinsen",
@@ -16109,7 +16116,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.95";
+const APP_VERSION="10.96";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -27886,6 +27893,1169 @@ html.wz-lock body{ touch-action:none; }
 
   window.WZ_DEBUG=WZ;
 })();
+</script>
+<style id="dcf-css">
+/* ═══ SIMULADOR DCF ═══════════════════════════════════════════════════
+   Uma escala só para toda a aba: campo 42px, dropdown 38px, pílula 30px.
+   Todo campo é border-box e todo contêiner tem min-width:0 — é o que
+   impede que uma coluna de grade estoure a largura da tela no iPhone. */
+#ast-view-dcf{ padding-bottom:8px; }
+#ast-view-dcf *{ box-sizing:border-box; }
+
+#ast-view-dcf .dcf-card,
+#modal-dcf-line .dcf-card{
+  background:var(--surface); border-radius:16px; padding:14px 15px 8px; margin-bottom:10px;
+}
+#ast-view-dcf .dcf-g2{ display:grid; grid-template-columns:1fr 1fr; gap:0 10px; }
+#modal-dcf-line .dcf-g2{ display:grid; grid-template-columns:1fr 1fr; gap:0 10px; }
+/* A coluna é uma pilha: rótulo em cima, campo embaixo. Com altura mínima
+   no rótulo, o rótulo de duas linhas não empurra o campo para baixo e as
+   duas colunas continuam alinhadas — que é a queixa de sempre. */
+#ast-view-dcf .dcf-g2>*, #modal-dcf-line .dcf-g2>*{
+  min-width:0; display:flex; flex-direction:column; justify-content:flex-end;
+}
+#ast-view-dcf .dcf-g2 .f-label, #modal-dcf-line .dcf-g2 .f-label{
+  min-height:24px; display:flex; align-items:flex-end;
+}
+
+/* campos */
+#ast-view-dcf input.dcf-in, #modal-dcf-line input.dcf-in{
+  width:100%; min-width:0; font-size:16px; line-height:1.2; padding:10px 12px;
+  min-height:42px; border-radius:12px; border:1.5px solid var(--line);
+  background:var(--paper); color:var(--body); margin-bottom:10px;
+  -webkit-appearance:none; appearance:none;
+}
+#ast-view-dcf input.dcf-in:focus, #modal-dcf-line input.dcf-in:focus{
+  outline:none; border-color:#0F2440;
+}
+#ast-view-dcf input.dcf-in:disabled, #modal-dcf-line input.dcf-in:disabled{
+  opacity:.55; background:var(--surface);
+}
+#ast-view-dcf select.dcf-in, #modal-dcf-line select.dcf-in{
+  width:100%; min-width:0; font-size:14px; line-height:1.2; height:38px; min-height:38px;
+  padding:0 28px 0 11px; border-radius:12px; border:1.5px solid var(--line);
+  background-color:var(--paper); color:var(--body); margin-bottom:10px; cursor:pointer;
+  -webkit-appearance:none; appearance:none; text-overflow:ellipsis;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1.5l5 5 5-5' fill='none' stroke='%237A766D' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat:no-repeat; background-position:right 9px center; background-size:10px 7px;
+}
+#ast-view-dcf .f-label, #modal-dcf-line .f-label{
+  font-size:9px; letter-spacing:1.6px; font-weight:600; text-transform:uppercase;
+  color:var(--ink-3); margin-bottom:6px; display:block; line-height:1.3;
+}
+
+/* pílulas e botões discretos */
+#ast-view-dcf .dcf-chip, #modal-dcf-line .dcf-chip{
+  border:1.5px solid var(--line); background:var(--paper); color:var(--ink-2);
+  border-radius:20px; min-height:30px; padding:0 12px; font-size:11.5px; font-weight:600;
+  cursor:pointer; display:inline-flex; align-items:center; line-height:1; white-space:nowrap;
+}
+#ast-view-dcf .dcf-chip.on, #modal-dcf-line .dcf-chip.on{
+  background:#0F2440; border-color:#0F2440; color:#fff;
+}
+#ast-view-dcf .dcf-chip:disabled{ opacity:.4; cursor:default; }
+#ast-view-dcf .dcf-ghost{
+  border:1.5px solid var(--line); background:none; color:var(--ink-2); border-radius:10px;
+  min-height:32px; padding:0 11px; font-size:11.5px; font-weight:600; cursor:pointer;
+}
+#ast-view-dcf .dcf-del, #modal-dcf-line .dcf-del{
+  width:100%; margin-top:14px; background:none; border:1.5px solid rgba(139,58,26,.35);
+  color:var(--warn); border-radius:12px; padding:12px; font-size:12.5px; font-weight:600; cursor:pointer;
+}
+
+/* KPIs */
+#ast-view-dcf .dcf-kpis{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px; }
+#ast-view-dcf .dcf-kpi{ background:var(--surface); border-radius:12px; padding:11px 13px; min-width:0; }
+#ast-view-dcf .dcf-kpi-l{ font-size:9px; letter-spacing:1.2px; font-weight:600; color:#7C7770;
+  text-transform:uppercase; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#ast-view-dcf .dcf-kpi-v{ font-family:var(--serif); font-style:italic; font-size:19px; line-height:1.15; color:var(--body); }
+#ast-view-dcf .dcf-kpi-s{ font-size:10px; color:var(--ink-3); margin-top:2px; }
+
+#ast-view-dcf .dcf-strip, #modal-dcf-line .dcf-strip{
+  background:rgba(15,36,64,.06); border-radius:12px; padding:9px 12px; font-size:11.5px;
+  color:var(--ink-2); line-height:1.6; margin-bottom:4px;
+}
+#ast-view-dcf .dcf-note, #modal-dcf-line .dcf-note{
+  font-size:10.5px; color:var(--ink-4); line-height:1.5; margin:0 0 10px;
+}
+#ast-view-dcf .dcf-flag{
+  font-size:11.5px; color:var(--warn); line-height:1.5; margin-bottom:6px;
+}
+
+/* tabelas */
+#ast-view-dcf table.dcf-t{ border-collapse:collapse; width:max-content; min-width:100%; font-size:11px; }
+#ast-view-dcf table.dcf-t th{
+  font-size:9px; letter-spacing:.6px; text-transform:uppercase; color:var(--ink-3);
+  font-weight:600; padding:7px 9px; text-align:right; white-space:nowrap;
+  position:sticky; top:0; background:var(--surface);
+}
+#ast-view-dcf table.dcf-t th.k, #ast-view-dcf table.dcf-t td.k{ text-align:left; }
+#ast-view-dcf table.dcf-t td{ padding:6px 9px; text-align:right; white-space:nowrap; color:var(--ink-2);
+  border-top:1px solid var(--line); }
+#ast-view-dcf table.dcf-t td.k{ color:var(--body); font-weight:600; }
+#ast-view-dcf table.dcf-t td.b{ font-weight:600; }
+
+#ast-view-dcf table.dcf-t2{ width:100%; border-collapse:collapse; font-size:11.5px; }
+#ast-view-dcf table.dcf-t2 th{ font-size:9px; letter-spacing:1px; text-transform:uppercase;
+  color:var(--ink-3); font-weight:600; padding:8px 0 5px; text-align:right; }
+#ast-view-dcf table.dcf-t2 td{ padding:5px 0; color:var(--ink-2); border-top:1px solid var(--line); }
+#ast-view-dcf table.dcf-t2 td.n{ text-align:right; white-space:nowrap; }
+#ast-view-dcf table.dcf-t2 td.s{ font-size:10px; color:var(--ink-4); width:62px; }
+#ast-view-dcf table.dcf-t2 tr.f td{ font-weight:700; color:var(--body); }
+
+/* grade manual, dentro da ficha da linha */
+#modal-dcf-line .dcf-man{ max-height:46dvh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  border:1.5px solid var(--line); border-radius:12px; padding:8px 10px; margin-bottom:12px; }
+#modal-dcf-line .dcf-man-r{ display:flex; align-items:center; gap:10px; }
+#modal-dcf-line .dcf-man-r>span{ font-size:11px; color:var(--ink-3); width:66px; flex-shrink:0; }
+#modal-dcf-line .dcf-man-r input.dcf-in{ margin-bottom:6px; min-height:38px; font-size:15px; }
+
+/* A tabela rola dentro da própria caixa, nos dois eixos: sessenta meses não
+   podem empurrar o resto da tela para baixo, e o cabeçalho fica grudado. */
+#ast-view-dcf .dcf-scroll{
+  padding:0; max-height:56dvh; overflow:auto; -webkit-overflow-scrolling:touch;
+}
+
+</style>
+<script id="dcf-js">
+/* ═══════════════════════════════════════════════════════════════════════
+   SIMULADOR DCF — FLUXO DE CAIXA DESCONTADO  (Patrimônio ▸ Simulador)
+
+   Um projeto é uma decisão de investimento: sai dinheiro agora, entra
+   dinheiro depois. O método é o mesmo da prática de advisory —
+   receita bruta ▸ deduções ▸ receita líquida ▸ custos ▸ despesas ▸
+   EBITDA ▸ capex ▸ variação de capital de giro ▸ fluxo livre — e daí,
+   descontado a uma taxa, saem VPL, TIR, payback e o ponto de virada.
+
+   PRETAX, SEMPRE. O fluxo não desconta imposto de renda sobre o lucro:
+   é o fluxo antes de tributos diretos, como pede o enunciado. As
+   deduções de receita (PIS, COFINS, ISS, ICMS) são outra coisa — são
+   tributos SOBRE A RECEITA e entram como linhas em percentual.
+
+   NOMINAL × REAL. O fluxo nominal carrega inflação; o real está a preços
+   de hoje. A taxa é sempre digitada NOMINAL ao ano; quando o fluxo é
+   real, ela é deflacionada por regressão geométrica — (1+i)/(1+ipca)−1 —
+   porque somar e subtrair taxas é aproximação e aqui não precisa ser.
+
+   PARÂMETROS DA TELA INICIAL. Nada aqui inventa índice: o IPCA vem da
+   curva declarada nos Parâmetros (paramTaxaEf), mês a mês, e o mesmo
+   vale para a sugestão de taxa pelo CDI. A projeção do simulador obedece
+   ao mesmo mundo que rege o resto do app.
+═══════════════════════════════════════════════════════════════════════ */
+(function(){
+"use strict";
+
+/* ── 1. DICIONÁRIO (pt / en / de) ─────────────────────────────────────
+   Dicionário próprio, no mesmo formato do resto do app: [pt, en, de].
+   Não se pendura no PDIC porque aquele vive dentro da IIFE do módulo PRO
+   e não é alcançável daqui. */
+const DIC=({
+  d_tab:["Simulador","Simulator","Simulator"],
+  d_title:["Simulador de investimentos","Investment simulator","Investitionsrechner"],
+  d_sub:["Fluxo de caixa descontado (DCF) — VPL, TIR, payback e ponto de equilíbrio",
+         "Discounted cash flow (DCF) — NPV, IRR, payback and break-even",
+         "Discounted Cash Flow (DCF) — Kapitalwert, IRR, Amortisation und Break-even"],
+  d_intro:["Monte o fluxo do projeto linha a linha. As saídas são sempre negativas e as entradas positivas — o app cuida do sinal. O IPCA e a sugestão de taxa vêm da curva declarada nos Parâmetros.",
+    "Build the project's cash flow line by line. Outflows are always negative and inflows positive — the app handles the sign. Inflation and the suggested rate come from the curve declared in Parameters.",
+    "Bauen Sie den Projekt-Cashflow Zeile für Zeile auf. Abflüsse sind stets negativ, Zuflüsse positiv — das Vorzeichen setzt die App. Inflation und Zinsvorschlag stammen aus der in den Parametern erklärten Kurve."],
+  d_new:["Novo projeto","New project","Neues Projekt"],
+  d_new_name:["Projeto sem nome","Untitled project","Projekt ohne Namen"],
+  d_none:["Nenhum projeto ainda. Comece por um: um imóvel para alugar, uma loja, um equipamento, uma sociedade.",
+    "No projects yet. Start with one: a rental property, a shop, a machine, a stake in a business.",
+    "Noch keine Projekte. Beginnen Sie mit einem: eine Mietimmobilie, ein Laden, eine Maschine, eine Beteiligung."],
+  d_open:["Abrir","Open","Öffnen"],
+  d_back:["Projetos","Projects","Projekte"],
+  d_dup:["Duplicar","Duplicate","Duplizieren"],
+  d_del:["Excluir projeto","Delete project","Projekt löschen"],
+  d_del_q:["Excluir este projeto? A operação não tem volta.","Delete this project? This cannot be undone.","Dieses Projekt löschen? Das lässt sich nicht rückgängig machen."],
+  d_csv:["Exportar CSV","Export CSV","CSV exportieren"],
+  d_name:["Nome do projeto","Project name","Projektname"],
+
+  /* premissas */
+  d_prem:["Premissas","Assumptions","Annahmen"],
+  d_ini:["Início do fluxo","Flow start","Beginn des Flusses"],
+  d_n:["Períodos","Periods","Perioden"],
+  d_freq:["Periodicidade","Periodicity","Periodizität"],
+  d_freq_m:["Mensal","Monthly","Monatlich"],
+  d_freq_a:["Anual","Annual","Jährlich"],
+  d_tipo:["Tipo de fluxo","Flow type","Art des Flusses"],
+  d_nominal:["Nominal (pretax)","Nominal (pretax)","Nominal (pretax)"],
+  d_real:["Real (pretax)","Real (pretax)","Real (pretax)"],
+  d_taxa:["Taxa de desconto (% a.a.)","Discount rate (% p.a.)","Diskontsatz (% p. a.)"],
+  d_ipca:["IPCA (% a.a.)","Inflation (% p.a.)","Inflation (% p. a.)"],
+  d_ipca_auto:["IPCA dos Parâmetros","Inflation from Parameters","Inflation aus Parametern"],
+  d_usar_cdi:["Taxa = CDI","Rate = CDI","Satz = CDI"],
+  d_taxa_ef:["Taxa efetiva do desconto","Effective discount rate","Effektiver Diskontsatz"],
+  d_taxa_ef_real:["deflacionada: (1+i)/(1+IPCA)−1","deflated: (1+i)/(1+inflation)−1","deflationiert: (1+i)/(1+Inflation)−1"],
+  d_meio:["Meio de período","Mid-period","Periodenmitte"],
+  d_meio_h:["Desconta como se o caixa entrasse no meio do período, e não no último dia. É a prática de mercado em avaliação.",
+    "Discounts as if cash arrived mid-period rather than on the last day. Standard market practice in valuation.",
+    "Diskontiert, als flösse das Geld in der Periodenmitte statt am letzten Tag. Marktstandard in der Bewertung."],
+  d_inflar:["Corrigir pelo IPCA","Inflate the lines","Inflationieren"],
+  d_inflar_h:["As linhas são digitadas a preços de hoje e o app as corrige mês a mês pela curva de IPCA. Só vale para fluxo nominal.",
+    "Lines are entered in today's money and the app inflates them month by month using the inflation curve. Nominal flows only.",
+    "Zeilen werden zu heutigen Preisen erfasst und Monat für Monat mit der Inflationskurve fortgeschrieben. Nur bei nominalem Fluss."],
+  d_ncg:["Capital de giro (% da receita)","Working capital (% of revenue)","Working Capital (% des Umsatzes)"],
+  d_ncg_h:["O que fica preso em estoque e a receber. Só a VARIAÇÃO entra no fluxo: crescer consome caixa, encolher devolve.",
+    "What sits in inventory and receivables. Only the CHANGE hits cash: growing consumes it, shrinking gives it back.",
+    "Was in Vorräten und Forderungen gebunden ist. Nur die VERÄNDERUNG trifft den Cashflow."],
+  d_tv:["Valor terminal","Terminal value","Endwert"],
+  d_tv_on:["Considerar valor terminal","Include a terminal value","Endwert berücksichtigen"],
+  d_tv_met:["Método","Method","Methode"],
+  d_tv_gordon:["Perpetuidade (Gordon)","Perpetuity (Gordon)","Ewige Rente (Gordon)"],
+  d_tv_mult:["Múltiplo de EBITDA","EBITDA multiple","EBITDA-Multiplikator"],
+  d_tv_g:["Crescimento g (% a.a.)","Growth g (% p.a.)","Wachstum g (% p. a.)"],
+  d_tv_x:["Múltiplo (×)","Multiple (×)","Multiplikator (×)"],
+  d_tv_val:["Valor terminal","Terminal value","Endwert"],
+  d_tv_pv:["Valor presente do terminal","Present value of terminal","Barwert des Endwerts"],
+  d_tv_share:["do VPL vem do valor terminal","of the NPV comes from the terminal value","des Kapitalwerts stammen aus dem Endwert"],
+
+  /* linhas */
+  d_linhas:["Linhas do fluxo","Cash flow lines","Cashflow-Zeilen"],
+  d_add_line:["Nova linha","New line","Neue Zeile"],
+  d_edit_line:["Editar linha","Edit line","Zeile bearbeiten"],
+  d_no_lines:["Nenhuma linha ainda. Comece pela receita, depois os custos.",
+    "No lines yet. Start with revenue, then costs.",
+    "Noch keine Zeilen. Beginnen Sie mit dem Umsatz, dann die Kosten."],
+  d_nat:["Natureza","Nature","Art"],
+  d_nat_receita:["Receita","Revenue","Umsatz"],
+  d_nat_deducao:["Dedução da receita (%)","Revenue deduction (%)","Umsatzabzug (%)"],
+  d_nat_custo:["Custo","Cost","Kosten"],
+  d_nat_desp_adm:["Despesa administrativa","Administrative expense","Verwaltungsaufwand"],
+  d_nat_desp_com:["Despesa comercial","Selling expense","Vertriebsaufwand"],
+  d_nat_capex:["Capex (investimento)","Capex (investment)","Capex (Investition)"],
+  d_nat_outras:["Outras saídas","Other outflows","Sonstige Abflüsse"],
+  d_desc:["Descrição","Description","Bezeichnung"],
+  d_modo:["Como é informado","How it is entered","Art der Eingabe"],
+  d_modo_serie:["Série (valor e repetição)","Series (value and repetition)","Serie (Betrag und Wiederholung)"],
+  d_modo_manual:["Manual, período a período","Manual, period by period","Manuell, Periode für Periode"],
+  d_valor:["Valor por ocorrência","Amount per occurrence","Betrag je Vorkommen"],
+  d_pct:["% sobre a receita bruta","% of gross revenue","% vom Bruttoumsatz"],
+  d_ini_per:["Primeiro período","First period","Erste Periode"],
+  d_rep:["Repetições (0 = até o fim)","Repetitions (0 = to the end)","Wiederholungen (0 = bis Ende)"],
+  d_passo:["A cada N períodos","Every N periods","Alle N Perioden"],
+  d_parc:["Parcelas","Instalments","Raten"],
+  d_parc_h:["Cada ocorrência é dividida em parcelas iguais em períodos consecutivos.",
+    "Each occurrence is split into equal instalments over consecutive periods.",
+    "Jedes Vorkommen wird in gleiche Raten über aufeinanderfolgende Perioden geteilt."],
+  d_lag:["Carência (períodos)","Lag (periods)","Karenz (Perioden)"],
+  d_cresc:["Crescimento (% por ocorrência)","Growth (% per occurrence)","Wachstum (% je Vorkommen)"],
+  d_manual_h:["Digite o valor de cada período. O sinal é dado pela natureza da linha — não use menos.",
+    "Type the amount for each period. The sign comes from the line's nature — do not use a minus.",
+    "Geben Sie je Periode den Betrag ein. Das Vorzeichen ergibt sich aus der Art der Zeile."],
+  d_off:["Desativada (fora do cálculo)","Disabled (out of the calculation)","Deaktiviert (nicht gerechnet)"],
+  d_total_line:["Total da linha","Line total","Summe der Zeile"],
+  d_del_line:["Excluir linha","Delete line","Zeile löschen"],
+  d_save:["Salvar","Save","Speichern"],
+  d_cancel:["Cancelar","Cancel","Abbrechen"],
+  d_t0:["t0 (data-base)","t0 (base date)","t0 (Stichtag)"],
+  d_t0_h:["O momento zero, imediatamente antes do primeiro período. É onde mora o investimento inicial.",
+    "The zero moment, just before the first period. This is where the initial investment sits.",
+    "Der Zeitpunkt null, unmittelbar vor der ersten Periode. Hier steht die Anfangsinvestition."],
+
+  /* resultados */
+  d_res:["Resultado","Result","Ergebnis"],
+  d_vpl:["VPL","NPV","Kapitalwert"],
+  d_tir:["TIR a.a.","IRR p.a.","IRR p. a."],
+  d_tirm:["TIR modificada a.a.","Modified IRR p.a.","Modifizierte IRR p. a."],
+  d_pb:["Payback simples","Simple payback","Einfache Amortisation"],
+  d_pbd:["Payback descontado","Discounted payback","Diskontierte Amortisation"],
+  d_be:["Ponto de equilíbrio","Break-even","Break-even"],
+  d_pi:["Índice de lucratividade","Profitability index","Rentabilitätsindex"],
+  d_pi_h:["Valor presente das entradas dividido pelo das saídas. Acima de 1, o projeto cria valor.",
+    "Present value of inflows over present value of outflows. Above 1 the project creates value.",
+    "Barwert der Zuflüsse geteilt durch den der Abflüsse. Über 1 schafft das Projekt Wert."],
+  d_marg:["Margem de segurança da receita","Revenue margin of safety","Sicherheitsmarge Umsatz"],
+  d_marg_h:["Quanto a receita pode cair antes de o VPL zerar.","How far revenue can fall before the NPV hits zero.","Wie weit der Umsatz fallen darf, bis der Kapitalwert null wird."],
+  d_nd:["não definido","undefined","nicht definiert"],
+  d_aa:["a.a.","p.a.","p. a."],
+  d_sens_taxa:["Taxa","Rate","Satz"],
+  d_nunca:["não se paga no horizonte","not repaid within the horizon","im Horizont nicht zurückverdient"],
+  d_meses:["meses","months","Monate"],
+  d_anos:["anos","years","Jahre"],
+  d_per:["períodos","periods","Perioden"],
+
+  /* composição */
+  d_comp:["Composição do fluxo","Cash flow composition","Zusammensetzung des Flusses"],
+  d_rec_bruta:["Receita bruta","Gross revenue","Bruttoumsatz"],
+  d_deducoes:["(−) Deduções da receita","(−) Revenue deductions","(−) Umsatzabzüge"],
+  d_rec_liq:["Receita líquida","Net revenue","Nettoumsatz"],
+  d_custos:["(−) Custos","(−) Costs","(−) Kosten"],
+  d_mb:["Margem bruta","Gross margin","Bruttomarge"],
+  d_adm:["(−) Despesas administrativas","(−) Administrative expenses","(−) Verwaltungsaufwand"],
+  d_com:["(−) Despesas comerciais","(−) Selling expenses","(−) Vertriebsaufwand"],
+  d_ebitda:["EBITDA","EBITDA","EBITDA"],
+  d_capex:["(−) Capex","(−) Capex","(−) Capex"],
+  d_dncg:["(−) Variação do capital de giro","(−) Change in working capital","(−) Veränderung Working Capital"],
+  d_outras:["(−) Outras saídas","(−) Other outflows","(−) Sonstige Abflüsse"],
+  d_fcl:["Fluxo de caixa livre","Free cash flow","Freier Cashflow"],
+  d_fcd:["Fluxo descontado","Discounted flow","Diskontierter Fluss"],
+  d_acum:["Acumulado","Cumulative","Kumuliert"],
+  d_pct_rl:["% da receita líquida","% of net revenue","% des Nettoumsatzes"],
+  d_mgebitda:["Margem EBITDA","EBITDA margin","EBITDA-Marge"],
+
+  /* tabela e gráfico */
+  d_tab_per:["Fluxo período a período","Period-by-period flow","Fluss Periode für Periode"],
+  d_ver:["Ver","View","Ansicht"],
+  d_ver_per:["Por período","By period","Je Periode"],
+  d_ver_ano:["Por ano","By year","Je Jahr"],
+  d_periodo:["Período","Period","Periode"],
+  d_graf:["Fluxo livre e acumulado descontado","Free cash flow and discounted cumulative","Freier Cashflow und diskontiert kumuliert"],
+  d_sens:["Sensibilidade do VPL","NPV sensitivity","Sensitivität des Kapitalwerts"],
+  d_sens_h:["Linhas: taxa de desconto. Colunas: receita.","Rows: discount rate. Columns: revenue.","Zeilen: Diskontsatz. Spalten: Umsatz."],
+
+  /* avisos */
+  d_flags:["Conferências","Checks","Prüfungen"],
+  d_f_ok:["Nada a apontar: o fluxo fecha e os números são calculáveis.","Nothing to flag: the flow closes and every figure is computable.","Nichts zu beanstanden: der Fluss schließt und alle Zahlen sind berechenbar."],
+  d_f_tir:["A TIR não existe: o fluxo não troca de sinal. Sem uma saída inicial não há taxa de retorno a calcular.",
+    "There is no IRR: the flow never changes sign. Without an initial outflow there is no rate of return to find.",
+    "Es gibt keine IRR: der Fluss wechselt nie das Vorzeichen. Ohne Anfangsabfluss ist keine Rendite zu berechnen."],
+  d_f_g:["O crescimento da perpetuidade é maior ou igual à taxa de desconto: o valor terminal seria infinito e foi zerado.",
+    "Perpetuity growth is at or above the discount rate: the terminal value would be infinite and was set to zero.",
+    "Das Wachstum der ewigen Rente erreicht oder übersteigt den Diskontsatz: der Endwert wäre unendlich und wurde auf null gesetzt."],
+  d_f_tvshare:["Mais da metade do VPL vem do valor terminal. Vale rever o crescimento ou o múltiplo.",
+    "More than half the NPV comes from the terminal value. Worth revisiting the growth rate or the multiple.",
+    "Mehr als die Hälfte des Kapitalwerts stammt aus dem Endwert. Wachstum oder Multiplikator überprüfen."],
+  d_f_real:["Fluxo real com crescimento nominal na perpetuidade costuma superestimar. Em fluxo real, o g também é real.",
+    "A real flow with nominal perpetuity growth tends to overstate. In a real flow, g is real too.",
+    "Ein realer Fluss mit nominalem Wachstum überschätzt meist. Im realen Fluss ist auch g real."],
+  d_f_semrec:["Não há linha de receita: o projeto só tem saídas.","There is no revenue line: the project has outflows only.","Es gibt keine Umsatzzeile: das Projekt hat nur Abflüsse."],
+  d_f_semt0:["Não há desembolso em t0. Um projeto sem investimento inicial não tem payback a medir.",
+    "There is no outlay at t0. A project with no initial investment has no payback to measure.",
+    "Kein Abfluss in t0. Ohne Anfangsinvestition gibt es keine Amortisation zu messen."],
+  d_f_ded:["As deduções passam de 100% da receita bruta.","Deductions exceed 100% of gross revenue.","Die Abzüge übersteigen 100 % des Bruttoumsatzes."],
+  d_hint_pretax:["Fluxo antes de tributos sobre o lucro (pretax), como pedem os manuais de avaliação. Tributos sobre a receita entram como linhas de dedução.",
+    "Flow before profit taxes (pretax), as valuation manuals prescribe. Taxes on revenue come in as deduction lines.",
+    "Fluss vor Ertragsteuern (pretax), wie es die Bewertungslehre vorsieht. Umsatzsteuern kommen als Abzugszeilen."]
+});
+const LIX={pt:0,en:1,de:2};
+const P=(k)=>{ const a=DIC[k]; if(!a) return k; const i=LIX[(typeof LANG!=="undefined"?LANG:"pt")]||0; return a[i]||a[0]; };
+/* ymAdd/ymNow também moram na IIFE do PRO; aqui se repete a conta, que é
+   a mesma de sempre: mês 1-12 com transbordo de ano. */
+const YM_NOW=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
+const YM_ADD=(s,k)=>{let a=String(s||"").split("-");let y=parseInt(a[0],10)||new Date().getFullYear();
+  let m=(parseInt(a[1],10)||1)+k; y+=Math.floor((m-1)/12); m=((m-1)%12+12)%12+1;
+  return y+"-"+String(m).padStart(2,"0");};
+const TXEF=(idx,ym)=>{ try{ return (window.PRO&&PRO.paramTaxaEf)?PRO.paramTaxaEf(idx,ym):null; }catch(e){ return null; } };
+const E=(s)=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const M=(v)=>{ try{ return fmt(v||0); }catch(e){ return String(v); } };
+/* Dinheiro no campo sai com separador de milhar, como em todo o resto do
+   app: 60000 lido como 60.000,00 evita o erro de um zero a mais. */
+const MSK=(v)=>{ const n=+v||0; if(!n) return "";
+  try{ return new Intl.NumberFormat((typeof LANG!=="undefined"&&LANG==="en")?"en-US":(typeof LANG!=="undefined"&&LANG==="de")?"de-DE":"pt-BR",
+    {minimumFractionDigits:2,maximumFractionDigits:2}).format(n); }catch(e){ return String(n); } };
+const NUM=(v,d)=>{ d=(d===undefined)?1:d; const s=(Math.round((v||0)*Math.pow(10,d))/Math.pow(10,d)).toFixed(d); return (typeof LANG!=="undefined"&&LANG!=="en")?s.replace(".",","):s; };
+const PCT=(v,d)=>NUM(v,d===undefined?1:d)+"%";
+
+/* ── 2. PERSISTÊNCIA ────────────────────────────────────────────────── */
+const KEY="gastos_v2_dcf";
+let L=[], SEL=null, VIEW=null;
+/* Sessenta linhas de mês não se leem num telefone: quando o fluxo é longo,
+   a vista abre agregada por ano e o detalhe fica a um toque. */
+function vistaPadrao(p){ return (p.freq==="m"&&(parseInt(p.n,10)||0)>24)?"ano":"per"; }
+function carregar(){ try{ L=JSON.parse(localStorage.getItem(KEY)||"[]"); }catch(e){ L=[]; } if(!Array.isArray(L)) L=[]; }
+function gravar(){ try{ localStorage.setItem(KEY,JSON.stringify(L)); }catch(e){} }
+carregar();
+
+function proj(){ return L.find(x=>String(x.id)===String(SEL))||null; }
+
+function novo(){
+  const p={
+    id:Date.now(), nome:P("d_new_name"), inicio:YM_NOW(),
+    n:60, freq:"m", tipo:"nominal", taxa:12, ipca:null, ipcaAuto:true,
+    meio:false, inflar:false, ncg:0,
+    tv:{on:false,metodo:"gordon",g:2,mult:5},
+    linhas:[], ts:Date.now()
+  };
+  p.ipca=ipcaCurva(p);
+  return p;
+}
+
+/* ── 3. PARÂMETROS DA TELA INICIAL ──────────────────────────────────── */
+/* Nenhum índice é inventado aqui: o app já tem uma curva declarada e é
+   dela que sai tanto o IPCA quanto a sugestão de taxa. */
+function idxMedioAA(idx,p){
+  const N=meses(p); const ini=p.inicio||YM_NOW();
+  let acc=1,c=0;
+  for(let i=0;i<N;i++){
+    let v=null;
+    v=TXEF(idx,YM_ADD(ini,i));
+    if(v===null||!isFinite(v)) continue;
+    acc*=Math.pow(1+v/100,1/12); c++;
+  }
+  if(!c){
+    const v=TXEF(idx,YM_NOW());
+    return (v===null||!isFinite(v))?null:Math.round(v*100)/100;
+  }
+  return Math.round((Math.pow(acc,12/c)-1)*10000)/100;
+}
+function ipcaCurva(p){ const v=idxMedioAA("ipca",p); return v===null?4.5:v; }
+function meses(p){ const n=Math.max(1,Math.min(600,parseInt(p.n,10)||60)); return p.freq==="m"?n:n*12; }
+function ppy(p){ return p.freq==="m"?12:1; }
+function labelPer(p,i){
+  if(i===0) return P("d_t0");
+  const ini=p.inicio||YM_NOW();
+  if(p.freq==="m"){
+    const ym=YM_ADD(ini,i-1); const [y,m]=ym.split("-");
+    const MN={pt:["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"],
+              en:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+              de:["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"]};
+    const arr=MN[(typeof LANG!=="undefined"?LANG:"pt")]||MN.pt;
+    return arr[parseInt(m,10)-1]+"/"+y.slice(2);
+  }
+  const y=parseInt((ini.split("-")[0]),10)+(i-1);
+  return String(y);
+}
+function anoDe(p,i){
+  const ini=p.inicio||YM_NOW();
+  if(i===0) return null;
+  if(p.freq==="m") return YM_ADD(ini,i-1).split("-")[0];
+  return String(parseInt(ini.split("-")[0],10)+(i-1));
+}
+
+/* ── 4. MOTOR ───────────────────────────────────────────────────────── */
+function fatoresInfl(p,N){
+  const f=[1], mp=(p.freq==="m")?1:12;
+  const ini=p.inicio||YM_NOW();
+  for(let i=1;i<=N;i++){
+    let fat=1;
+    for(let k=0;k<mp;k++){
+      let v=null;
+      if(p.ipcaAuto) v=TXEF("ipca",YM_ADD(ini,(i-1)*mp+k));
+      if(v===null||!isFinite(v)) v=(+p.ipca||0);
+      fat*=Math.pow(1+v/100,1/12);
+    }
+    f[i]=f[i-1]*fat;
+  }
+  return f;
+}
+
+function serie(l,N){
+  const a=new Array(N+1).fill(0);
+  if(l.modo==="manual"){
+    const m=l.manual||{};
+    Object.keys(m).forEach(k=>{ const i=parseInt(k,10); const v=+m[k]||0; if(i>=0&&i<=N) a[i]+=v; });
+    return a;
+  }
+  const val=+l.valor||0;
+  if(!val) return a;
+  /* zero é período válido (t0): parseInt(0)||1 daria 1 e engoliria o
+     desembolso inicial. O padrão só vale quando não há número nenhum. */
+  let ini=parseInt(l.ini,10); if(!isFinite(ini)) ini=1;
+  ini=Math.max(0,Math.min(N,ini));
+  const passo=Math.max(1,parseInt(l.passo,10)||1);
+  const rIn=parseInt(l.rep,10);
+  const rep=(!isFinite(rIn)||rIn<=0)?(Math.floor((N-ini)/passo)+1):rIn;
+  const g=(+l.cresc||0)/100;
+  const parc=Math.max(1,parseInt(l.parc,10)||1);
+  const lag=Math.max(0,parseInt(l.lag,10)||0);
+  for(let k=0;k<rep;k++){
+    const occ=ini+k*passo;
+    if(occ>N) break;
+    const v=val*Math.pow(1+g,k);
+    for(let j=0;j<parc;j++){
+      const idx=occ+lag+j;
+      if(idx>=0&&idx<=N) a[idx]+=v/parc;
+    }
+  }
+  return a;
+}
+
+function taxaEfetiva(p,taxaOv){
+  const iNom=((taxaOv===undefined||taxaOv===null)?(+p.taxa||0):taxaOv)/100;
+  const ip=(+p.ipca||0)/100;
+  /* Regressão geométrica: em fluxo real a taxa perde a inflação embutida. */
+  const ief=(p.tipo==="real")?((1+iNom)/(1+ip)-1):iNom;
+  return {nom:iNom, ipca:ip, ef:ief, per:Math.pow(1+ief,1/ppy(p))-1};
+}
+
+function calc(p,opt){
+  opt=opt||{};
+  const fRec=(opt.fRec===undefined)?1:opt.fRec;
+  const N=Math.max(1,Math.min(600,parseInt(p.n,10)||60));
+  const z=()=>new Array(N+1).fill(0);
+  const rec=z(),cus=z(),adm=z(),com=z(),cap=z(),out=z();
+  const infl=(p.inflar&&p.tipo==="nominal")?fatoresInfl(p,N):null;
+  const destino={receita:rec,custo:cus,desp_adm:adm,desp_com:com,capex:cap,outras:out};
+  const porLinha={};
+  (p.linhas||[]).forEach(l=>{
+    if(l.off||l.tipo==="deducao") return;
+    const alvo=destino[l.tipo]; if(!alvo) return;
+    const s=serie(l,N);
+    if(infl) for(let i=0;i<=N;i++) s[i]*=infl[i];
+    const f=(l.tipo==="receita")?fRec:1;
+    let tot=0;
+    for(let i=0;i<=N;i++){ const v=s[i]*f; alvo[i]+=v; tot+=v; }
+    porLinha[l.id]=tot;
+  });
+  const ded=z(); let pctMax=0;
+  (p.linhas||[]).forEach(l=>{
+    if(l.off||l.tipo!=="deducao") return;
+    const pc=(+l.pct||0)/100;
+    const ini=Math.max(0,parseInt(l.ini,10)||0);
+    const rIn=parseInt(l.rep,10);
+    const fim=(!isFinite(rIn)||rIn<=0)?N:(ini+rIn-1);
+    let tot=0;
+    for(let i=ini;i<=Math.min(N,fim);i++){ const v=rec[i]*pc; ded[i]+=v; tot+=v; }
+    porLinha[l.id]=tot; pctMax+=pc*100;
+  });
+  const rl=z(),mb=z(),eb=z(),dncg=z(),fcl=z();
+  const gPct=(+p.ncg||0)/100; let ncgAnt=0;
+  for(let i=0;i<=N;i++){
+    rl[i]=rec[i]-ded[i];
+    mb[i]=rl[i]-cus[i];
+    eb[i]=mb[i]-adm[i]-com[i];
+    const ncg=rl[i]*gPct;
+    dncg[i]=ncg-ncgAnt; ncgAnt=ncg;
+    fcl[i]=eb[i]-cap[i]-out[i]-dncg[i];
+  }
+  const tx=taxaEfetiva(p,opt.taxa);
+  const ipP=tx.per, PY=ppy(p);
+
+  /* valor terminal */
+  let tv=0, tvErro=false;
+  if(p.tv&&p.tv.on){
+    if((p.tv.metodo||"gordon")==="gordon"){
+      const gP=Math.pow(1+((+p.tv.g||0)/100),1/PY)-1;
+      if(ipP>gP+1e-9) tv=fcl[N]*(1+gP)/(ipP-gP); else { tv=0; tvErro=true; }
+    }else{
+      let ebA=0; for(let k=0;k<PY&&(N-k)>=0;k++) ebA+=eb[N-k];
+      tv=ebA*(+p.tv.mult||0);
+    }
+  }
+
+  const expo=(i)=>(i===0)?0:(p.meio?i-0.5:i);
+  const fcd=z(); let vpl=0, vpIn=0, vpOut=0;
+  for(let i=0;i<=N;i++){
+    fcd[i]=fcl[i]*Math.pow(1+ipP,-expo(i));
+    vpl+=fcd[i];
+    if(fcl[i]>0) vpIn+=fcd[i]; else vpOut+=-fcd[i];
+  }
+  const vpTV=tv*Math.pow(1+ipP,-N);
+  vpl+=vpTV; if(vpTV>0) vpIn+=vpTV; else vpOut+=-vpTV;
+
+  /* caixa com terminal embutido, para TIR e payback */
+  const caixa=fcl.slice(); caixa[N]+=tv;
+
+  const npvAt=(r)=>{ let s=0; for(let i=0;i<=N;i++) s+=caixa[i]*Math.pow(1+r,-expo(i)); return s; };
+  let tir=null;
+  (function(){
+    let lo=-0.9999, hi=10, flo=npvAt(lo), fhi=npvAt(hi);
+    if(!isFinite(flo)||!isFinite(fhi)||flo*fhi>0) return;
+    for(let k=0;k<200;k++){
+      const mid=(lo+hi)/2, fm=npvAt(mid);
+      if(!isFinite(fm)) return;
+      if(flo*fm<=0){ hi=mid; fhi=fm; } else { lo=mid; flo=fm; }
+    }
+    tir=(lo+hi)/2;
+  })();
+  const tirAA=(tir===null)?null:(Math.pow(1+tir,PY)-1);
+
+  /* TIR modificada: sobras reinvestidas à própria taxa de desconto */
+  let mtir=null;
+  (function(){
+    let fv=0, pv=0;
+    for(let i=0;i<=N;i++){
+      if(caixa[i]>0) fv+=caixa[i]*Math.pow(1+ipP,N-i);
+      else pv+=caixa[i]*Math.pow(1+ipP,-i);
+    }
+    if(pv<0&&fv>0&&N>0) mtir=Math.pow(fv/(-pv),1/N)-1;
+  })();
+  const mtirAA=(mtir===null)?null:(Math.pow(1+mtir,PY)-1);
+
+  /* Payback é a hora em que o acumulado volta a zero. Valor terminal fica
+     de fora: ele não é caixa que entra, é o que o projeto valeria se
+     fosse vendido — pagar-se com ele seria contar o bolo e comê-lo. */
+  const payback=(arr)=>{
+    let cum=0, ant=0, negou=false;
+    for(let i=0;i<=N;i++){
+      ant=cum; cum+=arr[i];
+      if(cum<0){ negou=true; continue; }
+      if(negou) return (arr[i]!==0)?((i-1)+(-ant/arr[i])):i;
+    }
+    return negou?null:0;
+  };
+  const pb=payback(fcl), pbd=payback(fcd);
+
+  const tot=(a)=>a.reduce((s,v)=>s+v,0);
+  const T={rec:tot(rec),ded:tot(ded),rl:tot(rl),cus:tot(cus),mb:tot(mb),adm:tot(adm),
+           com:tot(com),eb:tot(eb),cap:tot(cap),dncg:tot(dncg),out:tot(out),fcl:tot(fcl)};
+
+  return {N,PY,rec,ded,rl,cus,mb,adm,com,eb,cap,dncg,out,fcl,fcd,caixa,T,
+          tv,vpTV,tvErro,vpl,vpIn,vpOut,tir,tirAA,mtir,mtirAA,pb,pbd,tx,
+          pi:(vpOut>0?vpIn/vpOut:null), porLinha, pctDed:pctMax};
+}
+
+/* O VPL é linear na receita — deduções e capital de giro são proporções
+   dela, e o terminal é linear no fluxo. Dá para resolver o ponto de
+   equilíbrio sem iterar. */
+function beReceita(p){
+  const a=calc(p,{fRec:0}).vpl, b=calc(p,{fRec:1}).vpl;
+  if(Math.abs(b-a)<1e-9) return null;
+  return (0-a)/(b-a);
+}
+
+/* ── 5. RENDER: LISTA ───────────────────────────────────────────────── */
+function renderLista(){
+  const el=document.getElementById("ast-view-dcf"); if(!el) return;
+  let h=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <span class="oi oi-sm oi-round oi-ring oi-foco" role="img" aria-label="Otto"></span>
+      <div><div style="font-family:var(--serif);font-style:italic;font-size:19px;color:var(--body);line-height:1.15">${E(P("d_title"))}</div>
+      <div style="font-size:11px;color:var(--ink-3);margin-top:2px">${E(P("d_sub"))}</div></div>
+    </div>
+    <div class="info-card" style="margin:10px 0 14px">${E(P("d_intro"))}</div>`;
+
+  if(!L.length){
+    h+=`<div style="background:var(--surface);border-radius:16px;padding:18px;text-align:center;font-size:12.5px;color:var(--ink-2);line-height:1.55;margin-bottom:12px">${E(P("d_none"))}</div>`;
+  }else{
+    h+=`<div class="sec-label">${E(P("d_back"))}</div>`;
+    L.slice().sort((a,b)=>(b.ts||0)-(a.ts||0)).forEach(p=>{
+      let r=null; try{ r=calc(p); }catch(e){}
+      const vpl=r?r.vpl:0;
+      const tir=(r&&r.tirAA!==null)?PCT(r.tirAA*100,1):"—";
+      h+=`<div onclick="DCF.abrir('${E(p.id)}')" style="background:var(--surface);border-radius:14px;padding:13px 15px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13.5px;font-weight:600;color:var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(p.nome||P("d_new_name"))}</div>
+          <div style="font-size:10.5px;color:var(--ink-3);margin-top:3px">${E(labelPer(p,1))} · ${p.n} ${E(p.freq==="m"?P("d_freq_m"):P("d_freq_a"))} · ${E(p.tipo==="real"?P("d_real"):P("d_nominal"))}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:var(--serif);font-style:italic;font-size:16px;color:${vpl>=0?"var(--green)":"var(--warn)"}">${M(vpl)}</div>
+          <div style="font-size:10px;color:var(--ink-3);margin-top:2px">${E(P("d_tir"))} ${tir}</div>
+        </div>
+      </div>`;
+    });
+  }
+  h+=`<button onclick="DCF.criar()" style="width:100%;background:#0F2440;color:#fff;border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:600;cursor:pointer;margin-top:4px">+ ${E(P("d_new"))}</button>`;
+  el.innerHTML=h;
+}
+
+/* ── 6. RENDER: EDITOR ──────────────────────────────────────────────── */
+function fld(label,inner,hint){
+  return `<div style="min-width:0">
+    <label class="f-label" style="display:block">${E(label)}</label>
+    ${inner}
+    ${hint?`<div style="font-size:10px;color:var(--ink-4);line-height:1.45;margin:-4px 0 8px">${E(hint)}</div>`:""}
+  </div>`;
+}
+const IN=`class="dcf-in"`;
+function renderEditor(){
+  const el=document.getElementById("ast-view-dcf"); const p=proj(); if(!el||!p) return;
+  const ehM=p.freq==="m";
+  let h=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <button onclick="DCF.voltar()" class="dcf-ghost">‹ ${E(P("d_back"))}</button>
+      <div style="flex:1"></div>
+      <button onclick="DCF.duplicar()" class="dcf-ghost">⧉ ${E(P("d_dup"))}</button>
+      <button onclick="DCF.exportar()" class="dcf-ghost">↓ CSV</button>
+    </div>`;
+
+  h+=`<div class="dcf-card">
+    ${fld(P("d_name"),`<input ${IN} type="text" value="${E(p.nome||"")}" onchange="DCF.set('nome',this.value)"/>`)}
+    <div class="dcf-g2">
+      ${fld(P("d_ini"),`<input ${IN} type="month" value="${E(p.inicio||"")}" onchange="DCF.set('inicio',this.value)"/>`)}
+      ${fld(P("d_n"),`<input ${IN} type="number" min="1" max="600" step="1" value="${parseInt(p.n,10)||60}" onchange="DCF.set('n',this.value)"/>`)}
+      ${fld(P("d_freq"),`<select ${IN} onchange="DCF.set('freq',this.value)">
+          <option value="m"${ehM?" selected":""}>${E(P("d_freq_m"))}</option>
+          <option value="a"${!ehM?" selected":""}>${E(P("d_freq_a"))}</option></select>`)}
+      ${fld(P("d_tipo"),`<select ${IN} onchange="DCF.set('tipo',this.value)">
+          <option value="nominal"${p.tipo!=="real"?" selected":""}>${E(P("d_nominal"))}</option>
+          <option value="real"${p.tipo==="real"?" selected":""}>${E(P("d_real"))}</option></select>`)}
+      ${fld(P("d_taxa"),`<input ${IN} type="number" step="0.01" value="${p.taxa}" onchange="DCF.set('taxa',this.value)"/>`)}
+      ${fld(P("d_ipca"),`<input ${IN} type="number" step="0.01" value="${p.ipca===null?"":p.ipca}" ${p.ipcaAuto?"disabled":""} onchange="DCF.set('ipca',this.value)"/>`)}
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px">
+      <button class="dcf-chip${p.ipcaAuto?" on":""}" onclick="DCF.tog('ipcaAuto')">IPCA · ${E(P("d_ipca_auto"))}</button>
+      <button class="dcf-chip" onclick="DCF.usarCdi()">${E(P("d_usar_cdi"))}</button>
+      <button class="dcf-chip${p.meio?" on":""}" onclick="DCF.tog('meio')">${E(P("d_meio"))}</button>
+      <button class="dcf-chip${p.inflar?" on":""}" onclick="DCF.tog('inflar')"${p.tipo==="real"?" disabled":""}>${E(P("d_inflar"))}</button>
+    </div>
+    <div class="dcf-note">${E(P("d_hint_pretax"))}</div>
+    <div class="dcf-g2">
+      ${fld(P("d_ncg"),`<input ${IN} type="number" step="0.1" value="${p.ncg||0}" onchange="DCF.set('ncg',this.value)"/>`,P("d_ncg_h"))}
+      <div></div>
+    </div>
+    <div class="sec-label" style="margin-top:6px">${E(P("d_tv"))}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+      <button class="dcf-chip${(p.tv&&p.tv.on)?" on":""}" onclick="DCF.tog('tv.on')">${E(P("d_tv_on"))}</button>
+    </div>
+    ${(p.tv&&p.tv.on)?`<div class="dcf-g2">
+      ${fld(P("d_tv_met"),`<select ${IN} onchange="DCF.set('tv.metodo',this.value)">
+        <option value="gordon"${(p.tv.metodo||"gordon")==="gordon"?" selected":""}>${E(P("d_tv_gordon"))}</option>
+        <option value="mult"${p.tv.metodo==="mult"?" selected":""}>${E(P("d_tv_mult"))}</option></select>`)}
+      ${(p.tv.metodo==="mult")
+        ? fld(P("d_tv_x"),`<input ${IN} type="number" step="0.1" value="${p.tv.mult||0}" onchange="DCF.set('tv.mult',this.value)"/>`)
+        : fld(P("d_tv_g"),`<input ${IN} type="number" step="0.1" value="${p.tv.g||0}" onchange="DCF.set('tv.g',this.value)"/>`)}
+    </div>`:""}
+  </div>`;
+
+  h+=`<div id="dcf-out"></div>`;
+  h+=`<button class="dcf-del" onclick="DCF.excluir()">${E(P("d_del"))}</button>`;
+  el.innerHTML=h;
+  saida();
+}
+
+/* ── 7. RENDER: RESULTADO ───────────────────────────────────────────── */
+function kpi(rot,val,cor,sub){
+  return `<div class="dcf-kpi"><div class="dcf-kpi-l">${E(rot)}</div>
+    <div class="dcf-kpi-v" style="${cor?`color:${cor}`:""}">${val}</div>
+    ${sub?`<div class="dcf-kpi-s">${E(sub)}</div>`:""}</div>`;
+}
+function perTxt(p,v){
+  if(v===null||v===undefined) return P("d_nunca");
+  const m=v*(12/ppy(p));
+  if(p.freq==="m") return NUM(m,1)+" "+P("d_meses");
+  return NUM(v,1)+" "+P("d_anos");
+}
+function saida(){
+  const p=proj(); const box=document.getElementById("dcf-out"); if(!p||!box) return;
+  let r; try{ r=calc(p); }catch(e){ box.innerHTML=""; return; }
+  const be=beReceita(p);
+  const N=r.N;
+
+  /* KPIs */
+  if(!VIEW) VIEW=vistaPadrao(p);
+  let h=`<div class="sec-label" style="margin-top:14px">${E(P("d_res"))}</div>
+    <div class="dcf-kpis">
+      ${kpi(P("d_vpl"),M(r.vpl),r.vpl>=0?"var(--green)":"var(--warn)")}
+      ${kpi(P("d_tir"),r.tirAA===null?E(P("d_nd")):PCT(r.tirAA*100,2),r.tirAA===null?"var(--ink-3)":(r.tirAA>r.tx.ef?"var(--green)":"var(--warn)"))}
+      ${kpi(P("d_pbd"),E(perTxt(p,r.pbd)))}
+      ${kpi(P("d_pb"),E(perTxt(p,r.pb)))}
+      ${kpi(P("d_pi"),r.pi===null?"—":NUM(r.pi,2),r.pi!==null&&r.pi>=1?"var(--green)":"var(--warn)")}
+      ${kpi(P("d_tirm"),r.mtirAA===null?E(P("d_nd")):PCT(r.mtirAA*100,2))}
+    </div>
+    <div class="dcf-strip">
+      <div><b>${E(P("d_taxa_ef"))}</b> ${PCT(r.tx.ef*100,2)} ${E(P("d_aa"))}${p.tipo==="real"?` · ${E(P("d_taxa_ef_real"))}`:""}</div>
+      <div><b>${E(P("d_be"))}</b> ${E(perTxt(p,r.pbd))}${be!==null?` · <b>${E(P("d_marg"))}</b> ${PCT((1-be)*100,1)}`:""}</div>
+    </div>`;
+
+  /* composição */
+  const rl=r.T.rl||0;
+  const lin=(rot,v,forte,pos)=>{
+    const pc=rl!==0?(v/rl*100):0;
+    return `<tr class="${forte?"f":""}"><td>${E(rot)}</td>
+      <td class="n" style="${pos&&v<0?"color:var(--warn)":""}">${M(v)}</td>
+      <td class="n s">${rl!==0?NUM(pc,1)+"%":"—"}</td></tr>`;
+  };
+  h+=`<div class="sec-label" style="margin-top:16px">${E(P("d_comp"))}</div>
+    <div class="dcf-card" style="padding:4px 12px 8px">
+    <table class="dcf-t2"><thead><tr><th></th><th class="n">${E(P("d_res"))}</th><th class="n s">${E(P("d_pct_rl"))}</th></tr></thead><tbody>
+    ${lin(P("d_rec_bruta"),r.T.rec)}
+    ${lin(P("d_deducoes"),-r.T.ded)}
+    ${lin(P("d_rec_liq"),r.T.rl,true)}
+    ${lin(P("d_custos"),-r.T.cus)}
+    ${lin(P("d_mb"),r.T.mb,true)}
+    ${lin(P("d_adm"),-r.T.adm)}
+    ${lin(P("d_com"),-r.T.com)}
+    ${lin(P("d_ebitda"),r.T.eb,true)}
+    ${lin(P("d_capex"),-r.T.cap)}
+    ${lin(P("d_dncg"),-r.T.dncg)}
+    ${lin(P("d_outras"),-r.T.out)}
+    ${lin(P("d_fcl"),r.T.fcl,true)}
+    ${(p.tv&&p.tv.on)?lin(P("d_tv_val"),r.tv):""}
+    ${(p.tv&&p.tv.on)?lin(P("d_tv_pv"),r.vpTV):""}
+    </tbody></table>
+    <div class="dcf-note" style="margin:6px 0 4px">${E(P("d_mgebitda"))}: ${rl!==0?NUM(r.T.eb/rl*100,1)+"%":"—"}${(p.tv&&p.tv.on&&r.vpl!==0)?` · ${NUM(r.vpTV/r.vpl*100,0)}% ${E(P("d_tv_share"))}`:""}</div>
+    </div>`;
+
+  /* gráfico */
+  h+=`<div class="sec-label" style="margin-top:16px">${E(P("d_graf"))}</div>
+      <div class="dcf-card">${grafico(p,r)}</div>`;
+
+  /* tabela */
+  h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px">
+        <div class="sec-label" style="margin:0">${E(P("d_tab_per"))}</div>
+        ${p.freq==="m"?`<div style="display:flex;gap:5px">
+          <button class="dcf-chip${(VIEW||vistaPadrao(p))==="per"?" on":""}" onclick="DCF.ver('per')">${E(P("d_ver_per"))}</button>
+          <button class="dcf-chip${(VIEW||vistaPadrao(p))==="ano"?" on":""}" onclick="DCF.ver('ano')">${E(P("d_ver_ano"))}</button>
+        </div>`:""}
+      </div>
+      <div class="dcf-card dcf-scroll">${tabela(p,r)}</div>`;
+
+  /* sensibilidade */
+  h+=`<div class="sec-label" style="margin-top:16px">${E(P("d_sens"))}</div>
+      <div class="dcf-card" style="padding:8px 12px 10px;overflow-x:auto">${sens(p)}
+      <div class="dcf-note" style="margin-top:6px">${E(P("d_sens_h"))}</div></div>`;
+
+  /* conferências */
+  const fl=[];
+  if(r.tirAA===null) fl.push(P("d_f_tir"));
+  if(r.tvErro) fl.push(P("d_f_g"));
+  if(p.tv&&p.tv.on&&r.vpl>0&&r.vpTV/r.vpl>0.5) fl.push(P("d_f_tvshare"));
+  if(p.tipo==="real"&&p.tv&&p.tv.on&&(p.tv.metodo||"gordon")==="gordon"&&(+p.tv.g||0)>0) fl.push(P("d_f_real"));
+  if(r.T.rec===0) fl.push(P("d_f_semrec"));
+  if(r.fcl[0]>=0) fl.push(P("d_f_semt0"));
+  if(r.pctDed>100) fl.push(P("d_f_ded"));
+  h+=`<div class="sec-label" style="margin-top:16px">${E(P("d_flags"))}</div>
+      <div class="dcf-card" style="padding:10px 14px">${
+        fl.length?fl.map(x=>`<div class="dcf-flag">⚠ ${E(x)}</div>`).join(""):`<div class="dcf-note" style="margin:0">✓ ${E(P("d_f_ok"))}</div>`
+      }</div>`;
+
+  /* linhas */
+  h+=`<div class="sec-label" style="margin-top:16px">${E(P("d_linhas"))}</div><div>${listaLinhas(p,r)}</div>`;
+  h+=`<button onclick="DCF.linha()" style="width:100%;background:var(--surface);color:var(--body);border:1.5px solid var(--line);border-radius:12px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;margin:8px 0 4px">+ ${E(P("d_add_line"))}</button>`;
+
+  box.innerHTML=h;
+  void N;
+}
+
+function listaLinhas(p,r){
+  if(!(p.linhas||[]).length)
+    return `<div style="background:var(--surface);border-radius:14px;padding:16px;text-align:center;font-size:12px;color:var(--ink-2)">${E(P("d_no_lines"))}</div>`;
+  const ORD=["receita","deducao","custo","desp_adm","desp_com","capex","outras"];
+  const IC={receita:"💵",deducao:"％",custo:"🏭",desp_adm:"🗂",desp_com:"📣",capex:"🏗",outras:"↘"};
+  let h="";
+  ORD.forEach(tp=>{
+    const ls=(p.linhas||[]).filter(l=>l.tipo===tp);
+    if(!ls.length) return;
+    h+=`<div style="font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin:10px 0 5px">${IC[tp]} ${E(P("d_nat_"+tp))}</div>`;
+    ls.forEach(l=>{
+      const tot=r.porLinha[l.id]||0;
+      const det=(l.tipo==="deducao")
+        ? PCT(+l.pct||0,2)
+        : (l.modo==="manual"
+            ? P("d_modo_manual")
+            : `${M(+l.valor||0)} · ${E(P("d_ini_per"))} ${(isFinite(parseInt(l.ini,10))?parseInt(l.ini,10):1)}${(parseInt(l.parc,10)||1)>1?` · ${parseInt(l.parc,10)}×`:""}${(+l.cresc||0)?` · ${NUM(+l.cresc,1)}%`:""}`);
+      h+=`<div onclick="DCF.linha('${E(l.id)}')" style="background:var(--surface);border-radius:12px;padding:10px 13px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;gap:10px;${l.off?"opacity:.45":""}">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12.5px;font-weight:600;color:var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(l.desc||P("d_nat_"+l.tipo))}</div>
+          <div style="font-size:10px;color:var(--ink-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${det}</div>
+        </div>
+        <div style="font-size:12px;color:${l.tipo==="receita"?"var(--green)":"var(--ink-2)"};flex-shrink:0">${l.tipo==="receita"?"":"−"}${M(Math.abs(tot))}</div>
+      </div>`;
+    });
+  });
+  return h;
+}
+
+/* ── 8. TABELA PERÍODO A PERÍODO ────────────────────────────────────── */
+function tabela(p,r){
+  const N=r.N;
+  if(!VIEW) VIEW=vistaPadrao(p);
+  const cols=[P("d_rec_liq"),P("d_custos"),P("d_ebitda"),P("d_capex"),P("d_dncg"),P("d_fcl"),P("d_fcd"),P("d_acum")];
+  let linhas=[];
+  if(p.freq==="m"&&VIEW==="ano"){
+    /* Mapa preserva a ordem de inserção mesmo com chaves que parecem
+       número — num objeto comum, "2026" viria antes de "t0" e a data-base
+       cairia no fim da tabela. */
+    const g=new Map();
+    for(let i=0;i<=N;i++){
+      const k=(i===0)?"t0":anoDe(p,i);
+      if(!g.has(k)) g.set(k,{rot:(i===0?P("d_t0"):k),rl:0,cus:0,eb:0,cap:0,dncg:0,fcl:0,fcd:0});
+      const x=g.get(k);
+      x.rl+=r.rl[i]; x.cus+=r.cus[i]; x.eb+=r.eb[i];
+      x.cap+=r.cap[i]; x.dncg+=r.dncg[i]; x.fcl+=r.fcl[i]; x.fcd+=r.fcd[i];
+    }
+    linhas=Array.from(g.values());
+  }else{
+    for(let i=0;i<=N;i++) linhas.push({rot:labelPer(p,i),rl:r.rl[i],cus:r.cus[i],eb:r.eb[i],
+      cap:r.cap[i],dncg:r.dncg[i],fcl:r.fcl[i],fcd:r.fcd[i]});
+  }
+  let ac=0;
+  const body=linhas.map(x=>{
+    ac+=x.fcd;
+    return `<tr><td class="k">${E(x.rot)}</td>
+      <td class="n">${M(x.rl)}</td><td class="n">${M(-x.cus)}</td><td class="n">${M(x.eb)}</td>
+      <td class="n">${M(-x.cap)}</td><td class="n">${M(-x.dncg)}</td>
+      <td class="n b" style="color:${x.fcl>=0?"var(--green)":"var(--warn)"}">${M(x.fcl)}</td>
+      <td class="n">${M(x.fcd)}</td>
+      <td class="n b" style="color:${ac>=0?"var(--green)":"var(--warn)"}">${M(ac)}</td></tr>`;
+  }).join("");
+  return `<table class="dcf-t"><thead><tr><th class="k">${E(P("d_periodo"))}</th>${cols.map(c=>`<th class="n">${E(c)}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table>`;
+}
+
+/* ── 9. GRÁFICO ─────────────────────────────────────────────────────── */
+function grafico(p,r){
+  const N=r.N, W=320, H=132, pad=4;
+  let ac=0; const acum=[];
+  for(let i=0;i<=N;i++){ ac+=r.fcd[i]; acum.push(ac); }
+  const vals=r.fcl.concat(acum);
+  let mx=Math.max.apply(null,vals), mn=Math.min.apply(null,vals);
+  if(!isFinite(mx)) mx=0; if(!isFinite(mn)) mn=0;
+  if(mx===mn){ mx=mx+1; mn=mn-1; }
+  const y=v=>pad+(mx-v)/(mx-mn)*(H-2*pad);
+  const x=i=>pad+(N===0?0:(i/N)*(W-2*pad));
+  const y0=y(0);
+  const bw=Math.max(1,(W-2*pad)/(N+1)*0.62);
+  let bars="";
+  for(let i=0;i<=N;i++){
+    const yv=y(r.fcl[i]);
+    const top=Math.min(yv,y0), hh=Math.max(0.8,Math.abs(yv-y0));
+    bars+=`<rect x="${(x(i)-bw/2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" fill="${r.fcl[i]>=0?"#3D5A3E":"#8B3A1A"}" opacity=".55" rx="${Math.min(1.5,bw/2).toFixed(1)}"/>`;
+  }
+  const pts=acum.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" style="display:block">
+    ${bars}
+    <line x1="${pad}" y1="${y0.toFixed(1)}" x2="${W-pad}" y2="${y0.toFixed(1)}" stroke="var(--line)" stroke-width="1"/>
+    <polyline points="${pts}" fill="none" stroke="#0F2440" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>
+  <div style="display:flex;gap:14px;justify-content:center;font-size:10px;color:var(--ink-3);margin-top:6px">
+    <span><span style="display:inline-block;width:9px;height:9px;background:#3D5A3E;opacity:.55;border-radius:2px;vertical-align:-1px"></span> ${E(P("d_fcl"))}</span>
+    <span><span style="display:inline-block;width:14px;height:2px;background:#0F2440;vertical-align:3px"></span> ${E(P("d_acum"))} (${E(P("d_fcd"))})</span>
+  </div>`;
+}
+
+/* ── 10. SENSIBILIDADE ──────────────────────────────────────────────── */
+function sens(p){
+  const t0=+p.taxa||0;
+  const taxas=[t0-2,t0,t0+2], recs=[0.9,1,1.1];
+  let h=`<table class="dcf-t"><thead><tr><th class="k">${E(P("d_sens_taxa"))}</th>${recs.map(f=>`<th class="n">${f<1?"−":f>1?"+":""}${Math.abs(Math.round((f-1)*100))}%</th>`).join("")}</tr></thead><tbody>`;
+  taxas.forEach(tx=>{
+    h+=`<tr><td class="k">${NUM(tx,2)}%</td>`;
+    recs.forEach(f=>{
+      let v=0; try{ v=calc(p,{taxa:tx,fRec:f}).vpl; }catch(e){}
+      h+=`<td class="n" style="color:${v>=0?"var(--green)":"var(--warn)"}">${M(v)}</td>`;
+    });
+    h+="</tr>";
+  });
+  return h+"</tbody></table>";
+}
+
+/* ── 11. FICHA DA LINHA ─────────────────────────────────────────────── */
+let LID=null;
+function abrirLinha(id){
+  const p=proj(); if(!p) return;
+  LID=id||null;
+  const l=id?(p.linhas||[]).find(x=>String(x.id)===String(id)):null;
+  const d=l||{tipo:"receita",modo:"serie",desc:"",valor:0,pct:0,ini:1,rep:0,passo:1,parc:1,lag:0,cresc:0,manual:{},off:false};
+  const ov=document.createElement("div");
+  ov.className="overlay open"; ov.id="modal-dcf-line"; ov.style.zIndex="210";
+  ov.innerHTML=`<div class="sheet" style="max-height:92dvh;overflow-y:auto">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="closeOverlay(this)">✕</button>
+    <div class="sheet-title">${E(l?P("d_edit_line"):P("d_add_line"))}</div>
+    <div id="dcf-l-body"></div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button onclick="closeOverlay(this)" style="flex:1;padding:13px;border-radius:12px;border:1.5px solid var(--line);background:none;color:var(--ink-2);font-size:13px;font-weight:600;cursor:pointer">${E(P("d_cancel"))}</button>
+      <button onclick="DCF.salvarLinha()" style="flex:2;padding:13px;border-radius:12px;border:none;background:#0F2440;color:#fff;font-size:13px;font-weight:600;cursor:pointer">${E(P("d_save"))}</button>
+    </div>
+    ${l?`<button class="dcf-del" onclick="DCF.excluirLinha()">${E(P("d_del_line"))}</button>`:""}
+  </div>`;
+  document.body.appendChild(ov);
+  ov.onclick=e=>{ if(e.target===ov) closeOverlay(ov); };
+  RASC=JSON.parse(JSON.stringify(d));
+  if(!RASC.id) RASC.id=Date.now();
+  corpoLinha();
+}
+let RASC=null;
+function corpoLinha(){
+  const p=proj(); const b=document.getElementById("dcf-l-body"); if(!b||!p) return;
+  const d=RASC, N=Math.max(1,Math.min(600,parseInt(p.n,10)||60));
+  const TPS=["receita","deducao","custo","desp_adm","desp_com","capex","outras"];
+  let h=fld(P("d_nat"),`<select ${IN} onchange="DCF.setL('tipo',this.value,1)">
+      ${TPS.map(x=>`<option value="${x}"${d.tipo===x?" selected":""}>${E(P("d_nat_"+x))}</option>`).join("")}
+    </select>`);
+  h+=fld(P("d_desc"),`<input ${IN} type="text" value="${E(d.desc||"")}" placeholder="${E(P("d_nat_"+d.tipo))}" onchange="DCF.setL('desc',this.value)"/>`);
+
+  if(d.tipo==="deducao"){
+    h+=`<div class="dcf-g2">
+      ${fld(P("d_pct"),`<input ${IN} type="number" step="0.01" value="${d.pct||0}" onchange="DCF.setL('pct',this.value)"/>`)}
+      ${fld(P("d_ini_per"),`<input ${IN} type="number" min="0" max="${N}" step="1" value="${parseInt(d.ini,10)||0}" onchange="DCF.setL('ini',this.value)"/>`)}
+      ${fld(P("d_rep"),`<input ${IN} type="number" min="0" step="1" value="${parseInt(d.rep,10)||0}" onchange="DCF.setL('rep',this.value)"/>`)}
+      <div></div>
+    </div>
+    <div class="dcf-note">${E(P("d_t0_h"))}</div>`;
+  }else{
+    h+=fld(P("d_modo"),`<select ${IN} onchange="DCF.setL('modo',this.value,1)">
+        <option value="serie"${d.modo!=="manual"?" selected":""}>${E(P("d_modo_serie"))}</option>
+        <option value="manual"${d.modo==="manual"?" selected":""}>${E(P("d_modo_manual"))}</option></select>`);
+    if(d.modo==="manual"){
+      h+=`<div class="dcf-note">${E(P("d_manual_h"))}</div><div class="dcf-man">`;
+      for(let i=0;i<=N;i++){
+        const v=(d.manual&&d.manual[i])||0;
+        h+=`<div class="dcf-man-r"><span>${E(labelPer(p,i))}</span>
+          <input ${IN} type="text" inputmode="decimal" value="${E(MSK(v))}" placeholder="0,00" onchange="DCF.setM(${i},this.value,1)"/></div>`;
+      }
+      h+=`</div>`;
+    }else{
+      h+=`<div class="dcf-g2">
+        ${fld(P("d_valor"),`<input ${IN} type="text" inputmode="decimal" value="${E(MSK(d.valor))}" placeholder="0,00" onchange="DCF.setL('valor',this.value,2)"/>`)}
+        ${fld(P("d_ini_per"),`<input ${IN} type="number" min="0" max="${N}" step="1" value="${parseInt(d.ini,10)||0}" onchange="DCF.setL('ini',this.value)"/>`)}
+        ${fld(P("d_rep"),`<input ${IN} type="number" min="0" step="1" value="${parseInt(d.rep,10)||0}" onchange="DCF.setL('rep',this.value)"/>`)}
+        ${fld(P("d_passo"),`<input ${IN} type="number" min="1" step="1" value="${parseInt(d.passo,10)||1}" onchange="DCF.setL('passo',this.value)"/>`)}
+        ${fld(P("d_parc"),`<input ${IN} type="number" min="1" step="1" value="${parseInt(d.parc,10)||1}" onchange="DCF.setL('parc',this.value)"/>`)}
+        ${fld(P("d_lag"),`<input ${IN} type="number" min="0" step="1" value="${parseInt(d.lag,10)||0}" onchange="DCF.setL('lag',this.value)"/>`)}
+        ${fld(P("d_cresc"),`<input ${IN} type="number" step="0.01" value="${d.cresc||0}" onchange="DCF.setL('cresc',this.value)"/>`)}
+        <div></div>
+      </div>
+      <div class="dcf-note">${E(P("d_parc_h"))} ${E(P("d_t0_h"))}</div>`;
+    }
+    h+=`<div class="dcf-strip" style="margin-top:2px" id="dcf-l-tot"></div>`;
+  }
+  h+=`<div style="margin:8px 0 10px"><button class="dcf-chip${d.off?" on":""}" onclick="DCF.setL('off',!${!!d.off},1)">${E(P("d_off"))}</button></div>`;
+  b.innerHTML=h;
+  totalLinha();
+}
+/* O total responde a cada campo sem remontar a ficha. */
+function totalLinha(){
+  const p=proj(), el=document.getElementById("dcf-l-tot");
+  if(!p||!el||!RASC||RASC.tipo==="deducao") return;
+  const N=Math.max(1,Math.min(600,parseInt(p.n,10)||60));
+  const tt=serie(RASC,N).reduce((a,v)=>a+v,0);
+  el.innerHTML=`<div><b>${E(P("d_total_line"))}</b> ${M(tt)}</div>`;
+}
+
+/* ── 12. CSV ────────────────────────────────────────────────────────── */
+function csv(){
+  const p=proj(); if(!p) return;
+  const r=calc(p), N=r.N, sep=";";
+  const dec=v=>String(Math.round((v||0)*100)/100).replace(".",",");
+  const rows=[];
+  rows.push([p.nome||"",P("d_taxa"),dec(p.taxa),P("d_ipca"),dec(p.ipca),P("d_tipo"),p.tipo].join(sep));
+  const rot=[P("d_periodo"),P("d_rec_bruta"),P("d_deducoes"),P("d_rec_liq"),P("d_custos"),P("d_mb"),
+             P("d_adm"),P("d_com"),P("d_ebitda"),P("d_capex"),P("d_dncg"),P("d_outras"),P("d_fcl"),P("d_fcd")];
+  rows.push(rot.join(sep));
+  for(let i=0;i<=N;i++){
+    rows.push([labelPer(p,i),dec(r.rec[i]),dec(-r.ded[i]),dec(r.rl[i]),dec(-r.cus[i]),dec(r.mb[i]),
+      dec(-r.adm[i]),dec(-r.com[i]),dec(r.eb[i]),dec(-r.cap[i]),dec(-r.dncg[i]),dec(-r.out[i]),
+      dec(r.fcl[i]),dec(r.fcd[i])].join(sep));
+  }
+  rows.push("");
+  rows.push([P("d_vpl"),dec(r.vpl)].join(sep));
+  rows.push([P("d_tir"),r.tirAA===null?"":dec(r.tirAA*100)].join(sep));
+  rows.push([P("d_pbd"),r.pbd===null?"":dec(r.pbd)].join(sep));
+  const blob=new Blob(["\ufeff"+rows.join("\n")],{type:"text/csv;charset=utf-8"});
+  const nome=(p.nome||"dcf").replace(/[^\w\-]+/g,"_")+".csv";
+  try{
+    if(navigator.canShare){
+      const f=new File([blob],nome,{type:"text/csv"});
+      if(navigator.canShare({files:[f]})){ navigator.share({files:[f],title:p.nome||"DCF"}).catch(()=>{}); return; }
+    }
+  }catch(e){}
+  const url=URL.createObjectURL(blob), a=document.createElement("a");
+  a.href=url; a.download=nome; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+
+/* ── 13. API ────────────────────────────────────────────────────────── */
+const num=v=>{ const n=parseFloat(String(v==null?"":v).replace(/\./g,"").replace(",",".")); return isNaN(n)?0:n; };
+const numSimples=v=>{ const n=parseFloat(String(v==null?"":v).replace(",",".")); return isNaN(n)?0:n; };
+
+window.DCF={
+  render(){ carregar(); if(SEL&&proj()) renderEditor(); else { SEL=null; renderLista(); } },
+  criar(){ const p=novo(); L.push(p); gravar(); SEL=p.id; VIEW=null; renderEditor(); },
+  abrir(id){ SEL=id; VIEW=null; renderEditor(); },
+  voltar(){ SEL=null; renderLista(); },
+  ver(v){ VIEW=v; saida(); },
+  set(k,v){
+    const p=proj(); if(!p) return;
+    if(k==="nome") p.nome=String(v||"").slice(0,60);
+    else if(k==="inicio") p.inicio=v||p.inicio;
+    else if(k==="n") p.n=Math.max(1,Math.min(600,parseInt(v,10)||60));
+    else if(k==="freq"){ p.freq=(v==="a")?"a":"m"; }
+    else if(k==="tipo"){ p.tipo=(v==="real")?"real":"nominal"; if(p.tipo==="real") p.inflar=false; }
+    else if(k==="taxa") p.taxa=numSimples(v);
+    else if(k==="ipca") p.ipca=numSimples(v);
+    else if(k==="ncg") p.ncg=numSimples(v);
+    else if(k.indexOf("tv.")===0){ p.tv=p.tv||{}; const kk=k.slice(3);
+      p.tv[kk]=(kk==="metodo")?v:numSimples(v); }
+    if(p.ipcaAuto) p.ipca=ipcaCurva(p);
+    p.ts=Date.now(); gravar();
+    if(k==="freq"||k==="tipo"||k==="n"||k==="inicio"||k.indexOf("tv.")===0) renderEditor(); else saida();
+  },
+  tog(k){
+    const p=proj(); if(!p) return;
+    if(k==="tv.on"){ p.tv=p.tv||{on:false,metodo:"gordon",g:2,mult:5}; p.tv.on=!p.tv.on; }
+    else if(k==="inflar"){ if(p.tipo==="real") return; p.inflar=!p.inflar; }
+    else p[k]=!p[k];
+    if(p.ipcaAuto) p.ipca=ipcaCurva(p);
+    p.ts=Date.now(); gravar(); renderEditor();
+  },
+  usarCdi(){
+    const p=proj(); if(!p) return;
+    const v=idxMedioAA("cdi",p);
+    if(v===null){ try{ toast("—"); }catch(e){} return; }
+    p.taxa=v; p.ts=Date.now(); gravar(); renderEditor();
+  },
+  duplicar(){
+    const p=proj(); if(!p) return;
+    const c=JSON.parse(JSON.stringify(p));
+    c.id=Date.now(); c.nome=(p.nome||"")+" ·"; c.ts=Date.now();
+    L.push(c); gravar(); SEL=c.id; renderEditor();
+  },
+  excluir(){
+    const p=proj(); if(!p) return;
+    if(!confirm(P("d_del_q"))) return;
+    L=L.filter(x=>String(x.id)!==String(p.id)); gravar(); SEL=null; renderLista();
+  },
+  exportar(){ csv(); },
+  linha(id){ abrirLinha(id); },
+  setL(k,v,re){
+    if(!RASC) return;
+    if(k==="tipo"){ RASC.tipo=v; if(v==="deducao"&&(parseInt(RASC.ini,10)||0)<0) RASC.ini=0; }
+    else if(k==="desc") RASC.desc=String(v||"").slice(0,60);
+    else if(k==="modo") RASC.modo=(v==="manual")?"manual":"serie";
+    else if(k==="off") RASC.off=(v===true||v==="true");
+    else if(k==="valor") RASC.valor=num(v);
+    else if(k==="pct"||k==="cresc") RASC[k]=numSimples(v);
+    else RASC[k]=Math.max(0,parseInt(v,10)||0);
+    if(!re) totalLinha();
+    /* re=1 remonta a ficha inteira; re=2 só reescreve o campo de dinheiro,
+       para não roubar o foco de quem ainda está digitando ao lado. */
+    if(re===1) corpoLinha();
+    else if(re===2){ const t=document.querySelector("#dcf-l-body .dcf-g2 input.dcf-in"); if(t) t.value=MSK(RASC.valor); totalLinha(); }
+  },
+  setM(i,v,re){ if(!RASC) return; RASC.manual=RASC.manual||{}; const n=num(v);
+    if(n) RASC.manual[i]=n; else delete RASC.manual[i];
+    if(re){ const el=document.querySelectorAll("#modal-dcf-line .dcf-man-r input.dcf-in")[i]; if(el) el.value=MSK(n); totalLinha(); } },
+  salvarLinha(){
+    const p=proj(); if(!p||!RASC) return;
+    p.linhas=p.linhas||[];
+    const i=p.linhas.findIndex(x=>String(x.id)===String(RASC.id));
+    if(i>=0) p.linhas[i]=RASC; else p.linhas.push(RASC);
+    p.ts=Date.now(); gravar();
+    const ov=document.getElementById("modal-dcf-line"); if(ov) closeOverlay(ov);
+    RASC=null; LID=null; renderEditor();
+  },
+  excluirLinha(){
+    const p=proj(); if(!p||!RASC) return;
+    p.linhas=(p.linhas||[]).filter(x=>String(x.id)!==String(RASC.id));
+    p.ts=Date.now(); gravar();
+    const ov=document.getElementById("modal-dcf-line"); if(ov) closeOverlay(ov);
+    RASC=null; LID=null; renderEditor();
+  },
+  _calc:calc
+};
+
+/* ── 14. LIGAÇÕES COM O APP ─────────────────────────────────────────── */
+/* A aba entra no ciclo de showAst; o idioma e o olho fechado voltam a
+   desenhar a tela sem que nada aqui precise saber como o resto do app
+   decidiu mudar. */
+(function(){
+  const orig=window.showAst;
+  if(typeof orig==="function"){
+    window.showAst=function(v){
+      orig(v);
+      const el=document.getElementById("ast-view-dcf");
+      if(el){
+        el.style.display=(v==="dcf")?"block":"none";
+        if(v==="dcf"){ try{ window.DCF.render(); }catch(e){ try{logErro("dcf",e);}catch(_){} } }
+      }
+      document.querySelectorAll("#nav-patrimonio .nav-btn").forEach(b=>{
+        const on=b.dataset.astview===v;
+        b.classList.toggle("active",on);
+        b.style.color=on?"#0F2440":"var(--ink-2)";
+      });
+    };
+  }
+  const at=window.applyTranslations;
+  if(typeof at==="function"){
+    window.applyTranslations=function(){
+      at.apply(this,arguments);
+      const el=document.getElementById("ast-view-dcf");
+      if(el&&el.style.display!=="none"){ try{ window.DCF.render(); }catch(e){} }
+    };
+  }
+  const tvz=window.toggleValores;
+  if(typeof tvz==="function"){
+    window.toggleValores=function(){
+      tvz.apply(this,arguments);
+      const el=document.getElementById("ast-view-dcf");
+      if(el&&el.style.display!=="none"){ try{ window.DCF.render(); }catch(e){} }
+    };
+  }
+})();
+
+})();
+
 </script>
 </body>
 </html>
