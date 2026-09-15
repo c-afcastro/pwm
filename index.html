@@ -16109,7 +16109,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.94";
+const APP_VERSION="10.95";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -16234,7 +16234,8 @@ function astFatorPeriodo(a,de,ate){
     const m=mesesCompletos(de,ate);
     return m>0?Math.pow(1+amCurva("poupanca",String(de).slice(0,7))/100,m):1;
   }
-  const du=diasUteis(de,ate);
+  /* mesma régua da B3 e do motor de séries: [de, ate) */
+  const du=duPeriodo(de,ate);
   if(du<=0) return 1;
   let fatorDia;
   switch(idx){
@@ -16271,6 +16272,7 @@ const TXD={
   "Início":["Home","Start"],
 
 "Aplicado":["Invested","Angelegt"],
+"dias úteis":["business days","Geschäftstage"],
 "Toque em <strong>fixar</strong> ao lado do campo para informar o valor exato.":["Tap <strong>pin</strong> next to the field to enter the exact amount.","Auf <strong>fixieren</strong> neben dem Feld tippen, um den genauen Betrag einzugeben."],
 "A posição é de ":["The position is dated ","Die Position ist vom "],
 " e a aplicação é de ":[" and the investment dates from "," und die Anlage vom "],
@@ -18363,6 +18365,64 @@ function indiceEstimado(idx,ym){
    descartado; ele só deixa de ser lido como o que não é. */
 const IDX_INTRAMES=["cdi","selic"];   /* acumulam dia a dia dentro do mês */
 
+/* ═══ O DIA QUE JÁ PASSOU NÃO É PREMISSA ══════════════════════════════
+   Um CDB de 100% do CDI corrigido de 31/08 até hoje nascia menor do que
+   o extrato do banco. A conta de dias úteis estava certa; a TAXA é que
+   não: os dias já decorridos estavam sendo precificados pela curva de
+   projeção dos Parâmetros (trajetória do Copom) em vez do CDI que de
+   fato vigorou. Projeção é para o futuro. O passado tem taxa divulgada.
+
+   Daqui em diante todo trecho [de, hoje) usa a taxa OBSERVADA — a série
+   realizada do Banco Central quando existe, senão o CDI/Selic à vista
+   que o próprio app exibe — e só o trecho [hoje, ate) segue a curva. */
+const IDX_DO_PRODUTO={cdi_pct:"cdi",cdi_spread:"cdi",ipca_spread:"ipca",poupanca:"poupanca"};
+
+function indiceMesObs(idx,ym,duMes){
+  if(!idx) return 0;
+  const s=HIST.series[idx];
+  /* 1º — mês fechado com dado do BCB: é o próprio fato */
+  if(s&&typeof s[ym]==="number"&&String(ym)<ymNow()) return s[ym];
+  /* 2º — mês EM CURSO: o CDI/Selic à vista, na base 252. É a taxa que
+     de fato vigorou nos dias que já correram deste mês. */
+  if(String(ym)===ymNow()&&IDX_INTRAMES.indexOf(idx)>=0&&duMes>0){
+    const aa=(idx==="cdi")?(+MARKET.cdi||0):(+MARKET.selic||0);
+    if(aa>0) return (Math.pow(1+aa/100,duMes/252)-1)*100;
+  }
+  /* 3º — mês fechado sem série baixada: vale a tabela histórica de metas
+     do Copom que o app carrega. Para uma data passada ela é REGISTRO, não
+     projeção — e é melhor que a curva do titular, que olha para frente.
+     A taxa à vista de hoje não serve aqui: em jun/25 a Selic era outra. */
+  if(String(ym)<ymNow()&&IDX_INTRAMES.indexOf(idx)>=0) return indiceEstimado(idx,ym);
+  return indiceMes(idx,ym);
+}
+
+/* Base do mês a partir da taxa mensal do indexador.
+
+   O PERCENTUAL DO CDI INCIDE SOBRE A TAXA DIÁRIA, não sobre a do mês.
+   É o que manda o Caderno de Fórmulas da B3 (CDBs-DIs-DPGE-...):
+     Fator DI = Π [ (TDIk · p/100) + 1 ],  TDIk = (1 + DIk/100)^(1/252) − 1
+   Aplicar o percentual ao acumulado do mês só coincide em 100% do CDI;
+   em 110% ou 95% a diferença aparece e cresce com o prazo. */
+function baseDoMes(idxN,p,duMes,taxaIdxMes,a){
+  const v=+p.idxVal||0, m=(+taxaIdxMes||0)/100;
+  switch(idxN){
+    case "cdi_pct":{
+      if(!(duMes>0)) return 1+m*v/100;
+      const tdi=Math.pow(1+m,1/duMes)-1;              // taxa DI do dia
+      return Math.pow(1+tdi*v/100,duMes);             // (1 + TDI·p/100)^du
+    }
+    /* Fator DI × Fator de Spread: o spread é taxa 252, apropriada pelos
+       dias úteis do mês — não pela fração 1/12 de calendário. */
+    case "cdi_spread":
+      return (1+m)*Math.pow(1+v/100,(duMes>0?duMes:21)/252);
+    case "ipca_spread":
+      return (1+m)*Math.pow(1+v/100,1/12);
+    case "poupanca": return 1+m;
+    case "pre":      return Math.pow(1+v/100,(duMes>0?duMes:21)/252);
+    default:         return 1+astManualAM(a,p)/100;   /* % ao mês na mão */
+  }
+}
+
 function idxMesEmCurso(idx,ym,parcial){
   /* IPCA, IGP-M e poupança só publicam com o mês fechado (ou já trazem o
      mês inteiro conhecido de antemão): o que vier já é o mês. */
@@ -18432,18 +18492,31 @@ function fatorIndice(idx,ini,fim,transf){
     /* Aqui o índice é o próprio parâmetro da função — não há produto no
        escopo. A referência a "p.idx", herdada de serieFatores por cópia,
        fazia esta função lançar em toda chamada. */
-    let parte;
+    let parte,duMes=0;
     if(idx!=="poupanca"){
-      const duMes=diasUteis(ini1,prox);
-      parte=duMes>0?Math.max(0,diasUteis(de,ate))/duMes:0;
+      /* régua da B3: [de, ate) — início inclusive, fim exclusive */
+      duMes=duPeriodo(ini1,prox);
+      parte=duMes>0?Math.max(0,duPeriodo(de,ate))/duMes:0;
     }else{
       parte=Math.max(0,dias(de,ate))/ultimo;
     }
     if(parte>0){
-      const taxa=f(indiceMes(idx,cur),cur)/100;
-      fator*=Math.pow(1+taxa,parte);
+      /* dias já decorridos pela taxa observada, dias futuros pela curva */
+      const hoje=today();
+      let pPas=0,pFut=parte;
+      if(IDX_INTRAMES.indexOf(idx)>=0&&duMes>0){
+        if(ate<=hoje){ pPas=parte; pFut=0; }
+        else if(de<hoje){
+          pPas=Math.max(0,duPeriodo(de,hoje))/duMes;
+          pFut=Math.max(0,duPeriodo(hoje,ate))/duMes;
+          if(!(pPas>0)||!(pFut>0)){pPas=0;pFut=parte;}
+        }
+      }
+      const tFut=f(indiceMes(idx,cur),cur)/100;
+      const tPas=pPas>0?f(indiceMesObs(idx,cur,duMes),cur)/100:tFut;
+      fator*=Math.pow(1+tPas,pPas)*Math.pow(1+tFut,pFut);
       meses+=parte;
-      if(indiceMesEhReal(idx,cur)) real+=parte; else est+=parte;
+      if(pFut<=1e-9||indiceMesEhReal(idx,cur)) real+=parte; else est+=parte;
     }
     cur=ymAdd(cur,1);
   }
@@ -18593,36 +18666,42 @@ function serieFatores(a,ini,fim,pro){
        poupança segue proporcional a dias corridos, pois credita por
        aniversário mensal. */
     const idxN=astIdxNorm(p.idx);
-    let parte;
+    let parte,duMes=0;
     if(idxN!=="poupanca"){
       /* Numerador e denominador na mesma régua [de,ate): um mês inteiro
          continua valendo exatamente 1, e o dia 1º deixa de ser contado
-         com a taxa do mês anterior. */
-      const duMes=duPeriodo(ini1,prox);
+         com a taxa do mês anterior. É a mesma régua da B3 — da data de
+         início INCLUSIVE até a data de atualização EXCLUSIVE. */
+      duMes=duPeriodo(ini1,prox);
       parte=duMes>0?Math.max(0,duPeriodo(de,ate))/duMes:0;
     }else{
       parte=Math.max(0,dias(de,ate))/ultimo;
     }
     if(parte>0){
-      let base=1, real=true, idxUsado="";
-      switch(astIdxNorm(p.idx)){
-        case "cdi_pct":
-          idxUsado="cdi"; base=1+indiceMes("cdi",cur)*(+p.idxVal||0)/10000; break;
-        case "cdi_spread":
-          idxUsado="cdi"; base=(1+indiceMes("cdi",cur)/100)*Math.pow(1+(+p.idxVal||0)/100,1/12); break;
-        case "ipca_spread":
-          idxUsado="ipca"; base=(1+indiceMes("ipca",cur)/100)*Math.pow(1+(+p.idxVal||0)/100,1/12); break;
-        case "poupanca":
-          idxUsado="poupanca"; base=1+indiceMes("poupanca",cur)/100; break;
-        case "pre":
-          base=Math.pow(1+(+p.idxVal||0)/100,1/12); break;
-        default:
-          /* rendimento informado à mão, em % ao mês */
-          base=1+astManualAM(a,p)/100;
+      const idxUsado=IDX_DO_PRODUTO[idxN]||"";
+      const hoje=today();
+      /* o mês se parte em dois: o que já correu e o que falta. Em mês
+         fechado ou inteiramente futuro um dos lados é zero e nada muda. */
+      let partePas=0,parteFut=parte;
+      if(idxUsado&&IDX_INTRAMES.indexOf(idxUsado)>=0&&duMes>0&&de<hoje&&ate>hoje){
+        partePas=Math.max(0,duPeriodo(de,hoje))/duMes;
+        parteFut=Math.max(0,duPeriodo(hoje,ate))/duMes;
+        if(!(partePas>0)||!(parteFut>0)){partePas=0;parteFut=parte;}
+      }else if(idxUsado&&IDX_INTRAMES.indexOf(idxUsado)>=0&&ate<=hoje){
+        partePas=parte; parteFut=0;
       }
-      if(idxUsado) real=indiceMesEhReal(idxUsado,cur);
+      const txFut=idxUsado?indiceMes(idxUsado,cur):0;
+      const txPas=partePas>0?indiceMesObs(idxUsado,cur,duMes):txFut;
+      const baseFut=baseDoMes(idxN,p,duMes,txFut,a);
+      const basePas=partePas>0?baseDoMes(idxN,p,duMes,txPas,a):baseFut;
+      let f=Math.pow(basePas,partePas)*Math.pow(baseFut,parteFut)*Math.pow(admM,parte);
+      if(!isFinite(f)||f<=0) f=1;
+      /* taxa equivalente do mês, já com os dois trechos dentro */
+      const baseEq=parte>0?Math.pow(Math.pow(basePas,partePas)*Math.pow(baseFut,parteFut),1/parte):1;
+      const real=idxUsado?(parteFut<=1e-9?true:indiceMesEhReal(idxUsado,cur)):true;
       out.push({ym:cur,de,ate,parte:R2(parte),
-        tx:R2((base-1)*100),f:Math.pow(base*admM,parte),real,idx:idxUsado});
+        tx:R2((baseEq-1)*100),f,real,idx:idxUsado,
+        duMes,duPas:R2(partePas*duMes),duFut:R2(parteFut*duMes)});
     }
     cur=ymAdd(cur,1);
   }
@@ -19733,7 +19812,14 @@ function astAtualizacao(a){
     MARKET.cdi,MARKET.selic,MARKET.ipca,MARKET.ts,PARAMS.ts].join("|");
   if(AST_CACHE[chave]) return AST_CACHE[chave];
 
+  /* dias ÚTEIS e a taxa que precificou o trecho decorrido: sem isso a
+     linha da correção não é conferível contra o extrato do banco */
+  const _idxU=IDX_DO_PRODUTO[astIdxNorm(p.idx)]||"";
+  const _obs=IDX_INTRAMES.indexOf(_idxU)>=0;
+  const _txObs=_obs?R2(_idxU==="cdi"?(+MARKET.cdi||0):(+MARKET.selic||0)):0;
+  const _lblObs=_obs?(_idxU==="cdi"?"CDI":"Selic"):"";
   const base={informado:bal,desde:de,dias:Math.max(0,dias(de,hj)),
+    du:Math.max(0,duPeriodo(de,hj)),txObs:_txObs,lblObs:_lblObs,
     valor:R2(bal),correcao:0,aportes:0,comeCotas:0,
     corrigido:false,estimado:false,fator:1};
   if(!(bal>0)||de>=hj){ AST_CACHE[chave]=base; return base; }
@@ -19741,6 +19827,7 @@ function astAtualizacao(a){
   const E=astEvoluirEventos(a,p,de,hj,bal);
   if(!E.meses&&!E.resgatado){ AST_CACHE[chave]=base; return base; }
   const out={informado:bal,desde:de,dias:Math.max(0,dias(de,hj)),
+    du:Math.max(0,duPeriodo(de,hj)),txObs:_txObs,lblObs:_lblObs,
     valor:E.valor,correcao:E.correcao,aportes:E.aportes,comeCotas:E.comeCotas,
     resgatado:R2(E.resgatado||0),
     corrigido:E.valor!==R2(bal),
@@ -20899,8 +20986,13 @@ function astPreview(){
       <div class="pro-cf"><span>Saldo de hoje</span>
         <span style="color:#0F2440">${fmt(dv.saldo)}</span></div>
       ${(()=>{const z=astAtualizacao(fake);
-        return z.corrigido?`<div class="pro-cf sub"><span>↳ correção desde ${brDate(z.desde)} · ${z.dias} dias</span>
-          <span style="color:#5A8A4A">${SGP("+")}${fmt(z.correcao+z.aportes-z.comeCotas)}</span></div>`:"";})()}
+        if(!z.corrigido) return "";
+        /* dia útil e taxa à vista na cara do usuário: é assim que a linha
+           fica conferível contra o extrato, sem abrir o código */
+        const det=TR("↳ correção desde ")+brDate(z.desde)+" · "+(z.du||0)+" "+TR("dias úteis")
+          +(z.txObs>0?" · "+z.lblObs+" "+z.txObs.toFixed(2).replace(".",",")+"% a.a.":"");
+        return `<div class="pro-cf sub"><span>${det}</span>
+          <span style="color:#5A8A4A">${SGP("+")}${fmt(z.correcao+z.aportes-z.comeCotas)}</span></div>`;})()}
       <div class="pro-cf"><span>(=) Rendimento acumulado</span>
         <span style="color:#5A8A4A">${SGP(dv.ganho>0?"+":"")}${fmt(dv.ganho)}</span></div>
       ${dv.iof>0?`<div class="pro-cf sub"><span>(−) IOF ${String(dv.iofPct).replace(".",",")}% · ${res.dias} dias</span>
