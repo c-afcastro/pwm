@@ -1050,12 +1050,12 @@
        O botão afunda um fio ao ser pressionado. Sem isso, num toque que
        abre uma folha com meio segundo de animação, a tela parece não ter
        registrado o toque. Despesas fica de fora, por acordo. */
-    :is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,
+    :is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,
         #screen-vidafinanceira,.overlay) button:active:not(:disabled),
     .pro-pill:active, .liq-card:active {
       transform: scale(.977);
     }
-    :is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,
+    :is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,
         #screen-vidafinanceira,.overlay) button,
     .pro-pill, .liq-card {
       -webkit-tap-highlight-color: transparent;
@@ -2147,6 +2147,21 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
           <div style="font-size:14px;font-weight:600" id="home-asset-x-val">—</div>
         </div>
       </button>
+
+      <!-- SIMULAÇÕES -->
+      <button onclick="enterSection('simulacoes')" style="width:100%;text-align:left;cursor:pointer;background:#6E4523;border:none;border-radius:16px;padding:16px 18px;color:#fff;transition:opacity .15s,transform .13s cubic-bezier(.22,.9,.32,1);display:flex;align-items:center;gap:14px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-25px;right:-25px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
+        <span class="oi oi-ring oi-foco" style="position:relative" role="img" aria-label="Otto"></span>
+        <div style="flex:1;min-width:0;position:relative">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px" data-i18n="nav_sim">Simulações</div>
+          <div style="font-family:var(--serif);font-style:italic;font-size:clamp(22px,7vw,28px);line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="home-sim-val">—</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px" id="home-sim-sub" data-i18n="sim_sub_home">projetos de investimento</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;position:relative">
+          <div style="font-size:10px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.5px" id="home-sim-x-label">VPL</div>
+          <div style="font-size:14px;font-weight:600" id="home-sim-x-val">—</div>
+        </div>
+      </button>
     </div>
 
   </div>
@@ -2553,7 +2568,6 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <button class="nav-btn" data-astview="list" onclick="showAst('list')" style="color:var(--ink-2)" data-i18n="ast_tab_list">Aplicações</button>
     <button class="nav-btn" data-astview="history" onclick="showAst('history')" style="color:var(--ink-2)" data-i18n="ast_tab_history">Histórico</button>
     <button class="nav-btn" data-astview="goals" onclick="showAst('goals')" style="color:var(--ink-2)" data-i18n="ast_tab_goals">Metas</button>
-    <button class="nav-btn" data-astview="dcf" onclick="showAst('dcf')" style="color:var(--ink-2)" data-i18n="ast_tab_dcf">Simulador</button>
   </div>
 
   <div class="content" id="ast-content" style="padding:16px 16px 100px">
@@ -2629,9 +2643,6 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
         Defina metas de alocação por classe. Acompanhe se sua carteira está balanceada conforme o planejado.
       </div>
     </div>
-
-    <!-- SIMULADOR DCF -->
-    <div id="ast-view-dcf" style="display:none"></div>
 
   </div>
 </div><!-- end screen-patrimonio -->
@@ -2771,6 +2782,49 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 <!-- ═══════════════════════════════════════════
      SCREEN: VIDA FINANCEIRA
 ═══════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════
+     SCREEN: SIMULAÇÕES  (fluxo de caixa descontado)
+═══════════════════════════════════════════ -->
+<div id="screen-simulacoes" class="screen" style="background:var(--bg)">
+
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="goHome()" style="width:36px;height:36px;border-radius:50%;background:#6E452322;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6E4523" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="oi oi-sm oi-round oi-ring oi-foco" role="img" aria-label="Otto"></span>
+      <div>
+        <div class="wordmark" style="color:#6E4523;font-size:clamp(20px,6.4vw,28px)" data-i18n="nav_sim">Simulações</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-ghost" id="btn-sim-csv" onclick="SIM.exportar()" title="CSV">↓</button>
+      <button onclick="SIM.criar()" style="background:#6E4523;color:#fff;border:none;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(110,69,35,.3)">+</button>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div id="sim-hero-wrap" style="margin:0 16px;background:#6E4523;border-radius:20px;padding:20px 24px 18px;position:relative;overflow:hidden;color:#fff">
+    <div style="position:absolute;top:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.04)"></div>
+    <div id="sim-hero" style="position:relative"></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="nav" id="nav-simulacoes" style="border-bottom-color:rgba(110,69,35,.15);margin-top:8px">
+    <button class="nav-btn active" data-simview="projetos" onclick="SIM.aba('projetos')" style="color:#6E4523" data-i18n="sim_tab_proj">Projetos</button>
+    <button class="nav-btn" data-simview="premissas" onclick="SIM.aba('premissas')" style="color:var(--ink-2)" data-i18n="sim_tab_prem">Premissas</button>
+    <button class="nav-btn" data-simview="fluxo" onclick="SIM.aba('fluxo')" style="color:var(--ink-2)" data-i18n="sim_tab_fluxo">Fluxo</button>
+    <button class="nav-btn" data-simview="result" onclick="SIM.aba('result')" style="color:var(--ink-2)" data-i18n="sim_tab_res">Resultado</button>
+  </div>
+
+  <div class="content" id="sim-content" style="padding:16px 16px 100px">
+    <div id="sim-view-projetos"></div>
+    <div id="sim-view-premissas" style="display:none"></div>
+    <div id="sim-view-fluxo" style="display:none"></div>
+    <div id="sim-view-result" style="display:none"></div>
+  </div>
+</div>
+
 <div id="screen-vidafinanceira" class="screen" style="background:var(--bg)">
   <div class="header">
     <div style="display:flex;align-items:center;gap:8px">
@@ -3735,7 +3789,12 @@ const I18N={
     ast_tab_list:"Aplicações",
     ast_tab_history:"Histórico",
     ast_tab_goals:"Metas",
-    ast_tab_dcf:"Simulador",
+    nav_sim:"Simulações",
+    sim_tab_proj:"Projetos",
+    sim_tab_prem:"Premissas",
+    sim_tab_fluxo:"Fluxo",
+    sim_tab_res:"Resultado",
+    sim_sub_home:"projetos de investimento",
     total:"Total",
     goal:"Meta",
     goal_total:"Meta total",
@@ -4755,7 +4814,12 @@ const I18N={
     ast_tab_list:"Holdings",
     ast_tab_history:"History",
     ast_tab_goals:"Goals",
-    ast_tab_dcf:"Simulator",
+    nav_sim:"Simulations",
+    sim_tab_proj:"Projects",
+    sim_tab_prem:"Assumptions",
+    sim_tab_fluxo:"Cash flow",
+    sim_tab_res:"Result",
+    sim_sub_home:"investment projects",
     total:"Total",
     goal:"Goal",
     goal_total:"Total goal",
@@ -5774,7 +5838,12 @@ const I18N={
     ast_tab_list:"Anlagen",
     ast_tab_history:"Verlauf",
     ast_tab_goals:"Ziele",
-    ast_tab_dcf:"Simulator",
+    nav_sim:"Simulationen",
+    sim_tab_proj:"Projekte",
+    sim_tab_prem:"Annahmen",
+    sim_tab_fluxo:"Cashflow",
+    sim_tab_res:"Ergebnis",
+    sim_sub_home:"Investitionsprojekte",
     total:"Gesamt",
     goal:"Ziel",
     goal_total:"Gesamtziel",
@@ -10469,7 +10538,7 @@ function openImportAssets(){
 let SCREEN="home"; // home | despesas | entradas | patrimonio | dividas
 
 function showScreen(name){
-  ["auth","home","despesas","entradas","patrimonio","dividas","vidafinanceira","manual"].forEach(s=>{
+  ["auth","home","despesas","entradas","patrimonio","dividas","simulacoes","vidafinanceira","manual"].forEach(s=>{
     const el=document.getElementById("screen-"+s);
     if(!el) return;
     el.style.display="";
@@ -10498,7 +10567,7 @@ function navGarantirTela(){
   if(typeof AUTH_OK!=="undefined"&&!AUTH_OK) return;   // tela de acesso manda
   const alvo="screen-"+(SCREEN||"home");
   let achou=false;
-  ["home","despesas","entradas","patrimonio","dividas","vidafinanceira","manual"].forEach(k=>{
+  ["home","despesas","entradas","patrimonio","dividas","simulacoes","vidafinanceira","manual"].forEach(k=>{
     const el=document.getElementById("screen-"+k);
     if(!el) return;
     el.classList.remove("slide-in","slide-out","slide-back","slide-out-back");
@@ -10538,6 +10607,7 @@ function enterSection(s){
     if(s==="entradas"){updateMonthNavInc();renderIncome();}
     if(s==="patrimonio"){populateAstClassFilter();renderAssets();showAst("dashboard");}
     if(s==="dividas"){populateDebtTypeFilter();renderDebts();showDebt("dashboard");}
+    if(s==="simulacoes"){ SIM.render(); }
     if(s==="vidafinanceira"){renderFinLife();}
     if(s==="manual"){renderManual();}
   }catch(err){
@@ -10550,7 +10620,7 @@ function goHome(){
   SCREEN="home";
   const seq=++NAV_SEQ;
   const home=document.getElementById("screen-home");
-  const screens=["despesas","entradas","patrimonio","dividas","vidafinanceira","manual"];
+  const screens=["despesas","entradas","patrimonio","dividas","simulacoes","vidafinanceira","manual"];
   const current=screens.find(s=>document.getElementById("screen-"+s)?.classList.contains("active"));
   const currentEl=current?document.getElementById("screen-"+current):null;
 
@@ -16116,7 +16186,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.96";
+const APP_VERSION="10.97";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -23145,7 +23215,7 @@ function fabTelaAtual(){
      "active" durante a transição, e aí a varredura elegia a errada. */
   if(typeof SCREEN!=="undefined"&&SCREEN) return SCREEN;
   let cur=null;
-  ["home","despesas","entradas","patrimonio","dividas","vidafinanceira","manual","auth"].forEach(k=>{
+  ["home","despesas","entradas","patrimonio","dividas","simulacoes","vidafinanceira","manual","auth"].forEach(k=>{
     const e=document.getElementById("screen-"+k);
     if(e&&e.classList.contains("active")) cur=k;
   });
@@ -23180,7 +23250,7 @@ function fabIcone(){
 }
 /* acompanha a rolagem de cada tela para trocar o ícone na hora certa */
 function fabLigarScroll(){
-  ["home","despesas","entradas","patrimonio","dividas","vidafinanceira","manual"].forEach(k=>{
+  ["home","despesas","entradas","patrimonio","dividas","simulacoes","vidafinanceira","manual"].forEach(k=>{
     const sc=document.querySelector("#screen-"+k+" .content")||document.getElementById("screen-"+k);
     if(!sc||sc.dataset.fabLigado) return;
     sc.dataset.fabLigado="1";
@@ -23189,7 +23259,7 @@ function fabLigarScroll(){
 }
 
 /* Botao de retorno so aparece nas telas internas. */
-const FAB_ON=["entradas","patrimonio","dividas","vidafinanceira","despesas","manual"];
+const FAB_ON=["entradas","patrimonio","dividas","simulacoes","vidafinanceira","despesas","manual"];
 function syncFab(){
   const f=document.getElementById("fab-home"); if(!f) return;
   const cur=fabTelaAtual();
@@ -26604,8 +26674,8 @@ window.PRO={
    ══════════════════════════════════════════════════════════════ */
 
 /* ── Campos de texto e numéricos ── */
-:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-vidafinanceira,
-    #modal-income,#modal-asset,#modal-debt,#modal-debt-payment,#modal-debt-detail,
+:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,#screen-vidafinanceira,
+    #modal-income,#modal-asset,#modal-sim-line,#modal-debt,#modal-debt-payment,#modal-debt-detail,
     #modal-cashflow,#modal-amort-table,#modal-debt-archive)
   input:not([type=checkbox]):not([type=color]):not([type=file]):not([type=date]):not([type=month]):not(.f-amount):not(.auth-input):not(.campo-sm){
   font-size:16px!important;
@@ -26616,19 +26686,19 @@ window.PRO={
   box-sizing:border-box!important;
 }
 /* campo de busca precisa de espaço para o × */
-:is(#screen-entradas,#screen-patrimonio,#screen-dividas) input[id$="-list-search"]:not(.campo-sm){
+:is(#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas) input[id$="-list-search"]:not(.campo-sm){
   padding:10px 34px 10px 12px!important;
 }
 /* valor em destaque (serifa) */
-:is(#modal-income,#modal-asset,#modal-debt,#modal-debt-payment) .f-amount{
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-debt,#modal-debt-payment) .f-amount{
   padding:10px 14px!important; min-height:54px!important; border-radius:12px!important;
 }
 /* caixa que espelha a parcela calculada */
 #debt-payment-display{ min-height:42px!important; border-radius:12px!important; padding:10px 12px!important; font-size:14px!important; }
 
 /* ── Dropdowns: uma única altura, seta própria ── */
-:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-vidafinanceira,
-    #modal-income,#modal-asset,#modal-debt,#modal-cashflow,#modal-amort-table) select:not(.campo-sm){
+:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,#screen-vidafinanceira,
+    #modal-income,#modal-asset,#modal-sim-line,#modal-debt,#modal-cashflow,#modal-amort-table) select:not(.campo-sm){
   font-size:14px!important;
   line-height:1.2!important;
   height:38px!important;
@@ -26645,23 +26715,23 @@ window.PRO={
   text-overflow:ellipsis;
 }
 /* dropdowns compactos das barras de filtro */
-:is(#screen-entradas,#screen-patrimonio,#screen-dividas) select.sel-sm{
+:is(#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas) select.sel-sm{
   font-size:13px!important; height:36px!important; min-height:36px!important;
   padding:0 24px 0 10px!important; border-radius:11px!important;
   background-position:right 8px center!important;
 }
 /* pílula de mês/benchmark dentro dos formulários novos */
-:is(#modal-income,#modal-asset) #inc-fer-mes,
-:is(#modal-income,#modal-asset) #ast-bench{
+:is(#modal-income,#modal-asset,#modal-sim-line) #inc-fer-mes,
+:is(#modal-income,#modal-asset,#modal-sim-line) #ast-bench{
   height:32px!important; min-height:32px!important; font-size:11.5px!important;
   border-radius:20px!important; padding:0 24px 0 12px!important;
   background-position:right 9px center!important;
 }
 
 /* ── Rótulos: duas escalas apenas ── */
-:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-vidafinanceira,
-    #modal-income,#modal-asset,#modal-debt,#modal-debt-payment,#modal-cashflow) .f-label,
-:is(#modal-income,#modal-asset) .pro-f>label{
+:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,#screen-vidafinanceira,
+    #modal-income,#modal-asset,#modal-sim-line,#modal-debt,#modal-debt-payment,#modal-cashflow) .f-label,
+:is(#modal-income,#modal-asset,#modal-sim-line) .pro-f>label{
   font-size:9px!important;
   letter-spacing:1.6px!important;
   font-weight:600!important;
@@ -26669,28 +26739,28 @@ window.PRO={
   color:var(--ink-3)!important;
   margin-bottom:6px!important;
 }
-:is(#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-vidafinanceira) .sec-label{
+:is(#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,#screen-vidafinanceira) .sec-label{
   font-size:10px!important;
   letter-spacing:2px!important;
   font-weight:600!important;
   color:var(--ink-3)!important;
   margin-bottom:10px!important;
 }
-:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-vidafinanceira) .stat-label{
+:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,#screen-vidafinanceira) .stat-label{
   font-size:9px!important; letter-spacing:1.2px!important; font-weight:600!important; color:#7C7770!important;
   margin-bottom:4px!important;
 }
-:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-vidafinanceira) .stat-val{
+:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,#screen-vidafinanceira) .stat-val{
   font-size:17px!important; line-height:1.15!important;
 }
-:is(#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-vidafinanceira) .stat{
+:is(#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,#screen-vidafinanceira) .stat{
   padding:11px 13px!important; border-radius:12px!important;
 }
-:is(#modal-income,#modal-asset) .pro-h b{ font-size:9px!important; letter-spacing:1.6px!important; }
+:is(#modal-income,#modal-asset,#modal-sim-line) .pro-h b{ font-size:9px!important; letter-spacing:1.6px!important; }
 
 /* ── Pílulas e segmentados ── */
-:is(#modal-income,#modal-asset,#modal-debt,#screen-entradas,#screen-patrimonio,#screen-dividas) .recur-btn,
-:is(#modal-income,#modal-asset) .pro-chips button{
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-debt,#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas) .recur-btn,
+:is(#modal-income,#modal-asset,#modal-sim-line) .pro-chips button{
   font-size:11.5px!important; min-height:32px!important; padding:0 13px!important;
   border-radius:20px!important; line-height:1!important;
   display:inline-flex!important; align-items:center!important; gap:5px!important;
@@ -26699,16 +26769,16 @@ window.PRO={
   font-size:12px!important; min-height:34px!important; padding:0 10px!important;
   border-radius:10px!important; line-height:1!important;
 }
-:is(#modal-income,#modal-asset,#modal-debt) .type-btn{
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-debt) .type-btn{
   font-size:12.5px!important; min-height:40px!important; border-radius:12px!important;
 }
 
 /* ── Botões de ação ── */
-:is(#modal-income,#modal-asset,#modal-debt,#modal-debt-payment) .btn-primary,
-:is(#modal-income,#modal-asset,#modal-debt,#modal-debt-payment) .btn-cancel-f{
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-debt,#modal-debt-payment) .btn-primary,
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-debt,#modal-debt-payment) .btn-cancel-f{
   font-size:13.5px!important; min-height:46px!important; border-radius:13px!important;
 }
-:is(#modal-income,#modal-asset,#modal-debt) .btn-delete{
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-debt) .btn-delete{
   font-size:12px!important; min-height:42px!important; border-radius:13px!important;
 }
 
@@ -26718,28 +26788,28 @@ window.PRO={
 }
 
 /* ── Grade de categorias/classes: rótulo legível ── */
-:is(#modal-income,#modal-asset,#modal-debt) .cat-btn .lbl{
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-debt) .cat-btn .lbl{
   font-size:10px!important; line-height:1.25!important;
 }
-:is(#modal-income,#modal-asset,#modal-debt) .cat-btn .ico{ font-size:24px!important; }
-:is(#modal-income,#modal-asset,#modal-debt) .cat-btn{ padding:11px 4px!important; gap:5px!important; }
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-debt) .cat-btn .ico{ font-size:24px!important; }
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-debt) .cat-btn{ padding:11px 4px!important; gap:5px!important; }
 
 /* ── Metas: campo de valor alinhado à escala ── */
-:is(#screen-entradas,#screen-patrimonio) #inc-goals-list input,
-:is(#screen-entradas,#screen-patrimonio) #ast-goals-list input{
+:is(#screen-entradas,#screen-patrimonio,#screen-simulacoes) #inc-goals-list input,
+:is(#screen-entradas,#screen-patrimonio,#screen-simulacoes) #ast-goals-list input{
   font-size:14px!important; min-height:36px!important; padding:8px 10px!important;
   border-radius:10px!important; text-align:right!important; width:92px!important;
 }
 
 /* ── Refinos finais ── */
-:is(#screen-entradas,#screen-patrimonio,#screen-dividas) select.sel-sm{
+:is(#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas) select.sel-sm{
   height:38px!important; min-height:38px!important;
 }
 /* grade de categorias com linhas iguais */
-:is(#modal-income,#modal-asset,#modal-debt) .cat-grid{ grid-auto-rows:76px!important; }
-:is(#modal-income,#modal-asset,#modal-debt) .cat-btn{ height:100%!important; justify-content:center!important; }
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-debt) .cat-grid{ grid-auto-rows:76px!important; }
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-debt) .cat-btn{ height:100%!important; justify-content:center!important; }
 /* botão de snapshot alinhado às pílulas */
-#screen-patrimonio button[onclick*="saveAssetSnapshot"]{
+#screen-patrimonio,#screen-simulacoes button[onclick*="saveAssetSnapshot"]{
   min-height:34px!important; font-size:12px!important; border-radius:10px!important; padding:0 13px!important;
 }
 /* controles do módulo */
@@ -26764,8 +26834,8 @@ window.PRO={
 
 /* ══ DROPDOWNS: escala única e compacta (referência: balão do 13º salário) ══
    32px de altura · 11.5px de fonte · raio de pílula. Despesas preservada. */
-:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-vidafinanceira,
-    #modal-income,#modal-asset,#modal-debt,#modal-debt-payment,#modal-cashflow,
+:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,#screen-vidafinanceira,
+    #modal-income,#modal-asset,#modal-sim-line,#modal-debt,#modal-debt-payment,#modal-cashflow,
     #modal-amort-table,#modal-fiscal,#modal-resgate) select{
   height:32px!important; min-height:32px!important;
   font-size:13px!important; line-height:1!important;
@@ -26774,14 +26844,14 @@ window.PRO={
   background-position:right 10px center!important;
   background-size:9px 6px!important;
 }
-:is(#screen-entradas,#screen-patrimonio,#screen-dividas) select.sel-sm{
+:is(#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas) select.sel-sm{
   height:32px!important; min-height:32px!important;
   font-size:11px!important; border-radius:20px!important;
   padding:0 24px 0 11px!important; background-position:right 9px center!important;
 }
 /* campos de mês (fim de vigência, projeções) seguem a mesma pílula.
    A cadeia de :not() eleva a especificidade acima da regra genérica de input. */
-:is(#modal-income,#modal-asset,#modal-debt)
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-debt)
   input[type=month]:not([type=text]):not([type=date]):not([type=number]):not(.f-amount):not(.auth-input){
   height:32px!important; min-height:32px!important;
   font-size:13px!important; line-height:1!important;
@@ -26797,31 +26867,31 @@ window.PRO={
    ══════════════════════════════════════════════════════════════════════ */
 
 /* campos numéricos do módulo fiscal: mesma pílula dos dropdowns */
-:is(#modal-income,#modal-asset) .pro-f>input:not([type=range]):not([type=checkbox]):not([type=color]):not([type=file]):not([type=date]):not([type=month]):not(.f-amount):not(.auth-input){
+:is(#modal-income,#modal-asset,#modal-sim-line) .pro-f>input:not([type=range]):not([type=checkbox]):not([type=color]):not([type=file]):not([type=date]):not([type=month]):not(.f-amount):not(.auth-input){
   height:32px!important; min-height:32px!important;
   font-size:13px!important; line-height:1!important;
   border-radius:20px!important; padding:0 12px!important;
 }
 /* descrição, data e demais campos de texto dos formulários */
-:is(#modal-income,#modal-asset,#modal-debt,#modal-debt-payment)
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-debt,#modal-debt-payment)
   input.f-input:not([type=range]):not([type=checkbox]):not([type=color]):not([type=file]):not([type=date]):not([type=month]):not(.f-amount):not(.auth-input){
   height:38px!important; min-height:38px!important;
   font-size:13px!important; line-height:1.2!important;
   padding:0 13px!important; border-radius:12px!important;
 }
 /* rótulos acima dos campos ficam mais justos */
-:is(#modal-income,#modal-asset) .pro-f>label{ margin-bottom:4px!important; }
-:is(#modal-income,#modal-asset) .pro-grid,
-:is(#modal-income,#modal-asset) .pro-grid3{ gap:8px!important; }
+:is(#modal-income,#modal-asset,#modal-sim-line) .pro-f>label{ margin-bottom:4px!important; }
+:is(#modal-income,#modal-asset,#modal-sim-line) .pro-grid,
+:is(#modal-income,#modal-asset,#modal-sim-line) .pro-grid3{ gap:8px!important; }
 :is(#nav-patrimonio,#nav-dividas) .nav-btn{
   padding:0 9px!important; font-size:10.5px!important;
 }
 /* três colunas: rótulo mais justo para não truncar */
-:is(#modal-income,#modal-asset) .pro-grid3{ grid-template-columns:1fr 1fr 1fr!important; }
-:is(#modal-income,#modal-asset) .pro-grid3 .pro-f>label{
+:is(#modal-income,#modal-asset,#modal-sim-line) .pro-grid3{ grid-template-columns:1fr 1fr 1fr!important; }
+:is(#modal-income,#modal-asset,#modal-sim-line) .pro-grid3 .pro-f>label{
   font-size:8.5px!important; letter-spacing:.5px!important;
 }
-:is(#modal-income,#modal-asset) .pro-h{ margin:14px 0 8px!important; }
+:is(#modal-income,#modal-asset,#modal-sim-line) .pro-h{ margin:14px 0 8px!important; }
 
 /* ══ CABEÇALHOS DE RESUMO E NAVEGAÇÃO DE MÊS MAIS BAIXOS ══════════════ */
 :is(#inc-hero-wrap,#ast-hero-wrap,#debt-hero-wrap){
@@ -26844,7 +26914,7 @@ window.PRO={
 }
 :is(#inc-hero-mini,#ast-hero-mini,#debt-hero-mini){ padding:7px 14px!important; }
 
-:is(#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-home) .month-nav{
+:is(#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,#screen-home) .month-nav{
   /* o seletor de mês tem a largura do que mostra, centrado no cabeçalho */
   width:fit-content!important;
   max-width:calc(100% - 32px)!important;
@@ -26853,19 +26923,19 @@ window.PRO={
   border-radius:9px!important;
   gap:2px;
 }
-:is(#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-home) .month-label{
+:is(#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,#screen-home) .month-label{
   flex:0 0 auto!important;
   min-width:96px;
   font-size:11.5px!important;
   padding:0 2px;
 }
-:is(#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-home) .month-delta{
+:is(#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,#screen-home) .month-delta{
   margin-left:4px!important;
 }
-:is(#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-home) .month-nav-btn{
+:is(#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,#screen-home) .month-nav-btn{
   width:28px!important; height:28px!important; font-size:15px!important;
 }
-:is(#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-home) .month-today-btn{
+:is(#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,#screen-home) .month-today-btn{
   padding:5px 9px!important;
 }
 
@@ -26888,11 +26958,11 @@ button,.cat-btn,.stat,.nav-btn,.recur-btn,.pro-pill{
 /* Fonte igual em todo input e select dos formulários. A única exceção é o
    campo de valor, que é o número principal da tela. */
 /* inclusive o campo de valor: a caixa continua maior, a fonte é a mesma */
-:is(#modal-income,#modal-asset,#modal-debt,#modal-debt-payment,#modal-fgts)
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-debt,#modal-debt-payment,#modal-fgts)
   :is(input,select):not([type=checkbox]):not([type=color]):not([type=file]):not([type=range]):not([type=date]):not([type=month]):not([hidden]){
   font-size:13px!important;
 }
-:is(#modal-income,#modal-asset,#modal-debt) input.f-amount{
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-debt) input.f-amount{
   height:44px!important; min-height:44px!important; font-weight:600!important;
 }
 /* Campos de data e mês não podem esticar além da célula nem se sobrepor.
@@ -26951,14 +27021,14 @@ input[type=month]::-webkit-datetime-edit-fields-wrapper{ padding:0; }
 .pro-f{ min-width:0!important; }
 /* a célula da grade também precisa poder encolher */
 .pro-f{ min-width:0!important; }
-:is(#modal-income,#modal-asset,#modal-fgts) .pro-grid{
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-fgts) .pro-grid{
   grid-template-columns:repeat(2,minmax(0,1fr))!important;
 }
-:is(#modal-income,#modal-asset,#modal-fgts) .pro-grid3{
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-fgts) .pro-grid3{
   grid-template-columns:repeat(3,minmax(0,1fr))!important;
 }
 /* campos decimais alinhados à direita, como número que são */
-:is(#modal-income,#modal-asset,#modal-fgts) input.dec{ text-align:right; padding-right:11px!important; }
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-fgts) input.dec{ text-align:right; padding-right:11px!important; }
 
 /* ══════════════════════════════════════════════════════════════════════
    DESPESAS — cabeçalho na mesma escala de Entradas, Patrimônio e Dívidas
@@ -27086,7 +27156,7 @@ input[type=month]::-webkit-datetime-edit-fields-wrapper{ padding:0; }
 #hero-despesas.mes-projetado{ box-shadow:inset 0 0 0 1.5px rgba(240,196,90,.45); }
 
 /* ── respiro abaixo da linha do mês, em todas as telas ── */
-:is(#screen-home,#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-dividas) .month-nav{
+:is(#screen-home,#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas) .month-nav{
   margin-bottom:8px!important;
 }
 
@@ -27117,12 +27187,12 @@ input[type=month]::-webkit-datetime-edit-fields-wrapper{ padding:0; }
   scroll-behavior:auto;
 }
 
-:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,
+:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,
     #screen-vidafinanceira) .header{
   padding-top:calc(20px + env(safe-area-inset-top))!important;
   padding-bottom:14px!important;
 }
-:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-dividas,
+:is(#screen-home,#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,
     #screen-vidafinanceira) .content{
   padding-bottom:calc(96px + env(safe-area-inset-bottom))!important;
   overscroll-behavior:contain;
@@ -27138,7 +27208,7 @@ input[type=month]::-webkit-datetime-edit-fields-wrapper{ padding:0; }
   min-height:44px!important; padding:0 12px!important;
   display:inline-flex!important; align-items:center!important; justify-content:center!important;
 }
-:is(#screen-entradas,#screen-patrimonio,#screen-dividas,#screen-vidafinanceira)
+:is(#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,#screen-vidafinanceira)
   .header button{ min-width:40px!important; min-height:40px!important; }
 
 /* botão flutuante de retorno: alcançável com o polegar */
@@ -27159,7 +27229,7 @@ input[type=month]::-webkit-datetime-edit-fields-wrapper{ padding:0; }
 .fab-home{ transition:background .2s ease, transform .12s ease; }
 
 /* rótulos das grades de categoria sem quebra feia */
-:is(#modal-income,#modal-asset,#modal-debt) .cat-btn .lbl{
+:is(#modal-income,#modal-asset,#modal-sim-line,#modal-debt) .cat-btn .lbl{
   font-size:9.5px!important; letter-spacing:-.1px!important;
   word-break:normal!important; overflow-wrap:break-word!important;
 }
@@ -27308,7 +27378,7 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
    Sobre os 16px: eles existem contra o zoom-ao-focar do Safari no iPhone.
    Este app declara maximum-scale=1.0 no viewport, que já suprime esse
    zoom, e <select> nunca o dispara — não tem cursor de texto. */
-:is(#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-dividas,
+:is(#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,
     #modal-params,#modal-export,#modal-rules) .campo-sm{
   font-size:13px!important;
   line-height:1.2!important;
@@ -27319,19 +27389,19 @@ button, [onclick]{ -webkit-tap-highlight-color: transparent; }
   box-sizing:border-box!important;
 }
 /* campo de busca: espaço à direita para o × */
-:is(#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-dividas,
+:is(#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,
     #modal-rules) input.campo-sm[id$="search"]{
   padding:0 30px 0 11px!important;
 }
 /* seletor compacto mantém a seta própria, só menor */
-:is(#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-dividas,
+:is(#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,
     #modal-params,#modal-export) select.campo-sm{
   padding:0 24px 0 11px!important;
   background-position:right 8px center!important;
   background-size:9px 6px!important;
 }
 /* o × acompanha a altura menor */
-:is(#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-dividas,
+:is(#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-simulacoes,#screen-dividas,
     #modal-rules) input.campo-sm[id$="search"] ~ button{
   font-size:14px!important;
 }
@@ -27894,447 +27964,532 @@ html.wz-lock body{ touch-action:none; }
   window.WZ_DEBUG=WZ;
 })();
 </script>
-<style id="dcf-css">
-/* ═══ SIMULADOR DCF ═══════════════════════════════════════════════════
-   Uma escala só para toda a aba: campo 42px, dropdown 38px, pílula 30px.
-   Todo campo é border-box e todo contêiner tem min-width:0 — é o que
-   impede que uma coluna de grade estoure a largura da tela no iPhone. */
-#ast-view-dcf{ padding-bottom:8px; }
-#ast-view-dcf *{ box-sizing:border-box; }
+<style id="sim-css">
+/* ═══ SIMULAÇÕES ══════════════════════════════════════════════════════
+   Nada aqui redefine tamanho de campo: a tela e a ficha entraram nas
+   listas de seletores que já governam Entradas, Patrimônio e Dívidas.
+   O que segue é só o que o app ainda não tinha — grade de duas colunas,
+   cabeçalho de grupo, tabela e eixo de gráfico. */
+#screen-simulacoes *, #modal-sim-line *{ box-sizing:border-box; }
 
-#ast-view-dcf .dcf-card,
-#modal-dcf-line .dcf-card{
-  background:var(--surface); border-radius:16px; padding:14px 15px 8px; margin-bottom:10px;
+/* duas colunas que não saem do prumo: a pilha é rótulo em cima, campo
+   embaixo, e o rótulo tem altura mínima para que um de duas linhas não
+   empurre o campo ao lado para baixo */
+#screen-simulacoes .sim-g2, #modal-sim-line .sim-g2{
+  display:grid; grid-template-columns:1fr 1fr; gap:0 10px;
 }
-#ast-view-dcf .dcf-g2{ display:grid; grid-template-columns:1fr 1fr; gap:0 10px; }
-#modal-dcf-line .dcf-g2{ display:grid; grid-template-columns:1fr 1fr; gap:0 10px; }
-/* A coluna é uma pilha: rótulo em cima, campo embaixo. Com altura mínima
-   no rótulo, o rótulo de duas linhas não empurra o campo para baixo e as
-   duas colunas continuam alinhadas — que é a queixa de sempre. */
-#ast-view-dcf .dcf-g2>*, #modal-dcf-line .dcf-g2>*{
+#screen-simulacoes .sim-f, #modal-sim-line .sim-f{
   min-width:0; display:flex; flex-direction:column; justify-content:flex-end;
 }
-#ast-view-dcf .dcf-g2 .f-label, #modal-dcf-line .dcf-g2 .f-label{
+#screen-simulacoes .sim-g2 .f-label, #modal-sim-line .sim-g2 .f-label{
   min-height:24px; display:flex; align-items:flex-end;
 }
-
-/* campos */
-#ast-view-dcf input.dcf-in, #modal-dcf-line input.dcf-in{
-  width:100%; min-width:0; font-size:16px; line-height:1.2; padding:10px 12px;
-  min-height:42px; border-radius:12px; border:1.5px solid var(--line);
-  background:var(--paper); color:var(--body); margin-bottom:10px;
-  -webkit-appearance:none; appearance:none;
+#screen-simulacoes .sim-hint, #modal-sim-line .sim-hint{
+  font-size:10.5px; color:var(--ink-4); line-height:1.5; margin:-4px 0 12px;
 }
-#ast-view-dcf input.dcf-in:focus, #modal-dcf-line input.dcf-in:focus{
-  outline:none; border-color:#0F2440;
+#screen-simulacoes .sim-chips, #modal-sim-line .sim-chips{
+  display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px;
 }
-#ast-view-dcf input.dcf-in:disabled, #modal-dcf-line input.dcf-in:disabled{
-  opacity:.55; background:var(--surface);
+#screen-simulacoes .sim-strip, #modal-sim-line .sim-strip{
+  background:rgba(110,69,35,.07); border-radius:12px; padding:9px 12px;
+  font-size:11.5px; color:var(--ink-2); line-height:1.65; margin-bottom:12px;
 }
-#ast-view-dcf select.dcf-in, #modal-dcf-line select.dcf-in{
-  width:100%; min-width:0; font-size:14px; line-height:1.2; height:38px; min-height:38px;
-  padding:0 28px 0 11px; border-radius:12px; border:1.5px solid var(--line);
-  background-color:var(--paper); color:var(--body); margin-bottom:10px; cursor:pointer;
-  -webkit-appearance:none; appearance:none; text-overflow:ellipsis;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1.5l5 5 5-5' fill='none' stroke='%237A766D' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-  background-repeat:no-repeat; background-position:right 9px center; background-size:10px 7px;
+#screen-simulacoes .sim-card{
+  background:var(--surface); border-radius:16px; padding:14px 15px; margin-bottom:4px;
 }
-#ast-view-dcf .f-label, #modal-dcf-line .f-label{
-  font-size:9px; letter-spacing:1.6px; font-weight:600; text-transform:uppercase;
-  color:var(--ink-3); margin-bottom:6px; display:block; line-height:1.3;
+#screen-simulacoes .sim-stats{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; }
+#screen-simulacoes .sim-pill{
+  background:rgba(255,255,255,.14); border-radius:20px; padding:3px 9px;
+  font-size:10.5px; color:rgba(255,255,255,.85); white-space:nowrap;
 }
 
-/* pílulas e botões discretos */
-#ast-view-dcf .dcf-chip, #modal-dcf-line .dcf-chip{
-  border:1.5px solid var(--line); background:var(--paper); color:var(--ink-2);
-  border-radius:20px; min-height:30px; padding:0 12px; font-size:11.5px; font-weight:600;
-  cursor:pointer; display:inline-flex; align-items:center; line-height:1; white-space:nowrap;
+/* cabeçalho de grupo: rótulo à esquerda, botão de adicionar à direita */
+#screen-simulacoes .sim-gh{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px; margin:16px 0 8px;
 }
-#ast-view-dcf .dcf-chip.on, #modal-dcf-line .dcf-chip.on{
-  background:#0F2440; border-color:#0F2440; color:#fff;
+#screen-simulacoes .sim-vazio{
+  background:var(--surface); border-radius:12px; padding:12px 14px;
+  font-size:11.5px; color:var(--ink-4); margin-bottom:4px;
 }
-#ast-view-dcf .dcf-chip:disabled{ opacity:.4; cursor:default; }
-#ast-view-dcf .dcf-ghost{
-  border:1.5px solid var(--line); background:none; color:var(--ink-2); border-radius:10px;
-  min-height:32px; padding:0 11px; font-size:11.5px; font-weight:600; cursor:pointer;
+#screen-simulacoes .sim-linha{
+  background:var(--surface); border-radius:12px; padding:10px 13px; margin-bottom:6px;
+  cursor:pointer; display:flex; align-items:center; gap:10px;
 }
-#ast-view-dcf .dcf-del, #modal-dcf-line .dcf-del{
-  width:100%; margin-top:14px; background:none; border:1.5px solid rgba(139,58,26,.35);
-  color:var(--warn); border-radius:12px; padding:12px; font-size:12.5px; font-weight:600; cursor:pointer;
+#screen-simulacoes .sim-linha.off{ opacity:.45; }
+#screen-simulacoes .sim-linha-t{
+  font-size:12.5px; font-weight:600; color:var(--body);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
+#screen-simulacoes .sim-linha-s{
+  font-size:10px; color:var(--ink-3); margin-top:2px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+#screen-simulacoes .sim-linha-v{ font-size:12px; flex-shrink:0; }
+#screen-simulacoes .sim-flag{ font-size:11.5px; color:var(--warn); line-height:1.5; margin-bottom:6px; }
 
-/* KPIs */
-#ast-view-dcf .dcf-kpis{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px; }
-#ast-view-dcf .dcf-kpi{ background:var(--surface); border-radius:12px; padding:11px 13px; min-width:0; }
-#ast-view-dcf .dcf-kpi-l{ font-size:9px; letter-spacing:1.2px; font-weight:600; color:#7C7770;
-  text-transform:uppercase; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-#ast-view-dcf .dcf-kpi-v{ font-family:var(--serif); font-style:italic; font-size:19px; line-height:1.15; color:var(--body); }
-#ast-view-dcf .dcf-kpi-s{ font-size:10px; color:var(--ink-3); margin-top:2px; }
-
-#ast-view-dcf .dcf-strip, #modal-dcf-line .dcf-strip{
-  background:rgba(15,36,64,.06); border-radius:12px; padding:9px 12px; font-size:11.5px;
-  color:var(--ink-2); line-height:1.6; margin-bottom:4px;
-}
-#ast-view-dcf .dcf-note, #modal-dcf-line .dcf-note{
-  font-size:10.5px; color:var(--ink-4); line-height:1.5; margin:0 0 10px;
-}
-#ast-view-dcf .dcf-flag{
-  font-size:11.5px; color:var(--warn); line-height:1.5; margin-bottom:6px;
-}
-
-/* tabelas */
-#ast-view-dcf table.dcf-t{ border-collapse:collapse; width:max-content; min-width:100%; font-size:11px; }
-#ast-view-dcf table.dcf-t th{
+/* tabelas: rolam dentro da própria caixa, nos dois eixos, com o
+   cabeçalho grudado — sessenta meses não empurram a tela para baixo */
+#screen-simulacoes .sim-scroll{ padding:0; max-height:56dvh; overflow:auto; -webkit-overflow-scrolling:touch; }
+#screen-simulacoes table.sim-t{ border-collapse:collapse; width:max-content; min-width:100%; font-size:11px; }
+#screen-simulacoes table.sim-t th{
   font-size:9px; letter-spacing:.6px; text-transform:uppercase; color:var(--ink-3);
-  font-weight:600; padding:7px 9px; text-align:right; white-space:nowrap;
+  font-weight:600; padding:8px 9px; text-align:right; white-space:nowrap;
   position:sticky; top:0; background:var(--surface);
 }
-#ast-view-dcf table.dcf-t th.k, #ast-view-dcf table.dcf-t td.k{ text-align:left; }
-#ast-view-dcf table.dcf-t td{ padding:6px 9px; text-align:right; white-space:nowrap; color:var(--ink-2);
-  border-top:1px solid var(--line); }
-#ast-view-dcf table.dcf-t td.k{ color:var(--body); font-weight:600; }
-#ast-view-dcf table.dcf-t td.b{ font-weight:600; }
+#screen-simulacoes table.sim-t th.k, #screen-simulacoes table.sim-t td.k{ text-align:left; }
+#screen-simulacoes table.sim-t td{
+  padding:6px 9px; text-align:right; white-space:nowrap; color:var(--ink-2);
+  border-top:1px solid var(--line);
+}
+#screen-simulacoes table.sim-t td.k{ color:var(--body); font-weight:600; }
+#screen-simulacoes table.sim-t td.b{ font-weight:600; }
 
-#ast-view-dcf table.dcf-t2{ width:100%; border-collapse:collapse; font-size:11.5px; }
-#ast-view-dcf table.dcf-t2 th{ font-size:9px; letter-spacing:1px; text-transform:uppercase;
-  color:var(--ink-3); font-weight:600; padding:8px 0 5px; text-align:right; }
-#ast-view-dcf table.dcf-t2 td{ padding:5px 0; color:var(--ink-2); border-top:1px solid var(--line); }
-#ast-view-dcf table.dcf-t2 td.n{ text-align:right; white-space:nowrap; }
-#ast-view-dcf table.dcf-t2 td.s{ font-size:10px; color:var(--ink-4); width:62px; }
-#ast-view-dcf table.dcf-t2 tr.f td{ font-weight:700; color:var(--body); }
+#screen-simulacoes table.sim-t2{ width:100%; border-collapse:collapse; font-size:11.5px; }
+#screen-simulacoes table.sim-t2 th{
+  font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--ink-3);
+  font-weight:600; padding:8px 0 5px; text-align:right;
+}
+#screen-simulacoes table.sim-t2 td{ padding:5px 0; color:var(--ink-2); border-top:1px solid var(--line); }
+#screen-simulacoes table.sim-t2 td.n{ text-align:right; white-space:nowrap; }
+#screen-simulacoes table.sim-t2 td.s{ font-size:10px; color:var(--ink-4); width:54px; }
+#screen-simulacoes table.sim-t2 tr.f td{ font-weight:700; color:var(--body); }
 
-/* grade manual, dentro da ficha da linha */
-#modal-dcf-line .dcf-man{ max-height:46dvh; overflow-y:auto; -webkit-overflow-scrolling:touch;
-  border:1.5px solid var(--line); border-radius:12px; padding:8px 10px; margin-bottom:12px; }
-#modal-dcf-line .dcf-man-r{ display:flex; align-items:center; gap:10px; }
-#modal-dcf-line .dcf-man-r>span{ font-size:11px; color:var(--ink-3); width:66px; flex-shrink:0; }
-#modal-dcf-line .dcf-man-r input.dcf-in{ margin-bottom:6px; min-height:38px; font-size:15px; }
-
-/* A tabela rola dentro da própria caixa, nos dois eixos: sessenta meses não
-   podem empurrar o resto da tela para baixo, e o cabeçalho fica grudado. */
-#ast-view-dcf .dcf-scroll{
-  padding:0; max-height:56dvh; overflow:auto; -webkit-overflow-scrolling:touch;
+/* gráficos: escala nos extremos, zero marcado, período nas pontas */
+#screen-simulacoes .sim-ax{ font-size:8.5px; fill:var(--ink-4); font-family:inherit; }
+#screen-simulacoes .sim-leg{
+  display:flex; gap:14px; justify-content:center; flex-wrap:wrap;
+  font-size:10px; color:var(--ink-3); margin-top:8px;
+}
+#screen-simulacoes .sim-leg i{
+  display:inline-block; width:10px; height:10px; border-radius:2px;
+  vertical-align:-1px; margin-right:5px;
 }
 
+/* grade manual, dentro da ficha da linha */
+#modal-sim-line .sim-man{
+  max-height:44dvh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  border:1.5px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:14px;
+}
+#modal-sim-line .sim-man-r{ display:flex; align-items:center; gap:10px; }
+#modal-sim-line .sim-man-r>span{ font-size:11px; color:var(--ink-3); width:60px; flex-shrink:0; }
+#modal-sim-line .sim-man-r input.f-input{ margin-bottom:8px; }
+#modal-sim-line .cat-grid{ border-color:rgba(110,69,35,.28); }
+
+/* A seção é marrom: as pílulas e os segmentados vestem a cor do módulo,
+   como o verde em Despesas e o vinho em Dívidas. */
+#screen-simulacoes .recur-btn, #modal-sim-line .recur-btn{ white-space:nowrap; }
+#screen-simulacoes .recur-btn.active, #modal-sim-line .recur-btn.active{
+  background:rgba(110,69,35,.10); border-color:#6E4523; color:#6E4523;
+}
+#screen-simulacoes .recur-btn:disabled{ opacity:.4; cursor:default; }
+#screen-simulacoes .type-btn.t-fix, #modal-sim-line .type-btn.t-fix{
+  border-color:#6E4523; background:rgba(110,69,35,.08); color:#6E4523;
+}
+#screen-simulacoes .btn-primary{ background:#6E4523; }
+
 </style>
-<script id="dcf-js">
+<script id="sim-js">
 /* ═══════════════════════════════════════════════════════════════════════
-   SIMULADOR DCF — FLUXO DE CAIXA DESCONTADO  (Patrimônio ▸ Simulador)
+   SIMULAÇÕES — FLUXO DE CAIXA DESCONTADO (DCF)
 
-   Um projeto é uma decisão de investimento: sai dinheiro agora, entra
-   dinheiro depois. O método é o mesmo da prática de advisory —
-   receita bruta ▸ deduções ▸ receita líquida ▸ custos ▸ despesas ▸
-   EBITDA ▸ capex ▸ variação de capital de giro ▸ fluxo livre — e daí,
-   descontado a uma taxa, saem VPL, TIR, payback e o ponto de virada.
+   Seção própria, no mesmo nível de Despesas, Dívidas, Entradas e
+   Patrimônio: um projeto de investimento não é uma aplicação, é uma
+   decisão — sai dinheiro agora, entra dinheiro depois — e merece a sua
+   própria porta.
 
-   PRETAX, SEMPRE. O fluxo não desconta imposto de renda sobre o lucro:
-   é o fluxo antes de tributos diretos, como pede o enunciado. As
-   deduções de receita (PIS, COFINS, ISS, ICMS) são outra coisa — são
-   tributos SOBRE A RECEITA e entram como linhas em percentual.
+   O encadeamento é o da prática de advisory: receita bruta ▸ deduções ▸
+   receita líquida ▸ custos ▸ despesas administrativas e comerciais ▸
+   EBITDA ▸ capex ▸ variação do capital de giro ▸ outras saídas ▸ fluxo
+   livre. Descontado, sai VPL, TIR, payback e o ponto de virada.
 
-   NOMINAL × REAL. O fluxo nominal carrega inflação; o real está a preços
-   de hoje. A taxa é sempre digitada NOMINAL ao ano; quando o fluxo é
-   real, ela é deflacionada por regressão geométrica — (1+i)/(1+ipca)−1 —
-   porque somar e subtrair taxas é aproximação e aqui não precisa ser.
+   PRETAX, SEMPRE: o fluxo não deduz imposto sobre o lucro. Tributos
+   sobre a RECEITA (PIS, COFINS, ISS, ICMS) são outra coisa e entram
+   como linhas de dedução em percentual.
 
-   PARÂMETROS DA TELA INICIAL. Nada aqui inventa índice: o IPCA vem da
-   curva declarada nos Parâmetros (paramTaxaEf), mês a mês, e o mesmo
-   vale para a sugestão de taxa pelo CDI. A projeção do simulador obedece
-   ao mesmo mundo que rege o resto do app.
+   NOMINAL × REAL: a taxa é digitada sempre NOMINAL ao ano. Quando o
+   fluxo é real, ela é deflacionada por regressão geométrica —
+   (1+i)/(1+IPCA)−1 — porque somar e subtrair taxas é aproximação.
+
+   PARÂMETROS DA TELA INICIAL: IPCA, CDI e qualquer índice de reajuste
+   saem da curva declarada nos Parâmetros, mês a mês. Nada é inventado
+   aqui, e a projeção do simulador vive no mesmo mundo que o resto do app.
+
+   VISUAL: nenhuma folha de estilo própria para campo. A tela e a ficha
+   entraram nas mesmas listas de seletores que governam Entradas,
+   Patrimônio e Dívidas — campo de 42px, dropdown de 38px, rótulo de 9px.
+   Classes daqui: .f-label, .f-input, .f-amount, .stat, .recur-btn,
+   .cat-grid, .sec-label, .f-actions. As mesmas de sempre.
 ═══════════════════════════════════════════════════════════════════════ */
 (function(){
 "use strict";
 
-/* ── 1. DICIONÁRIO (pt / en / de) ─────────────────────────────────────
-   Dicionário próprio, no mesmo formato do resto do app: [pt, en, de].
-   Não se pendura no PDIC porque aquele vive dentro da IIFE do módulo PRO
-   e não é alcançável daqui. */
-const DIC=({
-  d_tab:["Simulador","Simulator","Simulator"],
-  d_title:["Simulador de investimentos","Investment simulator","Investitionsrechner"],
-  d_sub:["Fluxo de caixa descontado (DCF) — VPL, TIR, payback e ponto de equilíbrio",
-         "Discounted cash flow (DCF) — NPV, IRR, payback and break-even",
-         "Discounted Cash Flow (DCF) — Kapitalwert, IRR, Amortisation und Break-even"],
-  d_intro:["Monte o fluxo do projeto linha a linha. As saídas são sempre negativas e as entradas positivas — o app cuida do sinal. O IPCA e a sugestão de taxa vêm da curva declarada nos Parâmetros.",
-    "Build the project's cash flow line by line. Outflows are always negative and inflows positive — the app handles the sign. Inflation and the suggested rate come from the curve declared in Parameters.",
-    "Bauen Sie den Projekt-Cashflow Zeile für Zeile auf. Abflüsse sind stets negativ, Zuflüsse positiv — das Vorzeichen setzt die App. Inflation und Zinsvorschlag stammen aus der in den Parametern erklärten Kurve."],
-  d_new:["Novo projeto","New project","Neues Projekt"],
-  d_new_name:["Projeto sem nome","Untitled project","Projekt ohne Namen"],
-  d_none:["Nenhum projeto ainda. Comece por um: um imóvel para alugar, uma loja, um equipamento, uma sociedade.",
+/* ── 1. DICIONÁRIO (pt / en / de) ───────────────────────────────────── */
+const DIC={
+  s_sub:["Fluxo de caixa descontado — VPL, TIR, payback e ponto de equilíbrio",
+         "Discounted cash flow — NPV, IRR, payback and break-even",
+         "Discounted Cash Flow — Kapitalwert, IRR, Amortisation und Break-even"],
+  s_intro:["Um projeto por vez: monte o fluxo linha a linha, declare a taxa e leia o resultado. As saídas são sempre negativas e as entradas positivas — o sinal é dado pela natureza da linha, você digita só o valor.",
+    "One project at a time: build the flow line by line, declare the rate and read the result. Outflows are always negative and inflows positive — the sign comes from the line's nature, you type only the amount.",
+    "Ein Projekt nach dem anderen: Fluss Zeile für Zeile aufbauen, Satz erklären, Ergebnis lesen. Abflüsse sind negativ, Zuflüsse positiv — das Vorzeichen ergibt sich aus der Art der Zeile."],
+  s_new:["Novo projeto","New project","Neues Projekt"],
+  s_new_name:["Projeto sem nome","Untitled project","Projekt ohne Namen"],
+  s_none:["Nenhum projeto ainda. Comece por um: um imóvel para alugar, uma loja, um equipamento, uma sociedade.",
     "No projects yet. Start with one: a rental property, a shop, a machine, a stake in a business.",
     "Noch keine Projekte. Beginnen Sie mit einem: eine Mietimmobilie, ein Laden, eine Maschine, eine Beteiligung."],
-  d_open:["Abrir","Open","Öffnen"],
-  d_back:["Projetos","Projects","Projekte"],
-  d_dup:["Duplicar","Duplicate","Duplizieren"],
-  d_del:["Excluir projeto","Delete project","Projekt löschen"],
-  d_del_q:["Excluir este projeto? A operação não tem volta.","Delete this project? This cannot be undone.","Dieses Projekt löschen? Das lässt sich nicht rückgängig machen."],
-  d_csv:["Exportar CSV","Export CSV","CSV exportieren"],
-  d_name:["Nome do projeto","Project name","Projektname"],
+  s_pick:["Escolha um projeto na aba Projetos.","Pick a project on the Projects tab.","Wählen Sie ein Projekt im Reiter Projekte."],
+  s_projs:["projetos","projects","Projekte"],
+  s_proj1:["projeto","project","Projekt"],
+  s_sel:["Selecionado","Selected","Ausgewählt"],
+  s_dup:["Duplicar","Duplicate","Duplizieren"],
+  s_del:["Excluir projeto","Delete project","Projekt löschen"],
+  s_del_q:["Excluir este projeto? A operação não tem volta.","Delete this project? This cannot be undone.","Dieses Projekt löschen? Das lässt sich nicht rückgängig machen."],
+  s_name:["Nome do projeto","Project name","Projektname"],
 
   /* premissas */
-  d_prem:["Premissas","Assumptions","Annahmen"],
-  d_ini:["Início do fluxo","Flow start","Beginn des Flusses"],
-  d_n:["Períodos","Periods","Perioden"],
-  d_freq:["Periodicidade","Periodicity","Periodizität"],
-  d_freq_m:["Mensal","Monthly","Monatlich"],
-  d_freq_a:["Anual","Annual","Jährlich"],
-  d_tipo:["Tipo de fluxo","Flow type","Art des Flusses"],
-  d_nominal:["Nominal (pretax)","Nominal (pretax)","Nominal (pretax)"],
-  d_real:["Real (pretax)","Real (pretax)","Real (pretax)"],
-  d_taxa:["Taxa de desconto (% a.a.)","Discount rate (% p.a.)","Diskontsatz (% p. a.)"],
-  d_ipca:["IPCA (% a.a.)","Inflation (% p.a.)","Inflation (% p. a.)"],
-  d_ipca_auto:["IPCA dos Parâmetros","Inflation from Parameters","Inflation aus Parametern"],
-  d_usar_cdi:["Taxa = CDI","Rate = CDI","Satz = CDI"],
-  d_taxa_ef:["Taxa efetiva do desconto","Effective discount rate","Effektiver Diskontsatz"],
-  d_taxa_ef_real:["deflacionada: (1+i)/(1+IPCA)−1","deflated: (1+i)/(1+inflation)−1","deflationiert: (1+i)/(1+Inflation)−1"],
-  d_meio:["Meio de período","Mid-period","Periodenmitte"],
-  d_meio_h:["Desconta como se o caixa entrasse no meio do período, e não no último dia. É a prática de mercado em avaliação.",
+  s_prem:["Premissas do projeto","Project assumptions","Projektannahmen"],
+  s_ini:["Início do fluxo","Flow start","Beginn des Flusses"],
+  s_mes:["Mês","Month","Monat"],
+  s_ano:["Ano","Year","Jahr"],
+  s_n:["Períodos","Periods","Perioden"],
+  s_freq:["Periodicidade","Periodicity","Periodizität"],
+  s_freq_m:["Mensal","Monthly","Monatlich"],
+  s_freq_a:["Anual","Annual","Jährlich"],
+  s_tipo:["Tipo de fluxo","Flow type","Art des Flusses"],
+  s_nominal:["Nominal","Nominal","Nominal"],
+  s_real:["Real","Real","Real"],
+  s_pretax:["Pretax","Pretax","Pretax"],
+  s_taxa:["Taxa de desconto (% a.a.)","Discount rate (% p.a.)","Diskontsatz (% p. a.)"],
+  s_ipca:["IPCA (% a.a.)","Inflation (% p.a.)","Inflation (% p. a.)"],
+  s_auto_ipca:["IPCA dos Parâmetros","Inflation from Parameters","Inflation aus Parametern"],
+  s_auto_cdi:["Taxa = CDI dos Parâmetros","Rate = CDI from Parameters","Satz = CDI aus Parametern"],
+  s_taxa_ef:["Taxa efetiva","Effective rate","Effektiver Satz"],
+  s_defl:["deflacionada: (1+i)/(1+IPCA)−1","deflated: (1+i)/(1+inflation)−1","deflationiert: (1+i)/(1+Inflation)−1"],
+  s_meio:["Meio de período","Mid-period","Periodenmitte"],
+  s_meio_h:["Desconta como se o caixa entrasse no meio do período, e não no último dia. É a prática de mercado em avaliação.",
     "Discounts as if cash arrived mid-period rather than on the last day. Standard market practice in valuation.",
     "Diskontiert, als flösse das Geld in der Periodenmitte statt am letzten Tag. Marktstandard in der Bewertung."],
-  d_inflar:["Corrigir pelo IPCA","Inflate the lines","Inflationieren"],
-  d_inflar_h:["As linhas são digitadas a preços de hoje e o app as corrige mês a mês pela curva de IPCA. Só vale para fluxo nominal.",
-    "Lines are entered in today's money and the app inflates them month by month using the inflation curve. Nominal flows only.",
-    "Zeilen werden zu heutigen Preisen erfasst und Monat für Monat mit der Inflationskurve fortgeschrieben. Nur bei nominalem Fluss."],
-  d_ncg:["Capital de giro (% da receita)","Working capital (% of revenue)","Working Capital (% des Umsatzes)"],
-  d_ncg_h:["O que fica preso em estoque e a receber. Só a VARIAÇÃO entra no fluxo: crescer consome caixa, encolher devolve.",
+  s_inflar:["Corrigir tudo pelo IPCA","Inflate everything","Alles inflationieren"],
+  s_inflar_h:["As linhas são digitadas a preços de hoje e corrigidas mês a mês pela curva de IPCA. Só vale para fluxo nominal, e não se acumula com o reajuste por índice da própria linha.",
+    "Lines are entered in today's money and inflated month by month by the inflation curve. Nominal flows only, and it does not stack with a line's own index escalation.",
+    "Zeilen werden zu heutigen Preisen erfasst und monatlich mit der Inflationskurve fortgeschrieben. Nur bei nominalem Fluss; nicht kumulativ mit der Indexierung der Zeile."],
+  s_ncg:["Capital de giro (% da receita)","Working capital (% of revenue)","Working Capital (% des Umsatzes)"],
+  s_ncg_h:["O que fica preso em estoque e a receber. Só a VARIAÇÃO entra no fluxo: crescer consome caixa, encolher devolve.",
     "What sits in inventory and receivables. Only the CHANGE hits cash: growing consumes it, shrinking gives it back.",
     "Was in Vorräten und Forderungen gebunden ist. Nur die VERÄNDERUNG trifft den Cashflow."],
-  d_tv:["Valor terminal","Terminal value","Endwert"],
-  d_tv_on:["Considerar valor terminal","Include a terminal value","Endwert berücksichtigen"],
-  d_tv_met:["Método","Method","Methode"],
-  d_tv_gordon:["Perpetuidade (Gordon)","Perpetuity (Gordon)","Ewige Rente (Gordon)"],
-  d_tv_mult:["Múltiplo de EBITDA","EBITDA multiple","EBITDA-Multiplikator"],
-  d_tv_g:["Crescimento g (% a.a.)","Growth g (% p.a.)","Wachstum g (% p. a.)"],
-  d_tv_x:["Múltiplo (×)","Multiple (×)","Multiplikator (×)"],
-  d_tv_val:["Valor terminal","Terminal value","Endwert"],
-  d_tv_pv:["Valor presente do terminal","Present value of terminal","Barwert des Endwerts"],
-  d_tv_share:["do VPL vem do valor terminal","of the NPV comes from the terminal value","des Kapitalwerts stammen aus dem Endwert"],
+  s_tv:["Valor terminal","Terminal value","Endwert"],
+  s_tv_on:["Considerar valor terminal","Include terminal value","Endwert einbeziehen"],
+  s_tv_met:["Método","Method","Methode"],
+  s_tv_gordon:["Perpetuidade (Gordon)","Perpetuity (Gordon)","Ewige Rente (Gordon)"],
+  s_tv_mult:["Múltiplo de EBITDA","EBITDA multiple","EBITDA-Multiplikator"],
+  s_tv_g:["Crescimento g (% a.a.)","Growth g (% p.a.)","Wachstum g (% p. a.)"],
+  s_tv_x:["Múltiplo (×)","Multiple (×)","Multiplikator (×)"],
+  s_tv_val:["Valor terminal","Terminal value","Endwert"],
+  s_tv_pv:["Valor presente do terminal","PV of terminal value","Barwert des Endwerts"],
+  s_tv_share:["do VPL vem do valor terminal","of the NPV comes from the terminal value","des Kapitalwerts stammen aus dem Endwert"],
 
   /* linhas */
-  d_linhas:["Linhas do fluxo","Cash flow lines","Cashflow-Zeilen"],
-  d_add_line:["Nova linha","New line","Neue Zeile"],
-  d_edit_line:["Editar linha","Edit line","Zeile bearbeiten"],
-  d_no_lines:["Nenhuma linha ainda. Comece pela receita, depois os custos.",
-    "No lines yet. Start with revenue, then costs.",
-    "Noch keine Zeilen. Beginnen Sie mit dem Umsatz, dann die Kosten."],
-  d_nat:["Natureza","Nature","Art"],
-  d_nat_receita:["Receita","Revenue","Umsatz"],
-  d_nat_deducao:["Dedução da receita (%)","Revenue deduction (%)","Umsatzabzug (%)"],
-  d_nat_custo:["Custo","Cost","Kosten"],
-  d_nat_desp_adm:["Despesa administrativa","Administrative expense","Verwaltungsaufwand"],
-  d_nat_desp_com:["Despesa comercial","Selling expense","Vertriebsaufwand"],
-  d_nat_capex:["Capex (investimento)","Capex (investment)","Capex (Investition)"],
-  d_nat_outras:["Outras saídas","Other outflows","Sonstige Abflüsse"],
-  d_desc:["Descrição","Description","Bezeichnung"],
-  d_modo:["Como é informado","How it is entered","Art der Eingabe"],
-  d_modo_serie:["Série (valor e repetição)","Series (value and repetition)","Serie (Betrag und Wiederholung)"],
-  d_modo_manual:["Manual, período a período","Manual, period by period","Manuell, Periode für Periode"],
-  d_valor:["Valor por ocorrência","Amount per occurrence","Betrag je Vorkommen"],
-  d_pct:["% sobre a receita bruta","% of gross revenue","% vom Bruttoumsatz"],
-  d_ini_per:["Primeiro período","First period","Erste Periode"],
-  d_rep:["Repetições (0 = até o fim)","Repetitions (0 = to the end)","Wiederholungen (0 = bis Ende)"],
-  d_passo:["A cada N períodos","Every N periods","Alle N Perioden"],
-  d_parc:["Parcelas","Instalments","Raten"],
-  d_parc_h:["Cada ocorrência é dividida em parcelas iguais em períodos consecutivos.",
-    "Each occurrence is split into equal instalments over consecutive periods.",
-    "Jedes Vorkommen wird in gleiche Raten über aufeinanderfolgende Perioden geteilt."],
-  d_lag:["Carência (períodos)","Lag (periods)","Karenz (Perioden)"],
-  d_cresc:["Crescimento (% por ocorrência)","Growth (% per occurrence)","Wachstum (% je Vorkommen)"],
-  d_manual_h:["Digite o valor de cada período. O sinal é dado pela natureza da linha — não use menos.",
+  s_add:["Adicionar","Add","Hinzufügen"],
+  s_new_line:["Nova linha","New line","Neue Zeile"],
+  s_edit_line:["Editar linha","Edit line","Zeile bearbeiten"],
+  s_no_lines:["Nenhuma linha nesta natureza.","No lines of this kind yet.","Noch keine Zeilen dieser Art."],
+  s_nat:["Natureza da linha","Line nature","Art der Zeile"],
+  s_desc:["Descrição","Description","Bezeichnung"],
+  s_modo:["Como é informado","How it is entered","Art der Eingabe"],
+  s_modo_serie:["Série","Series","Serie"],
+  s_modo_manual:["Período a período","Period by period","Periode für Periode"],
+  s_valor:["Valor por ocorrência","Amount per occurrence","Betrag je Vorkommen"],
+  s_pct:["% sobre a receita bruta","% of gross revenue","% vom Bruttoumsatz"],
+  s_ini_per:["Primeiro período","First period","Erste Periode"],
+  s_rep:["Repetições (0 = até o fim)","Repetitions (0 = to the end)","Wiederholungen (0 = bis Ende)"],
+  s_passo:["A cada N períodos","Every N periods","Alle N Perioden"],
+  s_parc:["Parcelas","Instalments","Raten"],
+  s_lag:["Carência (períodos)","Lag (periods)","Karenz (Perioden)"],
+  s_parc_h:["Cada ocorrência é dividida em parcelas iguais, em períodos consecutivos, depois da carência.",
+    "Each occurrence is split into equal instalments over consecutive periods, after the lag.",
+    "Jedes Vorkommen wird nach der Karenz in gleiche Raten über aufeinanderfolgende Perioden geteilt."],
+  s_t0_h:["Período 0 é a data-base, imediatamente antes do primeiro período: é onde mora o investimento inicial.",
+    "Period 0 is the base date, just before the first period: this is where the initial investment sits.",
+    "Periode 0 ist der Stichtag, unmittelbar vor der ersten Periode: hier steht die Anfangsinvestition."],
+  s_manual_h:["Digite o valor de cada período. O sinal é dado pela natureza da linha — não use menos.",
     "Type the amount for each period. The sign comes from the line's nature — do not use a minus.",
     "Geben Sie je Periode den Betrag ein. Das Vorzeichen ergibt sich aus der Art der Zeile."],
-  d_off:["Desativada (fora do cálculo)","Disabled (out of the calculation)","Deaktiviert (nicht gerechnet)"],
-  d_total_line:["Total da linha","Line total","Summe der Zeile"],
-  d_del_line:["Excluir linha","Delete line","Zeile löschen"],
-  d_save:["Salvar","Save","Speichern"],
-  d_cancel:["Cancelar","Cancel","Abbrechen"],
-  d_t0:["t0 (data-base)","t0 (base date)","t0 (Stichtag)"],
-  d_t0_h:["O momento zero, imediatamente antes do primeiro período. É onde mora o investimento inicial.",
-    "The zero moment, just before the first period. This is where the initial investment sits.",
-    "Der Zeitpunkt null, unmittelbar vor der ersten Periode. Hier steht die Anfangsinvestition."],
+  s_off:["Fora do cálculo","Out of the calculation","Nicht gerechnet"],
+  s_total_line:["Total da linha","Line total","Summe der Zeile"],
+  s_del_line:["Excluir linha","Delete line","Zeile löschen"],
+  s_save:["Salvar","Save","Speichern"],
+  s_cancel:["Cancelar","Cancel","Abbrechen"],
+  s_t0:["t0","t0","t0"],
+  s_t0_lbl:["t0 · data-base","t0 · base date","t0 · Stichtag"],
+
+  /* reajuste */
+  s_reaj:["Reajuste","Escalation","Anpassung"],
+  s_reaj_h:["O reajuste é o que faz o aluguel subir todo aniversário. Escolha o índice e de quantos em quantos períodos ele se aplica; o app acumula o índice do período anterior segundo a curva dos Parâmetros.",
+    "Escalation is what raises the rent on every anniversary. Pick the index and how many periods apart it applies; the app accumulates the index over the preceding span using the Parameters curve.",
+    "Die Anpassung lässt die Miete zu jedem Jahrestag steigen. Wählen Sie den Index und den Abstand in Perioden; die App kumuliert den Index der Vorperiode entlang der Parameterkurve."],
+  s_reaj_idx:["Índice do reajuste","Escalation index","Index der Anpassung"],
+  s_reaj_no:["Sem reajuste","No escalation","Keine Anpassung"],
+  s_reaj_fixo:["Percentual fixo","Fixed percentage","Fester Prozentsatz"],
+  s_reaj_cada:["A cada N períodos","Every N periods","Alle N Perioden"],
+  s_reaj_ini:["1º reajuste no período","First escalation at period","Erste Anpassung in Periode"],
+  s_reaj_pct:["Percentual do reajuste (%)","Escalation percentage (%)","Anpassungssatz (%)"],
+  s_cresc:["Crescimento por ocorrência (%)","Growth per occurrence (%)","Wachstum je Vorkommen (%)"],
+  s_cresc_h:["Crescimento real do negócio — mais clientes, mais volume. É outra coisa que o reajuste por índice, e os dois convivem.",
+    "Real growth of the business — more customers, more volume. Different from index escalation; the two coexist.",
+    "Reales Wachstum des Geschäfts — mehr Kunden, mehr Menge. Etwas anderes als die Indexierung; beides geht zusammen."],
+
+  /* naturezas */
+  s_n_receita:["Receita","Revenue","Umsatz"],
+  s_n_deducao:["Dedução","Deduction","Abzug"],
+  s_n_custo:["Custo","Cost","Kosten"],
+  s_n_desp_adm:["Desp. adm.","Admin exp.","Verwaltung"],
+  s_n_desp_com:["Desp. com.","Selling exp.","Vertrieb"],
+  s_n_capex:["Capex","Capex","Capex"],
+  s_n_outras:["Outras saídas","Other outflows","Sonstige"],
+  s_g_receita:["Receitas","Revenue","Umsatz"],
+  s_g_deducao:["Deduções da receita (%)","Revenue deductions (%)","Umsatzabzüge (%)"],
+  s_g_custo:["Custos","Costs","Kosten"],
+  s_g_desp_adm:["Despesas administrativas","Administrative expenses","Verwaltungsaufwand"],
+  s_g_desp_com:["Despesas comerciais","Selling expenses","Vertriebsaufwand"],
+  s_g_capex:["Capex (investimentos)","Capex (investments)","Capex (Investitionen)"],
+  s_g_outras:["Outras saídas","Other outflows","Sonstige Abflüsse"],
 
   /* resultados */
-  d_res:["Resultado","Result","Ergebnis"],
-  d_vpl:["VPL","NPV","Kapitalwert"],
-  d_tir:["TIR a.a.","IRR p.a.","IRR p. a."],
-  d_tirm:["TIR modificada a.a.","Modified IRR p.a.","Modifizierte IRR p. a."],
-  d_pb:["Payback simples","Simple payback","Einfache Amortisation"],
-  d_pbd:["Payback descontado","Discounted payback","Diskontierte Amortisation"],
-  d_be:["Ponto de equilíbrio","Break-even","Break-even"],
-  d_pi:["Índice de lucratividade","Profitability index","Rentabilitätsindex"],
-  d_pi_h:["Valor presente das entradas dividido pelo das saídas. Acima de 1, o projeto cria valor.",
-    "Present value of inflows over present value of outflows. Above 1 the project creates value.",
-    "Barwert der Zuflüsse geteilt durch den der Abflüsse. Über 1 schafft das Projekt Wert."],
-  d_marg:["Margem de segurança da receita","Revenue margin of safety","Sicherheitsmarge Umsatz"],
-  d_marg_h:["Quanto a receita pode cair antes de o VPL zerar.","How far revenue can fall before the NPV hits zero.","Wie weit der Umsatz fallen darf, bis der Kapitalwert null wird."],
-  d_nd:["não definido","undefined","nicht definiert"],
-  d_aa:["a.a.","p.a.","p. a."],
-  d_sens_taxa:["Taxa","Rate","Satz"],
-  d_nunca:["não se paga no horizonte","not repaid within the horizon","im Horizont nicht zurückverdient"],
-  d_meses:["meses","months","Monate"],
-  d_anos:["anos","years","Jahre"],
-  d_per:["períodos","periods","Perioden"],
+  s_res:["Resultado","Result","Ergebnis"],
+  s_vpl:["VPL","NPV","Kapitalwert"],
+  s_tir:["TIR a.a.","IRR p.a.","IRR p. a."],
+  s_tirm:["TIR modificada","Modified IRR","Modifizierte IRR"],
+  s_pb:["Payback simples","Simple payback","Einfache Amortisation"],
+  s_pbd:["Payback descontado","Discounted payback","Diskontierte Amortisation"],
+  s_be:["Ponto de equilíbrio","Break-even","Break-even"],
+  s_pi:["Lucratividade (PI)","Profitability (PI)","Rentabilität (PI)"],
+  s_marg:["Margem de segurança","Margin of safety","Sicherheitsmarge"],
+  s_nd:["não definido","undefined","nicht definiert"],
+  s_nunca:["não se paga","not repaid","nicht amortisiert"],
+  s_meses:["meses","months","Monate"],
+  s_anos:["anos","years","Jahre"],
+  s_aa:["a.a.","p.a.","p. a."],
 
   /* composição */
-  d_comp:["Composição do fluxo","Cash flow composition","Zusammensetzung des Flusses"],
-  d_rec_bruta:["Receita bruta","Gross revenue","Bruttoumsatz"],
-  d_deducoes:["(−) Deduções da receita","(−) Revenue deductions","(−) Umsatzabzüge"],
-  d_rec_liq:["Receita líquida","Net revenue","Nettoumsatz"],
-  d_custos:["(−) Custos","(−) Costs","(−) Kosten"],
-  d_mb:["Margem bruta","Gross margin","Bruttomarge"],
-  d_adm:["(−) Despesas administrativas","(−) Administrative expenses","(−) Verwaltungsaufwand"],
-  d_com:["(−) Despesas comerciais","(−) Selling expenses","(−) Vertriebsaufwand"],
-  d_ebitda:["EBITDA","EBITDA","EBITDA"],
-  d_capex:["(−) Capex","(−) Capex","(−) Capex"],
-  d_dncg:["(−) Variação do capital de giro","(−) Change in working capital","(−) Veränderung Working Capital"],
-  d_outras:["(−) Outras saídas","(−) Other outflows","(−) Sonstige Abflüsse"],
-  d_fcl:["Fluxo de caixa livre","Free cash flow","Freier Cashflow"],
-  d_fcd:["Fluxo descontado","Discounted flow","Diskontierter Fluss"],
-  d_acum:["Acumulado","Cumulative","Kumuliert"],
-  d_pct_rl:["% da receita líquida","% of net revenue","% des Nettoumsatzes"],
-  d_mgebitda:["Margem EBITDA","EBITDA margin","EBITDA-Marge"],
+  s_comp:["Composição do fluxo","Cash flow composition","Zusammensetzung des Flusses"],
+  s_rec_bruta:["Receita bruta","Gross revenue","Bruttoumsatz"],
+  s_deducoes:["(−) Deduções","(−) Deductions","(−) Abzüge"],
+  s_rec_liq:["Receita líquida","Net revenue","Nettoumsatz"],
+  s_custos:["(−) Custos","(−) Costs","(−) Kosten"],
+  s_mb:["Margem bruta","Gross margin","Bruttomarge"],
+  s_adm:["(−) Desp. administrativas","(−) Admin expenses","(−) Verwaltung"],
+  s_com:["(−) Desp. comerciais","(−) Selling expenses","(−) Vertrieb"],
+  s_ebitda:["EBITDA","EBITDA","EBITDA"],
+  s_capex:["(−) Capex","(−) Capex","(−) Capex"],
+  s_dncg:["(−) Variação do giro","(−) Change in WC","(−) Δ Working Capital"],
+  s_outras:["(−) Outras saídas","(−) Other outflows","(−) Sonstige"],
+  s_fcl:["Fluxo de caixa livre","Free cash flow","Freier Cashflow"],
+  s_fcd:["Fluxo descontado","Discounted flow","Diskontierter Fluss"],
+  s_acum:["Acumulado descontado","Discounted cumulative","Diskontiert kumuliert"],
+  s_pct_rl:["% RL","% NR","% NU"],
+  s_mgebitda:["Margem EBITDA","EBITDA margin","EBITDA-Marge"],
 
-  /* tabela e gráfico */
-  d_tab_per:["Fluxo período a período","Period-by-period flow","Fluss Periode für Periode"],
-  d_ver:["Ver","View","Ansicht"],
-  d_ver_per:["Por período","By period","Je Periode"],
-  d_ver_ano:["Por ano","By year","Je Jahr"],
-  d_periodo:["Período","Period","Periode"],
-  d_graf:["Fluxo livre e acumulado descontado","Free cash flow and discounted cumulative","Freier Cashflow und diskontiert kumuliert"],
-  d_sens:["Sensibilidade do VPL","NPV sensitivity","Sensitivität des Kapitalwerts"],
-  d_sens_h:["Linhas: taxa de desconto. Colunas: receita.","Rows: discount rate. Columns: revenue.","Zeilen: Diskontsatz. Spalten: Umsatz."],
+  /* tabela e gráficos */
+  s_tab:["Fluxo período a período","Period-by-period flow","Fluss Periode für Periode"],
+  s_ver_per:["Por período","By period","Je Periode"],
+  s_ver_ano:["Por ano","By year","Je Jahr"],
+  s_periodo:["Período","Period","Periode"],
+  s_g1:["Fluxo de caixa livre por período","Free cash flow by period","Freier Cashflow je Periode"],
+  s_g2:["Acumulado descontado e ponto de equilíbrio","Discounted cumulative and break-even","Diskontiert kumuliert und Break-even"],
+  s_g_maior:["maior","max","max"],
+  s_g_menor:["menor","min","min"],
+  s_g_be:["equilíbrio","break-even","Break-even"],
+  s_sens:["Sensibilidade do VPL","NPV sensitivity","Sensitivität des Kapitalwerts"],
+  s_sens_taxa:["Taxa","Rate","Satz"],
+  s_sens_h:["Linhas: taxa de desconto. Colunas: variação da receita.","Rows: discount rate. Columns: change in revenue.","Zeilen: Diskontsatz. Spalten: Umsatzänderung."],
+  s_csv:["Exportar CSV","Export CSV","CSV exportieren"],
 
-  /* avisos */
-  d_flags:["Conferências","Checks","Prüfungen"],
-  d_f_ok:["Nada a apontar: o fluxo fecha e os números são calculáveis.","Nothing to flag: the flow closes and every figure is computable.","Nichts zu beanstanden: der Fluss schließt und alle Zahlen sind berechenbar."],
-  d_f_tir:["A TIR não existe: o fluxo não troca de sinal. Sem uma saída inicial não há taxa de retorno a calcular.",
+  /* conferências */
+  s_flags:["Conferências","Checks","Prüfungen"],
+  s_f_ok:["Nada a apontar: o fluxo fecha e os números são calculáveis.","Nothing to flag: the flow closes and every figure is computable.","Nichts zu beanstanden: der Fluss schließt und alle Zahlen sind berechenbar."],
+  s_f_tir:["A TIR não existe: o fluxo não troca de sinal. Sem uma saída inicial não há taxa de retorno a calcular.",
     "There is no IRR: the flow never changes sign. Without an initial outflow there is no rate of return to find.",
     "Es gibt keine IRR: der Fluss wechselt nie das Vorzeichen. Ohne Anfangsabfluss ist keine Rendite zu berechnen."],
-  d_f_g:["O crescimento da perpetuidade é maior ou igual à taxa de desconto: o valor terminal seria infinito e foi zerado.",
-    "Perpetuity growth is at or above the discount rate: the terminal value would be infinite and was set to zero.",
-    "Das Wachstum der ewigen Rente erreicht oder übersteigt den Diskontsatz: der Endwert wäre unendlich und wurde auf null gesetzt."],
-  d_f_tvshare:["Mais da metade do VPL vem do valor terminal. Vale rever o crescimento ou o múltiplo.",
+  s_f_g:["O crescimento da perpetuidade alcança a taxa de desconto: o valor terminal seria infinito e foi zerado.",
+    "Perpetuity growth reaches the discount rate: the terminal value would be infinite and was set to zero.",
+    "Das Wachstum der ewigen Rente erreicht den Diskontsatz: der Endwert wäre unendlich und wurde auf null gesetzt."],
+  s_f_tvshare:["Mais da metade do VPL vem do valor terminal. Vale rever o crescimento ou o múltiplo.",
     "More than half the NPV comes from the terminal value. Worth revisiting the growth rate or the multiple.",
     "Mehr als die Hälfte des Kapitalwerts stammt aus dem Endwert. Wachstum oder Multiplikator überprüfen."],
-  d_f_real:["Fluxo real com crescimento nominal na perpetuidade costuma superestimar. Em fluxo real, o g também é real.",
-    "A real flow with nominal perpetuity growth tends to overstate. In a real flow, g is real too.",
-    "Ein realer Fluss mit nominalem Wachstum überschätzt meist. Im realen Fluss ist auch g real."],
-  d_f_semrec:["Não há linha de receita: o projeto só tem saídas.","There is no revenue line: the project has outflows only.","Es gibt keine Umsatzzeile: das Projekt hat nur Abflüsse."],
-  d_f_semt0:["Não há desembolso em t0. Um projeto sem investimento inicial não tem payback a medir.",
-    "There is no outlay at t0. A project with no initial investment has no payback to measure.",
-    "Kein Abfluss in t0. Ohne Anfangsinvestition gibt es keine Amortisation zu messen."],
-  d_f_ded:["As deduções passam de 100% da receita bruta.","Deductions exceed 100% of gross revenue.","Die Abzüge übersteigen 100 % des Bruttoumsatzes."],
-  d_hint_pretax:["Fluxo antes de tributos sobre o lucro (pretax), como pedem os manuais de avaliação. Tributos sobre a receita entram como linhas de dedução.",
-    "Flow before profit taxes (pretax), as valuation manuals prescribe. Taxes on revenue come in as deduction lines.",
-    "Fluss vor Ertragsteuern (pretax), wie es die Bewertungslehre vorsieht. Umsatzsteuern kommen als Abzugszeilen."]
-});
+  s_f_real:["Fluxo real com g nominal na perpetuidade superestima. Em fluxo real, o g também é real.",
+    "A real flow with nominal perpetuity growth overstates. In a real flow, g is real too.",
+    "Ein realer Fluss mit nominalem g überschätzt. Im realen Fluss ist auch g real."],
+  s_f_semrec:["Não há linha de receita: o projeto só tem saídas.","There is no revenue line: the project has outflows only.","Es gibt keine Umsatzzeile: das Projekt hat nur Abflüsse."],
+  s_f_semt0:["Não há desembolso em t0. Sem investimento inicial não há payback a medir.",
+    "There is no outlay at t0. With no initial investment there is no payback to measure.",
+    "Kein Abfluss in t0. Ohne Anfangsinvestition gibt es keine Amortisation."],
+  s_f_ded:["As deduções passam de 100% da receita bruta.","Deductions exceed 100% of gross revenue.","Die Abzüge übersteigen 100 % des Bruttoumsatzes."],
+  s_f_semcurva:["O índice {i} do reajuste não tem curva declarada nos Parâmetros: esse reajuste ficou em zero.",
+    "The {i} escalation index has no curve declared in Parameters: that escalation came out as zero.",
+    "Für den Anpassungsindex {i} ist in den Parametern keine Kurve erklärt: die Anpassung blieb null."],
+  s_f_semcdi:["Não há curva de CDI declarada nos Parâmetros: a taxa continua a que você digitou.",
+    "No CDI curve is declared in Parameters: the rate remains the one you typed.",
+    "In den Parametern ist keine CDI-Kurve erklärt: der Satz bleibt der eingegebene."],
+  s_hint_pretax:["Fluxo antes de tributos sobre o lucro. Tributos sobre a receita entram como linhas de dedução.",
+    "Flow before profit taxes. Taxes on revenue come in as deduction lines.",
+    "Fluss vor Ertragsteuern. Umsatzsteuern kommen als Abzugszeilen."]
+};
 const LIX={pt:0,en:1,de:2};
-const P=(k)=>{ const a=DIC[k]; if(!a) return k; const i=LIX[(typeof LANG!=="undefined"?LANG:"pt")]||0; return a[i]||a[0]; };
-/* ymAdd/ymNow também moram na IIFE do PRO; aqui se repete a conta, que é
-   a mesma de sempre: mês 1-12 com transbordo de ano. */
+const LG=()=>(typeof LANG!=="undefined"?LANG:"pt");
+const P=(k)=>{ const a=DIC[k]; if(!a) return k; return a[LIX[LG()]||0]||a[0]; };
+const E=(x)=>String(x==null?"":x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const M=(v)=>{ try{ return fmt(v||0); }catch(e){ return String(v); } };
+const LOC=()=>LG()==="en"?"en-US":LG()==="de"?"de-DE":"pt-BR";
+const NUM=(v,d)=>{ d=(d===undefined)?1:d; const n=+v||0;
+  try{ return new Intl.NumberFormat(LOC(),{minimumFractionDigits:d,maximumFractionDigits:d}).format(n); }
+  catch(e){ return n.toFixed(d); } };
+const PCT=(v,d)=>NUM(v,d===undefined?1:d)+"%";
+const MSK=(v)=>{ const n=+v||0; return n?NUM(n,2):""; };
+const CUR=(v)=>{ const n=+v||0; if(!isFinite(n)) return "0";
+  const a=Math.abs(n);
+  const k=(x,s)=>NUM(x,x>=100?0:1).replace(/[.,]0$/,"")+s;
+  if(a>=1e9) return (n<0?"−":"")+k(a/1e9,"B");
+  if(a>=1e6) return (n<0?"−":"")+k(a/1e6,"M");
+  if(a>=1e3) return (n<0?"−":"")+k(a/1e3,"k");
+  return (n<0?"−":"")+NUM(a,0); };
+
+/* Mês e ano em três idiomas: o seletor nativo de mês vinha em inglês
+   mesmo com o app em português, porque quem o desenha é o sistema. */
+const MESES={
+  pt:["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"],
+  en:["January","February","March","April","May","June","July","August","September","October","November","December"],
+  de:["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"]};
+const MESES3={
+  pt:["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"],
+  en:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+  de:["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"]};
+
 const YM_NOW=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
-const YM_ADD=(s,k)=>{let a=String(s||"").split("-");let y=parseInt(a[0],10)||new Date().getFullYear();
+const YM_ADD=(s,k)=>{const a=String(s||"").split("-");let y=parseInt(a[0],10)||new Date().getFullYear();
   let m=(parseInt(a[1],10)||1)+k; y+=Math.floor((m-1)/12); m=((m-1)%12+12)%12+1;
   return y+"-"+String(m).padStart(2,"0");};
+/* A curva de índice do app é a única fonte: paramTaxaEf vive na IIFE do
+   módulo PRO e só é alcançável pela porta que ele abriu. */
 const TXEF=(idx,ym)=>{ try{ return (window.PRO&&PRO.paramTaxaEf)?PRO.paramTaxaEf(idx,ym):null; }catch(e){ return null; } };
-const E=(s)=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const M=(v)=>{ try{ return fmt(v||0); }catch(e){ return String(v); } };
-/* Dinheiro no campo sai com separador de milhar, como em todo o resto do
-   app: 60000 lido como 60.000,00 evita o erro de um zero a mais. */
-const MSK=(v)=>{ const n=+v||0; if(!n) return "";
-  try{ return new Intl.NumberFormat((typeof LANG!=="undefined"&&LANG==="en")?"en-US":(typeof LANG!=="undefined"&&LANG==="de")?"de-DE":"pt-BR",
-    {minimumFractionDigits:2,maximumFractionDigits:2}).format(n); }catch(e){ return String(n); } };
-const NUM=(v,d)=>{ d=(d===undefined)?1:d; const s=(Math.round((v||0)*Math.pow(10,d))/Math.pow(10,d)).toFixed(d); return (typeof LANG!=="undefined"&&LANG!=="en")?s.replace(".",","):s; };
-const PCT=(v,d)=>NUM(v,d===undefined?1:d)+"%";
+/* Selic, CDI, IPCA e IGP-M vêm ao ano; TR e poupança já vêm ao mês. */
+const AO_MES=(idx,v)=>(idx==="tr"||idx==="poupanca")?(v/100):(Math.pow(1+v/100,1/12)-1);
 
 /* ── 2. PERSISTÊNCIA ────────────────────────────────────────────────── */
 const KEY="gastos_v2_dcf";
-let L=[], SEL=null, VIEW=null;
-/* Sessenta linhas de mês não se leem num telefone: quando o fluxo é longo,
-   a vista abre agregada por ano e o detalhe fica a um toque. */
-function vistaPadrao(p){ return (p.freq==="m"&&(parseInt(p.n,10)||0)>24)?"ano":"per"; }
-function carregar(){ try{ L=JSON.parse(localStorage.getItem(KEY)||"[]"); }catch(e){ L=[]; } if(!Array.isArray(L)) L=[]; }
-function gravar(){ try{ localStorage.setItem(KEY,JSON.stringify(L)); }catch(e){} }
+let L=[], SEL=null, ABA="projetos", VIEW=null, NAT_NOVA="receita";
+function carregar(){ try{ L=JSON.parse(localStorage.getItem(KEY)||"[]"); }catch(e){ L=[]; } if(!Array.isArray(L)) L=[];
+  try{ SEL=SEL||localStorage.getItem(KEY+"_sel")||null; }catch(e){} }
+function gravar(){ try{ localStorage.setItem(KEY,JSON.stringify(L)); localStorage.setItem(KEY+"_sel",SEL==null?"":String(SEL)); }catch(e){} }
 carregar();
-
 function proj(){ return L.find(x=>String(x.id)===String(SEL))||null; }
 
+const NATS=["receita","deducao","custo","desp_adm","desp_com","capex","outras"];
+const ICO={receita:"💵",deducao:"🧾",custo:"🏭",desp_adm:"🗂",desp_com:"📣",capex:"🏗",outras:"↘"};
+
 function novo(){
-  const p={
-    id:Date.now(), nome:P("d_new_name"), inicio:YM_NOW(),
-    n:60, freq:"m", tipo:"nominal", taxa:12, ipca:null, ipcaAuto:true,
-    meio:false, inflar:false, ncg:0,
-    tv:{on:false,metodo:"gordon",g:2,mult:5},
-    linhas:[], ts:Date.now()
-  };
+  const p={id:Date.now(), nome:P("s_new_name"), inicio:YM_NOW(), n:60, freq:"m",
+    tipo:"nominal", taxa:12, taxaAuto:false, ipca:null, ipcaAuto:true,
+    meio:false, inflar:false, ncg:0, tv:{on:false,metodo:"gordon",g:2,mult:5},
+    linhas:[], ts:Date.now()};
   p.ipca=ipcaCurva(p);
   return p;
 }
 
-/* ── 3. PARÂMETROS DA TELA INICIAL ──────────────────────────────────── */
-/* Nenhum índice é inventado aqui: o app já tem uma curva declarada e é
-   dela que sai tanto o IPCA quanto a sugestão de taxa. */
+/* ── 3. ÍNDICES DA CURVA DOS PARÂMETROS ─────────────────────────────── */
+function meses(p){ const n=Math.max(1,Math.min(600,parseInt(p.n,10)||60)); return p.freq==="m"?n:n*12; }
+function ppy(p){ return p.freq==="m"?12:1; }
 function idxMedioAA(idx,p){
-  const N=meses(p); const ini=p.inicio||YM_NOW();
+  const N=meses(p), ini=p.inicio||YM_NOW();
   let acc=1,c=0;
   for(let i=0;i<N;i++){
-    let v=null;
-    v=TXEF(idx,YM_ADD(ini,i));
+    const v=TXEF(idx,YM_ADD(ini,i));
     if(v===null||!isFinite(v)) continue;
-    acc*=Math.pow(1+v/100,1/12); c++;
+    acc*=(1+AO_MES(idx,v)); c++;
   }
-  if(!c){
-    const v=TXEF(idx,YM_NOW());
-    return (v===null||!isFinite(v))?null:Math.round(v*100)/100;
-  }
+  if(!c){ const v=TXEF(idx,YM_NOW()); return (v===null||!isFinite(v))?null:Math.round(v*100)/100; }
   return Math.round((Math.pow(acc,12/c)-1)*10000)/100;
 }
 function ipcaCurva(p){ const v=idxMedioAA("ipca",p); return v===null?4.5:v; }
-function meses(p){ const n=Math.max(1,Math.min(600,parseInt(p.n,10)||60)); return p.freq==="m"?n:n*12; }
-function ppy(p){ return p.freq==="m"?12:1; }
-function labelPer(p,i){
-  if(i===0) return P("d_t0");
+function taxaDe(p){
+  if(p.taxaAuto){ const v=idxMedioAA("cdi",p); if(v!==null) return v; }
+  return +p.taxa||0;
+}
+/* Índice acumulado nos `qtd` períodos anteriores ao período i. É o que um
+   contrato de aluguel faz no aniversário: olha doze meses para trás. */
+function acumIdx(p,idx,i,qtd){
+  const mp=(p.freq==="m")?1:12, tot=qtd*mp, ini=p.inicio||YM_NOW();
+  let acc=1, c=0;
+  for(let k=0;k<tot;k++){
+    const m=YM_ADD(ini,(i-1)*mp-tot+k);
+    const v=TXEF(idx,m);
+    if(v===null||!isFinite(v)) continue;
+    acc*=(1+AO_MES(idx,v)); c++;
+  }
+  /* Curva em branco nos Parâmetros: o reajuste por IPCA ainda tem para
+     onde recorrer — o IPCA declarado no próprio projeto. Os demais
+     índices ficam em zero e a tela diz por quê, em vez de inventar. */
+  if(!c){
+    SEM_CURVA[idx]=1;
+    if(idx==="ipca") return (Math.pow(1+(+p.ipca||0)/100,tot/12)-1)*100;
+    return 0;
+  }
+  if(c<tot) acc=Math.pow(acc,tot/c);
+  return (acc-1)*100;
+}
+const SEM_CURVA={};
+
+/* ── 4. MOTOR ───────────────────────────────────────────────────────── */
+function labelPer(p,i,curto){
+  if(i===0) return curto?P("s_t0"):P("s_t0_lbl");
   const ini=p.inicio||YM_NOW();
   if(p.freq==="m"){
-    const ym=YM_ADD(ini,i-1); const [y,m]=ym.split("-");
-    const MN={pt:["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"],
-              en:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
-              de:["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"]};
-    const arr=MN[(typeof LANG!=="undefined"?LANG:"pt")]||MN.pt;
-    return arr[parseInt(m,10)-1]+"/"+y.slice(2);
+    const ym=YM_ADD(ini,i-1), a=ym.split("-");
+    return (MESES3[LG()]||MESES3.pt)[parseInt(a[1],10)-1]+"/"+a[0].slice(2);
   }
-  const y=parseInt((ini.split("-")[0]),10)+(i-1);
-  return String(y);
+  return String(parseInt(ini.split("-")[0],10)+(i-1));
 }
 function anoDe(p,i){
   const ini=p.inicio||YM_NOW();
   if(i===0) return null;
-  if(p.freq==="m") return YM_ADD(ini,i-1).split("-")[0];
-  return String(parseInt(ini.split("-")[0],10)+(i-1));
+  return (p.freq==="m")?YM_ADD(ini,i-1).split("-")[0]
+                       :String(parseInt(ini.split("-")[0],10)+(i-1));
 }
-
-/* ── 4. MOTOR ───────────────────────────────────────────────────────── */
 function fatoresInfl(p,N){
-  const f=[1], mp=(p.freq==="m")?1:12;
-  const ini=p.inicio||YM_NOW();
+  const f=[1], mp=(p.freq==="m")?1:12, ini=p.inicio||YM_NOW();
   for(let i=1;i<=N;i++){
     let fat=1;
     for(let k=0;k<mp;k++){
-      let v=null;
-      if(p.ipcaAuto) v=TXEF("ipca",YM_ADD(ini,(i-1)*mp+k));
+      let v=p.ipcaAuto?TXEF("ipca",YM_ADD(ini,(i-1)*mp+k)):null;
       if(v===null||!isFinite(v)) v=(+p.ipca||0);
-      fat*=Math.pow(1+v/100,1/12);
+      fat*=(1+AO_MES("ipca",v));
     }
     f[i]=f[i-1]*fat;
   }
   return f;
 }
-
-function serie(l,N){
+/* Fator de reajuste da linha: degraus nos aniversários declarados. */
+function fatorReaj(l,N,p){
+  const f=new Array(N+1).fill(1);
+  const r=l.reaj||{}; const idx=r.idx||"";
+  if(!idx) return f;
+  const cada=Math.max(1,parseInt(r.cada,10)||(p.freq==="m"?12:1));
+  let ini=parseInt(r.ini,10); if(!isFinite(ini)||ini<1) ini=cada+1;
+  let cur=1;
+  for(let i=1;i<=N;i++){
+    if(i>=ini&&((i-ini)%cada===0)){
+      cur*=(idx==="fixo")?(1+(+r.pct||0)/100):(1+acumIdx(p,idx,i,cada)/100);
+    }
+    f[i]=cur;
+  }
+  return f;
+}
+function serie(l,N,p){
   const a=new Array(N+1).fill(0);
   if(l.modo==="manual"){
     const m=l.manual||{};
-    Object.keys(m).forEach(k=>{ const i=parseInt(k,10); const v=+m[k]||0; if(i>=0&&i<=N) a[i]+=v; });
+    Object.keys(m).forEach(k=>{ const i=parseInt(k,10); if(i>=0&&i<=N) a[i]+=(+m[k]||0); });
+    const fr=fatorReaj(l,N,p||{freq:"m"});
+    for(let i=0;i<=N;i++) a[i]*=fr[i];
     return a;
   }
   const val=+l.valor||0;
@@ -28349,26 +28504,24 @@ function serie(l,N){
   const g=(+l.cresc||0)/100;
   const parc=Math.max(1,parseInt(l.parc,10)||1);
   const lag=Math.max(0,parseInt(l.lag,10)||0);
+  const fr=fatorReaj(l,N,p||{freq:"m"});
   for(let k=0;k<rep;k++){
     const occ=ini+k*passo;
     if(occ>N) break;
-    const v=val*Math.pow(1+g,k);
+    const v=val*Math.pow(1+g,k)*fr[occ];
     for(let j=0;j<parc;j++){
-      const idx=occ+lag+j;
-      if(idx>=0&&idx<=N) a[idx]+=v/parc;
+      const i=occ+lag+j;
+      if(i>=0&&i<=N) a[i]+=v/parc;
     }
   }
   return a;
 }
-
-function taxaEfetiva(p,taxaOv){
-  const iNom=((taxaOv===undefined||taxaOv===null)?(+p.taxa||0):taxaOv)/100;
+function taxaEfetiva(p,ov){
+  const iNom=((ov===undefined||ov===null)?taxaDe(p):ov)/100;
   const ip=(+p.ipca||0)/100;
-  /* Regressão geométrica: em fluxo real a taxa perde a inflação embutida. */
-  const ief=(p.tipo==="real")?((1+iNom)/(1+ip)-1):iNom;
+  const ief=(p.tipo==="real")?((1+iNom)/(1+ip)-1):iNom;   /* regressão geométrica */
   return {nom:iNom, ipca:ip, ef:ief, per:Math.pow(1+ief,1/ppy(p))-1};
 }
-
 function calc(p,opt){
   opt=opt||{};
   const fRec=(opt.fRec===undefined)?1:opt.fRec;
@@ -28376,19 +28529,19 @@ function calc(p,opt){
   const z=()=>new Array(N+1).fill(0);
   const rec=z(),cus=z(),adm=z(),com=z(),cap=z(),out=z();
   const infl=(p.inflar&&p.tipo==="nominal")?fatoresInfl(p,N):null;
-  const destino={receita:rec,custo:cus,desp_adm:adm,desp_com:com,capex:cap,outras:out};
+  const dest={receita:rec,custo:cus,desp_adm:adm,desp_com:com,capex:cap,outras:out};
   const porLinha={};
   (p.linhas||[]).forEach(l=>{
     if(l.off||l.tipo==="deducao") return;
-    const alvo=destino[l.tipo]; if(!alvo) return;
-    const s=serie(l,N);
+    const alvo=dest[l.tipo]; if(!alvo) return;
+    const s=serie(l,N,p);
     if(infl) for(let i=0;i<=N;i++) s[i]*=infl[i];
     const f=(l.tipo==="receita")?fRec:1;
     let tot=0;
     for(let i=0;i<=N;i++){ const v=s[i]*f; alvo[i]+=v; tot+=v; }
     porLinha[l.id]=tot;
   });
-  const ded=z(); let pctMax=0;
+  const ded=z(); let pctDed=0;
   (p.linhas||[]).forEach(l=>{
     if(l.off||l.tipo!=="deducao") return;
     const pc=(+l.pct||0)/100;
@@ -28397,7 +28550,7 @@ function calc(p,opt){
     const fim=(!isFinite(rIn)||rIn<=0)?N:(ini+rIn-1);
     let tot=0;
     for(let i=ini;i<=Math.min(N,fim);i++){ const v=rec[i]*pc; ded[i]+=v; tot+=v; }
-    porLinha[l.id]=tot; pctMax+=pc*100;
+    porLinha[l.id]=tot; pctDed+=pc*100;
   });
   const rl=z(),mb=z(),eb=z(),dncg=z(),fcl=z();
   const gPct=(+p.ncg||0)/100; let ncgAnt=0;
@@ -28409,10 +28562,8 @@ function calc(p,opt){
     dncg[i]=ncg-ncgAnt; ncgAnt=ncg;
     fcl[i]=eb[i]-cap[i]-out[i]-dncg[i];
   }
-  const tx=taxaEfetiva(p,opt.taxa);
-  const ipP=tx.per, PY=ppy(p);
+  const tx=taxaEfetiva(p,opt.taxa), ipP=tx.per, PY=ppy(p);
 
-  /* valor terminal */
   let tv=0, tvErro=false;
   if(p.tv&&p.tv.on){
     if((p.tv.metodo||"gordon")==="gordon"){
@@ -28423,7 +28574,6 @@ function calc(p,opt){
       tv=ebA*(+p.tv.mult||0);
     }
   }
-
   const expo=(i)=>(i===0)?0:(p.meio?i-0.5:i);
   const fcd=z(); let vpl=0, vpIn=0, vpOut=0;
   for(let i=0;i<=N;i++){
@@ -28434,9 +28584,7 @@ function calc(p,opt){
   const vpTV=tv*Math.pow(1+ipP,-N);
   vpl+=vpTV; if(vpTV>0) vpIn+=vpTV; else vpOut+=-vpTV;
 
-  /* caixa com terminal embutido, para TIR e payback */
   const caixa=fcl.slice(); caixa[N]+=tv;
-
   const npvAt=(r)=>{ let s=0; for(let i=0;i<=N;i++) s+=caixa[i]*Math.pow(1+r,-expo(i)); return s; };
   let tir=null;
   (function(){
@@ -28447,11 +28595,10 @@ function calc(p,opt){
       if(!isFinite(fm)) return;
       if(flo*fm<=0){ hi=mid; fhi=fm; } else { lo=mid; flo=fm; }
     }
-    tir=(lo+hi)/2;
+    tir=(lo+hi)/2; void fhi;
   })();
   const tirAA=(tir===null)?null:(Math.pow(1+tir,PY)-1);
 
-  /* TIR modificada: sobras reinvestidas à própria taxa de desconto */
   let mtir=null;
   (function(){
     let fv=0, pv=0;
@@ -28463,8 +28610,8 @@ function calc(p,opt){
   })();
   const mtirAA=(mtir===null)?null:(Math.pow(1+mtir,PY)-1);
 
-  /* Payback é a hora em que o acumulado volta a zero. Valor terminal fica
-     de fora: ele não é caixa que entra, é o que o projeto valeria se
+  /* Payback é a hora em que o acumulado volta a zero. O valor terminal
+     fica de fora: não é caixa que entra, é o que o projeto valeria se
      fosse vendido — pagar-se com ele seria contar o bolo e comê-lo. */
   const payback=(arr)=>{
     let cum=0, ant=0, negou=false;
@@ -28476,270 +28623,317 @@ function calc(p,opt){
     return negou?null:0;
   };
   const pb=payback(fcl), pbd=payback(fcd);
-
-  const tot=(a)=>a.reduce((s,v)=>s+v,0);
+  const tot=a=>a.reduce((s,v)=>s+v,0);
   const T={rec:tot(rec),ded:tot(ded),rl:tot(rl),cus:tot(cus),mb:tot(mb),adm:tot(adm),
            com:tot(com),eb:tot(eb),cap:tot(cap),dncg:tot(dncg),out:tot(out),fcl:tot(fcl)};
-
   return {N,PY,rec,ded,rl,cus,mb,adm,com,eb,cap,dncg,out,fcl,fcd,caixa,T,
           tv,vpTV,tvErro,vpl,vpIn,vpOut,tir,tirAA,mtir,mtirAA,pb,pbd,tx,
-          pi:(vpOut>0?vpIn/vpOut:null), porLinha, pctDed:pctMax};
+          pi:(vpOut>0?vpIn/vpOut:null), porLinha, pctDed};
 }
-
-/* O VPL é linear na receita — deduções e capital de giro são proporções
-   dela, e o terminal é linear no fluxo. Dá para resolver o ponto de
-   equilíbrio sem iterar. */
+/* O VPL é linear na receita — deduções e giro são proporções dela e o
+   terminal é linear no fluxo. Dá para resolver o equilíbrio sem iterar. */
 function beReceita(p){
   const a=calc(p,{fRec:0}).vpl, b=calc(p,{fRec:1}).vpl;
   if(Math.abs(b-a)<1e-9) return null;
   return (0-a)/(b-a);
 }
 
-/* ── 5. RENDER: LISTA ───────────────────────────────────────────────── */
-function renderLista(){
-  const el=document.getElementById("ast-view-dcf"); if(!el) return;
-  let h=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-      <span class="oi oi-sm oi-round oi-ring oi-foco" role="img" aria-label="Otto"></span>
-      <div><div style="font-family:var(--serif);font-style:italic;font-size:19px;color:var(--body);line-height:1.15">${E(P("d_title"))}</div>
-      <div style="font-size:11px;color:var(--ink-3);margin-top:2px">${E(P("d_sub"))}</div></div>
-    </div>
-    <div class="info-card" style="margin:10px 0 14px">${E(P("d_intro"))}</div>`;
+/* ── 5. PEÇAS DE INTERFACE ──────────────────────────────────────────── */
+function campo(lbl,inner,hint){
+  return `<div class="sim-f"><label class="f-label">${E(lbl)}</label>${inner}`+
+    (hint?`<div class="sim-hint">${E(hint)}</div>`:"")+`</div>`;
+}
+function stat(lbl,val,cor){
+  return `<div class="stat"><div class="stat-label">${E(lbl)}</div>
+    <div class="stat-val" style="color:${cor||"var(--body)"}">${val}</div></div>`;
+}
+function selMes(id,val,onch){
+  const a=(val||YM_NOW()).split("-");
+  const mesAtual=parseInt(a[1],10)||1, anoAtual=parseInt(a[0],10)||new Date().getFullYear();
+  const hoje=new Date().getFullYear();
+  const nomes=MESES[LG()]||MESES.pt;
+  let m=`<select class="f-input" id="${id}-m" onchange="${onch}">`;
+  nomes.forEach((n,i)=>{ m+=`<option value="${i+1}"${(i+1)===mesAtual?" selected":""}>${E(n)}</option>`; });
+  m+=`</select>`;
+  let y=`<select class="f-input" id="${id}-a" onchange="${onch}">`;
+  for(let k=hoje-5;k<=hoje+20;k++) y+=`<option value="${k}"${k===anoAtual?" selected":""}>${k}</option>`;
+  y+=`</select>`;
+  return {m,y};
+}
+function perTxt(p,v){
+  if(v===null||v===undefined) return P("s_nunca");
+  return (p.freq==="m")?(NUM(v*(12/ppy(p)),1)+" "+P("s_meses")):(NUM(v,1)+" "+P("s_anos"));
+}
 
+/* ── 6. HERO E ABAS ─────────────────────────────────────────────────── */
+function hero(){
+  const el=document.getElementById("sim-hero"); if(!el) return;
+  const p=proj();
+  if(!p){
+    el.innerHTML=`<div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,34px);line-height:1.05">${L.length}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.62);margin-top:4px">${E(L.length===1?P("s_proj1"):P("s_projs"))}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:8px;line-height:1.5">${E(P("s_sub"))}</div>`;
+    return;
+  }
+  let r=null; try{ r=calc(p); }catch(e){}
+  const vpl=r?r.vpl:0;
+  el.innerHTML=`<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(p.nome||P("s_new_name"))}</div>
+    <div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,34px);line-height:1.05">${M(vpl)}</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:3px">${E(P("s_vpl"))} · ${E(P("s_taxa_ef"))} ${PCT(taxaEfetiva(p).ef*100,2)} ${E(P("s_aa"))}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px">
+      <span class="sim-pill">${E(P("s_tir"))} ${r&&r.tirAA!==null?PCT(r.tirAA*100,1):"—"}</span>
+      <span class="sim-pill">${E(P("s_pbd"))} ${r?E(perTxt(p,r.pbd)):"—"}</span>
+      <span class="sim-pill">${E(p.tipo==="real"?P("s_real"):P("s_nominal"))} · ${E(P("s_pretax"))}</span>
+    </div>`;
+}
+function aba(v){
+  ABA=v;
+  ["projetos","premissas","fluxo","result"].forEach(k=>{
+    const el=document.getElementById("sim-view-"+k);
+    if(el){ el.style.display=(k===v)?"block":"none"; el.classList.remove("tab-enter"); void el.offsetWidth; if(k===v) el.classList.add("tab-enter"); }
+  });
+  document.querySelectorAll("#nav-simulacoes .nav-btn").forEach(b=>{
+    const on=b.dataset.simview===v;
+    b.classList.toggle("active",on);
+    b.style.color=on?"#6E4523":"var(--ink-2)";
+  });
+  const c=document.getElementById("sim-content"); if(c) c.scrollTo({top:0});
+  if(v==="projetos") renderProjetos();
+  if(v==="premissas") renderPremissas();
+  if(v==="fluxo") renderFluxo();
+  if(v==="result") renderResult();
+}
+
+/* ── 7. ABA PROJETOS ────────────────────────────────────────────────── */
+function renderProjetos(){
+  const el=document.getElementById("sim-view-projetos"); if(!el) return;
+  let h=`<div class="info-card" style="margin:0 0 14px">${E(P("s_intro"))}</div>`;
   if(!L.length){
-    h+=`<div style="background:var(--surface);border-radius:16px;padding:18px;text-align:center;font-size:12.5px;color:var(--ink-2);line-height:1.55;margin-bottom:12px">${E(P("d_none"))}</div>`;
+    h+=`<div style="background:var(--surface);border-radius:16px;padding:18px;text-align:center;font-size:12.5px;color:var(--ink-2);line-height:1.55;margin-bottom:12px">${E(P("s_none"))}</div>`;
   }else{
-    h+=`<div class="sec-label">${E(P("d_back"))}</div>`;
     L.slice().sort((a,b)=>(b.ts||0)-(a.ts||0)).forEach(p=>{
       let r=null; try{ r=calc(p); }catch(e){}
-      const vpl=r?r.vpl:0;
-      const tir=(r&&r.tirAA!==null)?PCT(r.tirAA*100,1):"—";
-      h+=`<div onclick="DCF.abrir('${E(p.id)}')" style="background:var(--surface);border-radius:14px;padding:13px 15px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px">
+      const vpl=r?r.vpl:0, sel=String(p.id)===String(SEL);
+      h+=`<div onclick="SIM.abrir('${E(p.id)}')" style="background:${sel?"var(--paper)":"var(--surface)"};${sel?"box-shadow:inset 0 0 0 1.5px #6E4523;":""}border-radius:14px;padding:13px 15px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px">
         <div style="flex:1;min-width:0">
-          <div style="font-size:13.5px;font-weight:600;color:var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(p.nome||P("d_new_name"))}</div>
-          <div style="font-size:10.5px;color:var(--ink-3);margin-top:3px">${E(labelPer(p,1))} · ${p.n} ${E(p.freq==="m"?P("d_freq_m"):P("d_freq_a"))} · ${E(p.tipo==="real"?P("d_real"):P("d_nominal"))}</div>
+          <div style="font-size:13.5px;font-weight:600;color:var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(p.nome||P("s_new_name"))}</div>
+          <div style="font-size:10.5px;color:var(--ink-3);margin-top:3px">${E(labelPer(p,1))} · ${parseInt(p.n,10)||0} ${E(p.freq==="m"?P("s_freq_m"):P("s_freq_a"))} · ${E(p.tipo==="real"?P("s_real"):P("s_nominal"))}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-family:var(--serif);font-style:italic;font-size:16px;color:${vpl>=0?"var(--green)":"var(--warn)"}">${M(vpl)}</div>
-          <div style="font-size:10px;color:var(--ink-3);margin-top:2px">${E(P("d_tir"))} ${tir}</div>
+          <div style="font-size:10px;color:var(--ink-3);margin-top:2px">${E(P("s_tir"))} ${r&&r.tirAA!==null?PCT(r.tirAA*100,1):"—"}</div>
         </div>
       </div>`;
     });
   }
-  h+=`<button onclick="DCF.criar()" style="width:100%;background:#0F2440;color:#fff;border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:600;cursor:pointer;margin-top:4px">+ ${E(P("d_new"))}</button>`;
+  h+=`<button class="btn-primary" style="background:#6E4523;width:100%;margin-top:4px" onclick="SIM.criar()">+ ${E(P("s_new"))}</button>`;
+  if(proj()){
+    h+=`<div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn-cancel-f" style="flex:1" onclick="SIM.duplicar()">⧉ ${E(P("s_dup"))}</button>
+      <button class="btn-cancel-f" style="flex:1" onclick="SIM.exportar()">↓ ${E(P("s_csv"))}</button>
+    </div>
+    <button class="btn-delete" style="display:block" onclick="SIM.excluir()">${E(P("s_del"))}</button>`;
+  }
   el.innerHTML=h;
 }
 
-/* ── 6. RENDER: EDITOR ──────────────────────────────────────────────── */
-function fld(label,inner,hint){
-  return `<div style="min-width:0">
-    <label class="f-label" style="display:block">${E(label)}</label>
-    ${inner}
-    ${hint?`<div style="font-size:10px;color:var(--ink-4);line-height:1.45;margin:-4px 0 8px">${E(hint)}</div>`:""}
-  </div>`;
+/* ── 8. ABA PREMISSAS ───────────────────────────────────────────────── */
+function semProjeto(){
+  return `<div style="background:var(--surface);border-radius:16px;padding:20px;text-align:center;font-size:12.5px;color:var(--ink-2)">${E(P("s_pick"))}</div>`;
 }
-const IN=`class="dcf-in"`;
-function renderEditor(){
-  const el=document.getElementById("ast-view-dcf"); const p=proj(); if(!el||!p) return;
-  const ehM=p.freq==="m";
-  let h=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-      <button onclick="DCF.voltar()" class="dcf-ghost">‹ ${E(P("d_back"))}</button>
-      <div style="flex:1"></div>
-      <button onclick="DCF.duplicar()" class="dcf-ghost">⧉ ${E(P("d_dup"))}</button>
-      <button onclick="DCF.exportar()" class="dcf-ghost">↓ CSV</button>
-    </div>`;
+function renderPremissas(){
+  const el=document.getElementById("sim-view-premissas"); if(!el) return;
+  const p=proj(); if(!p){ el.innerHTML=semProjeto(); return; }
+  const ms=selMes("sim-ini",p.inicio,"SIM.setIni()");
+  let h=`<div class="sec-label">${E(P("s_prem"))}</div>
+  ${campo(P("s_name"),`<input class="f-input" type="text" value="${E(p.nome||"")}" onchange="SIM.set('nome',this.value)"/>`)}
+  <div class="sim-g2">
+    ${campo(P("s_mes"),ms.m)}
+    ${campo(P("s_ano"),ms.y)}
+    ${campo(P("s_n"),`<input class="f-input" type="number" min="1" max="600" step="1" value="${parseInt(p.n,10)||60}" onchange="SIM.set('n',this.value)"/>`)}
+    ${campo(P("s_freq"),`<select class="f-input" onchange="SIM.set('freq',this.value)">
+        <option value="m"${p.freq==="m"?" selected":""}>${E(P("s_freq_m"))}</option>
+        <option value="a"${p.freq!=="m"?" selected":""}>${E(P("s_freq_a"))}</option></select>`)}
+  </div>
 
-  h+=`<div class="dcf-card">
-    ${fld(P("d_name"),`<input ${IN} type="text" value="${E(p.nome||"")}" onchange="DCF.set('nome',this.value)"/>`)}
-    <div class="dcf-g2">
-      ${fld(P("d_ini"),`<input ${IN} type="month" value="${E(p.inicio||"")}" onchange="DCF.set('inicio',this.value)"/>`)}
-      ${fld(P("d_n"),`<input ${IN} type="number" min="1" max="600" step="1" value="${parseInt(p.n,10)||60}" onchange="DCF.set('n',this.value)"/>`)}
-      ${fld(P("d_freq"),`<select ${IN} onchange="DCF.set('freq',this.value)">
-          <option value="m"${ehM?" selected":""}>${E(P("d_freq_m"))}</option>
-          <option value="a"${!ehM?" selected":""}>${E(P("d_freq_a"))}</option></select>`)}
-      ${fld(P("d_tipo"),`<select ${IN} onchange="DCF.set('tipo',this.value)">
-          <option value="nominal"${p.tipo!=="real"?" selected":""}>${E(P("d_nominal"))}</option>
-          <option value="real"${p.tipo==="real"?" selected":""}>${E(P("d_real"))}</option></select>`)}
-      ${fld(P("d_taxa"),`<input ${IN} type="number" step="0.01" value="${p.taxa}" onchange="DCF.set('taxa',this.value)"/>`)}
-      ${fld(P("d_ipca"),`<input ${IN} type="number" step="0.01" value="${p.ipca===null?"":p.ipca}" ${p.ipcaAuto?"disabled":""} onchange="DCF.set('ipca',this.value)"/>`)}
-    </div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px">
-      <button class="dcf-chip${p.ipcaAuto?" on":""}" onclick="DCF.tog('ipcaAuto')">IPCA · ${E(P("d_ipca_auto"))}</button>
-      <button class="dcf-chip" onclick="DCF.usarCdi()">${E(P("d_usar_cdi"))}</button>
-      <button class="dcf-chip${p.meio?" on":""}" onclick="DCF.tog('meio')">${E(P("d_meio"))}</button>
-      <button class="dcf-chip${p.inflar?" on":""}" onclick="DCF.tog('inflar')"${p.tipo==="real"?" disabled":""}>${E(P("d_inflar"))}</button>
-    </div>
-    <div class="dcf-note">${E(P("d_hint_pretax"))}</div>
-    <div class="dcf-g2">
-      ${fld(P("d_ncg"),`<input ${IN} type="number" step="0.1" value="${p.ncg||0}" onchange="DCF.set('ncg',this.value)"/>`,P("d_ncg_h"))}
-      <div></div>
-    </div>
-    <div class="sec-label" style="margin-top:6px">${E(P("d_tv"))}</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
-      <button class="dcf-chip${(p.tv&&p.tv.on)?" on":""}" onclick="DCF.tog('tv.on')">${E(P("d_tv_on"))}</button>
-    </div>
-    ${(p.tv&&p.tv.on)?`<div class="dcf-g2">
-      ${fld(P("d_tv_met"),`<select ${IN} onchange="DCF.set('tv.metodo',this.value)">
-        <option value="gordon"${(p.tv.metodo||"gordon")==="gordon"?" selected":""}>${E(P("d_tv_gordon"))}</option>
-        <option value="mult"${p.tv.metodo==="mult"?" selected":""}>${E(P("d_tv_mult"))}</option></select>`)}
+  <div class="sec-label">${E(P("s_tipo"))}</div>
+  <div class="type-row">
+    <button class="type-btn${p.tipo!=="real"?" t-fix":""}" onclick="SIM.set('tipo','nominal')">${E(P("s_nominal"))} · ${E(P("s_pretax"))}</button>
+    <button class="type-btn${p.tipo==="real"?" t-fix":""}" onclick="SIM.set('tipo','real')">${E(P("s_real"))} · ${E(P("s_pretax"))}</button>
+  </div>
+  <div class="sim-hint" style="margin-top:-8px">${E(P("s_hint_pretax"))}</div>
+
+  <div class="sim-g2">
+    ${campo(P("s_taxa"),`<input class="f-input" type="number" step="0.01" value="${NUMin(taxaDe(p))}" ${p.taxaAuto?"disabled":""} onchange="SIM.set('taxa',this.value)"/>`)}
+    ${campo(P("s_ipca"),`<input class="f-input" type="number" step="0.01" value="${NUMin(p.ipca)}" ${p.ipcaAuto?"disabled":""} onchange="SIM.set('ipca',this.value)"/>`)}
+  </div>
+  <div class="sim-chips">
+    <button class="recur-btn${p.taxaAuto?" active":""}" onclick="SIM.tog('taxaAuto')">${E(P("s_auto_cdi"))}</button>
+    <button class="recur-btn${p.ipcaAuto?" active":""}" onclick="SIM.tog('ipcaAuto')">${E(P("s_auto_ipca"))}</button>
+    <button class="recur-btn${p.meio?" active":""}" onclick="SIM.tog('meio')">${E(P("s_meio"))}</button>
+    <button class="recur-btn${p.inflar?" active":""}" ${p.tipo==="real"?"disabled":""} onclick="SIM.tog('inflar')">${E(P("s_inflar"))}</button>
+  </div>
+  <div class="sim-strip">
+    <b>${E(P("s_taxa_ef"))}</b> ${PCT(taxaEfetiva(p).ef*100,2)} ${E(P("s_aa"))}${p.tipo==="real"?` · ${E(P("s_defl"))}`:""}
+  </div>
+  <div class="sim-hint">${E(P("s_meio_h"))}</div>
+
+  <div class="sec-label">${E(P("s_ncg"))}</div>
+  ${campo("%",`<input class="f-input" type="number" step="0.1" value="${NUMin(p.ncg)}" onchange="SIM.set('ncg',this.value)"/>`,P("s_ncg_h"))}
+
+  <div class="sec-label">${E(P("s_tv"))}</div>
+  <div class="sim-chips">
+    <button class="recur-btn${(p.tv&&p.tv.on)?" active":""}" onclick="SIM.tog('tv.on')">${E(P("s_tv_on"))}</button>
+  </div>`;
+  if(p.tv&&p.tv.on){
+    h+=`<div class="sim-g2">
+      ${campo(P("s_tv_met"),`<select class="f-input" onchange="SIM.set('tv.metodo',this.value)">
+        <option value="gordon"${(p.tv.metodo||"gordon")==="gordon"?" selected":""}>${E(P("s_tv_gordon"))}</option>
+        <option value="mult"${p.tv.metodo==="mult"?" selected":""}>${E(P("s_tv_mult"))}</option></select>`)}
       ${(p.tv.metodo==="mult")
-        ? fld(P("d_tv_x"),`<input ${IN} type="number" step="0.1" value="${p.tv.mult||0}" onchange="DCF.set('tv.mult',this.value)"/>`)
-        : fld(P("d_tv_g"),`<input ${IN} type="number" step="0.1" value="${p.tv.g||0}" onchange="DCF.set('tv.g',this.value)"/>`)}
-    </div>`:""}
-  </div>`;
-
-  h+=`<div id="dcf-out"></div>`;
-  h+=`<button class="dcf-del" onclick="DCF.excluir()">${E(P("d_del"))}</button>`;
+        ? campo(P("s_tv_x"),`<input class="f-input" type="number" step="0.1" value="${NUMin(p.tv.mult)}" onchange="SIM.set('tv.mult',this.value)"/>`)
+        : campo(P("s_tv_g"),`<input class="f-input" type="number" step="0.1" value="${NUMin(p.tv.g)}" onchange="SIM.set('tv.g',this.value)"/>`)}
+    </div>`;
+  }
   el.innerHTML=h;
-  saida();
 }
+const NUMin=(v)=>{ const n=+v||0; return String(Math.round(n*100)/100); };
 
-/* ── 7. RENDER: RESULTADO ───────────────────────────────────────────── */
-function kpi(rot,val,cor,sub){
-  return `<div class="dcf-kpi"><div class="dcf-kpi-l">${E(rot)}</div>
-    <div class="dcf-kpi-v" style="${cor?`color:${cor}`:""}">${val}</div>
-    ${sub?`<div class="dcf-kpi-s">${E(sub)}</div>`:""}</div>`;
-}
-function perTxt(p,v){
-  if(v===null||v===undefined) return P("d_nunca");
-  const m=v*(12/ppy(p));
-  if(p.freq==="m") return NUM(m,1)+" "+P("d_meses");
-  return NUM(v,1)+" "+P("d_anos");
-}
-function saida(){
-  const p=proj(); const box=document.getElementById("dcf-out"); if(!p||!box) return;
-  let r; try{ r=calc(p); }catch(e){ box.innerHTML=""; return; }
-  const be=beReceita(p);
-  const N=r.N;
-
-  /* KPIs */
-  if(!VIEW) VIEW=vistaPadrao(p);
-  let h=`<div class="sec-label" style="margin-top:14px">${E(P("d_res"))}</div>
-    <div class="dcf-kpis">
-      ${kpi(P("d_vpl"),M(r.vpl),r.vpl>=0?"var(--green)":"var(--warn)")}
-      ${kpi(P("d_tir"),r.tirAA===null?E(P("d_nd")):PCT(r.tirAA*100,2),r.tirAA===null?"var(--ink-3)":(r.tirAA>r.tx.ef?"var(--green)":"var(--warn)"))}
-      ${kpi(P("d_pbd"),E(perTxt(p,r.pbd)))}
-      ${kpi(P("d_pb"),E(perTxt(p,r.pb)))}
-      ${kpi(P("d_pi"),r.pi===null?"—":NUM(r.pi,2),r.pi!==null&&r.pi>=1?"var(--green)":"var(--warn)")}
-      ${kpi(P("d_tirm"),r.mtirAA===null?E(P("d_nd")):PCT(r.mtirAA*100,2))}
-    </div>
-    <div class="dcf-strip">
-      <div><b>${E(P("d_taxa_ef"))}</b> ${PCT(r.tx.ef*100,2)} ${E(P("d_aa"))}${p.tipo==="real"?` · ${E(P("d_taxa_ef_real"))}`:""}</div>
-      <div><b>${E(P("d_be"))}</b> ${E(perTxt(p,r.pbd))}${be!==null?` · <b>${E(P("d_marg"))}</b> ${PCT((1-be)*100,1)}`:""}</div>
-    </div>`;
-
-  /* composição */
-  const rl=r.T.rl||0;
-  const lin=(rot,v,forte,pos)=>{
-    const pc=rl!==0?(v/rl*100):0;
-    return `<tr class="${forte?"f":""}"><td>${E(rot)}</td>
-      <td class="n" style="${pos&&v<0?"color:var(--warn)":""}">${M(v)}</td>
-      <td class="n s">${rl!==0?NUM(pc,1)+"%":"—"}</td></tr>`;
-  };
-  h+=`<div class="sec-label" style="margin-top:16px">${E(P("d_comp"))}</div>
-    <div class="dcf-card" style="padding:4px 12px 8px">
-    <table class="dcf-t2"><thead><tr><th></th><th class="n">${E(P("d_res"))}</th><th class="n s">${E(P("d_pct_rl"))}</th></tr></thead><tbody>
-    ${lin(P("d_rec_bruta"),r.T.rec)}
-    ${lin(P("d_deducoes"),-r.T.ded)}
-    ${lin(P("d_rec_liq"),r.T.rl,true)}
-    ${lin(P("d_custos"),-r.T.cus)}
-    ${lin(P("d_mb"),r.T.mb,true)}
-    ${lin(P("d_adm"),-r.T.adm)}
-    ${lin(P("d_com"),-r.T.com)}
-    ${lin(P("d_ebitda"),r.T.eb,true)}
-    ${lin(P("d_capex"),-r.T.cap)}
-    ${lin(P("d_dncg"),-r.T.dncg)}
-    ${lin(P("d_outras"),-r.T.out)}
-    ${lin(P("d_fcl"),r.T.fcl,true)}
-    ${(p.tv&&p.tv.on)?lin(P("d_tv_val"),r.tv):""}
-    ${(p.tv&&p.tv.on)?lin(P("d_tv_pv"),r.vpTV):""}
-    </tbody></table>
-    <div class="dcf-note" style="margin:6px 0 4px">${E(P("d_mgebitda"))}: ${rl!==0?NUM(r.T.eb/rl*100,1)+"%":"—"}${(p.tv&&p.tv.on&&r.vpl!==0)?` · ${NUM(r.vpTV/r.vpl*100,0)}% ${E(P("d_tv_share"))}`:""}</div>
-    </div>`;
-
-  /* gráfico */
-  h+=`<div class="sec-label" style="margin-top:16px">${E(P("d_graf"))}</div>
-      <div class="dcf-card">${grafico(p,r)}</div>`;
-
-  /* tabela */
-  h+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px">
-        <div class="sec-label" style="margin:0">${E(P("d_tab_per"))}</div>
-        ${p.freq==="m"?`<div style="display:flex;gap:5px">
-          <button class="dcf-chip${(VIEW||vistaPadrao(p))==="per"?" on":""}" onclick="DCF.ver('per')">${E(P("d_ver_per"))}</button>
-          <button class="dcf-chip${(VIEW||vistaPadrao(p))==="ano"?" on":""}" onclick="DCF.ver('ano')">${E(P("d_ver_ano"))}</button>
-        </div>`:""}
-      </div>
-      <div class="dcf-card dcf-scroll">${tabela(p,r)}</div>`;
-
-  /* sensibilidade */
-  h+=`<div class="sec-label" style="margin-top:16px">${E(P("d_sens"))}</div>
-      <div class="dcf-card" style="padding:8px 12px 10px;overflow-x:auto">${sens(p)}
-      <div class="dcf-note" style="margin-top:6px">${E(P("d_sens_h"))}</div></div>`;
-
-  /* conferências */
-  const fl=[];
-  if(r.tirAA===null) fl.push(P("d_f_tir"));
-  if(r.tvErro) fl.push(P("d_f_g"));
-  if(p.tv&&p.tv.on&&r.vpl>0&&r.vpTV/r.vpl>0.5) fl.push(P("d_f_tvshare"));
-  if(p.tipo==="real"&&p.tv&&p.tv.on&&(p.tv.metodo||"gordon")==="gordon"&&(+p.tv.g||0)>0) fl.push(P("d_f_real"));
-  if(r.T.rec===0) fl.push(P("d_f_semrec"));
-  if(r.fcl[0]>=0) fl.push(P("d_f_semt0"));
-  if(r.pctDed>100) fl.push(P("d_f_ded"));
-  h+=`<div class="sec-label" style="margin-top:16px">${E(P("d_flags"))}</div>
-      <div class="dcf-card" style="padding:10px 14px">${
-        fl.length?fl.map(x=>`<div class="dcf-flag">⚠ ${E(x)}</div>`).join(""):`<div class="dcf-note" style="margin:0">✓ ${E(P("d_f_ok"))}</div>`
-      }</div>`;
-
-  /* linhas */
-  h+=`<div class="sec-label" style="margin-top:16px">${E(P("d_linhas"))}</div><div>${listaLinhas(p,r)}</div>`;
-  h+=`<button onclick="DCF.linha()" style="width:100%;background:var(--surface);color:var(--body);border:1.5px solid var(--line);border-radius:12px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;margin:8px 0 4px">+ ${E(P("d_add_line"))}</button>`;
-
-  box.innerHTML=h;
-  void N;
-}
-
-function listaLinhas(p,r){
-  if(!(p.linhas||[]).length)
-    return `<div style="background:var(--surface);border-radius:14px;padding:16px;text-align:center;font-size:12px;color:var(--ink-2)">${E(P("d_no_lines"))}</div>`;
-  const ORD=["receita","deducao","custo","desp_adm","desp_com","capex","outras"];
-  const IC={receita:"💵",deducao:"％",custo:"🏭",desp_adm:"🗂",desp_com:"📣",capex:"🏗",outras:"↘"};
+/* ── 9. ABA FLUXO ───────────────────────────────────────────────────── */
+function renderFluxo(){
+  const el=document.getElementById("sim-view-fluxo"); if(!el) return;
+  const p=proj(); if(!p){ el.innerHTML=semProjeto(); return; }
+  let r=null; try{ r=calc(p); }catch(e){ r=null; }
   let h="";
-  ORD.forEach(tp=>{
+  NATS.forEach(tp=>{
     const ls=(p.linhas||[]).filter(l=>l.tipo===tp);
-    if(!ls.length) return;
-    h+=`<div style="font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin:10px 0 5px">${IC[tp]} ${E(P("d_nat_"+tp))}</div>`;
+    h+=`<div class="sim-gh">
+      <div class="sec-label" style="margin:0">${ICO[tp]} ${E(P("s_g_"+tp))}</div>
+      <button class="recur-btn" onclick="SIM.linha(null,'${tp}')">+ ${E(P("s_n_"+tp))}</button>
+    </div>`;
+    if(!ls.length){ h+=`<div class="sim-vazio">${E(P("s_no_lines"))}</div>`; return; }
     ls.forEach(l=>{
-      const tot=r.porLinha[l.id]||0;
+      const tot=(r&&r.porLinha[l.id])||0;
       const det=(l.tipo==="deducao")
         ? PCT(+l.pct||0,2)
         : (l.modo==="manual"
-            ? P("d_modo_manual")
-            : `${M(+l.valor||0)} · ${E(P("d_ini_per"))} ${(isFinite(parseInt(l.ini,10))?parseInt(l.ini,10):1)}${(parseInt(l.parc,10)||1)>1?` · ${parseInt(l.parc,10)}×`:""}${(+l.cresc||0)?` · ${NUM(+l.cresc,1)}%`:""}`);
-      h+=`<div onclick="DCF.linha('${E(l.id)}')" style="background:var(--surface);border-radius:12px;padding:10px 13px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;gap:10px;${l.off?"opacity:.45":""}">
+            ? P("s_modo_manual")
+            : `${M(+l.valor||0)} · ${E(P("s_ini_per"))} ${(isFinite(parseInt(l.ini,10))?parseInt(l.ini,10):1)}`
+              +((parseInt(l.parc,10)||1)>1?` · ${parseInt(l.parc,10)}×`:"")
+              +(((l.reaj||{}).idx)?` · ${E(idxLbl(l.reaj.idx))}`:"")
+              +((+l.cresc||0)?` · +${NUM(+l.cresc,1)}%`:""));
+      h+=`<div class="sim-linha${l.off?" off":""}" onclick="SIM.linha('${E(l.id)}')">
         <div style="flex:1;min-width:0">
-          <div style="font-size:12.5px;font-weight:600;color:var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(l.desc||P("d_nat_"+l.tipo))}</div>
-          <div style="font-size:10px;color:var(--ink-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${det}</div>
+          <div class="sim-linha-t">${E(l.desc||P("s_n_"+l.tipo))}</div>
+          <div class="sim-linha-s">${det}</div>
         </div>
-        <div style="font-size:12px;color:${l.tipo==="receita"?"var(--green)":"var(--ink-2)"};flex-shrink:0">${l.tipo==="receita"?"":"−"}${M(Math.abs(tot))}</div>
+        <div class="sim-linha-v" style="color:${l.tipo==="receita"?"var(--green)":"var(--ink-2)"}">${l.tipo==="receita"?"":"−"}${M(Math.abs(tot))}</div>
       </div>`;
     });
   });
-  return h;
+  el.innerHTML=h;
+}
+function idxLbl(id){
+  const m={ipca:"IPCA",igpm:"IGP-M",cdi:"CDI",selic:"Selic",tr:"TR",poupanca:"Poupança",fixo:"%"};
+  return m[id]||id;
 }
 
-/* ── 8. TABELA PERÍODO A PERÍODO ────────────────────────────────────── */
+/* ── 10. ABA RESULTADO ──────────────────────────────────────────────── */
+function renderResult(){
+  const el=document.getElementById("sim-view-result"); if(!el) return;
+  const p=proj(); if(!p){ el.innerHTML=semProjeto(); return; }
+  Object.keys(SEM_CURVA).forEach(k=>delete SEM_CURVA[k]);
+  let r; try{ r=calc(p); }catch(e){ el.innerHTML=semProjeto(); return; }
+  if(!VIEW) VIEW=(p.freq==="m"&&(parseInt(p.n,10)||0)>24)?"ano":"per";
+  const be=beReceita(p), rl=r.T.rl||0;
+
+  let h=`<div class="sec-label">${E(P("s_res"))}</div>
+  <div class="sim-stats">
+    ${stat(P("s_vpl"),M(r.vpl),r.vpl>=0?"var(--green)":"var(--warn)")}
+    ${stat(P("s_tir"),r.tirAA===null?E(P("s_nd")):PCT(r.tirAA*100,2),r.tirAA===null?"var(--ink-3)":(r.tirAA>r.tx.ef?"var(--green)":"var(--warn)"))}
+    ${stat(P("s_pbd"),E(perTxt(p,r.pbd)))}
+    ${stat(P("s_pb"),E(perTxt(p,r.pb)))}
+    ${stat(P("s_pi"),r.pi===null?"—":NUM(r.pi,2),r.pi!==null&&r.pi>=1?"var(--green)":"var(--warn)")}
+    ${stat(P("s_tirm"),r.mtirAA===null?E(P("s_nd")):PCT(r.mtirAA*100,2))}
+  </div>
+  <div class="sim-strip">
+    <b>${E(P("s_taxa_ef"))}</b> ${PCT(r.tx.ef*100,2)} ${E(P("s_aa"))}${p.tipo==="real"?` · ${E(P("s_defl"))}`:""}<br>
+    <b>${E(P("s_be"))}</b> ${E(perTxt(p,r.pbd))}${be!==null?` · <b>${E(P("s_marg"))}</b> ${PCT((1-be)*100,1)}`:""}
+  </div>`;
+
+  const lin=(rot,v,forte)=>{
+    const pc=rl!==0?(v/rl*100):0;
+    return `<tr class="${forte?"f":""}"><td>${E(rot)}</td><td class="n">${M(v)}</td>
+      <td class="n s">${rl!==0?NUM(pc,1)+"%":"—"}</td></tr>`;
+  };
+  h+=`<div class="sec-label" style="margin-top:18px">${E(P("s_comp"))}</div>
+  <div class="sim-card" style="padding:2px 14px 10px">
+    <table class="sim-t2"><thead><tr><th></th><th class="n">${E(P("s_res"))}</th><th class="n s">${E(P("s_pct_rl"))}</th></tr></thead><tbody>
+    ${lin(P("s_rec_bruta"),r.T.rec)}
+    ${lin(P("s_deducoes"),-r.T.ded)}
+    ${lin(P("s_rec_liq"),r.T.rl,true)}
+    ${lin(P("s_custos"),-r.T.cus)}
+    ${lin(P("s_mb"),r.T.mb,true)}
+    ${lin(P("s_adm"),-r.T.adm)}
+    ${lin(P("s_com"),-r.T.com)}
+    ${lin(P("s_ebitda"),r.T.eb,true)}
+    ${lin(P("s_capex"),-r.T.cap)}
+    ${lin(P("s_dncg"),-r.T.dncg)}
+    ${lin(P("s_outras"),-r.T.out)}
+    ${lin(P("s_fcl"),r.T.fcl,true)}
+    ${(p.tv&&p.tv.on)?lin(P("s_tv_val"),r.tv):""}
+    ${(p.tv&&p.tv.on)?lin(P("s_tv_pv"),r.vpTV):""}
+    </tbody></table>
+    <div class="sim-hint" style="margin:8px 0 0">${E(P("s_mgebitda"))}: ${rl!==0?NUM(r.T.eb/rl*100,1)+"%":"—"}${(p.tv&&p.tv.on&&r.vpl!==0)?` · ${NUM(r.vpTV/r.vpl*100,0)}% ${E(P("s_tv_share"))}`:""}</div>
+  </div>`;
+
+  h+=`<div class="sec-label" style="margin-top:18px">${E(P("s_g1"))}</div>
+      <div class="sim-card">${grafBarras(p,r)}</div>
+      <div class="sec-label" style="margin-top:18px">${E(P("s_g2"))}</div>
+      <div class="sim-card">${grafLinha(p,r)}</div>`;
+
+  h+=`<div class="sim-gh" style="margin-top:18px">
+        <div class="sec-label" style="margin:0">${E(P("s_tab"))}</div>
+        ${p.freq==="m"?`<div style="display:flex;gap:5px">
+          <button class="recur-btn${VIEW==="per"?" active":""}" onclick="SIM.ver('per')">${E(P("s_ver_per"))}</button>
+          <button class="recur-btn${VIEW==="ano"?" active":""}" onclick="SIM.ver('ano')">${E(P("s_ver_ano"))}</button>
+        </div>`:""}
+      </div>
+      <div class="sim-card sim-scroll">${tabela(p,r)}</div>`;
+
+  h+=`<div class="sec-label" style="margin-top:18px">${E(P("s_sens"))}</div>
+      <div class="sim-card sim-scroll" style="max-height:none">${sens(p)}</div>
+      <div class="sim-hint">${E(P("s_sens_h"))}</div>`;
+
+  const fl=[];
+  if(r.tirAA===null) fl.push(P("s_f_tir"));
+  if(r.tvErro) fl.push(P("s_f_g"));
+  if(p.tv&&p.tv.on&&r.vpl>0&&r.vpTV/r.vpl>0.5) fl.push(P("s_f_tvshare"));
+  if(p.tipo==="real"&&p.tv&&p.tv.on&&(p.tv.metodo||"gordon")==="gordon"&&(+p.tv.g||0)>0) fl.push(P("s_f_real"));
+  if(r.T.rec===0) fl.push(P("s_f_semrec"));
+  if(r.fcl[0]>=0) fl.push(P("s_f_semt0"));
+  if(r.pctDed>100) fl.push(P("s_f_ded"));
+  Object.keys(SEM_CURVA).forEach(k=>{ if(k!=="ipca") fl.push(P("s_f_semcurva").replace("{i}",idxLbl(k))); });
+  if(p.taxaAuto&&idxMedioAA("cdi",p)===null) fl.push(P("s_f_semcdi"));
+  h+=`<div class="sec-label" style="margin-top:18px">${E(P("s_flags"))}</div>
+      <div class="sim-card" style="padding:12px 14px">${
+        fl.length?fl.map(x=>`<div class="sim-flag">⚠ ${E(x)}</div>`).join("")
+                 :`<div class="sim-hint" style="margin:0">✓ ${E(P("s_f_ok"))}</div>`}</div>`;
+  el.innerHTML=h;
+}
+
+/* ── 11. TABELA ─────────────────────────────────────────────────────── */
 function tabela(p,r){
   const N=r.N;
-  if(!VIEW) VIEW=vistaPadrao(p);
-  const cols=[P("d_rec_liq"),P("d_custos"),P("d_ebitda"),P("d_capex"),P("d_dncg"),P("d_fcl"),P("d_fcd"),P("d_acum")];
+  const cols=[P("s_rec_liq"),P("s_custos"),P("s_ebitda"),P("s_capex"),P("s_dncg"),P("s_fcl"),P("s_fcd"),P("s_acum")];
   let linhas=[];
   if(p.freq==="m"&&VIEW==="ano"){
-    /* Mapa preserva a ordem de inserção mesmo com chaves que parecem
-       número — num objeto comum, "2026" viria antes de "t0" e a data-base
-       cairia no fim da tabela. */
+    /* Map preserva a ordem de inserção mesmo com chaves que parecem
+       número: num objeto comum "2026" viria antes de "t0". */
     const g=new Map();
     for(let i=0;i<=N;i++){
       const k=(i===0)?"t0":anoDe(p,i);
-      if(!g.has(k)) g.set(k,{rot:(i===0?P("d_t0"):k),rl:0,cus:0,eb:0,cap:0,dncg:0,fcl:0,fcd:0});
+      if(!g.has(k)) g.set(k,{rot:(i===0?P("s_t0_lbl"):k),rl:0,cus:0,eb:0,cap:0,dncg:0,fcl:0,fcd:0});
       const x=g.get(k);
       x.rl+=r.rl[i]; x.cus+=r.cus[i]; x.eb+=r.eb[i];
       x.cap+=r.cap[i]; x.dncg+=r.dncg[i]; x.fcl+=r.fcl[i]; x.fcd+=r.fcd[i];
@@ -28759,159 +28953,224 @@ function tabela(p,r){
       <td class="n">${M(x.fcd)}</td>
       <td class="n b" style="color:${ac>=0?"var(--green)":"var(--warn)"}">${M(ac)}</td></tr>`;
   }).join("");
-  return `<table class="dcf-t"><thead><tr><th class="k">${E(P("d_periodo"))}</th>${cols.map(c=>`<th class="n">${E(c)}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table>`;
+  return `<table class="sim-t"><thead><tr><th class="k">${E(P("s_periodo"))}</th>${cols.map(c=>`<th class="n">${E(c)}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table>`;
 }
 
-/* ── 9. GRÁFICO ─────────────────────────────────────────────────────── */
-function grafico(p,r){
-  const N=r.N, W=320, H=132, pad=4;
-  let ac=0; const acum=[];
-  for(let i=0;i<=N;i++){ ac+=r.fcd[i]; acum.push(ac); }
-  const vals=r.fcl.concat(acum);
+/* ── 12. GRÁFICOS ───────────────────────────────────────────────────── */
+/* Gráfico sem rótulo é enfeite. Cada um traz a escala nos dois extremos,
+   a linha do zero marcada e o período nas pontas. */
+function eixo(mn,mx,W,H,padL,padT,padB){
+  const y=v=>padT+(mx-v)/((mx-mn)||1)*(H-padT-padB);
+  return {y, y0:y(0)};
+}
+function grafBarras(p,r){
+  const N=r.N, W=320, H=150, padL=42, padR=6, padT=12, padB=20;
+  const vals=r.fcl.slice(0,N+1);
   let mx=Math.max.apply(null,vals), mn=Math.min.apply(null,vals);
   if(!isFinite(mx)) mx=0; if(!isFinite(mn)) mn=0;
-  if(mx===mn){ mx=mx+1; mn=mn-1; }
-  const y=v=>pad+(mx-v)/(mx-mn)*(H-2*pad);
-  const x=i=>pad+(N===0?0:(i/N)*(W-2*pad));
-  const y0=y(0);
-  const bw=Math.max(1,(W-2*pad)/(N+1)*0.62);
+  if(mx<=0) mx=0; if(mn>=0) mn=0;
+  if(mx===mn){ mx=1; mn=-1; }
+  const {y,y0}=eixo(mn,mx,W,H,padL,padT,padB);
+  const x=i=>padL+(N===0?0:(i/N)*(W-padL-padR));
+  const bw=Math.max(1,(W-padL-padR)/(N+1)*0.66);
   let bars="";
   for(let i=0;i<=N;i++){
-    const yv=y(r.fcl[i]);
-    const top=Math.min(yv,y0), hh=Math.max(0.8,Math.abs(yv-y0));
-    bars+=`<rect x="${(x(i)-bw/2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" fill="${r.fcl[i]>=0?"#3D5A3E":"#8B3A1A"}" opacity=".55" rx="${Math.min(1.5,bw/2).toFixed(1)}"/>`;
+    const yv=y(r.fcl[i]), top=Math.min(yv,y0), hh=Math.max(0.8,Math.abs(yv-y0));
+    bars+=`<rect x="${(x(i)-bw/2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" fill="${r.fcl[i]>=0?"var(--green)":"var(--warn)"}" opacity=".62" rx="${Math.min(1.5,bw/2).toFixed(1)}"/>`;
   }
-  const pts=acum.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" style="display:block">
+  const marcas=[0,Math.round(N/2),N].filter((v,i,a)=>a.indexOf(v)===i);
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="display:block;overflow:visible">
+    <line x1="${padL}" y1="${y0.toFixed(1)}" x2="${W-padR}" y2="${y0.toFixed(1)}" stroke="var(--line)" stroke-width="1"/>
     ${bars}
-    <line x1="${pad}" y1="${y0.toFixed(1)}" x2="${W-pad}" y2="${y0.toFixed(1)}" stroke="var(--line)" stroke-width="1"/>
-    <polyline points="${pts}" fill="none" stroke="#0F2440" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+    <text x="${padL-5}" y="${(y(mx)+3).toFixed(1)}" class="sim-ax" text-anchor="end">${E(CUR(mx))}</text>
+    <text x="${padL-5}" y="${(y0+3).toFixed(1)}" class="sim-ax" text-anchor="end">0</text>
+    <text x="${padL-5}" y="${(y(mn)+3).toFixed(1)}" class="sim-ax" text-anchor="end">${E(CUR(mn))}</text>
+    ${marcas.map(i=>`<text x="${x(i).toFixed(1)}" y="${H-5}" class="sim-ax" text-anchor="${i===0?"start":i===N?"end":"middle"}">${E(labelPer(p,i,true))}</text>`).join("")}
   </svg>
-  <div style="display:flex;gap:14px;justify-content:center;font-size:10px;color:var(--ink-3);margin-top:6px">
-    <span><span style="display:inline-block;width:9px;height:9px;background:#3D5A3E;opacity:.55;border-radius:2px;vertical-align:-1px"></span> ${E(P("d_fcl"))}</span>
-    <span><span style="display:inline-block;width:14px;height:2px;background:#0F2440;vertical-align:3px"></span> ${E(P("d_acum"))} (${E(P("d_fcd"))})</span>
+  <div class="sim-leg">
+    <span><i style="background:var(--green);opacity:.62"></i>${E(P("s_fcl"))} ${E(P("s_g_maior"))} ${E(CUR(mx))}</span>
+    <span><i style="background:var(--warn);opacity:.62"></i>${E(P("s_g_menor"))} ${E(CUR(mn))}</span>
+  </div>`;
+}
+function grafLinha(p,r){
+  const N=r.N, W=320, H=150, padL=42, padR=6, padT=12, padB=20;
+  let ac=0; const acum=[];
+  for(let i=0;i<=N;i++){ ac+=r.fcd[i]; acum.push(ac); }
+  let mx=Math.max.apply(null,acum), mn=Math.min.apply(null,acum);
+  if(!isFinite(mx)) mx=0; if(!isFinite(mn)) mn=0;
+  if(mx<=0) mx=0; if(mn>=0) mn=0;
+  if(mx===mn){ mx=1; mn=-1; }
+  const {y,y0}=eixo(mn,mx,W,H,padL,padT,padB);
+  const x=i=>padL+(N===0?0:(i/N)*(W-padL-padR));
+  const pts=acum.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  let beI=null;
+  for(let i=1;i<=N;i++){ if(acum[i-1]<0&&acum[i]>=0){ beI=i; break; } }
+  const marcas=[0,Math.round(N/2),N].filter((v,i,a)=>a.indexOf(v)===i);
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" style="display:block;overflow:visible">
+    <line x1="${padL}" y1="${y0.toFixed(1)}" x2="${W-padR}" y2="${y0.toFixed(1)}" stroke="var(--line)" stroke-width="1"/>
+    <polyline points="${pts}" fill="none" stroke="#6E4523" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${beI!==null?`<line x1="${x(beI).toFixed(1)}" y1="${padT}" x2="${x(beI).toFixed(1)}" y2="${H-padB}" stroke="var(--ink-4)" stroke-width="1" stroke-dasharray="3 3"/>
+      <circle cx="${x(beI).toFixed(1)}" cy="${y(acum[beI]).toFixed(1)}" r="3" fill="#6E4523"/>
+      <text x="${x(beI).toFixed(1)}" y="${padT-3}" class="sim-ax" text-anchor="middle">${E(P("s_g_be"))} ${E(labelPer(p,beI,true))}</text>`:""}
+    <text x="${padL-5}" y="${(y(mx)+3).toFixed(1)}" class="sim-ax" text-anchor="end">${E(CUR(mx))}</text>
+    <text x="${padL-5}" y="${(y0+3).toFixed(1)}" class="sim-ax" text-anchor="end">0</text>
+    <text x="${padL-5}" y="${(y(mn)+3).toFixed(1)}" class="sim-ax" text-anchor="end">${E(CUR(mn))}</text>
+    ${marcas.map(i=>`<text x="${x(i).toFixed(1)}" y="${H-5}" class="sim-ax" text-anchor="${i===0?"start":i===N?"end":"middle"}">${E(labelPer(p,i,true))}</text>`).join("")}
+  </svg>
+  <div class="sim-leg">
+    <span><i style="background:#6E4523;height:2px;border-radius:0"></i>${E(P("s_acum"))}</span>
+    <span>${E(P("s_vpl"))} ${E(M(r.vpl))}</span>
   </div>`;
 }
 
-/* ── 10. SENSIBILIDADE ──────────────────────────────────────────────── */
+/* ── 13. SENSIBILIDADE ──────────────────────────────────────────────── */
 function sens(p){
-  const t0=+p.taxa||0;
+  const t0=taxaDe(p);
   const taxas=[t0-2,t0,t0+2], recs=[0.9,1,1.1];
-  let h=`<table class="dcf-t"><thead><tr><th class="k">${E(P("d_sens_taxa"))}</th>${recs.map(f=>`<th class="n">${f<1?"−":f>1?"+":""}${Math.abs(Math.round((f-1)*100))}%</th>`).join("")}</tr></thead><tbody>`;
+  let h=`<table class="sim-t"><thead><tr><th class="k">${E(P("s_sens_taxa"))}</th>${
+    recs.map(f=>`<th class="n">${f<1?"−":f>1?"+":"±"}${Math.abs(Math.round((f-1)*100))}%</th>`).join("")}</tr></thead><tbody>`;
   taxas.forEach(tx=>{
     h+=`<tr><td class="k">${NUM(tx,2)}%</td>`;
     recs.forEach(f=>{
       let v=0; try{ v=calc(p,{taxa:tx,fRec:f}).vpl; }catch(e){}
       h+=`<td class="n" style="color:${v>=0?"var(--green)":"var(--warn)"}">${M(v)}</td>`;
     });
-    h+="</tr>";
+    h+=`</tr>`;
   });
-  return h+"</tbody></table>";
+  return h+`</tbody></table>`;
 }
 
-/* ── 11. FICHA DA LINHA ─────────────────────────────────────────────── */
-let LID=null;
-function abrirLinha(id){
+/* ── 14. FICHA DA LINHA ─────────────────────────────────────────────── */
+let RASC=null;
+function abrirLinha(id,natPadrao){
   const p=proj(); if(!p) return;
-  LID=id||null;
   const l=id?(p.linhas||[]).find(x=>String(x.id)===String(id)):null;
-  const d=l||{tipo:"receita",modo:"serie",desc:"",valor:0,pct:0,ini:1,rep:0,passo:1,parc:1,lag:0,cresc:0,manual:{},off:false};
+  const base={id:Date.now(),tipo:natPadrao||NAT_NOVA||"receita",modo:"serie",desc:"",valor:0,pct:0,
+    ini:(natPadrao==="capex"?0:1),rep:0,passo:1,parc:1,lag:0,cresc:0,
+    reaj:{idx:"",cada:(p.freq==="m"?12:1),ini:0,pct:0},manual:{},off:false};
+  RASC=JSON.parse(JSON.stringify(l||base));
+  if(!RASC.id) RASC.id=Date.now();
+  RASC.reaj=RASC.reaj||{idx:"",cada:(p.freq==="m"?12:1),ini:0,pct:0};
   const ov=document.createElement("div");
-  ov.className="overlay open"; ov.id="modal-dcf-line"; ov.style.zIndex="210";
+  ov.className="overlay open"; ov.id="modal-sim-line"; ov.style.zIndex="210";
   ov.innerHTML=`<div class="sheet" style="max-height:92dvh;overflow-y:auto">
     <div class="sheet-handle"></div>
     <button class="sheet-close" onclick="closeOverlay(this)">✕</button>
-    <div class="sheet-title">${E(l?P("d_edit_line"):P("d_add_line"))}</div>
-    <div id="dcf-l-body"></div>
-    <div style="display:flex;gap:8px;margin-top:6px">
-      <button onclick="closeOverlay(this)" style="flex:1;padding:13px;border-radius:12px;border:1.5px solid var(--line);background:none;color:var(--ink-2);font-size:13px;font-weight:600;cursor:pointer">${E(P("d_cancel"))}</button>
-      <button onclick="DCF.salvarLinha()" style="flex:2;padding:13px;border-radius:12px;border:none;background:#0F2440;color:#fff;font-size:13px;font-weight:600;cursor:pointer">${E(P("d_save"))}</button>
+    <div class="form-title">${E(l?P("s_edit_line"):P("s_new_line"))}</div>
+    <div id="sim-l-body"></div>
+    <div class="f-actions" style="margin-top:8px">
+      <button class="btn-cancel-f" onclick="closeOverlay(this)">${E(P("s_cancel"))}</button>
+      <button class="btn-primary" style="background:#6E4523" onclick="SIM.salvarLinha()">${E(P("s_save"))}</button>
     </div>
-    ${l?`<button class="dcf-del" onclick="DCF.excluirLinha()">${E(P("d_del_line"))}</button>`:""}
+    ${l?`<button class="btn-delete" onclick="SIM.excluirLinha()">${E(P("s_del_line"))}</button>`:""}
   </div>`;
   document.body.appendChild(ov);
   ov.onclick=e=>{ if(e.target===ov) closeOverlay(ov); };
-  RASC=JSON.parse(JSON.stringify(d));
-  if(!RASC.id) RASC.id=Date.now();
   corpoLinha();
 }
-let RASC=null;
 function corpoLinha(){
-  const p=proj(); const b=document.getElementById("dcf-l-body"); if(!b||!p) return;
+  const p=proj(), b=document.getElementById("sim-l-body"); if(!p||!b||!RASC) return;
   const d=RASC, N=Math.max(1,Math.min(600,parseInt(p.n,10)||60));
-  const TPS=["receita","deducao","custo","desp_adm","desp_com","capex","outras"];
-  let h=fld(P("d_nat"),`<select ${IN} onchange="DCF.setL('tipo',this.value,1)">
-      ${TPS.map(x=>`<option value="${x}"${d.tipo===x?" selected":""}>${E(P("d_nat_"+x))}</option>`).join("")}
-    </select>`);
-  h+=fld(P("d_desc"),`<input ${IN} type="text" value="${E(d.desc||"")}" placeholder="${E(P("d_nat_"+d.tipo))}" onchange="DCF.setL('desc',this.value)"/>`);
+  let h=`<label class="f-label">${E(P("s_nat"))}</label>
+  <div class="cat-grid" id="sim-nat-grid" style="grid-template-columns:repeat(4,1fr)">
+    ${NATS.map(x=>`<button class="cat-btn" onclick="SIM.setL('tipo','${x}',1)"
+      style="${d.tipo===x?"border-color:#6E4523;background:rgba(110,69,35,.08)":""}">
+      <span class="ico">${ICO[x]}</span><span class="lbl">${E(P("s_n_"+x))}</span></button>`).join("")}
+  </div>
+  <label class="f-label">${E(P("s_desc"))}</label>
+  <input class="f-input" type="text" value="${E(d.desc||"")}" placeholder="${E(P("s_n_"+d.tipo))}" onchange="SIM.setL('desc',this.value)"/>`;
 
   if(d.tipo==="deducao"){
-    h+=`<div class="dcf-g2">
-      ${fld(P("d_pct"),`<input ${IN} type="number" step="0.01" value="${d.pct||0}" onchange="DCF.setL('pct',this.value)"/>`)}
-      ${fld(P("d_ini_per"),`<input ${IN} type="number" min="0" max="${N}" step="1" value="${parseInt(d.ini,10)||0}" onchange="DCF.setL('ini',this.value)"/>`)}
-      ${fld(P("d_rep"),`<input ${IN} type="number" min="0" step="1" value="${parseInt(d.rep,10)||0}" onchange="DCF.setL('rep',this.value)"/>`)}
-      <div></div>
-    </div>
-    <div class="dcf-note">${E(P("d_t0_h"))}</div>`;
+    h+=`<label class="f-label">${E(P("s_pct"))}</label>
+      <input class="f-amount" type="number" step="0.01" value="${NUMin(d.pct)}" onchange="SIM.setL('pct',this.value)"/>
+      <div class="sim-g2">
+        ${campo(P("s_ini_per"),`<input class="f-input" type="number" min="0" max="${N}" step="1" value="${inteiro(d.ini,0)}" onchange="SIM.setL('ini',this.value)"/>`)}
+        ${campo(P("s_rep"),`<input class="f-input" type="number" min="0" step="1" value="${inteiro(d.rep,0)}" onchange="SIM.setL('rep',this.value)"/>`)}
+      </div>
+      <div class="sim-hint">${E(P("s_t0_h"))}</div>`;
   }else{
-    h+=fld(P("d_modo"),`<select ${IN} onchange="DCF.setL('modo',this.value,1)">
-        <option value="serie"${d.modo!=="manual"?" selected":""}>${E(P("d_modo_serie"))}</option>
-        <option value="manual"${d.modo==="manual"?" selected":""}>${E(P("d_modo_manual"))}</option></select>`);
+    h+=`<label class="f-label">${E(P("s_modo"))}</label>
+    <div class="type-row">
+      <button class="type-btn${d.modo!=="manual"?" t-fix":""}" onclick="SIM.setL('modo','serie',1)">${E(P("s_modo_serie"))}</button>
+      <button class="type-btn${d.modo==="manual"?" t-fix":""}" onclick="SIM.setL('modo','manual',1)">${E(P("s_modo_manual"))}</button>
+    </div>`;
     if(d.modo==="manual"){
-      h+=`<div class="dcf-note">${E(P("d_manual_h"))}</div><div class="dcf-man">`;
+      h+=`<div class="sim-hint">${E(P("s_manual_h"))}</div><div class="sim-man">`;
       for(let i=0;i<=N;i++){
-        const v=(d.manual&&d.manual[i])||0;
-        h+=`<div class="dcf-man-r"><span>${E(labelPer(p,i))}</span>
-          <input ${IN} type="text" inputmode="decimal" value="${E(MSK(v))}" placeholder="0,00" onchange="DCF.setM(${i},this.value,1)"/></div>`;
+        h+=`<div class="sim-man-r"><span>${E(labelPer(p,i,true))}</span>
+          <input class="f-input" type="text" inputmode="decimal" value="${E(MSK((d.manual||{})[i]))}" placeholder="0,00" onchange="SIM.setM(${i},this.value,1)"/></div>`;
       }
       h+=`</div>`;
     }else{
-      h+=`<div class="dcf-g2">
-        ${fld(P("d_valor"),`<input ${IN} type="text" inputmode="decimal" value="${E(MSK(d.valor))}" placeholder="0,00" onchange="DCF.setL('valor',this.value,2)"/>`)}
-        ${fld(P("d_ini_per"),`<input ${IN} type="number" min="0" max="${N}" step="1" value="${parseInt(d.ini,10)||0}" onchange="DCF.setL('ini',this.value)"/>`)}
-        ${fld(P("d_rep"),`<input ${IN} type="number" min="0" step="1" value="${parseInt(d.rep,10)||0}" onchange="DCF.setL('rep',this.value)"/>`)}
-        ${fld(P("d_passo"),`<input ${IN} type="number" min="1" step="1" value="${parseInt(d.passo,10)||1}" onchange="DCF.setL('passo',this.value)"/>`)}
-        ${fld(P("d_parc"),`<input ${IN} type="number" min="1" step="1" value="${parseInt(d.parc,10)||1}" onchange="DCF.setL('parc',this.value)"/>`)}
-        ${fld(P("d_lag"),`<input ${IN} type="number" min="0" step="1" value="${parseInt(d.lag,10)||0}" onchange="DCF.setL('lag',this.value)"/>`)}
-        ${fld(P("d_cresc"),`<input ${IN} type="number" step="0.01" value="${d.cresc||0}" onchange="DCF.setL('cresc',this.value)"/>`)}
-        <div></div>
+      h+=`<label class="f-label">${E(P("s_valor"))}</label>
+      <input class="f-amount" type="text" inputmode="decimal" value="${E(MSK(d.valor))}" placeholder="0,00" onchange="SIM.setL('valor',this.value,2)"/>
+      <div class="sim-g2">
+        ${campo(P("s_ini_per"),`<input class="f-input" type="number" min="0" max="${N}" step="1" value="${inteiro(d.ini,1)}" onchange="SIM.setL('ini',this.value)"/>`)}
+        ${campo(P("s_rep"),`<input class="f-input" type="number" min="0" step="1" value="${inteiro(d.rep,0)}" onchange="SIM.setL('rep',this.value)"/>`)}
+        ${campo(P("s_passo"),`<input class="f-input" type="number" min="1" step="1" value="${inteiro(d.passo,1)}" onchange="SIM.setL('passo',this.value)"/>`)}
+        ${campo(P("s_parc"),`<input class="f-input" type="number" min="1" step="1" value="${inteiro(d.parc,1)}" onchange="SIM.setL('parc',this.value)"/>`)}
+        ${campo(P("s_lag"),`<input class="f-input" type="number" min="0" step="1" value="${inteiro(d.lag,0)}" onchange="SIM.setL('lag',this.value)"/>`)}
+        ${campo(P("s_cresc"),`<input class="f-input" type="number" step="0.01" value="${NUMin(d.cresc)}" onchange="SIM.setL('cresc',this.value)"/>`)}
       </div>
-      <div class="dcf-note">${E(P("d_parc_h"))} ${E(P("d_t0_h"))}</div>`;
+      <div class="sim-hint">${E(P("s_parc_h"))} ${E(P("s_t0_h"))}</div>`;
     }
-    h+=`<div class="dcf-strip" style="margin-top:2px" id="dcf-l-tot"></div>`;
+    /* reajuste */
+    const r=d.reaj||{};
+    h+=`<div class="sec-label" style="margin-top:14px">${E(P("s_reaj"))}</div>
+    ${campo(P("s_reaj_idx"),`<select class="f-input" onchange="SIM.setR('idx',this.value,1)">
+        <option value=""${!r.idx?" selected":""}>${E(P("s_reaj_no"))}</option>
+        <option value="ipca"${r.idx==="ipca"?" selected":""}>IPCA</option>
+        <option value="igpm"${r.idx==="igpm"?" selected":""}>IGP-M</option>
+        <option value="cdi"${r.idx==="cdi"?" selected":""}>CDI</option>
+        <option value="selic"${r.idx==="selic"?" selected":""}>Selic</option>
+        <option value="tr"${r.idx==="tr"?" selected":""}>TR</option>
+        <option value="poupanca"${r.idx==="poupanca"?" selected":""}>${E(idxLbl("poupanca"))}</option>
+        <option value="fixo"${r.idx==="fixo"?" selected":""}>${E(P("s_reaj_fixo"))}</option>
+      </select>`)}`;
+    if(r.idx){
+      h+=`<div class="sim-g2">
+        ${campo(P("s_reaj_cada"),`<input class="f-input" type="number" min="1" step="1" value="${inteiro(r.cada,p.freq==="m"?12:1)}" onchange="SIM.setR('cada',this.value)"/>`)}
+        ${campo(P("s_reaj_ini"),`<input class="f-input" type="number" min="1" step="1" value="${inteiro(r.ini,(parseInt(r.cada,10)||12)+1)}" onchange="SIM.setR('ini',this.value)"/>`)}
+        ${r.idx==="fixo"?campo(P("s_reaj_pct"),`<input class="f-input" type="number" step="0.01" value="${NUMin(r.pct)}" onchange="SIM.setR('pct',this.value)"/>`):""}
+      </div>`;
+    }
+    h+=`<div class="sim-hint">${E(P("s_reaj_h"))}</div>
+        <div class="sim-hint">${E(P("s_cresc_h"))}</div>
+        <div class="sim-strip" id="sim-l-tot"></div>`;
   }
-  h+=`<div style="margin:8px 0 10px"><button class="dcf-chip${d.off?" on":""}" onclick="DCF.setL('off',!${!!d.off},1)">${E(P("d_off"))}</button></div>`;
+  h+=`<div class="sim-chips" style="margin:10px 0 4px">
+    <button class="recur-btn${d.off?" active":""}" onclick="SIM.setL('off',${d.off?"false":"true"},1)">${E(P("s_off"))}</button>
+  </div>`;
   b.innerHTML=h;
   totalLinha();
 }
-/* O total responde a cada campo sem remontar a ficha. */
+const inteiro=(v,def)=>{ const n=parseInt(v,10); return String(isFinite(n)?n:def); };
 function totalLinha(){
-  const p=proj(), el=document.getElementById("dcf-l-tot");
+  const p=proj(), el=document.getElementById("sim-l-tot");
   if(!p||!el||!RASC||RASC.tipo==="deducao") return;
   const N=Math.max(1,Math.min(600,parseInt(p.n,10)||60));
-  const tt=serie(RASC,N).reduce((a,v)=>a+v,0);
-  el.innerHTML=`<div><b>${E(P("d_total_line"))}</b> ${M(tt)}</div>`;
+  const tt=serie(RASC,N,p).reduce((a,v)=>a+v,0);
+  el.innerHTML=`<b>${E(P("s_total_line"))}</b> ${M(tt)}`;
 }
 
-/* ── 12. CSV ────────────────────────────────────────────────────────── */
+/* ── 15. CSV ────────────────────────────────────────────────────────── */
 function csv(){
-  const p=proj(); if(!p) return;
+  const p=proj(); if(!p){ try{ toast(P("s_pick")); }catch(e){} return; }
   const r=calc(p), N=r.N, sep=";";
   const dec=v=>String(Math.round((v||0)*100)/100).replace(".",",");
   const rows=[];
-  rows.push([p.nome||"",P("d_taxa"),dec(p.taxa),P("d_ipca"),dec(p.ipca),P("d_tipo"),p.tipo].join(sep));
-  const rot=[P("d_periodo"),P("d_rec_bruta"),P("d_deducoes"),P("d_rec_liq"),P("d_custos"),P("d_mb"),
-             P("d_adm"),P("d_com"),P("d_ebitda"),P("d_capex"),P("d_dncg"),P("d_outras"),P("d_fcl"),P("d_fcd")];
-  rows.push(rot.join(sep));
+  rows.push([p.nome||"",P("s_taxa"),dec(taxaDe(p)),P("s_ipca"),dec(p.ipca),P("s_tipo"),p.tipo].join(sep));
+  rows.push([P("s_periodo"),P("s_rec_bruta"),P("s_deducoes"),P("s_rec_liq"),P("s_custos"),P("s_mb"),
+             P("s_adm"),P("s_com"),P("s_ebitda"),P("s_capex"),P("s_dncg"),P("s_outras"),P("s_fcl"),P("s_fcd")].join(sep));
   for(let i=0;i<=N;i++){
-    rows.push([labelPer(p,i),dec(r.rec[i]),dec(-r.ded[i]),dec(r.rl[i]),dec(-r.cus[i]),dec(r.mb[i]),
+    rows.push([labelPer(p,i,true),dec(r.rec[i]),dec(-r.ded[i]),dec(r.rl[i]),dec(-r.cus[i]),dec(r.mb[i]),
       dec(-r.adm[i]),dec(-r.com[i]),dec(r.eb[i]),dec(-r.cap[i]),dec(-r.dncg[i]),dec(-r.out[i]),
       dec(r.fcl[i]),dec(r.fcd[i])].join(sep));
   }
   rows.push("");
-  rows.push([P("d_vpl"),dec(r.vpl)].join(sep));
-  rows.push([P("d_tir"),r.tirAA===null?"":dec(r.tirAA*100)].join(sep));
-  rows.push([P("d_pbd"),r.pbd===null?"":dec(r.pbd)].join(sep));
+  rows.push([P("s_vpl"),dec(r.vpl)].join(sep));
+  rows.push([P("s_tir"),r.tirAA===null?"":dec(r.tirAA*100)].join(sep));
+  rows.push([P("s_pbd"),r.pbd===null?"":dec(r.pbd)].join(sep));
   const blob=new Blob(["\ufeff"+rows.join("\n")],{type:"text/csv;charset=utf-8"});
   const nome=(p.nome||"dcf").replace(/[^\w\-]+/g,"_")+".csv";
   try{
@@ -28925,31 +29184,52 @@ function csv(){
   setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
 
-/* ── 13. API ────────────────────────────────────────────────────────── */
-const num=v=>{ const n=parseFloat(String(v==null?"":v).replace(/\./g,"").replace(",",".")); return isNaN(n)?0:n; };
-const numSimples=v=>{ const n=parseFloat(String(v==null?"":v).replace(",",".")); return isNaN(n)?0:n; };
+/* ── 16. API ────────────────────────────────────────────────────────── */
+const num=v=>{ let s=String(v==null?"":v).trim();
+  if(LG()==="en") s=s.replace(/,/g,""); else s=s.replace(/\./g,"").replace(",",".");
+  const n=parseFloat(s.replace(/[^\d.\-]/g,"")); return isNaN(n)?0:n; };
+const dec=v=>{ const n=parseFloat(String(v==null?"":v).replace(",",".")); return isNaN(n)?0:n; };
 
-window.DCF={
-  render(){ carregar(); if(SEL&&proj()) renderEditor(); else { SEL=null; renderLista(); } },
-  criar(){ const p=novo(); L.push(p); gravar(); SEL=p.id; VIEW=null; renderEditor(); },
-  abrir(id){ SEL=id; VIEW=null; renderEditor(); },
-  voltar(){ SEL=null; renderLista(); },
-  ver(v){ VIEW=v; saida(); },
+function tudo(){ hero(); aba(ABA); atualizarHome(); }
+function atualizarHome(){
+  const v=document.getElementById("home-sim-val"), s=document.getElementById("home-sim-x-val");
+  if(!v) return;
+  v.textContent=String(L.length);
+  if(s){
+    let melhor=null;
+    L.forEach(p=>{ try{ const c=calc(p).vpl; if(melhor===null||c>melhor) melhor=c; }catch(e){} });
+    s.textContent=(melhor===null)?"—":M(melhor);
+  }
+}
+
+window.SIM={
+  render(){ carregar(); if(SEL&&!proj()) SEL=null; if(!SEL&&L.length===1) SEL=L[0].id; tudo(); },
+  aba(v){ ABA=v; hero(); aba(v); },
+  ver(v){ VIEW=v; renderResult(); },
+  criar(){ const p=novo(); L.push(p); SEL=p.id; VIEW=null; gravar(); ABA="premissas"; tudo(); },
+  abrir(id){ SEL=id; VIEW=null; gravar(); ABA="premissas"; tudo(); },
   set(k,v){
     const p=proj(); if(!p) return;
     if(k==="nome") p.nome=String(v||"").slice(0,60);
-    else if(k==="inicio") p.inicio=v||p.inicio;
     else if(k==="n") p.n=Math.max(1,Math.min(600,parseInt(v,10)||60));
-    else if(k==="freq"){ p.freq=(v==="a")?"a":"m"; }
+    else if(k==="freq") p.freq=(v==="a")?"a":"m";
     else if(k==="tipo"){ p.tipo=(v==="real")?"real":"nominal"; if(p.tipo==="real") p.inflar=false; }
-    else if(k==="taxa") p.taxa=numSimples(v);
-    else if(k==="ipca") p.ipca=numSimples(v);
-    else if(k==="ncg") p.ncg=numSimples(v);
-    else if(k.indexOf("tv.")===0){ p.tv=p.tv||{}; const kk=k.slice(3);
-      p.tv[kk]=(kk==="metodo")?v:numSimples(v); }
+    else if(k==="taxa") p.taxa=dec(v);
+    else if(k==="ipca") p.ipca=dec(v);
+    else if(k==="ncg") p.ncg=dec(v);
+    else if(k.indexOf("tv.")===0){ p.tv=p.tv||{}; const kk=k.slice(3); p.tv[kk]=(kk==="metodo")?v:dec(v); }
     if(p.ipcaAuto) p.ipca=ipcaCurva(p);
-    p.ts=Date.now(); gravar();
-    if(k==="freq"||k==="tipo"||k==="n"||k==="inicio"||k.indexOf("tv.")===0) renderEditor(); else saida();
+    p.ts=Date.now(); VIEW=null; gravar();
+    if(k==="nome"||k==="taxa"||k==="ipca"||k==="ncg"){ hero(); if(ABA==="result") renderResult(); }
+    else tudo();
+  },
+  setIni(){
+    const p=proj(); if(!p) return;
+    const m=document.getElementById("sim-ini-m"), a=document.getElementById("sim-ini-a");
+    if(!m||!a) return;
+    p.inicio=a.value+"-"+String(parseInt(m.value,10)).padStart(2,"0");
+    if(p.ipcaAuto) p.ipca=ipcaCurva(p);
+    p.ts=Date.now(); VIEW=null; gravar(); hero();
   },
   tog(k){
     const p=proj(); if(!p) return;
@@ -28957,27 +29237,22 @@ window.DCF={
     else if(k==="inflar"){ if(p.tipo==="real") return; p.inflar=!p.inflar; }
     else p[k]=!p[k];
     if(p.ipcaAuto) p.ipca=ipcaCurva(p);
-    p.ts=Date.now(); gravar(); renderEditor();
-  },
-  usarCdi(){
-    const p=proj(); if(!p) return;
-    const v=idxMedioAA("cdi",p);
-    if(v===null){ try{ toast("—"); }catch(e){} return; }
-    p.taxa=v; p.ts=Date.now(); gravar(); renderEditor();
+    if(k==="taxaAuto"&&!p.taxaAuto){ const v=idxMedioAA("cdi",p); if(v!==null) p.taxa=v; }
+    p.ts=Date.now(); VIEW=null; gravar(); tudo();
   },
   duplicar(){
     const p=proj(); if(!p) return;
-    const c=JSON.parse(JSON.stringify(p));
-    c.id=Date.now(); c.nome=(p.nome||"")+" ·"; c.ts=Date.now();
-    L.push(c); gravar(); SEL=c.id; renderEditor();
+    const c=JSON.parse(JSON.stringify(p)); c.id=Date.now(); c.nome=(p.nome||"")+" ·"; c.ts=Date.now();
+    L.push(c); SEL=c.id; gravar(); tudo();
   },
   excluir(){
     const p=proj(); if(!p) return;
-    if(!confirm(P("d_del_q"))) return;
-    L=L.filter(x=>String(x.id)!==String(p.id)); gravar(); SEL=null; renderLista();
+    if(!confirm(P("s_del_q"))) return;
+    L=L.filter(x=>String(x.id)!==String(p.id)); SEL=L.length?L[0].id:null;
+    gravar(); ABA="projetos"; tudo();
   },
   exportar(){ csv(); },
-  linha(id){ abrirLinha(id); },
+  linha(id,nat){ if(nat) NAT_NOVA=nat; abrirLinha(id,nat); },
   setL(k,v,re){
     if(!RASC) return;
     if(k==="tipo"){ RASC.tipo=v; if(v==="deducao"&&(parseInt(RASC.ini,10)||0)<0) RASC.ini=0; }
@@ -28985,73 +29260,62 @@ window.DCF={
     else if(k==="modo") RASC.modo=(v==="manual")?"manual":"serie";
     else if(k==="off") RASC.off=(v===true||v==="true");
     else if(k==="valor") RASC.valor=num(v);
-    else if(k==="pct"||k==="cresc") RASC[k]=numSimples(v);
+    else if(k==="pct"||k==="cresc") RASC[k]=dec(v);
     else RASC[k]=Math.max(0,parseInt(v,10)||0);
-    if(!re) totalLinha();
-    /* re=1 remonta a ficha inteira; re=2 só reescreve o campo de dinheiro,
-       para não roubar o foco de quem ainda está digitando ao lado. */
+    /* re=1 remonta a ficha; re=2 só reescreve o campo de dinheiro, para
+       não roubar o foco de quem ainda está digitando ao lado. */
     if(re===1) corpoLinha();
-    else if(re===2){ const t=document.querySelector("#dcf-l-body .dcf-g2 input.dcf-in"); if(t) t.value=MSK(RASC.valor); totalLinha(); }
+    else if(re===2){ const t=document.querySelector("#sim-l-body input.f-amount"); if(t) t.value=MSK(RASC.valor); totalLinha(); }
+    else totalLinha();
   },
-  setM(i,v,re){ if(!RASC) return; RASC.manual=RASC.manual||{}; const n=num(v);
-    if(n) RASC.manual[i]=n; else delete RASC.manual[i];
-    if(re){ const el=document.querySelectorAll("#modal-dcf-line .dcf-man-r input.dcf-in")[i]; if(el) el.value=MSK(n); totalLinha(); } },
+  setR(k,v,re){
+    if(!RASC) return;
+    RASC.reaj=RASC.reaj||{};
+    if(k==="idx") RASC.reaj.idx=v||"";
+    else if(k==="pct") RASC.reaj.pct=dec(v);
+    else RASC.reaj[k]=Math.max(0,parseInt(v,10)||0);
+    if(re) corpoLinha(); else totalLinha();
+  },
+  setM(i,v,re){
+    if(!RASC) return; RASC.manual=RASC.manual||{};
+    const n=num(v); if(n) RASC.manual[i]=n; else delete RASC.manual[i];
+    if(re){ const el=document.querySelectorAll("#sim-l-body .sim-man-r input.f-input")[i]; if(el) el.value=MSK(n); totalLinha(); }
+  },
   salvarLinha(){
     const p=proj(); if(!p||!RASC) return;
     p.linhas=p.linhas||[];
     const i=p.linhas.findIndex(x=>String(x.id)===String(RASC.id));
     if(i>=0) p.linhas[i]=RASC; else p.linhas.push(RASC);
-    p.ts=Date.now(); gravar();
-    const ov=document.getElementById("modal-dcf-line"); if(ov) closeOverlay(ov);
-    RASC=null; LID=null; renderEditor();
+    p.ts=Date.now(); VIEW=null; gravar();
+    const ov=document.getElementById("modal-sim-line"); if(ov) closeOverlay(ov);
+    RASC=null; ABA="fluxo"; tudo();
   },
   excluirLinha(){
     const p=proj(); if(!p||!RASC) return;
     p.linhas=(p.linhas||[]).filter(x=>String(x.id)!==String(RASC.id));
-    p.ts=Date.now(); gravar();
-    const ov=document.getElementById("modal-dcf-line"); if(ov) closeOverlay(ov);
-    RASC=null; LID=null; renderEditor();
+    p.ts=Date.now(); VIEW=null; gravar();
+    const ov=document.getElementById("modal-sim-line"); if(ov) closeOverlay(ov);
+    RASC=null; ABA="fluxo"; tudo();
   },
-  _calc:calc
+  _calc:calc, _serie:serie
 };
 
-/* ── 14. LIGAÇÕES COM O APP ─────────────────────────────────────────── */
-/* A aba entra no ciclo de showAst; o idioma e o olho fechado voltam a
-   desenhar a tela sem que nada aqui precise saber como o resto do app
-   decidiu mudar. */
+/* ── 17. LIGAÇÕES COM O APP ─────────────────────────────────────────── */
+/* Idioma e olho fechado redesenham a seção sem que nada aqui precise
+   saber como o resto do app decidiu mudar. */
 (function(){
-  const orig=window.showAst;
-  if(typeof orig==="function"){
-    window.showAst=function(v){
-      orig(v);
-      const el=document.getElementById("ast-view-dcf");
-      if(el){
-        el.style.display=(v==="dcf")?"block":"none";
-        if(v==="dcf"){ try{ window.DCF.render(); }catch(e){ try{logErro("dcf",e);}catch(_){} } }
-      }
-      document.querySelectorAll("#nav-patrimonio .nav-btn").forEach(b=>{
-        const on=b.dataset.astview===v;
-        b.classList.toggle("active",on);
-        b.style.color=on?"#0F2440":"var(--ink-2)";
-      });
-    };
-  }
+  const redesenhar=()=>{
+    const sc=document.getElementById("screen-simulacoes");
+    try{ atualizarHome(); }catch(e){}
+    if(sc&&sc.classList.contains("active")){ try{ window.SIM.render(); }catch(e){} }
+  };
   const at=window.applyTranslations;
-  if(typeof at==="function"){
-    window.applyTranslations=function(){
-      at.apply(this,arguments);
-      const el=document.getElementById("ast-view-dcf");
-      if(el&&el.style.display!=="none"){ try{ window.DCF.render(); }catch(e){} }
-    };
-  }
-  const tvz=window.toggleValores;
-  if(typeof tvz==="function"){
-    window.toggleValores=function(){
-      tvz.apply(this,arguments);
-      const el=document.getElementById("ast-view-dcf");
-      if(el&&el.style.display!=="none"){ try{ window.DCF.render(); }catch(e){} }
-    };
-  }
+  if(typeof at==="function"){ window.applyTranslations=function(){ at.apply(this,arguments); redesenhar(); }; }
+  const tv=window.toggleValores;
+  if(typeof tv==="function"){ window.toggleValores=function(){ tv.apply(this,arguments); redesenhar(); }; }
+  const rh=window.renderHome;
+  if(typeof rh==="function"){ window.renderHome=function(){ rh.apply(this,arguments); try{ atualizarHome(); }catch(e){} }; }
+  try{ atualizarHome(); }catch(e){}
 })();
 
 })();
