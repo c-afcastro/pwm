@@ -16186,7 +16186,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.97";
+const APP_VERSION="10.98";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -27966,33 +27966,89 @@ html.wz-lock body{ touch-action:none; }
 </script>
 <style id="sim-css">
 /* ═══ SIMULAÇÕES ══════════════════════════════════════════════════════
-   Nada aqui redefine tamanho de campo: a tela e a ficha entraram nas
-   listas de seletores que já governam Entradas, Patrimônio e Dívidas.
-   O que segue é só o que o app ainda não tinha — grade de duas colunas,
-   cabeçalho de grupo, tabela e eixo de gráfico. */
+   UMA escala só, e ela não é inventada aqui: é a forma compacta que o
+   app já usa em Parâmetros, na ficha da aplicação e na da entrada —
+   .pro-h / .pro-grid / .pro-f / .pro-pill. Rótulo de 9px numa linha só,
+   com reticências se não couber; campo de 36px e texto de 13,5px.
+
+   As regras repetem esses valores com !important porque o bloco de
+   padronização geral força 42px/16px em qualquer input desta tela, e
+   aqui a referência é a outra. Nada de escala própria: se um dia a
+   forma compacta do app mudar, muda-se este bloco junto com ela. */
 #screen-simulacoes *, #modal-sim-line *{ box-sizing:border-box; }
 
-/* duas colunas que não saem do prumo: a pilha é rótulo em cima, campo
-   embaixo, e o rótulo tem altura mínima para que um de duas linhas não
-   empurre o campo ao lado para baixo */
-#screen-simulacoes .sim-g2, #modal-sim-line .sim-g2{
-  display:grid; grid-template-columns:1fr 1fr; gap:0 10px;
+/* ── o campo compacto ── */
+#screen-simulacoes .pro-f, #modal-sim-line .pro-f{
+  display:flex; flex-direction:column; gap:5px; min-width:0;
 }
-#screen-simulacoes .sim-f, #modal-sim-line .sim-f{
-  min-width:0; display:flex; flex-direction:column; justify-content:flex-end;
+#screen-simulacoes .pro-f>label, #modal-sim-line .pro-f>label{
+  font-size:9px!important; letter-spacing:1px; text-transform:uppercase;
+  color:var(--ink-3); font-weight:600; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; margin:0!important; line-height:1.2;
 }
-#screen-simulacoes .sim-g2 .f-label, #modal-sim-line .sim-g2 .f-label{
-  min-height:24px; display:flex; align-items:flex-end;
+#screen-simulacoes .pro-f>input, #screen-simulacoes .pro-f>select,
+#modal-sim-line .pro-f>input, #modal-sim-line .pro-f>select,
+#modal-sim-line .sim-man-r>input{
+  width:100%; min-width:0;
+  font-size:13.5px!important; line-height:1.2!important;
+  min-height:36px!important; height:36px!important;
+  padding:8px 11px!important; border-radius:11px!important;
+  border:1.5px solid transparent!important; background:var(--surface)!important;
+  color:var(--body)!important; margin:0!important;
+  -webkit-appearance:none; appearance:none;
 }
-#screen-simulacoes .sim-hint, #modal-sim-line .sim-hint{
-  font-size:10.5px; color:var(--ink-4); line-height:1.5; margin:-4px 0 12px;
+#screen-simulacoes .pro-f>select, #modal-sim-line .pro-f>select{
+  padding-right:26px!important; text-overflow:ellipsis; cursor:pointer;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1.5l5 5 5-5' fill='none' stroke='%237A766D' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>")!important;
+  background-repeat:no-repeat!important; background-position:right 9px center!important;
+  background-size:10px 7px!important;
 }
-#screen-simulacoes .sim-chips, #modal-sim-line .sim-chips{
-  display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px;
+#screen-simulacoes .pro-f>input:focus, #screen-simulacoes .pro-f>select:focus,
+#modal-sim-line .pro-f>input:focus, #modal-sim-line .pro-f>select:focus,
+#modal-sim-line .sim-man-r>input:focus{
+  border-color:#6E4523!important; background:var(--paper)!important; outline:none;
 }
+#screen-simulacoes .pro-f>input:disabled, #modal-sim-line .pro-f>input:disabled{
+  opacity:.55; color:var(--ink-3)!important;
+}
+/* grade de duas colunas, sem estouro */
+#screen-simulacoes .pro-grid, #modal-sim-line .pro-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:9px;
+}
+#screen-simulacoes .pro-grid>*, #modal-sim-line .pro-grid>*{ min-width:0; }
+/* cabeçalho de bloco e nota */
+#screen-simulacoes .pro-h, #modal-sim-line .pro-h{
+  display:flex; align-items:center; gap:9px; margin:18px 0 10px;
+}
+#screen-simulacoes .pro-h b, #modal-sim-line .pro-h b{
+  font-size:9px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--ink-3); font-weight:700; white-space:nowrap;
+}
+#screen-simulacoes .pro-h i, #modal-sim-line .pro-h i{ flex:1; height:1px; background:var(--line); }
+#screen-simulacoes .pro-note, #modal-sim-line .pro-note{
+  font-size:10.5px; color:var(--ink-3); line-height:1.5; margin:8px 0 0;
+}
+/* pílulas: a mesma do módulo, vestida de marrom como a seção */
+#screen-simulacoes .pro-chips, #modal-sim-line .pro-chips{
+  display:flex; gap:5px; flex-wrap:wrap; align-items:center; margin-top:10px;
+}
+#screen-simulacoes .pro-pill, #modal-sim-line .pro-pill{
+  display:inline-flex!important; align-items:center; justify-content:center; gap:5px;
+  border:1.5px solid var(--line); background:var(--surface); color:var(--ink-2);
+  font-size:11.5px!important; font-weight:500; white-space:nowrap;
+  border-radius:20px!important; padding:0 13px!important; min-height:32px!important;
+  height:auto; cursor:pointer; line-height:1!important;
+}
+#screen-simulacoes .pro-pill.on, #modal-sim-line .pro-pill.on{
+  border-color:#6E4523; background:rgba(110,69,35,.10); color:#6E4523;
+  font-weight:700; box-shadow:inset 0 0 0 1px rgba(110,69,35,.25);
+}
+#screen-simulacoes .pro-pill:disabled{ opacity:.4; cursor:default; }
+
+/* ── peças próprias da seção ── */
 #screen-simulacoes .sim-strip, #modal-sim-line .sim-strip{
   background:rgba(110,69,35,.07); border-radius:12px; padding:9px 12px;
-  font-size:11.5px; color:var(--ink-2); line-height:1.65; margin-bottom:12px;
+  font-size:11.5px; color:var(--ink-2); line-height:1.65; margin:10px 0 0;
 }
 #screen-simulacoes .sim-card{
   background:var(--surface); border-radius:16px; padding:14px 15px; margin-bottom:4px;
@@ -28002,11 +28058,8 @@ html.wz-lock body{ touch-action:none; }
   background:rgba(255,255,255,.14); border-radius:20px; padding:3px 9px;
   font-size:10.5px; color:rgba(255,255,255,.85); white-space:nowrap;
 }
-
-/* cabeçalho de grupo: rótulo à esquerda, botão de adicionar à direita */
 #screen-simulacoes .sim-gh{
-  display:flex; align-items:center; justify-content:space-between;
-  gap:10px; margin:16px 0 8px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px; margin:16px 0 8px;
 }
 #screen-simulacoes .sim-vazio{
   background:var(--surface); border-radius:12px; padding:12px 14px;
@@ -28028,8 +28081,7 @@ html.wz-lock body{ touch-action:none; }
 #screen-simulacoes .sim-linha-v{ font-size:12px; flex-shrink:0; }
 #screen-simulacoes .sim-flag{ font-size:11.5px; color:var(--warn); line-height:1.5; margin-bottom:6px; }
 
-/* tabelas: rolam dentro da própria caixa, nos dois eixos, com o
-   cabeçalho grudado — sessenta meses não empurram a tela para baixo */
+/* ── tabelas: rolam dentro da própria caixa, cabeçalho grudado ── */
 #screen-simulacoes .sim-scroll{ padding:0; max-height:56dvh; overflow:auto; -webkit-overflow-scrolling:touch; }
 #screen-simulacoes table.sim-t{ border-collapse:collapse; width:max-content; min-width:100%; font-size:11px; }
 #screen-simulacoes table.sim-t th{
@@ -28055,7 +28107,7 @@ html.wz-lock body{ touch-action:none; }
 #screen-simulacoes table.sim-t2 td.s{ font-size:10px; color:var(--ink-4); width:54px; }
 #screen-simulacoes table.sim-t2 tr.f td{ font-weight:700; color:var(--body); }
 
-/* gráficos: escala nos extremos, zero marcado, período nas pontas */
+/* ── gráficos: escala nos extremos, zero marcado, período nas pontas ── */
 #screen-simulacoes .sim-ax{ font-size:8.5px; fill:var(--ink-4); font-family:inherit; }
 #screen-simulacoes .sim-leg{
   display:flex; gap:14px; justify-content:center; flex-wrap:wrap;
@@ -28066,26 +28118,14 @@ html.wz-lock body{ touch-action:none; }
   vertical-align:-1px; margin-right:5px;
 }
 
-/* grade manual, dentro da ficha da linha */
+/* ── grade manual, dentro da ficha da linha ── */
 #modal-sim-line .sim-man{
   max-height:44dvh; overflow-y:auto; -webkit-overflow-scrolling:touch;
-  border:1.5px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:14px;
+  border:1.5px solid var(--line); border-radius:12px; padding:10px 12px; margin:10px 0 0;
 }
-#modal-sim-line .sim-man-r{ display:flex; align-items:center; gap:10px; }
-#modal-sim-line .sim-man-r>span{ font-size:11px; color:var(--ink-3); width:60px; flex-shrink:0; }
-#modal-sim-line .sim-man-r input.f-input{ margin-bottom:8px; }
-#modal-sim-line .cat-grid{ border-color:rgba(110,69,35,.28); }
-
-/* A seção é marrom: as pílulas e os segmentados vestem a cor do módulo,
-   como o verde em Despesas e o vinho em Dívidas. */
-#screen-simulacoes .recur-btn, #modal-sim-line .recur-btn{ white-space:nowrap; }
-#screen-simulacoes .recur-btn.active, #modal-sim-line .recur-btn.active{
-  background:rgba(110,69,35,.10); border-color:#6E4523; color:#6E4523;
-}
-#screen-simulacoes .recur-btn:disabled{ opacity:.4; cursor:default; }
-#screen-simulacoes .type-btn.t-fix, #modal-sim-line .type-btn.t-fix{
-  border-color:#6E4523; background:rgba(110,69,35,.08); color:#6E4523;
-}
+#modal-sim-line .sim-man-r{ display:flex; align-items:center; gap:10px; margin-bottom:7px; }
+#modal-sim-line .sim-man-r>span{ font-size:11px; color:var(--ink-3); width:58px; flex-shrink:0; }
+#modal-sim-line .cat-grid{ border-color:rgba(110,69,35,.28); margin-bottom:14px; }
 #screen-simulacoes .btn-primary{ background:#6E4523; }
 
 </style>
@@ -28118,7 +28158,7 @@ html.wz-lock body{ touch-action:none; }
    VISUAL: nenhuma folha de estilo própria para campo. A tela e a ficha
    entraram nas mesmas listas de seletores que governam Entradas,
    Patrimônio e Dívidas — campo de 42px, dropdown de 38px, rótulo de 9px.
-   Classes daqui: .f-label, .f-input, .f-amount, .stat, .recur-btn,
+   Classes daqui: .pro-h, .pro-grid, .pro-f, .pro-pill, .stat,
    .cat-grid, .sec-label, .f-actions. As mesmas de sempre.
 ═══════════════════════════════════════════════════════════════════════ */
 (function(){
@@ -28148,6 +28188,11 @@ const DIC={
 
   /* premissas */
   s_prem:["Premissas do projeto","Project assumptions","Projektannahmen"],
+  s_h_ident:["Identificação","Identification","Kennzeichnung"],
+  s_h_horiz:["Horizonte","Horizon","Horizont"],
+  s_h_taxa:["Taxas","Rates","Sätze"],
+  s_h_giro:["Capital de giro","Working capital","Working Capital"],
+  s_rep_h:["0 = até o fim","0 = to the end","0 = bis Ende"],
   s_ini:["Início do fluxo","Flow start","Beginn des Flusses"],
   s_mes:["Mês","Month","Monat"],
   s_ano:["Ano","Year","Jahr"],
@@ -28159,8 +28204,8 @@ const DIC={
   s_nominal:["Nominal","Nominal","Nominal"],
   s_real:["Real","Real","Real"],
   s_pretax:["Pretax","Pretax","Pretax"],
-  s_taxa:["Taxa de desconto (% a.a.)","Discount rate (% p.a.)","Diskontsatz (% p. a.)"],
-  s_ipca:["IPCA (% a.a.)","Inflation (% p.a.)","Inflation (% p. a.)"],
+  s_taxa:["Taxa desconto % a.a.","Discount rate % p.a.","Diskontsatz % p. a."],
+  s_ipca:["IPCA % a.a.","Inflation % p.a.","Inflation % p. a."],
   s_auto_ipca:["IPCA dos Parâmetros","Inflation from Parameters","Inflation aus Parametern"],
   s_auto_cdi:["Taxa = CDI dos Parâmetros","Rate = CDI from Parameters","Satz = CDI aus Parametern"],
   s_taxa_ef:["Taxa efetiva","Effective rate","Effektiver Satz"],
@@ -28173,16 +28218,16 @@ const DIC={
   s_inflar_h:["As linhas são digitadas a preços de hoje e corrigidas mês a mês pela curva de IPCA. Só vale para fluxo nominal, e não se acumula com o reajuste por índice da própria linha.",
     "Lines are entered in today's money and inflated month by month by the inflation curve. Nominal flows only, and it does not stack with a line's own index escalation.",
     "Zeilen werden zu heutigen Preisen erfasst und monatlich mit der Inflationskurve fortgeschrieben. Nur bei nominalem Fluss; nicht kumulativ mit der Indexierung der Zeile."],
-  s_ncg:["Capital de giro (% da receita)","Working capital (% of revenue)","Working Capital (% des Umsatzes)"],
+  s_ncg:["Giro % da receita","Working cap. % rev.","Umlaufverm. % Umsatz"],
   s_ncg_h:["O que fica preso em estoque e a receber. Só a VARIAÇÃO entra no fluxo: crescer consome caixa, encolher devolve.",
     "What sits in inventory and receivables. Only the CHANGE hits cash: growing consumes it, shrinking gives it back.",
     "Was in Vorräten und Forderungen gebunden ist. Nur die VERÄNDERUNG trifft den Cashflow."],
   s_tv:["Valor terminal","Terminal value","Endwert"],
   s_tv_on:["Considerar valor terminal","Include terminal value","Endwert einbeziehen"],
   s_tv_met:["Método","Method","Methode"],
-  s_tv_gordon:["Perpetuidade (Gordon)","Perpetuity (Gordon)","Ewige Rente (Gordon)"],
-  s_tv_mult:["Múltiplo de EBITDA","EBITDA multiple","EBITDA-Multiplikator"],
-  s_tv_g:["Crescimento g (% a.a.)","Growth g (% p.a.)","Wachstum g (% p. a.)"],
+  s_tv_gordon:["Perpetuidade","Perpetuity","Ewige Rente"],
+  s_tv_mult:["Múltiplo EBITDA","EBITDA multiple","EBITDA-Multiple"],
+  s_tv_g:["Crescimento g % a.a.","Growth g % p.a.","Wachstum g % p. a."],
   s_tv_x:["Múltiplo (×)","Multiple (×)","Multiplikator (×)"],
   s_tv_val:["Valor terminal","Terminal value","Endwert"],
   s_tv_pv:["Valor presente do terminal","PV of terminal value","Barwert des Endwerts"],
@@ -28199,12 +28244,12 @@ const DIC={
   s_modo_serie:["Série","Series","Serie"],
   s_modo_manual:["Período a período","Period by period","Periode für Periode"],
   s_valor:["Valor por ocorrência","Amount per occurrence","Betrag je Vorkommen"],
-  s_pct:["% sobre a receita bruta","% of gross revenue","% vom Bruttoumsatz"],
-  s_ini_per:["Primeiro período","First period","Erste Periode"],
-  s_rep:["Repetições (0 = até o fim)","Repetitions (0 = to the end)","Wiederholungen (0 = bis Ende)"],
-  s_passo:["A cada N períodos","Every N periods","Alle N Perioden"],
+  s_pct:["% da receita bruta","% of gross revenue","% vom Bruttoumsatz"],
+  s_ini_per:["1º período","First period","Erste Periode"],
+  s_rep:["Repetições","Repetitions","Wiederholungen"],
+  s_passo:["A cada N per.","Every N periods","Alle N Perioden"],
   s_parc:["Parcelas","Instalments","Raten"],
-  s_lag:["Carência (períodos)","Lag (periods)","Karenz (Perioden)"],
+  s_lag:["Carência (per.)","Lag (periods)","Karenz (Per.)"],
   s_parc_h:["Cada ocorrência é dividida em parcelas iguais, em períodos consecutivos, depois da carência.",
     "Each occurrence is split into equal instalments over consecutive periods, after the lag.",
     "Jedes Vorkommen wird nach der Karenz in gleiche Raten über aufeinanderfolgende Perioden geteilt."],
@@ -28227,13 +28272,13 @@ const DIC={
   s_reaj_h:["O reajuste é o que faz o aluguel subir todo aniversário. Escolha o índice e de quantos em quantos períodos ele se aplica; o app acumula o índice do período anterior segundo a curva dos Parâmetros.",
     "Escalation is what raises the rent on every anniversary. Pick the index and how many periods apart it applies; the app accumulates the index over the preceding span using the Parameters curve.",
     "Die Anpassung lässt die Miete zu jedem Jahrestag steigen. Wählen Sie den Index und den Abstand in Perioden; die App kumuliert den Index der Vorperiode entlang der Parameterkurve."],
-  s_reaj_idx:["Índice do reajuste","Escalation index","Index der Anpassung"],
+  s_reaj_idx:["Índice","Index","Index"],
   s_reaj_no:["Sem reajuste","No escalation","Keine Anpassung"],
   s_reaj_fixo:["Percentual fixo","Fixed percentage","Fester Prozentsatz"],
-  s_reaj_cada:["A cada N períodos","Every N periods","Alle N Perioden"],
-  s_reaj_ini:["1º reajuste no período","First escalation at period","Erste Anpassung in Periode"],
-  s_reaj_pct:["Percentual do reajuste (%)","Escalation percentage (%)","Anpassungssatz (%)"],
-  s_cresc:["Crescimento por ocorrência (%)","Growth per occurrence (%)","Wachstum je Vorkommen (%)"],
+  s_reaj_cada:["A cada N per.","Every N periods","Alle N Perioden"],
+  s_reaj_ini:["1º reajuste no per.","First one at period","Erste in Periode"],
+  s_reaj_pct:["Reajuste %","Escalation %","Anpassung %"],
+  s_cresc:["Crescimento %","Growth %","Wachstum %"],
   s_cresc_h:["Crescimento real do negócio — mais clientes, mais volume. É outra coisa que o reajuste por índice, e os dois convivem.",
     "Real growth of the business — more customers, more volume. Different from index escalation; the two coexist.",
     "Reales Wachstum des Geschäfts — mehr Kunden, mehr Menge. Etwas anderes als die Indexierung; beides geht zusammen."],
@@ -28639,9 +28684,34 @@ function beReceita(p){
 }
 
 /* ── 5. PEÇAS DE INTERFACE ──────────────────────────────────────────── */
+/* O campo do app é o do módulo PRO: rótulo de 9px numa linha só, com
+   reticências se não couber, e caixa de 36px. É a forma compacta usada
+   em Parâmetros, na ficha da aplicação e na da entrada — e agora aqui,
+   em vez de uma escala própria. */
 function campo(lbl,inner,hint){
-  return `<div class="sim-f"><label class="f-label">${E(lbl)}</label>${inner}`+
-    (hint?`<div class="sim-hint">${E(hint)}</div>`:"")+`</div>`;
+  return `<div class="pro-f"><label title="${E(lbl)}">${E(lbl)}</label>${inner}`+
+    (hint?`<div class="pro-note">${E(hint)}</div>`:"")+`</div>`;
+}
+/* O app carrega uma regra global `input,select,textarea{font-size:16px
+   !important}` — a que impede o Safari de dar zoom ao focar um campo.
+   Ela vence qualquer folha de estilo, então a escala compacta é aplicada
+   no elemento, com prioridade, depois que a tela é desenhada. Um lugar
+   só, e vale para a seção inteira. */
+const ESCALA={"font-size":"13.5px","min-height":"36px","height":"36px",
+  "padding":"8px 11px","border-radius":"11px","margin":"0"};
+function compactar(root){
+  if(!root) return;
+  root.querySelectorAll(".pro-f>input,.pro-f>select,.sim-man-r>input").forEach(el=>{
+    Object.keys(ESCALA).forEach(k=>el.style.setProperty(k,ESCALA[k],"important"));
+    if(el.tagName==="SELECT") el.style.setProperty("padding-right","26px","important");
+  });
+  root.querySelectorAll(".pro-f>label").forEach(el=>{
+    el.style.setProperty("font-size","9px","important");
+    el.style.setProperty("margin","0","important");
+  });
+}
+function bloco(tt,extra){
+  return `<div class="pro-h"><b>${E(tt)}</b><i></i>${extra||""}</div>`;
 }
 function stat(lbl,val,cor){
   return `<div class="stat"><div class="stat-label">${E(lbl)}</div>
@@ -28652,10 +28722,10 @@ function selMes(id,val,onch){
   const mesAtual=parseInt(a[1],10)||1, anoAtual=parseInt(a[0],10)||new Date().getFullYear();
   const hoje=new Date().getFullYear();
   const nomes=MESES[LG()]||MESES.pt;
-  let m=`<select class="f-input" id="${id}-m" onchange="${onch}">`;
+  let m=`<select id="${id}-m" onchange="${onch}">`;
   nomes.forEach((n,i)=>{ m+=`<option value="${i+1}"${(i+1)===mesAtual?" selected":""}>${E(n)}</option>`; });
   m+=`</select>`;
-  let y=`<select class="f-input" id="${id}-a" onchange="${onch}">`;
+  let y=`<select id="${id}-a" onchange="${onch}">`;
   for(let k=hoje-5;k<=hoje+20;k++) y+=`<option value="${k}"${k===anoAtual?" selected":""}>${k}</option>`;
   y+=`</select>`;
   return {m,y};
@@ -28735,6 +28805,7 @@ function renderProjetos(){
     <button class="btn-delete" style="display:block" onclick="SIM.excluir()">${E(P("s_del"))}</button>`;
   }
   el.innerHTML=h;
+  compactar(el);
 }
 
 /* ── 8. ABA PREMISSAS ───────────────────────────────────────────────── */
@@ -28745,57 +28816,67 @@ function renderPremissas(){
   const el=document.getElementById("sim-view-premissas"); if(!el) return;
   const p=proj(); if(!p){ el.innerHTML=semProjeto(); return; }
   const ms=selMes("sim-ini",p.inicio,"SIM.setIni()");
-  let h=`<div class="sec-label">${E(P("s_prem"))}</div>
-  ${campo(P("s_name"),`<input class="f-input" type="text" value="${E(p.nome||"")}" onchange="SIM.set('nome',this.value)"/>`)}
-  <div class="sim-g2">
+  let h=`${bloco(P("s_h_ident"))}
+  ${campo(P("s_name"),`<input type="text" value="${E(p.nome||"")}" onchange="SIM.set('nome',this.value)"/>`)}
+
+  ${bloco(P("s_h_horiz"))}
+  <div class="pro-grid">
     ${campo(P("s_mes"),ms.m)}
     ${campo(P("s_ano"),ms.y)}
-    ${campo(P("s_n"),`<input class="f-input" type="number" min="1" max="600" step="1" value="${parseInt(p.n,10)||60}" onchange="SIM.set('n',this.value)"/>`)}
-    ${campo(P("s_freq"),`<select class="f-input" onchange="SIM.set('freq',this.value)">
+  </div>
+  <div class="pro-grid" style="margin-top:9px">
+    ${campo(P("s_n"),`<input type="number" min="1" max="600" step="1" value="${parseInt(p.n,10)||60}" onchange="SIM.set('n',this.value)"/>`)}
+    ${campo(P("s_freq"),`<select onchange="SIM.set('freq',this.value)">
         <option value="m"${p.freq==="m"?" selected":""}>${E(P("s_freq_m"))}</option>
         <option value="a"${p.freq!=="m"?" selected":""}>${E(P("s_freq_a"))}</option></select>`)}
   </div>
 
-  <div class="sec-label">${E(P("s_tipo"))}</div>
-  <div class="type-row">
-    <button class="type-btn${p.tipo!=="real"?" t-fix":""}" onclick="SIM.set('tipo','nominal')">${E(P("s_nominal"))} · ${E(P("s_pretax"))}</button>
-    <button class="type-btn${p.tipo==="real"?" t-fix":""}" onclick="SIM.set('tipo','real')">${E(P("s_real"))} · ${E(P("s_pretax"))}</button>
+  ${bloco(P("s_tipo"))}
+  <div class="pro-chips" style="margin-top:0">
+    <button class="pro-pill${p.tipo!=="real"?" on":""}" onclick="SIM.set('tipo','nominal')">${E(P("s_nominal"))} · ${E(P("s_pretax"))}</button>
+    <button class="pro-pill${p.tipo==="real"?" on":""}" onclick="SIM.set('tipo','real')">${E(P("s_real"))} · ${E(P("s_pretax"))}</button>
   </div>
-  <div class="sim-hint" style="margin-top:-8px">${E(P("s_hint_pretax"))}</div>
+  <div class="pro-note">${E(P("s_hint_pretax"))}</div>
 
-  <div class="sim-g2">
-    ${campo(P("s_taxa"),`<input class="f-input" type="number" step="0.01" value="${NUMin(taxaDe(p))}" ${p.taxaAuto?"disabled":""} onchange="SIM.set('taxa',this.value)"/>`)}
-    ${campo(P("s_ipca"),`<input class="f-input" type="number" step="0.01" value="${NUMin(p.ipca)}" ${p.ipcaAuto?"disabled":""} onchange="SIM.set('ipca',this.value)"/>`)}
+  ${bloco(P("s_h_taxa"))}
+  <div class="pro-grid">
+    ${campo(P("s_taxa"),`<input type="number" step="0.01" value="${NUMin(taxaDe(p))}" ${p.taxaAuto?"disabled":""} onchange="SIM.set('taxa',this.value)"/>`)}
+    ${campo(P("s_ipca"),`<input type="number" step="0.01" value="${NUMin(p.ipca)}" ${p.ipcaAuto?"disabled":""} onchange="SIM.set('ipca',this.value)"/>`)}
   </div>
-  <div class="sim-chips">
-    <button class="recur-btn${p.taxaAuto?" active":""}" onclick="SIM.tog('taxaAuto')">${E(P("s_auto_cdi"))}</button>
-    <button class="recur-btn${p.ipcaAuto?" active":""}" onclick="SIM.tog('ipcaAuto')">${E(P("s_auto_ipca"))}</button>
-    <button class="recur-btn${p.meio?" active":""}" onclick="SIM.tog('meio')">${E(P("s_meio"))}</button>
-    <button class="recur-btn${p.inflar?" active":""}" ${p.tipo==="real"?"disabled":""} onclick="SIM.tog('inflar')">${E(P("s_inflar"))}</button>
+  <div class="pro-chips">
+    <button class="pro-pill${p.taxaAuto?" on":""}" onclick="SIM.tog('taxaAuto')">${E(P("s_auto_cdi"))}</button>
+    <button class="pro-pill${p.ipcaAuto?" on":""}" onclick="SIM.tog('ipcaAuto')">${E(P("s_auto_ipca"))}</button>
+    <button class="pro-pill${p.meio?" on":""}" onclick="SIM.tog('meio')">${E(P("s_meio"))}</button>
+    <button class="pro-pill${p.inflar?" on":""}" ${p.tipo==="real"?"disabled":""} onclick="SIM.tog('inflar')">${E(P("s_inflar"))}</button>
   </div>
-  <div class="sim-strip">
+  <div class="sim-strip" style="margin-top:10px">
     <b>${E(P("s_taxa_ef"))}</b> ${PCT(taxaEfetiva(p).ef*100,2)} ${E(P("s_aa"))}${p.tipo==="real"?` · ${E(P("s_defl"))}`:""}
   </div>
-  <div class="sim-hint">${E(P("s_meio_h"))}</div>
+  <div class="pro-note" style="margin-top:0">${E(P("s_meio_h"))}</div>
 
-  <div class="sec-label">${E(P("s_ncg"))}</div>
-  ${campo("%",`<input class="f-input" type="number" step="0.1" value="${NUMin(p.ncg)}" onchange="SIM.set('ncg',this.value)"/>`,P("s_ncg_h"))}
+  ${bloco(P("s_h_giro"))}
+  <div class="pro-grid">
+    ${campo(P("s_ncg"),`<input type="number" step="0.1" value="${NUMin(p.ncg)}" onchange="SIM.set('ncg',this.value)"/>`)}
+    <div></div>
+  </div>
+  <div class="pro-note">${E(P("s_ncg_h"))}</div>
 
-  <div class="sec-label">${E(P("s_tv"))}</div>
-  <div class="sim-chips">
-    <button class="recur-btn${(p.tv&&p.tv.on)?" active":""}" onclick="SIM.tog('tv.on')">${E(P("s_tv_on"))}</button>
+  ${bloco(P("s_tv"))}
+  <div class="pro-chips" style="margin-top:0">
+    <button class="pro-pill${(p.tv&&p.tv.on)?" on":""}" onclick="SIM.tog('tv.on')">${E(P("s_tv_on"))}</button>
   </div>`;
   if(p.tv&&p.tv.on){
-    h+=`<div class="sim-g2">
-      ${campo(P("s_tv_met"),`<select class="f-input" onchange="SIM.set('tv.metodo',this.value)">
+    h+=`<div class="pro-grid" style="margin-top:10px">
+      ${campo(P("s_tv_met"),`<select onchange="SIM.set('tv.metodo',this.value)">
         <option value="gordon"${(p.tv.metodo||"gordon")==="gordon"?" selected":""}>${E(P("s_tv_gordon"))}</option>
         <option value="mult"${p.tv.metodo==="mult"?" selected":""}>${E(P("s_tv_mult"))}</option></select>`)}
       ${(p.tv.metodo==="mult")
-        ? campo(P("s_tv_x"),`<input class="f-input" type="number" step="0.1" value="${NUMin(p.tv.mult)}" onchange="SIM.set('tv.mult',this.value)"/>`)
-        : campo(P("s_tv_g"),`<input class="f-input" type="number" step="0.1" value="${NUMin(p.tv.g)}" onchange="SIM.set('tv.g',this.value)"/>`)}
+        ? campo(P("s_tv_x"),`<input type="number" step="0.1" value="${NUMin(p.tv.mult)}" onchange="SIM.set('tv.mult',this.value)"/>`)
+        : campo(P("s_tv_g"),`<input type="number" step="0.1" value="${NUMin(p.tv.g)}" onchange="SIM.set('tv.g',this.value)"/>`)}
     </div>`;
   }
   el.innerHTML=h;
+  compactar(el);
 }
 const NUMin=(v)=>{ const n=+v||0; return String(Math.round(n*100)/100); };
 
@@ -28809,7 +28890,7 @@ function renderFluxo(){
     const ls=(p.linhas||[]).filter(l=>l.tipo===tp);
     h+=`<div class="sim-gh">
       <div class="sec-label" style="margin:0">${ICO[tp]} ${E(P("s_g_"+tp))}</div>
-      <button class="recur-btn" onclick="SIM.linha(null,'${tp}')">+ ${E(P("s_n_"+tp))}</button>
+      <button class="pro-pill" onclick="SIM.linha(null,'${tp}')">+ ${E(P("s_n_"+tp))}</button>
     </div>`;
     if(!ls.length){ h+=`<div class="sim-vazio">${E(P("s_no_lines"))}</div>`; return; }
     ls.forEach(l=>{
@@ -28832,6 +28913,7 @@ function renderFluxo(){
     });
   });
   el.innerHTML=h;
+  compactar(el);
 }
 function idxLbl(id){
   const m={ipca:"IPCA",igpm:"IGP-M",cdi:"CDI",selic:"Selic",tr:"TR",poupanca:"Poupança",fixo:"%"};
@@ -28884,7 +28966,7 @@ function renderResult(){
     ${(p.tv&&p.tv.on)?lin(P("s_tv_val"),r.tv):""}
     ${(p.tv&&p.tv.on)?lin(P("s_tv_pv"),r.vpTV):""}
     </tbody></table>
-    <div class="sim-hint" style="margin:8px 0 0">${E(P("s_mgebitda"))}: ${rl!==0?NUM(r.T.eb/rl*100,1)+"%":"—"}${(p.tv&&p.tv.on&&r.vpl!==0)?` · ${NUM(r.vpTV/r.vpl*100,0)}% ${E(P("s_tv_share"))}`:""}</div>
+    <div class="pro-note" style="margin:8px 0 0">${E(P("s_mgebitda"))}: ${rl!==0?NUM(r.T.eb/rl*100,1)+"%":"—"}${(p.tv&&p.tv.on&&r.vpl!==0)?` · ${NUM(r.vpTV/r.vpl*100,0)}% ${E(P("s_tv_share"))}`:""}</div>
   </div>`;
 
   h+=`<div class="sec-label" style="margin-top:18px">${E(P("s_g1"))}</div>
@@ -28895,15 +28977,15 @@ function renderResult(){
   h+=`<div class="sim-gh" style="margin-top:18px">
         <div class="sec-label" style="margin:0">${E(P("s_tab"))}</div>
         ${p.freq==="m"?`<div style="display:flex;gap:5px">
-          <button class="recur-btn${VIEW==="per"?" active":""}" onclick="SIM.ver('per')">${E(P("s_ver_per"))}</button>
-          <button class="recur-btn${VIEW==="ano"?" active":""}" onclick="SIM.ver('ano')">${E(P("s_ver_ano"))}</button>
+          <button class="pro-pill${VIEW==="per"?" on":""}" onclick="SIM.ver('per')">${E(P("s_ver_per"))}</button>
+          <button class="pro-pill${VIEW==="ano"?" on":""}" onclick="SIM.ver('ano')">${E(P("s_ver_ano"))}</button>
         </div>`:""}
       </div>
       <div class="sim-card sim-scroll">${tabela(p,r)}</div>`;
 
   h+=`<div class="sec-label" style="margin-top:18px">${E(P("s_sens"))}</div>
       <div class="sim-card sim-scroll" style="max-height:none">${sens(p)}</div>
-      <div class="sim-hint">${E(P("s_sens_h"))}</div>`;
+      <div class="pro-note">${E(P("s_sens_h"))}</div>`;
 
   const fl=[];
   if(r.tirAA===null) fl.push(P("s_f_tir"));
@@ -28918,8 +29000,9 @@ function renderResult(){
   h+=`<div class="sec-label" style="margin-top:18px">${E(P("s_flags"))}</div>
       <div class="sim-card" style="padding:12px 14px">${
         fl.length?fl.map(x=>`<div class="sim-flag">⚠ ${E(x)}</div>`).join("")
-                 :`<div class="sim-hint" style="margin:0">✓ ${E(P("s_f_ok"))}</div>`}</div>`;
+                 :`<div class="pro-note" style="margin:0">✓ ${E(P("s_f_ok"))}</div>`}</div>`;
   el.innerHTML=h;
+  compactar(el);
 }
 
 /* ── 11. TABELA ─────────────────────────────────────────────────────── */
@@ -29071,53 +29154,56 @@ function abrirLinha(id,natPadrao){
 function corpoLinha(){
   const p=proj(), b=document.getElementById("sim-l-body"); if(!p||!b||!RASC) return;
   const d=RASC, N=Math.max(1,Math.min(600,parseInt(p.n,10)||60));
-  let h=`<label class="f-label">${E(P("s_nat"))}</label>
+  let h=`${bloco(P("s_nat"))}
   <div class="cat-grid" id="sim-nat-grid" style="grid-template-columns:repeat(4,1fr)">
     ${NATS.map(x=>`<button class="cat-btn" onclick="SIM.setL('tipo','${x}',1)"
       style="${d.tipo===x?"border-color:#6E4523;background:rgba(110,69,35,.08)":""}">
       <span class="ico">${ICO[x]}</span><span class="lbl">${E(P("s_n_"+x))}</span></button>`).join("")}
   </div>
-  <label class="f-label">${E(P("s_desc"))}</label>
-  <input class="f-input" type="text" value="${E(d.desc||"")}" placeholder="${E(P("s_n_"+d.tipo))}" onchange="SIM.setL('desc',this.value)"/>`;
+  ${campo(P("s_desc"),`<input type="text" value="${E(d.desc||"")}" placeholder="${E(P("s_n_"+d.tipo))}" onchange="SIM.setL('desc',this.value)"/>`)}`;
 
   if(d.tipo==="deducao"){
-    h+=`<label class="f-label">${E(P("s_pct"))}</label>
-      <input class="f-amount" type="number" step="0.01" value="${NUMin(d.pct)}" onchange="SIM.setL('pct',this.value)"/>
-      <div class="sim-g2">
-        ${campo(P("s_ini_per"),`<input class="f-input" type="number" min="0" max="${N}" step="1" value="${inteiro(d.ini,0)}" onchange="SIM.setL('ini',this.value)"/>`)}
-        ${campo(P("s_rep"),`<input class="f-input" type="number" min="0" step="1" value="${inteiro(d.rep,0)}" onchange="SIM.setL('rep',this.value)"/>`)}
+    h+=`<div class="pro-grid" style="margin-top:10px">
+        ${campo(P("s_pct"),`<input type="number" step="0.01" value="${NUMin(d.pct)}" onchange="SIM.setL('pct',this.value)"/>`)}
+        <div></div>
       </div>
-      <div class="sim-hint">${E(P("s_t0_h"))}</div>`;
+      <div class="pro-grid" style="margin-top:9px">
+        ${campo(P("s_ini_per"),`<input type="number" min="0" max="${N}" step="1" value="${inteiro(d.ini,0)}" onchange="SIM.setL('ini',this.value)"/>`)}
+        ${campo(P("s_rep")+" (0 = ∞)",`<input type="number" min="0" step="1" value="${inteiro(d.rep,0)}" onchange="SIM.setL('rep',this.value)"/>`)}
+      </div>
+      <div class="pro-note">${E(P("s_t0_h"))}</div>`;
   }else{
-    h+=`<label class="f-label">${E(P("s_modo"))}</label>
-    <div class="type-row">
-      <button class="type-btn${d.modo!=="manual"?" t-fix":""}" onclick="SIM.setL('modo','serie',1)">${E(P("s_modo_serie"))}</button>
-      <button class="type-btn${d.modo==="manual"?" t-fix":""}" onclick="SIM.setL('modo','manual',1)">${E(P("s_modo_manual"))}</button>
+    h+=`${bloco(P("s_modo"))}
+    <div class="pro-chips" style="margin-top:0">
+      <button class="pro-pill${d.modo!=="manual"?" on":""}" onclick="SIM.setL('modo','serie',1)">${E(P("s_modo_serie"))}</button>
+      <button class="pro-pill${d.modo==="manual"?" on":""}" onclick="SIM.setL('modo','manual',1)">${E(P("s_modo_manual"))}</button>
     </div>`;
     if(d.modo==="manual"){
-      h+=`<div class="sim-hint">${E(P("s_manual_h"))}</div><div class="sim-man">`;
+      h+=`<div class="pro-note">${E(P("s_manual_h"))}</div><div class="sim-man">`;
       for(let i=0;i<=N;i++){
         h+=`<div class="sim-man-r"><span>${E(labelPer(p,i,true))}</span>
-          <input class="f-input" type="text" inputmode="decimal" value="${E(MSK((d.manual||{})[i]))}" placeholder="0,00" onchange="SIM.setM(${i},this.value,1)"/></div>`;
+          <input type="text" inputmode="decimal" value="${E(MSK((d.manual||{})[i]))}" placeholder="0,00" onchange="SIM.setM(${i},this.value,1)"/></div>`;
       }
       h+=`</div>`;
     }else{
-      h+=`<label class="f-label">${E(P("s_valor"))}</label>
-      <input class="f-amount" type="text" inputmode="decimal" value="${E(MSK(d.valor))}" placeholder="0,00" onchange="SIM.setL('valor',this.value,2)"/>
-      <div class="sim-g2">
-        ${campo(P("s_ini_per"),`<input class="f-input" type="number" min="0" max="${N}" step="1" value="${inteiro(d.ini,1)}" onchange="SIM.setL('ini',this.value)"/>`)}
-        ${campo(P("s_rep"),`<input class="f-input" type="number" min="0" step="1" value="${inteiro(d.rep,0)}" onchange="SIM.setL('rep',this.value)"/>`)}
-        ${campo(P("s_passo"),`<input class="f-input" type="number" min="1" step="1" value="${inteiro(d.passo,1)}" onchange="SIM.setL('passo',this.value)"/>`)}
-        ${campo(P("s_parc"),`<input class="f-input" type="number" min="1" step="1" value="${inteiro(d.parc,1)}" onchange="SIM.setL('parc',this.value)"/>`)}
-        ${campo(P("s_lag"),`<input class="f-input" type="number" min="0" step="1" value="${inteiro(d.lag,0)}" onchange="SIM.setL('lag',this.value)"/>`)}
-        ${campo(P("s_cresc"),`<input class="f-input" type="number" step="0.01" value="${NUMin(d.cresc)}" onchange="SIM.setL('cresc',this.value)"/>`)}
+      h+=`<div class="pro-grid" style="margin-top:10px">
+        ${campo(P("s_valor"),`<input class="sim-val" type="text" inputmode="decimal" value="${E(MSK(d.valor))}" placeholder="0,00" onchange="SIM.setL('valor',this.value,2)"/>`)}
+        <div></div>
       </div>
-      <div class="sim-hint">${E(P("s_parc_h"))} ${E(P("s_t0_h"))}</div>`;
+      <div class="pro-grid" style="margin-top:9px">
+        ${campo(P("s_ini_per"),`<input type="number" min="0" max="${N}" step="1" value="${inteiro(d.ini,1)}" onchange="SIM.setL('ini',this.value)"/>`)}
+        ${campo(P("s_rep")+" (0 = ∞)",`<input type="number" min="0" step="1" value="${inteiro(d.rep,0)}" onchange="SIM.setL('rep',this.value)"/>`)}
+        ${campo(P("s_passo"),`<input type="number" min="1" step="1" value="${inteiro(d.passo,1)}" onchange="SIM.setL('passo',this.value)"/>`)}
+        ${campo(P("s_parc"),`<input type="number" min="1" step="1" value="${inteiro(d.parc,1)}" onchange="SIM.setL('parc',this.value)"/>`)}
+        ${campo(P("s_lag"),`<input type="number" min="0" step="1" value="${inteiro(d.lag,0)}" onchange="SIM.setL('lag',this.value)"/>`)}
+        ${campo(P("s_cresc"),`<input type="number" step="0.01" value="${NUMin(d.cresc)}" onchange="SIM.setL('cresc',this.value)"/>`)}
+      </div>
+      <div class="pro-note">${E(P("s_parc_h"))} ${E(P("s_t0_h"))}</div>`;
     }
     /* reajuste */
     const r=d.reaj||{};
     h+=`<div class="sec-label" style="margin-top:14px">${E(P("s_reaj"))}</div>
-    ${campo(P("s_reaj_idx"),`<select class="f-input" onchange="SIM.setR('idx',this.value,1)">
+    <div class="pro-grid" style="margin-top:10px">${campo(P("s_reaj_idx"),`<select onchange="SIM.setR('idx',this.value,1)">
         <option value=""${!r.idx?" selected":""}>${E(P("s_reaj_no"))}</option>
         <option value="ipca"${r.idx==="ipca"?" selected":""}>IPCA</option>
         <option value="igpm"${r.idx==="igpm"?" selected":""}>IGP-M</option>
@@ -29126,22 +29212,23 @@ function corpoLinha(){
         <option value="tr"${r.idx==="tr"?" selected":""}>TR</option>
         <option value="poupanca"${r.idx==="poupanca"?" selected":""}>${E(idxLbl("poupanca"))}</option>
         <option value="fixo"${r.idx==="fixo"?" selected":""}>${E(P("s_reaj_fixo"))}</option>
-      </select>`)}`;
+      </select>`)}<div></div></div>`;
     if(r.idx){
-      h+=`<div class="sim-g2">
-        ${campo(P("s_reaj_cada"),`<input class="f-input" type="number" min="1" step="1" value="${inteiro(r.cada,p.freq==="m"?12:1)}" onchange="SIM.setR('cada',this.value)"/>`)}
-        ${campo(P("s_reaj_ini"),`<input class="f-input" type="number" min="1" step="1" value="${inteiro(r.ini,(parseInt(r.cada,10)||12)+1)}" onchange="SIM.setR('ini',this.value)"/>`)}
-        ${r.idx==="fixo"?campo(P("s_reaj_pct"),`<input class="f-input" type="number" step="0.01" value="${NUMin(r.pct)}" onchange="SIM.setR('pct',this.value)"/>`):""}
+      h+=`<div class="pro-grid" style="margin-top:9px">
+        ${campo(P("s_reaj_cada"),`<input type="number" min="1" step="1" value="${inteiro(r.cada,p.freq==="m"?12:1)}" onchange="SIM.setR('cada',this.value)"/>`)}
+        ${campo(P("s_reaj_ini"),`<input type="number" min="1" step="1" value="${inteiro(r.ini,(parseInt(r.cada,10)||12)+1)}" onchange="SIM.setR('ini',this.value)"/>`)}
+        ${r.idx==="fixo"?campo(P("s_reaj_pct"),`<input type="number" step="0.01" value="${NUMin(r.pct)}" onchange="SIM.setR('pct',this.value)"/>`):""}
       </div>`;
     }
-    h+=`<div class="sim-hint">${E(P("s_reaj_h"))}</div>
-        <div class="sim-hint">${E(P("s_cresc_h"))}</div>
+    h+=`<div class="pro-note">${E(P("s_reaj_h"))}</div>
+        <div class="pro-note">${E(P("s_cresc_h"))}</div>
         <div class="sim-strip" id="sim-l-tot"></div>`;
   }
   h+=`<div class="sim-chips" style="margin:10px 0 4px">
-    <button class="recur-btn${d.off?" active":""}" onclick="SIM.setL('off',${d.off?"false":"true"},1)">${E(P("s_off"))}</button>
+    <button class="pro-pill${d.off?" on":""}" onclick="SIM.setL('off',${d.off?"false":"true"},1)">${E(P("s_off"))}</button>
   </div>`;
   b.innerHTML=h;
+  compactar(b);
   totalLinha();
 }
 const inteiro=(v,def)=>{ const n=parseInt(v,10); return String(isFinite(n)?n:def); };
@@ -29265,7 +29352,7 @@ window.SIM={
     /* re=1 remonta a ficha; re=2 só reescreve o campo de dinheiro, para
        não roubar o foco de quem ainda está digitando ao lado. */
     if(re===1) corpoLinha();
-    else if(re===2){ const t=document.querySelector("#sim-l-body input.f-amount"); if(t) t.value=MSK(RASC.valor); totalLinha(); }
+    else if(re===2){ const t=document.querySelector("#sim-l-body input.sim-val"); if(t) t.value=MSK(RASC.valor); totalLinha(); }
     else totalLinha();
   },
   setR(k,v,re){
@@ -29279,7 +29366,7 @@ window.SIM={
   setM(i,v,re){
     if(!RASC) return; RASC.manual=RASC.manual||{};
     const n=num(v); if(n) RASC.manual[i]=n; else delete RASC.manual[i];
-    if(re){ const el=document.querySelectorAll("#sim-l-body .sim-man-r input.f-input")[i]; if(el) el.value=MSK(n); totalLinha(); }
+    if(re){ const el=document.querySelectorAll("#sim-l-body .sim-man-r input")[i]; if(el) el.value=MSK(n); totalLinha(); }
   },
   salvarLinha(){
     const p=proj(); if(!p||!RASC) return;
