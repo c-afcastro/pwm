@@ -16186,7 +16186,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.98";
+const APP_VERSION="10.99";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -16622,6 +16622,7 @@ const TXD={
 "Provisão de IR e IOF":["Income tax and IOF provision","Steuer- und IOF-Rückstellung"],
 "Rendimento acumulado":["Accumulated return","Kumulierter Ertrag"],
 "(=) Rendimento bruto":["(=) Gross return","(=) Bruttoertrag"],
+"(−) Resgatado":["(−) Redeemed","(−) Ausgezahlt"],
 "Evolução mês a mês":["Month-by-month path","Monatsverlauf"],
 "Come-cotas já debitado":["Fund tax already charged","Fondssteuer bereits belastet"],
 "Montante aplicado":["Amount invested","Anlagebetrag"],
@@ -19196,6 +19197,19 @@ function astEvolucao(a,mesesFuturos){
   const inicio=p.aplic||a.lastUpdate||today();
   const hoje=today();
   const custo=(+p.custo||0)>0?+p.custo:(parseFloat(a.balance)||0);
+  /* RESGATES. Registrar um resgate baixa o custo na proporção retirada —
+     é o que mantém o IR do saldo remanescente correto. A curva de
+     acompanhamento, porém, ignorava o evento: media o saldo ANTES do saque
+     contra o custo JÁ BAIXADO, e o valor resgatado aparecia duas vezes como
+     rendimento. Aqui o dinheiro sai do saldo na data em que saiu e a base
+     histórica volta a ser o montante originalmente aplicado. */
+  const RG=astResgates(a,p).filter(r=>r.data>inicio);
+  const baixaTot=R2(RG.reduce((s,r)=>s+(+r.custoBaixa||0),0));
+  const custo0=R2(custo+baixaTot);                 /* montante aplicado original */
+  const resgTot=R2(RG.reduce((s,r)=>s+(+r.valor||0),0));
+  const resgAte=d=>R2(RG.reduce((s,r)=>s+(r.data<=d?(+r.valor||0):0),0));
+  const baixaAte=d=>R2(RG.reduce((s,r)=>s+(r.data<=d?(+r.custoBaixa||0):0),0));
+  const resgNo=(de,ate)=>R2(RG.reduce((s,r)=>s+((r.data>de&&r.data<=ate)?(+r.valor||0):0),0));
   const atz=astAtualizacao(a);            /* posição informada + correção */
   const real=atz.valor;                   /* valor de hoje */
   const aporte=+p.aporte||0;
@@ -19225,20 +19239,22 @@ function astEvolucao(a,mesesFuturos){
   const depAc=[0];
   for(let j=1;j<S.length;j++) depAc[j]=depAc[j-1]+(temAporte?depMes(S[j].ym):0);
   const modelaAte=(k)=>{                       // saldo modelado até o mês k da série
-    let sal=custo;
+    let sal=custo0;
     for(let j=0;j<k;j++){ sal=sal*S[j].f;
-      if(j>0&&temAporte){ const dp=depMes(S[j].ym); sal+=dp+depRend(dp,S[j].ym,S[j].f); } }
+      if(j>0&&temAporte){ const dp=depMes(S[j].ym); sal+=dp+depRend(dp,S[j].ym,S[j].f); }
+      const sai=resgNo(S[j].de,S[j].ate);
+      if(sai>0) sal=Math.max(0,sal-sai); }
     return sal;
   };
   const modeloHoje=modelaAte(S.length);
-  const aportHoje=R2(custo+(S.length>1?depAc[S.length-1]:0));
+  const aportHoje=R2(custo0+(S.length>1?depAc[S.length-1]:0));
   const infor=parseFloat(a.balance)||0;
   const posData=(a.lastUpdate&&a.lastUpdate>inicio)?a.lastUpdate:inicio;
   const ancorado=posData>inicio;
   /* Saldo mês a mês: sai do custo pela série do indexador, encosta no saldo
      informado na data dele e segue corrigido daí até hoje. */
-  const saldoAte=[custo], ccAte=[0]; {
-    let sal=custo, encostou=false, ccAcum=0, aportadoAc=custo;
+  const saldoAte=[custo0], ccAte=[0]; {
+    let sal=custo0, encostou=false, ccAcum=0, aportadoAc=custo0, ancJ=-1;
     const aliqCC=(p.trib==="fundoCP")?FISCAL.irFundoCP:FISCAL.irFundoLP;
     for(let j=0;j<S.length;j++){
       /* ao alcançar a data da posição, a curva encosta no valor informado
@@ -19250,7 +19266,7 @@ function astEvolucao(a,mesesFuturos){
          cima do valor que o titular declarou. */
       let fj=S[j].f;
       if(!encostou&&infor>0&&S[j].ate>posData){
-        sal=infor; aportadoAc=infor; encostou=true;
+        sal=infor; aportadoAc=infor; encostou=true; ancJ=j;
         if(S[j].de<posData){
           /* a fração sai do MESMO motor que a tela de Patrimônio usa, e não
              de uma proporção por dias corridos: proporção aproximada deixava
@@ -19272,6 +19288,14 @@ function astEvolucao(a,mesesFuturos){
         const d=R2(Math.max(0,(sal-aportadoAc)*aliqCC/100-ccAcum));
         if(d>0){ sal-=d; ccAcum=R2(ccAcum+d); }
       }
+      /* o dinheiro sai na data do resgate. No balde em que a curva encostou
+         na posição informada, só saem os resgates POSTERIORES à data da
+         foto: os anteriores já não estavam nela. */
+      {
+        const corte=(j===ancJ&&posData>S[j].de)?posData:S[j].de;
+        const sai=resgNo(corte,S[j].ate);
+        if(sai>0) sal=Math.max(0,sal-sai);
+      }
       saldoAte[j+1]=sal; ccAte[j+1]=ccAcum;
     }
     if(!encostou&&infor>0) saldoAte[S.length]=infor;   // posição é de hoje
@@ -19279,8 +19303,8 @@ function astEvolucao(a,mesesFuturos){
   const valorHoje=R2(saldoAte[S.length]);
   const mesesPos=mesesEntre(inicio,posData);
   /* taxa realizada: só o trecho de fato observado, do aporte à posição */
-  const efet=(custo>0&&mesesPos>0.03&&infor>0)
-    ?taxaImplicita(custo,infor,mesesPos,aporte):iAM;
+  const efet=(custo0>0&&mesesPos>0.03&&infor>0)
+    ?taxaImplicita(custo0,R2(infor+resgAte(posData)),mesesPos,aporte):iAM;
 
   const pts=[];
   /* dataSaldo: a data A QUE O SALDO DO PONTO SE REFERE. O ponto histórico
@@ -19289,10 +19313,17 @@ function astEvolucao(a,mesesFuturos){
      saldo de 01/10. Sem registrar isso, qualquer comparação contra um
      índice mede um intervalo que a aplicação não viveu. */
   const push=(data,d,aportado,saldo,modelo,rendMes,cc,futuro,dataSaldo)=>{
-    const ganho=R2(Math.max(0,saldo-aportado));
-    const prov=astProvisao(a,ganho,d);
-    pts.push({data,dataSaldo:dataSaldo||data,ym:ymOf(data),dias:d,futuro,m:pts.length,
+    const dRef=dataSaldo||data;
+    const rAc=resgAte(dRef), bAc=baixaAte(dRef);
+    /* O que saiu em resgate continua sendo rendimento realizado e volta ao
+       numerador. O imposto, não: ele alcança apenas o ganho que ainda está
+       na aplicação, medido contra o custo já baixado. */
+    const ganho=R2(Math.max(0,saldo+rAc-aportado));
+    const fiscal=R2(Math.max(0,saldo-Math.max(0,aportado-bAc)));
+    const prov=astProvisao(a,fiscal,d);
+    pts.push({data,dataSaldo:dRef,ym:ymOf(data),dias:d,futuro,m:pts.length,
       aportado:R2(aportado),saldo:R2(saldo),modelo:R2(modelo),
+      resgAcum:rAc,baixaAcum:bAc,ganhoFiscal:fiscal,
       rendMes:R2(rendMes),rendAcum:ganho,comeCotas:R2(cc),
       iofPct:prov.iofPct,iof:prov.iof,aliq:prov.aliq,ir:prov.ir,
       liquido:R2(saldo-prov.total),rendLiqAcum:R2(ganho-prov.total)});
@@ -19312,7 +19343,7 @@ function astEvolucao(a,mesesFuturos){
        capital do que o saldo tinha recebido, e toda medida de rentabilidade
        que divide um pelo outro saía para baixo. */
     const nt=Math.max(0,Math.min(S.length-1,kk-1));
-    const aport=R2(custo+(temAporte?(depAc[nt]||0):0));
+    const aport=R2(custo0+(temAporte?(depAc[nt]||0):0));
     const modelo=R2(modelaAte(k));
     let saldo=R2(saldoAte[kk]);
     const cc=R2((ccAte[kk]||0)-ccPago);
@@ -19356,14 +19387,24 @@ function astEvolucao(a,mesesFuturos){
     push(data,d,aportado,saldo,modelo,rend,cc,true);
   }
   pts.forEach(x=>x.ccAcum=ccPago);
+  /* Fluxo externo de cada passo: aporte menos resgate. É o que a medida de
+     rentabilidade ponderada no tempo precisa tirar do saldo antes de
+     dividir — sem isso um resgate viraria prejuízo do mês. */
+  for(let i=0;i<pts.length;i++){
+    const ant=i?pts[i-1]:null;
+    pts[i].fluxo=ant?R2((pts[i].aportado-ant.aportado)-(pts[i].resgAcum-ant.resgAcum)):0;
+    if(ant&&!pts[i].futuro)
+      pts[i].rendMes=R2((pts[i].saldo+pts[i].resgAcum)-(ant.saldo+ant.resgAcum));
+  }
 
   const atual=pts.filter(x=>!x.futuro).pop()||pts[0];
   return {
-    asset:a, inicio, hoje, custo, aporte,
+    asset:a, inicio, hoje, custo:custo0, custoFiscal:R2(custo), aporte,
     fgAuto, depHoje:R2(temAporte?depMes(ymOf(hoje)):0),
     real:R2(valorHoje), saldoInformado:R2(infor), posData, atualizacao:atz, ancorado,
+    resgatado:resgTot, custoBaixado:baixaTot, temResgate:RG.length>0,
     curto:mesesPos<1,
-    retornoPeriodo:custo>0?R2((valorHoje/custo-1)*100):0,
+    retornoPeriodo:custo0>0?R2(((valorHoje+resgTot)/custo0-1)*100):0,
     iAM:R2(iAM*100), iAA:R2((Math.pow(1+iAM,12)-1)*100),
     efetivaAM:R2(efet*100), efetivaAA:R2((Math.pow(1+efet,12)-1)*100),
     comeCotas, pontos:pts, atual,
@@ -19372,8 +19413,9 @@ function astEvolucao(a,mesesFuturos){
     desvio:R2(valorHoje-atual.modelo),
     desvioPct:atual.modelo>0?R2((valorHoje/atual.modelo-1)*100):0,
     aportado:aportHoje,
-    ganho:R2(valorHoje-aportHoje),
-    ganhoPct:aportHoje>0?R2((valorHoje/aportHoje-1)*100):0,
+    ganho:R2(valorHoje+resgTot-aportHoje),
+    ganhoFiscal:R2(Math.max(0,valorHoje-Math.max(0,aportHoje-baixaTot))),
+    ganhoPct:aportHoje>0?R2(((valorHoje+resgTot)/aportHoje-1)*100):0,
     diasCorridos:diasHoje,
     proxFaixa:astProxFaixaIR(a,diasHoje)
   };
@@ -19423,7 +19465,7 @@ function astRendimentoCarteira(){
     return {a, e,
       nome:a.name||"—", cls:gAssetClass(a.class),
       custo:e.custo, saldo:e.real, ganho:e.ganho, ganhoPct:e.ganhoPct,
-      prov:astProvisao(a,Math.max(0,e.ganho),e.diasCorridos),
+      prov:astProvisao(a,Math.max(0,(e.ganhoFiscal!==undefined?e.ganhoFiscal:e.ganho)),e.diasCorridos),
       /* rendimento do proximo mes pela taxa cadastrada */
       mesAtual:R2(e.real*astLiquidoAM(a)/100), dias:e.diasCorridos};
   }).sort((x,y)=>y.ganho-x.ganho);
@@ -22204,7 +22246,10 @@ function aplComparativo(pts,bench){
   const ativo=[0]; { let f=1;
     for(let i=1;i<pts.length;i++){
       const ant=+pts[i-1].saldo||0;
-      const ap=(+pts[i].aportado||0)-(+pts[i-1].aportado||0);
+      /* fluxo externo do passo: aporte menos resgate. Um saque não é
+         prejuízo, e sem retirá-lo do numerador a curva despencaria. */
+      const ap=(pts[i].fluxo!==undefined)?(+pts[i].fluxo||0)
+              :((+pts[i].aportado||0)-(+pts[i-1].aportado||0));
       let r=1;
       if(ant>0){ const x=((+pts[i].saldo||0)-ap)/ant; if(isFinite(x)&&x>0) r=x; }
       f*=r; ativo.push(R2((f-1)*100));
@@ -22428,7 +22473,7 @@ function renderRendimento(){
           ${PX("ap_res_tot")} ${fmt(astResgatadoTotal(a))}</div>
       </div>`
     :`<div class="info-card" style="background:rgba(15,36,64,.06);color:#0F2440;margin-bottom:12px">${PX("ap_no_res")}</div>`;
-  const provHoje=astProvisao(a,Math.max(0,e.ganho),e.diasCorridos);
+  const provHoje=astProvisao(a,Math.max(0,(e.ganhoFiscal!==undefined?e.ganhoFiscal:e.ganho)),e.diasCorridos);
 
   /* tabela: últimos meses e os projetados */
   const pts=jan.filter((x,i)=>{
@@ -22520,6 +22565,7 @@ function renderRendimento(){
       ${R("Montante aplicado",fmt(e.custo),"","var(--ink-2)")}
       ${e.fgAuto?R("Depósito do mês",fmt(e.depHoje),"sub","var(--ink-2)"):(e.aporte>0?R("Aporte mensal",fmt(e.aporte),"sub","var(--ink-2)"):"")}
       ${e.aporte>0?R("(=) Total aportado",fmt(e.aportado),"sub","var(--ink-2)"):""}
+      ${(e.resgatado>0)?R("(−) Resgatado",SGP("−")+fmt(e.resgatado),"sub",RED):""}
       ${R(e.ancorado?"Saldo informado":"Valor de hoje pela taxa",fmt(e.real),"",NAV)}
       ${R("(=) Rendimento bruto",SGP(e.ganho>=0?"+":"−")+fmt(Math.abs(e.ganho)),"tot",GRN)}
       ${provHoje.iof>0?R("(−) IOF "+String(provHoje.iofPct).replace(".",",")+"% · "+e.diasCorridos+" dias",SGP("−")+fmt(provHoje.iof),"sub",RED):""}
@@ -22617,7 +22663,11 @@ function drawRendChart(e){
   c.width=W*dpr;c.height=H*dpr;c.style.width=W+"px";c.style.height=H+"px";
   const ctx=c.getContext("2d");ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
   const pad={l:4,r:4,t:10,b:18}, cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
-  const vals=pts.flatMap(p=>[p.saldo,p.liquido,p.aportado,p.modelo]);
+  /* a linha do APLICADO é o capital que ainda está lá: um resgate baixa o
+     custo na proporção retirada, e mantê-la no valor original faria a curva
+     do saldo parecer afundada para sempre depois de um saque. */
+  const apl=p=>R2((+p.aportado||0)-(+p.baixaAcum||0));
+  const vals=pts.flatMap(p=>[p.saldo,p.liquido,apl(p),p.modelo]);
   const mn=Math.min(...vals), mx=Math.max(...vals), rg=(mx-mn)||1;
   const X=i=>pad.l+(i/(pts.length-1))*cW;
   const Y=v=>pad.t+cH-((v-mn)/rg)*cH;
@@ -22629,7 +22679,7 @@ function drawRendChart(e){
   }
   /* montante aplicado: linha de referência */
   ctx.setLineDash([3,3]);ctx.strokeStyle="#9A958C";ctx.lineWidth=1;ctx.beginPath();
-  pts.forEach((p,i)=>{i?ctx.lineTo(X(i),Y(p.aportado)):ctx.moveTo(X(i),Y(p.aportado));});
+  pts.forEach((p,i)=>{i?ctx.lineTo(X(i),Y(apl(p))):ctx.moveTo(X(i),Y(apl(p)));});
   ctx.stroke();ctx.setLineDash([]);
   /* área do saldo */
   const g=ctx.createLinearGradient(0,pad.t,0,pad.t+cH);
