@@ -16186,7 +16186,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="10.99";
+const APP_VERSION="11.00";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -16623,6 +16623,16 @@ const TXD={
 "Rendimento acumulado":["Accumulated return","Kumulierter Ertrag"],
 "(=) Rendimento bruto":["(=) Gross return","(=) Bruttoertrag"],
 "(−) Resgatado":["(−) Redeemed","(−) Ausgezahlt"],
+"(−) Baixa de custo no resgate":["(−) Cost written off on redemption","(−) Kostenabgang bei Auszahlung"],
+"(=) Capital ainda aplicado":["(=) Capital still invested","(=) Noch angelegtes Kapital"],
+"Saldo hoje":["Balance today","Bestand heute"],
+"(=) Ganho ainda não realizado":["(=) Unrealized gain","(=) Nicht realisierter Gewinn"],
+"Ganho já realizado":["Gain already realized","Bereits realisierter Gewinn"],
+"Resgatado (bruto)":["Redeemed (gross)","Ausgezahlt (brutto)"],
+"(−) Custo baixado":["(−) Cost written off","(−) Kostenabgang"],
+"(=) Ganho realizado":["(=) Realized gain","(=) Realisierter Gewinn"],
+"(−) IR já pago no resgate":["(−) Tax already paid on redemption","(−) Bei Auszahlung bereits gezahlte Steuer"],
+"(=) Rendimento acumulado":["(=) Accumulated return","(=) Kumulierter Ertrag"],
 "Evolução mês a mês":["Month-by-month path","Monatsverlauf"],
 "Come-cotas já debitado":["Fund tax already charged","Fondssteuer bereits belastet"],
 "Montante aplicado":["Amount invested","Anlagebetrag"],
@@ -17412,6 +17422,9 @@ const PDIC={
   ap_hist_res:["Histórico de resgates","Redemption history","Auszahlungshistorie"],
   ap_no_res:["Nenhum resgate registrado nesta aplicação.","No redemption recorded for this holding.","Für diese Anlage wurde keine Auszahlung gebucht."],
   ap_res_tot:["Total resgatado","Total redeemed","Insgesamt ausgezahlt"],
+  ap_resg_note:["O IR de hoje incide só sobre o ganho que ainda está na aplicação; o ganho que saiu no resgate já foi tributado na data dele. Os dois somados são o rendimento acumulado do card do topo.",
+    "Today's tax applies only to the gain still held; the gain taken out on redemption was taxed on that date. Together they make up the accumulated return shown at the top.",
+    "Die heutige Steuer trifft nur den noch angelegten Gewinn; der bei der Auszahlung entnommene Gewinn wurde an jenem Tag versteuert. Zusammen ergeben sie den kumulierten Ertrag oben."],
   ap_edit:["Editar","Edit","Bearbeiten"],
   ap_redeem:["Registrar resgate","Record redemption","Auszahlung buchen"],
   ap_venc_note:["Aplicação vencida: a curva e a tabela terminam no vencimento, em",
@@ -19346,11 +19359,26 @@ function astEvolucao(a,mesesFuturos){
     const aport=R2(custo0+(temAporte?(depAc[nt]||0):0));
     const modelo=R2(modelaAte(k));
     let saldo=R2(saldoAte[kk]);
+    /* O balde da série fecha no dia 1º; o ponto é rotulado pelo aniversário
+       da aplicação. Ler o saldo do balde fechado punha no dia 24 o valor do
+       dia 1º: três semanas de rendimento escorregavam para o ponto seguinte,
+       e a linha "Hoje" aparecia rendendo mais do que um mês inteiro de
+       projeção. Aqui o saldo é corrigido do fechamento do balde até a data
+       do ponto — e, se a posição informada cair nesse intervalo, a correção
+       parte dela. */
+    let sb=(kk<=0)?inicio:(S[kk-1]?S[kk-1].ate:data);
+    if(infor>0&&posData>sb&&posData<=data){ sb=posData; saldo=R2(infor); }
+    if(data>sb){
+      let f=1;
+      try{ const r=fatorProduto(a,sb,data,p); if(r&&isFinite(r.fator)&&r.fator>0) f=r.fator; }catch(e){}
+      saldo=R2(saldo*f);
+      const sai=resgNo(sb,data);
+      if(sai>0) saldo=R2(Math.max(0,saldo-sai));
+    }
     const cc=R2((ccAte[kk]||0)-ccPago);
     ccPago=R2(ccAte[kk]||0);
-    const ant=pts.length?pts[pts.length-1].saldo:custo;
-    const dSal=(kk<=0)?inicio:((S[kk-1]&&S[kk-1].ate<data)?S[kk-1].ate:data);
-    push(data,d,aport,saldo,modelo,m?saldo-ant:0,cc,false,dSal);
+    const ant=pts.length?pts[pts.length-1].saldo:custo0;
+    push(data,d,aport,saldo,modelo,m?saldo-ant:0,cc,false,data);
   }
   /* ponto de hoje, para a curva fechar no saldo informado */
   const ultH=pts[pts.length-1];
@@ -19403,6 +19431,9 @@ function astEvolucao(a,mesesFuturos){
     fgAuto, depHoje:R2(temAporte?depMes(ymOf(hoje)):0),
     real:R2(valorHoje), saldoInformado:R2(infor), posData, atualizacao:atz, ancorado,
     resgatado:resgTot, custoBaixado:baixaTot, temResgate:RG.length>0,
+    ganhoResg:R2(resgTot-baixaTot),
+    irResg:R2(RG.reduce((x,r)=>x+(+r.ir||0)+(+r.iof||0),0)),
+    ultResg:RG.length?RG[RG.length-1].data:null,
     curto:mesesPos<1,
     retornoPeriodo:custo0>0?R2(((valorHoje+resgTot)/custo0-1)*100):0,
     iAM:R2(iAM*100), iAA:R2((Math.pow(1+iAM,12)-1)*100),
@@ -22474,6 +22505,11 @@ function renderRendimento(){
       </div>`
     :`<div class="info-card" style="background:rgba(15,36,64,.06);color:#0F2440;margin-bottom:12px">${PX("ap_no_res")}</div>`;
   const provHoje=astProvisao(a,Math.max(0,(e.ganhoFiscal!==undefined?e.ganhoFiscal:e.ganho)),e.diasCorridos);
+  /* Com resgate registrado a conta tem dois andares: o que ainda está na
+     aplicação (e ainda deve IR) e o que já saiu (e já pagou). Misturar os
+     dois numa coluna só é o que tornava o resumo ilegível. */
+  const temR=(+e.resgatado||0)>0;
+  const gBruto=temR?(+e.ganhoFiscal||0):(+e.ganho||0);
 
   /* tabela: últimos meses e os projetados */
   const pts=jan.filter((x,i)=>{
@@ -22565,15 +22601,26 @@ function renderRendimento(){
       ${R("Montante aplicado",fmt(e.custo),"","var(--ink-2)")}
       ${e.fgAuto?R("Depósito do mês",fmt(e.depHoje),"sub","var(--ink-2)"):(e.aporte>0?R("Aporte mensal",fmt(e.aporte),"sub","var(--ink-2)"):"")}
       ${e.aporte>0?R("(=) Total aportado",fmt(e.aportado),"sub","var(--ink-2)"):""}
-      ${(e.resgatado>0)?R("(−) Resgatado",SGP("−")+fmt(e.resgatado),"sub",RED):""}
-      ${R(e.ancorado?"Saldo informado":"Valor de hoje pela taxa",fmt(e.real),"",NAV)}
-      ${R("(=) Rendimento bruto",SGP(e.ganho>=0?"+":"−")+fmt(Math.abs(e.ganho)),"tot",GRN)}
+      ${temR?R("(−) Baixa de custo no resgate",SGP("−")+fmt(e.custoBaixado),"sub",RED):""}
+      ${temR?R("(=) Capital ainda aplicado",fmt(e.custoFiscal),"sub","var(--ink-2)"):""}
+      ${R(temR?"Saldo hoje":(e.ancorado?"Saldo informado":"Valor de hoje pela taxa"),fmt(e.real),"",NAV)}
+      ${R(temR?"(=) Ganho ainda não realizado":"(=) Rendimento bruto",
+          SGP(gBruto>=0?"+":"−")+fmt(Math.abs(gBruto)),"tot",GRN)}
       ${provHoje.iof>0?R("(−) IOF "+String(provHoje.iofPct).replace(".",",")+"% · "+e.diasCorridos+" dias",SGP("−")+fmt(provHoje.iof),"sub",RED):""}
       ${R("(−) IR "+String(provHoje.aliq).replace(".",",")+"%",SGP("−")+fmt(provHoje.ir),"",RED)}
       ${e.atual.ccAcum>0?R("Come-cotas já debitado",SGP("−")+fmt(e.atual.ccAcum),"sub",RED):""}
       ${R("(=) Líquido hoje",fmt(e.real-provHoje.total),"grand",GRN)}
     </div>
 
+    ${temR?`<div class="sec-label">Ganho já realizado</div>
+    <div style="background:var(--surface);border-radius:14px;padding:12px 15px;margin-bottom:12px">
+      ${R("Resgatado (bruto)",fmt(e.resgatado),"","var(--ink-2)")}
+      ${R("(−) Custo baixado",SGP("−")+fmt(e.custoBaixado),"sub","var(--ink-2)")}
+      ${R("(=) Ganho realizado",SGP(e.ganhoResg>=0?"+":"−")+fmt(Math.abs(e.ganhoResg)),"tot",GRN)}
+      ${e.irResg>0?R("(−) IR já pago no resgate",SGP("−")+fmt(e.irResg),"sub",RED):""}
+      ${R("(=) Rendimento acumulado",SGP(e.ganho>=0?"+":"−")+fmt(Math.abs(e.ganho)),"grand",GRN)}
+    </div>
+    <div class="pro-note" style="margin:0 0 12px">${PX("ap_resg_note")}</div>`:""}
     ${!e.ancorado?`<div class="info-card" style="background:rgba(15,36,64,.06);color:#0F2440;margin-bottom:12px">
       O valor de hoje vem do cálculo do app: ${fmt(e.custo)} aplicados há ${e.diasCorridos} dias, capitalizados pelo histórico do indexador (${String(e.fator.amEquiv).replace(".",",")}% ao mês equivalente, contra ${String(e.iAM).replace(".",",")}% na taxa de hoje). Atualize o saldo na aplicação, com a data da nova posição, para acompanhar o realizado.</div>`:""}
     ${e.proxFaixa?`<div class="info-card" style="background:rgba(90,138,74,.1);color:#3F6B33;margin-bottom:12px">
