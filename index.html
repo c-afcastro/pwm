@@ -1693,6 +1693,79 @@
     }
     .btn-settled:hover { border-color: var(--warn); color: var(--warn); }
     .settled-row { opacity: .45; }
+    /* ── CONTAS A RECEBER / POPUPS (v11.05) ── */
+    .rc-kpis { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; margin-bottom: 16px; }
+    .rc-kpi { background: var(--surface); border-radius: 14px; padding: 12px 14px; min-width: 0; }
+    .rc-kpi .k { font-size: 12px; color: var(--ink-2); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rc-kpi .v { font-family: var(--serif); font-size: 19px; color: var(--body); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rc-kpi .s { font-size: 11px; color: var(--ink-3); margin-top: 3px; line-height: 1.35; }
+    .rc-kpi .v.wood, .rc-v.wood, b.wood { color: var(--wood); }
+    .rc-kpi .v.ok, .rc-v.ok, b.ok, span.ok { color: var(--green); }
+    .rc-kpi .v.muted { color: var(--ink-3); }
+    .rc-kpi.full { grid-column: 1 / -1; }
+    .rc-actions.eq { grid-template-columns: 1fr 1fr; }
+    .rc-late { color: var(--warn); }
+    #splits-summary-cards.rc-people { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; margin-bottom: 16px; }
+    .rc-person { background: var(--surface); border: none; border-radius: 14px; padding: 12px 14px; text-align: left; cursor: pointer; min-width: 0; color: var(--body); }
+    .rc-person-h { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; min-width: 0; }
+    .rc-person-h span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rc-person-v { font-family: var(--serif); font-size: 19px; color: var(--wood); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rc-person-s { font-size: 11px; color: var(--ink-2); margin-top: 2px; line-height: 1.35; }
+    .rc-av { width: 32px; height: 32px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .rc-grp { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 14px 0 6px; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+    .rc-grp span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rc-grp b { font-family: var(--serif); font-weight: 400; font-size: 15px; color: var(--body); white-space: nowrap; }
+    .rc-list { background: var(--surface); border-radius: 14px; padding: 0 14px; }
+    .rc-row, .rc-crow { display: grid; grid-template-columns: 32px minmax(0,1fr) auto; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .rc-row:last-child, .rc-crow:last-child { border-bottom: none; }
+    .rc-body { min-width: 0; }
+    .rc-t { font-size: 14px; font-weight: 600; color: var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rc-m { font-size: 12px; color: var(--ink-2); margin-top: 2px; line-height: 1.4; overflow-wrap: anywhere; }
+    .rc-r { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .rc-v { font-family: var(--serif); font-size: 16px; color: var(--wood); white-space: nowrap; }
+    .rc-btn { background: var(--green-bg); color: var(--green); border: 1.5px solid var(--green); border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .rc-tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 10px; background: var(--wood-bg); color: var(--wood); vertical-align: 1px; }
+    .rc-empty { color: var(--ink-2); font-size: 13px; text-align: center; padding: 16px 0; }
+    .rc-note { font-size: 12px; color: var(--ink-2); line-height: 1.5; margin: 0 0 12px; }
+    .rc-det { margin-top: 14px; }
+    .rc-det > summary { list-style: none; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--ink-2); padding: 10px 14px; background: var(--surface); border-radius: 12px; }
+    .rc-det > summary::-webkit-details-marker { display: none; }
+    .rc-det > summary::after { content: "▾"; margin-left: 6px; color: var(--ink-3); }
+    .rc-det[open] > summary::after { content: "▴"; }
+    .rc-det > summary b { font-family: var(--serif); font-weight: 400; font-size: 15px; color: var(--ink-3); margin-left: auto; }
+    .rc-chip { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 16px; border: 1.5px solid var(--line); background: none; color: var(--ink-2); font-size: 12px; cursor: pointer; white-space: nowrap; }
+    .rc-chip i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .rc-chip.on { border-color: var(--body); color: var(--body); font-weight: 600; }
+    .rc-sheet { padding-bottom: calc(clamp(24px,5dvh,44px) + env(safe-area-inset-bottom,0px)); }
+    .rc-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .rc-head-t { flex: 1; min-width: 0; }
+    .rc-h1 { font-family: var(--serif); font-size: 21px; color: var(--body); line-height: 1.2; }
+    .rc-h2 { font-size: 13px; color: var(--ink-2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rc-x { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: none; color: var(--ink-2); font-size: 15px; cursor: pointer; flex-shrink: 0; }
+    .rc-card { background: var(--surface); border-radius: 14px; padding: 14px; margin-bottom: 16px; }
+    .rc-dl { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 7px 12px; margin: 0; font-size: 13px; }
+    .rc-dl dt { color: var(--ink-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rc-dl dd { margin: 0; text-align: right; color: var(--body); white-space: nowrap; }
+    .rc-dl dd b { font-weight: 700; }
+    .rc-form .rc-in { display: block; box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; height: 48px; margin-bottom: 14px; -webkit-appearance: none; appearance: none; text-align: left; font-size: 15px; }
+    .rc-form input[type="date"].rc-in::-webkit-date-and-time-value { text-align: left; }
+    .rc-quick { display: flex; gap: 8px; margin: -6px 0 14px; }
+    .rc-actions { display: grid; grid-template-columns: 1fr 1.6fr; gap: 8px; margin-top: 4px; }
+    .rc-b1, .rc-b2 { height: 46px; border-radius: 14px; font-size: 14px; font-weight: 600; cursor: pointer; padding: 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rc-b1 { background: var(--accent); color: var(--accent-ink); border: none; }
+    .rc-b1:disabled { opacity: .45; cursor: default; }
+    .rc-b2 { background: none; color: var(--body); border: 1.5px solid var(--line); }
+    .rc-wide { width: 100%; margin-top: 12px; }
+    .rc-sub { font-size: 12px; font-weight: 600; color: var(--ink-2); margin: 18px 0 6px; }
+    .rc-hrow { display: grid; grid-template-columns: minmax(0,1fr) auto auto; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .rc-hrow:last-child { border-bottom: none; }
+    .rc-undo { height: 30px; padding: 0 10px; border-radius: 15px; border: 1.5px solid var(--line); background: none; color: var(--ink-2); font-size: 12px; cursor: pointer; }
+    .rc-crow { grid-template-columns: 22px minmax(0,1fr) auto; }
+    .rc-ck { width: 20px; height: 20px; margin: 0; accent-color: var(--green); }
+    .rc-sumline { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 2px 12px; font-size: 13px; color: var(--ink-2); }
+    .rc-sumline b { font-family: var(--serif); font-weight: 400; font-size: 20px; color: var(--green); }
+    .ast-rend-chip { cursor: pointer; border: none; font: inherit; }
+
 
     /* ── ÍCONES ───────────────────────────────────────────────────────
        Um traço, uma máscara, nenhuma cor própria.
@@ -2445,14 +2518,16 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     </div>
 
     <div id="view-splits" style="display:none">
-      <!-- person filter chips — above everything -->
-      <div id="splits-person-filter" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
-      <div class="sec-label" data-i18n="open_balances">Pendências em aberto</div>
-      <div id="splits-summary-cards" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px"></div>
-      <div class="sec-label" data-i18n="by_expense">Por gasto</div>
+      <div id="splits-person-filter" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:14px"></div>
+      <div id="splits-kpis" class="rc-kpis"></div>
+      <div class="sec-label" data-i18n="rc_by_person">Por pessoa</div>
+      <div id="splits-summary-cards" class="rc-people"></div>
+      <div class="sec-label" data-i18n="rc_open_title">Em aberto, por mês de competência</div>
       <div id="splits-list"></div>
-      <div class="sec-label" style="margin-top:24px" data-i18n="settled">Baixas realizadas</div>
+      <details id="splits-fut-wrap" class="rc-det" style="display:none"><summary></summary><div id="splits-future" style="padding-top:8px"></div></details>
+      <div class="sec-label" style="margin-top:24px" data-i18n="rc_rec_title">Recebidos, por data da baixa</div>
       <div id="splits-settled"></div>
+      <div class="info-card" style="margin-top:16px" data-i18n="rc_help">Competência é o mês da despesa que gerou o valor a receber.</div>
     </div>
 
 
@@ -4343,6 +4418,90 @@ const I18N={
     w_filtered:"filtrado",
     ast_tab_liq:"Liquidez",
     since_position:"desde a última posição",
+    rc_your_share:"(sua parte)",
+    ar_chip:"estimado desde as posições informadas",
+    ar_title:"Rendimento desde a última posição",
+    ar_help:"Cada aplicação guarda o saldo do dia em que você o informou. Até a próxima atualização, o app corrige esse saldo pelo indexador de cada uma, em dias úteis e pela curva dos Parâmetros. A diferença abaixo é essa correção e já está incluída no total do patrimônio. Como cada ativo tem uma data-base diferente, o valor não corresponde a um período único.",
+    ar_informed:"Saldos informados",
+    ar_today:"Estimado hoje",
+    ar_diff:"Diferença",
+    ar_pos_on:"posição de {d}, há {n} dias",
+    ar_from_aplic:"sem data de posição: contado desde a aplicação em {d}",
+    ar_no_date:"sem data-base",
+    ar_old:"desatualizada",
+    ar_tip:"Toque numa aplicação para atualizar o saldo. Ao salvar com a data de hoje, a diferença dela volta a zero.",
+    rc_kpi_open:"A receber",
+    rc_kpi_month:"Recebido no mês",
+    rc_kpi_age:"Prazo médio em aberto",
+    rc_kpi_fut:"Previsto no horizonte",
+    rc_items:"em aberto",
+    rc_payments:"baixas",
+    rc_days:"dias",
+    rc_late:"há mais de 30 dias",
+    rc_weighted:"ponderado pelo valor",
+    rc_until:"até",
+    rc_by_person:"Por pessoa",
+    rc_open_title:"Em aberto, por mês de competência",
+    rc_fut_title:"Previstos (despesas futuras)",
+    rc_fut_short:"Previsto",
+    rc_fut_note:"A despesa ainda não ocorreu: o valor passa a ser devido na data da despesa. O período segue o horizonte dos Parâmetros.",
+    rc_rec_title:"Recebidos, por data da baixa",
+    rc_help:"Competência é o mês da despesa que gerou o valor a receber. A baixa é o dia em que o dinheiro voltou. Toque em qualquer linha para ver o detalhe, registrar um recebimento parcial ou desfazer uma baixa.",
+    rc_comp:"Competência",
+    rc_exp_on:"despesa em",
+    rc_paid_on:"baixa em",
+    rc_no_date:"baixa sem data",
+    rc_no_date_grp:"Baixas sem data (registros antigos)",
+    rc_legacy_hint:"registrada antes da versão 11.05",
+    rc_recv_in:"Recebido em",
+    rc_age_tpl:"há {n} dias",
+    rc_age_today:"desde hoje",
+    rc_oldest:"mais antigo",
+    rc_receive:"Receber",
+    rc_receive_title:"Registrar recebimento",
+    rc_detail_title:"Recebível quitado",
+    rc_exp_date:"Data da despesa",
+    rc_exp_total:"Total da despesa",
+    rc_share_of:"Parte de",
+    rc_received_so_far:"Já recebido",
+    rc_received_total:"Recebido",
+    rc_balance:"Em aberto",
+    rc_settled_full:"Quitado",
+    rc_status:"Situação",
+    rc_recurring:"recorrente",
+    rc_pay_date:"Data do recebimento",
+    rc_pay_value:"Valor recebido",
+    rc_full:"Valor em aberto",
+    rc_half:"Metade",
+    rc_note:"Observação (opcional)",
+    rc_note_ph:"Pix, dinheiro, transferência",
+    rc_confirm:"Confirmar recebimento",
+    rc_cancel:"Cancelar",
+    rc_history:"Histórico de baixas",
+    rc_undo:"Desfazer",
+    rc_undo_ok:"Baixa desfeita",
+    rc_reopen:"Reabrir pendência",
+    rc_saved:"Recebimento registrado",
+    rc_partial_saved:"Baixa parcial registrada",
+    rc_capped:"Valor ajustado ao saldo em aberto",
+    rc_invalid:"Informe um valor maior que zero",
+    rc_partial:"parcial",
+    rc_recv_of:"recebido {a} de {b}",
+    rc_receive_all:"Receber tudo",
+    rc_send_charge:"Enviar cobrança",
+    rc_batch_title:"Baixa em lote",
+    rc_batch_hint:"Marque o que foi pago. Todos recebem a mesma data de recebimento.",
+    rc_selected:"Selecionado",
+    rc_batch_confirm:"Confirmar {n} baixas",
+    rc_batch_ok:"{n} baixas registradas",
+    rc_charge_hi:"Olá, {nome}! Segue o resumo dos valores em aberto:",
+    rc_charge_total:"Total",
+    rc_copied:"Cobrança copiada",
+    rc_none_open:"Nenhuma pendência em aberto",
+    rc_none_rec:"Nenhuma baixa registrada ainda",
+    rc_older:"Ver meses anteriores",
+    rc_all:"Todos",
+    rc_not_found:"Lançamento não encontrado",
     institution:"Instituição",
     ast_contrib:"Aporte/mês",
     ast_simulated:"simulado",
@@ -5381,6 +5540,90 @@ const I18N={
     w_filtered:"filtered",
     ast_tab_liq:"Liquidity",
     since_position:"since last position",
+    rc_your_share:"(your share)",
+    ar_chip:"estimated since reported positions",
+    ar_title:"Yield since last reported position",
+    ar_help:"Each holding keeps the balance from the day you reported it. Until the next update, the app accrues that balance by each holding's own index, in business days and following the curve in Parameters. The difference below is that accrual and is already included in total net worth. Because each holding has a different base date, the amount does not refer to a single period.",
+    ar_informed:"Reported balances",
+    ar_today:"Estimated today",
+    ar_diff:"Difference",
+    ar_pos_on:"position of {d}, {n} days ago",
+    ar_from_aplic:"no position date: counted from investment date {d}",
+    ar_no_date:"no base date",
+    ar_old:"outdated",
+    ar_tip:"Tap a holding to update its balance. Saving it with today's date resets its difference to zero.",
+    rc_kpi_open:"Receivable",
+    rc_kpi_month:"Received this month",
+    rc_kpi_age:"Average days open",
+    rc_kpi_fut:"Forecast to horizon",
+    rc_items:"open",
+    rc_payments:"payments",
+    rc_days:"days",
+    rc_late:"over 30 days",
+    rc_weighted:"value-weighted",
+    rc_until:"until",
+    rc_by_person:"By person",
+    rc_open_title:"Open, by accrual month",
+    rc_fut_title:"Forecast (future expenses)",
+    rc_fut_short:"Forecast",
+    rc_fut_note:"The expense has not happened yet: the amount becomes due on the expense date. The period follows the horizon in Parameters.",
+    rc_rec_title:"Received, by settlement date",
+    rc_help:"Accrual month is the month of the expense that created the receivable. Settlement is the day the money came back. Tap any row to see details, record a partial payment or undo a settlement.",
+    rc_comp:"Accrual",
+    rc_exp_on:"expense on",
+    rc_paid_on:"settled on",
+    rc_no_date:"settled, no date",
+    rc_no_date_grp:"Settlements without date (older records)",
+    rc_legacy_hint:"recorded before version 11.05",
+    rc_recv_in:"Received in",
+    rc_age_tpl:"{n} days open",
+    rc_age_today:"since today",
+    rc_oldest:"oldest",
+    rc_receive:"Receive",
+    rc_receive_title:"Record payment",
+    rc_detail_title:"Receivable settled",
+    rc_exp_date:"Expense date",
+    rc_exp_total:"Expense total",
+    rc_share_of:"Share of",
+    rc_received_so_far:"Received so far",
+    rc_received_total:"Received",
+    rc_balance:"Outstanding",
+    rc_settled_full:"Settled",
+    rc_status:"Status",
+    rc_recurring:"recurring",
+    rc_pay_date:"Date received",
+    rc_pay_value:"Amount received",
+    rc_full:"Outstanding amount",
+    rc_half:"Half",
+    rc_note:"Note (optional)",
+    rc_note_ph:"Transfer, cash",
+    rc_confirm:"Confirm payment",
+    rc_cancel:"Cancel",
+    rc_history:"Settlement history",
+    rc_undo:"Undo",
+    rc_undo_ok:"Settlement undone",
+    rc_reopen:"Reopen item",
+    rc_saved:"Payment recorded",
+    rc_partial_saved:"Partial payment recorded",
+    rc_capped:"Amount capped at the outstanding balance",
+    rc_invalid:"Enter an amount above zero",
+    rc_partial:"partial",
+    rc_recv_of:"received {a} of {b}",
+    rc_receive_all:"Receive all",
+    rc_send_charge:"Send reminder",
+    rc_batch_title:"Batch settlement",
+    rc_batch_hint:"Tick what was paid. All get the same payment date.",
+    rc_selected:"Selected",
+    rc_batch_confirm:"Confirm {n} payments",
+    rc_batch_ok:"{n} payments recorded",
+    rc_charge_hi:"Hi {nome}! Here is a summary of what is still open:",
+    rc_charge_total:"Total",
+    rc_copied:"Reminder copied",
+    rc_none_open:"Nothing outstanding",
+    rc_none_rec:"No settlements recorded yet",
+    rc_older:"Show earlier months",
+    rc_all:"All",
+    rc_not_found:"Entry not found",
     institution:"Institution",
     ast_contrib:"Contrib./mo.",
     ast_simulated:"simulated",
@@ -6419,6 +6662,90 @@ const I18N={
     w_filtered:"gefiltert",
     ast_tab_liq:"Liquidität",
     since_position:"seit dem letzten Stand",
+    rc_your_share:"(Ihr Anteil)",
+    ar_chip:"geschätzt seit den gemeldeten Ständen",
+    ar_title:"Ertrag seit dem letzten Stand",
+    ar_help:"Jede Anlage speichert den Saldo vom Tag Ihrer Meldung. Bis zur nächsten Aktualisierung schreibt die App diesen Saldo mit dem jeweiligen Index fort, in Bankarbeitstagen und nach der Kurve in den Parametern. Die Differenz unten ist diese Fortschreibung und bereits im Gesamtvermögen enthalten. Da jede Anlage ein anderes Basisdatum hat, bezieht sich der Betrag nicht auf einen einheitlichen Zeitraum.",
+    ar_informed:"Gemeldete Salden",
+    ar_today:"Heute geschätzt",
+    ar_diff:"Differenz",
+    ar_pos_on:"Stand vom {d}, vor {n} Tagen",
+    ar_from_aplic:"ohne Standdatum: ab Anlagedatum {d} gerechnet",
+    ar_no_date:"kein Basisdatum",
+    ar_old:"veraltet",
+    ar_tip:"Tippen Sie auf eine Anlage, um den Saldo zu aktualisieren. Mit heutigem Datum gespeichert, fällt ihre Differenz auf null.",
+    rc_kpi_open:"Offen",
+    rc_kpi_month:"Diesen Monat erhalten",
+    rc_kpi_age:"Ø Tage offen",
+    rc_kpi_fut:"Prognose bis Horizont",
+    rc_items:"offen",
+    rc_payments:"Zahlungen",
+    rc_days:"Tage",
+    rc_late:"über 30 Tage",
+    rc_weighted:"wertgewichtet",
+    rc_until:"bis",
+    rc_by_person:"Nach Person",
+    rc_open_title:"Offen, nach Leistungsmonat",
+    rc_fut_title:"Prognose (künftige Ausgaben)",
+    rc_fut_short:"Prognose",
+    rc_fut_note:"Die Ausgabe ist noch nicht erfolgt: Der Betrag wird am Ausgabedatum fällig. Der Zeitraum folgt dem Horizont in den Parametern.",
+    rc_rec_title:"Erhalten, nach Zahlungsdatum",
+    rc_help:"Der Leistungsmonat ist der Monat der Ausgabe, aus der die Forderung entstand. Die Zahlung ist der Tag, an dem das Geld zurückkam. Tippen Sie auf eine Zeile für Details, Teilzahlungen oder zum Stornieren.",
+    rc_comp:"Leistung",
+    rc_exp_on:"Ausgabe am",
+    rc_paid_on:"bezahlt am",
+    rc_no_date:"bezahlt, ohne Datum",
+    rc_no_date_grp:"Zahlungen ohne Datum (ältere Einträge)",
+    rc_legacy_hint:"vor Version 11.05 erfasst",
+    rc_recv_in:"Erhalten im",
+    rc_age_tpl:"seit {n} Tagen",
+    rc_age_today:"seit heute",
+    rc_oldest:"ältester",
+    rc_receive:"Erhalten",
+    rc_receive_title:"Zahlung erfassen",
+    rc_detail_title:"Forderung beglichen",
+    rc_exp_date:"Ausgabedatum",
+    rc_exp_total:"Gesamtbetrag",
+    rc_share_of:"Anteil von",
+    rc_received_so_far:"Bereits erhalten",
+    rc_received_total:"Erhalten",
+    rc_balance:"Offen",
+    rc_settled_full:"Beglichen",
+    rc_status:"Status",
+    rc_recurring:"wiederkehrend",
+    rc_pay_date:"Eingangsdatum",
+    rc_pay_value:"Erhaltener Betrag",
+    rc_full:"Offener Betrag",
+    rc_half:"Hälfte",
+    rc_note:"Notiz (optional)",
+    rc_note_ph:"Überweisung, bar",
+    rc_confirm:"Zahlung bestätigen",
+    rc_cancel:"Abbrechen",
+    rc_history:"Zahlungsverlauf",
+    rc_undo:"Stornieren",
+    rc_undo_ok:"Zahlung storniert",
+    rc_reopen:"Posten wieder öffnen",
+    rc_saved:"Zahlung erfasst",
+    rc_partial_saved:"Teilzahlung erfasst",
+    rc_capped:"Betrag auf den offenen Saldo begrenzt",
+    rc_invalid:"Betrag größer als null eingeben",
+    rc_partial:"teilweise",
+    rc_recv_of:"{a} von {b} erhalten",
+    rc_receive_all:"Alles erhalten",
+    rc_send_charge:"Erinnerung senden",
+    rc_batch_title:"Sammelzahlung",
+    rc_batch_hint:"Markieren Sie, was bezahlt wurde. Alle erhalten dasselbe Eingangsdatum.",
+    rc_selected:"Ausgewählt",
+    rc_batch_confirm:"{n} Zahlungen bestätigen",
+    rc_batch_ok:"{n} Zahlungen erfasst",
+    rc_charge_hi:"Hallo {nome}! Hier die offenen Beträge:",
+    rc_charge_total:"Summe",
+    rc_copied:"Erinnerung kopiert",
+    rc_none_open:"Nichts offen",
+    rc_none_rec:"Noch keine Zahlungen erfasst",
+    rc_older:"Frühere Monate anzeigen",
+    rc_all:"Alle",
+    rc_not_found:"Eintrag nicht gefunden",
     institution:"Institut",
     ast_contrib:"Einzahl./Mon.",
     ast_simulated:"simuliert",
@@ -7406,6 +7733,58 @@ function astValorAtual(a){
   AST_VAL_CACHE[a.id]={k:ck,v};
   return v;
 }
+/* ══ RENDIMENTO DESDE A ÚLTIMA POSIÇÃO — detalhe (v11.05) ══════════════
+   O selo somava, sem dizer de onde, a correção de cada aplicação entre a
+   data da SUA última posição e hoje. Cada ativo tem uma data diferente,
+   então o número não batia com nada que o titular reconhecesse. O popup
+   abre a conta: ativo a ativo, data-base, saldo informado, estimado hoje. */
+function astRendDetalhe(){
+  const hj=today();
+  return assetsFiltrados().filter(a=>a&&!a.virtual&&!astVencidaFora(a)&&(parseFloat(a.balance)||0)>0).map(a=>{
+    const base=parseFloat(a.balance)||0;
+    const d0=String((a.lastUpdate||(a.pro&&a.pro.aplic)||"")).slice(0,10);
+    const fonte=a.lastUpdate?"pos":(d0?"aplic":"none");
+    const hoje=astValorAtual(a);
+    const dias=d0?Math.max(0,Math.round((new Date(hj+"T12:00:00")-new Date(d0+"T12:00:00"))/864e5)):0;
+    return {a,base,d0,fonte,hoje,rend:Math.round((hoje-base)*100)/100,dias};
+  }).sort((x,y)=>y.rend-x.rend);
+}
+function openAstRendPopup(){
+  const L=astRendDetalhe();
+  const sB=L.reduce((s,x)=>s+x.base,0), sH=L.reduce((s,x)=>s+x.hoje,0);
+  let ov=document.getElementById("modal-ast-rend");
+  if(!ov){
+    ov=document.createElement("div"); ov.className="overlay"; ov.id="modal-ast-rend"; ov.style.zIndex="170";
+    ov.innerHTML=`<div class="sheet rc-sheet"><div class="sheet-handle"></div><div id="ast-rend-body"></div></div>`;
+    document.body.appendChild(ov);
+  }
+  const linhas=L.map(x=>{
+    const c=gAssetClass(x.a.class);
+    const quando=x.fonte==="pos"
+      ?t("ar_pos_on").replace("{d}",fmtDateShort(x.d0)).replace("{n}",x.dias)
+      :(x.fonte==="aplic"?`<span class="rc-late">${t("ar_from_aplic").replace("{d}",fmtDateShort(x.d0))}</span>`:t("ar_no_date"));
+    const velho=(x.fonte==="pos"&&x.dias>30)?` <span class="rc-tag">${t("ar_old")}</span>`:"";
+    return `<div class="rc-row" onclick="document.getElementById('modal-ast-rend').classList.remove('open');openAssetEdit(${JSON.stringify(x.a.id)})">
+      <span class="rc-av" style="background:${c.color}">${c.emoji}</span>
+      <div class="rc-body"><div class="rc-t">${escapeHtml(x.a.name||catLabel(c))}</div>
+        <div class="rc-m">${velho?velho.trim()+" ":""}${quando}</div>
+        <div class="rc-m">${fmt(x.base)} → ${fmt(x.hoje)}</div></div>
+      <div class="rc-r"><div class="rc-v ${x.rend>0?"ok":""}">${x.rend>0?SGP("+"):""}${fmt(x.rend)}</div></div>
+    </div>`;
+  }).join("");
+  document.getElementById("ast-rend-body").innerHTML=`
+    <div class="rc-head"><div class="rc-head-t"><div class="rc-h1">${t("ar_title")}</div></div>
+      <button class="rc-x" onclick="document.getElementById('modal-ast-rend').classList.remove('open')" aria-label="close">✕</button></div>
+    <div class="rc-note">${t("ar_help")}</div>
+    <div class="rc-kpis">
+      <div class="rc-kpi"><div class="k">${t("ar_informed")}</div><div class="v">${fmt(sB)}</div></div>
+      <div class="rc-kpi"><div class="k">${t("ar_today")}</div><div class="v">${fmt(sH)}</div></div>
+      <div class="rc-kpi full"><div class="k">${t("ar_diff")}</div><div class="v ok">${SGP("+")}${fmt(sH-sB)}</div></div>
+    </div>
+    <div class="rc-list">${linhas||`<div class="rc-empty">—</div>`}</div>
+    <div class="rc-note" style="margin-top:12px">${t("ar_tip")}</div>`;
+  ov.classList.add("open");
+}
 /* Quanto rendeu desde a última posição informada */
 function astRendAcum(a){ if(!a||a.virtual) return 0;
   return Math.round((astValorAtual(a)-(parseFloat(a&&a.balance)||0))*100)/100; }
@@ -7441,14 +7820,6 @@ function personAmount(e, rowIdx){
   return parseFloat(row.val)||0;
 }
 function settleKey(e, idx){ return `${e.id}_${idx}`; }
-function isSettled(e, idx){ return !!SETTLED[settleKey(e,idx)]; }
-function toggleSettle(expId, idx){
-  const key=`${expId}_${idx}`;
-  SETTLED[key]=!SETTLED[key];
-  persist();
-  renderSplits();
-  updateHero();
-}
 
 /* ── ACTIVE MONTH (YYYY-MM) ── */
 const _now = new Date();
@@ -7879,7 +8250,7 @@ function updateHero(){
 
   // split note
   const hasSplit=me.some(e=>e.split&&e.split.mode!=="none"&&e.split.rows?.length);
-  document.getElementById("hero-split-note").textContent=hasSplit?"(sua parte)":"";
+  document.getElementById("hero-split-note").textContent=hasSplit?t("rc_your_share"):"";
 
   document.getElementById("total-meta").innerHTML=
     `<div class="hero-meta-item">${t("type_fixed")} <strong>${fmt(fixed)}</strong></div>
@@ -7940,112 +8311,431 @@ function updateHero(){
    a data ainda está no futuro, ninguém deve nada: o valor fica separado
    como previsto e não entra no total a receber. */
 function splitFuturo(e){
-  const hj=new Date().toISOString().split("T")[0];
-  return String((e&&e.date)||"")>hj;
+  return String((e&&e.date)||"")>today();
+}
+/* ══ CONTAS A RECEBER — RATEIOS (v11.05) ═══════════════════════════════
+   Cada parte de um rateio é um recebível com duas datas que importam:
+   a COMPETÊNCIA (mês da despesa que o originou) e a BAIXA (dia em que o
+   dinheiro voltou). Antes a baixa era um booleano sem data, e a despesa
+   recorrente aparecia uma vez só — dar baixa num mês quitava todos.
+   Agora cada ocorrência mensal é um recebível próprio, a baixa guarda
+   data, valor (aceita parcial) e observação, e a tela organiza tudo por
+   competência (em aberto) e por data da baixa (recebidos).
+   Formato de SETTLED[chave]: true (registro antigo, sem data) ou
+   {p:[{d:"AAAA-MM-DD", v:número, n:"nota"}]}. */
+const SPL_MIG_KEY="gastos_v2_settled_mig1105";
+let SPL_IDX={}, SPL_PD=null;
+function splKey(instId,idx){ return instId+"_"+idx; }
+function splReg(key){
+  const r=SETTLED[key]; if(!r) return null;
+  if(r===true) return {legacy:true,p:[]};
+  if(Array.isArray(r.p)) return r;
+  return null;
+}
+function splRecebidoKey(key,amt){
+  const r=splReg(key); if(!r) return 0;
+  if(r.legacy) return amt;
+  return Math.min(amt, r.p.reduce((s,x)=>s+(+x.v||0),0));
+}
+function splitRecebido(e,idx){ return splRecebidoKey(settleKey(e,idx), personAmount(e,idx)); }
+function isSettled(e, idx){
+  const key=settleKey(e,idx), r=splReg(key);
+  if(!r) return false;
+  if(r.legacy||!e||!e.split) return true;
+  const amt=personAmount(e,idx);
+  return splRecebidoKey(key,amt)>=amt-0.005;
+}
+/* compatibilidade: quem chamava o antigo liga/desliga agora abre o popup */
+function toggleSettle(expId, idx){ openSplReceive(splKey(expId,idx)); }
+
+/* Uma vez só: a baixa antiga de uma despesa recorrente valia para todas as
+   ocorrências (era assim que o histórico a lia). Ao separar os meses, as
+   ocorrências já vencidas herdam essa baixa — nada reabre sozinho. */
+function splMigrar(){
+  try{
+    if(localStorage.getItem(SPL_MIG_KEY)) return;
+    const hj=today(); let mud=false;
+    EX.forEach(e=>{
+      if(!e.split||e.split.mode==="none"||!e.split.rows?.length) return;
+      if(!e.recurrence||e.recurrence==="none") return;
+      const ds=recurDates(e.date,e.recurrence,e.recurUntil);
+      e.split.rows.forEach((r,idx)=>{
+        if(SETTLED[e.id+"_"+idx]!==true) return;
+        ds.forEach((d,i)=>{ if(i>0&&d<=hj){ const k=e.id+"_r"+i+"_"+idx; if(!SETTLED[k]){ SETTLED[k]=true; mud=true; } } });
+      });
+    });
+    if(mud) persist();
+    localStorage.setItem(SPL_MIG_KEY,"1");
+  }catch(e){}
+}
+function splYmAdd(s,k){ let[y,m]=s.split("-").map(Number); m+=k; y+=Math.floor((m-1)/12); m=((m-1)%12+12)%12+1; return y+"-"+String(m).padStart(2,"0"); }
+/* o previsto vai até o horizonte dos Parâmetros — a mesma régua de toda projeção */
+function splHorizonte(){
+  let h=24;
+  try{ if(window.PRO&&PRO.params){ const p=PRO.params(); if(+p.horizonte>0) h=+p.horizonte; } }catch(e){}
+  h=Math.max(6,Math.min(120,h));
+  return splYmAdd(cym(),h-1);
+}
+function splDias(d){
+  const a=new Date(today()+"T12:00:00"), b=new Date(String(d).slice(0,10)+"T12:00:00");
+  return Math.round((a-b)/864e5);
+}
+function splLedger(){
+  splMigrar();
+  const hj=today(), hz=splHorizonte(), out=[];
+  EX.forEach(e=>{
+    if(!e.split||e.split.mode==="none"||!e.split.rows?.length) return;
+    const recur=e.recurrence&&e.recurrence!=="none";
+    const datas=recur?recurDates(e.date,e.recurrence,e.recurUntil):[e.date];
+    datas.forEach((d,i)=>{
+      const k7=ym(d); if(!d||k7>hz) return;
+      const inst=i>0?{...e,date:d,id:e.id+"_r"+i,_parentId:e.id,_recurInstance:true}:e;
+      e.split.rows.forEach((row,idx)=>{
+        const amt=Math.round(personAmount(e,idx)*100)/100; if(!(amt>0)) return;
+        const key=splKey(inst.id,idx), reg=splReg(key);
+        const rec=splRecebidoKey(key,amt);
+        const saldo=Math.max(0,Math.round((amt-rec)*100)/100);
+        const pags=(reg&&!reg.legacy)?reg.p.map((p,j)=>({...p,j})).sort((a,b)=>String(a.d).localeCompare(String(b.d))):[];
+        out.push({key,inst,e,idx,name:row.name||"?",amount:amt,recebido:rec,saldo,pags,
+          legacy:!!(reg&&reg.legacy),cur:e.currency||"BRL",date:d,ym:k7,futuro:d>hj,
+          settled:saldo<=0.005,ultimaBaixa:pags.length?pags[pags.length-1].d:null,
+          dias:Math.max(0,splDias(d))});
+      });
+    });
+  });
+  SPL_IDX={}; out.forEach(x=>SPL_IDX[x.key]=x);
+  return out;
 }
 function buildOpenSplits(){
   const items=[], futuros=[];
-  EX.forEach(e=>{
-    if(!e.split||e.split.mode==="none"||!e.split.rows?.length) return;
-    const fut=splitFuturo(e);
-    e.split.rows.forEach((row,idx)=>{
-      if(isSettled(e,idx)) return;
-      const o={expId:e.id,idx,name:row.name||"?",amount:personAmount(e,idx),
-               cur:e.currency||"BRL",e,futuro:fut,ym:ym(e.date)};
-      (fut?futuros:items).push(o);
-    });
+  splLedger().forEach(x=>{
+    if(x.settled) return;
+    const o={expId:x.inst.id,idx:x.idx,name:x.name,amount:x.saldo,cur:x.cur,e:x.inst,futuro:x.futuro,ym:x.ym,key:x.key};
+    (x.futuro?futuros:items).push(o);
   });
   return {items, futuros,
     totalCount:items.length, totalVal:items.reduce((s,i)=>s+i.amount,0),
     futCount:futuros.length, futVal:futuros.reduce((s,i)=>s+i.amount,0)};
 }
 
-function openPersonDetail(personName){
-  // gather ALL split rows for this person (open + settled)
-  const open=[], settled=[];
-  EX.forEach(e=>{
-    if(!e.split||e.split.mode==="none"||!e.split.rows?.length) return;
-    e.split.rows.forEach((row,idx)=>{
-      if((row.name||"?")=== personName){
-        const obj={e,idx,amount:personAmount(e,idx),cur:e.currency||"BRL",settled:isSettled(e,idx)};
-        if(obj.settled) settled.push(obj); else open.push(obj);
-      }
-    });
+/* ── rótulos ── */
+function splMesLongo(k){ const [y,m]=String(k).split("-").map(Number); const L=(MONTHS_I18N[LANG]||MONTHS_I18N.pt).full; return (L[m-1]||"")+" "+y; }
+function splMesCurto(k){ const [y,m]=String(k).split("-").map(Number); const L=(MONTHS_I18N[LANG]||MONTHS_I18N.pt).short; return (L[m-1]||"")+"/"+String(y).slice(2); }
+function splIdade(n){ return n<=0?t("rc_age_today"):t("rc_age_tpl").replace("{n}",n); }
+function splCor(nm){ const p=PEOPLE.find(q=>q.name===nm); return (p&&p.color)||"var(--green)"; }
+function splAv(nm,sz){ return `<span class="rc-av" style="background:${splCor(nm)};${sz?`width:${sz}px;height:${sz}px;font-size:${Math.round(sz*.34)}px`:""}">${escapeHtml(personInitials(nm))}</span>`; }
+function splGrupos(arr,fn){ const m=new Map(); arr.forEach(x=>{ const k=fn(x); if(!m.has(k)) m.set(k,[]); m.get(k).push(x); }); return m; }
+
+/* linha de um recebível. modo: open | fut | pay (evento de baixa) */
+function splRow(x,modo,pay,semNome){
+  const c=gc(x.e.category);
+  const meta=[];
+  if(!semNome) meta.push(escapeHtml(x.name));
+  let valor, cls="";
+  if(modo==="pay"){
+    meta.push(t("rc_comp")+" "+splMesCurto(x.ym));
+    meta.push(pay&&pay.d?t("rc_paid_on")+" "+fmtDateShort(pay.d):t("rc_no_date"));
+    if(pay&&pay.n) meta.push(escapeHtml(pay.n));
+    valor=pay?(pay.legacy?x.amount:(+pay.v||0)):x.recebido; cls=" ok";
+  } else {
+    meta.push(t("rc_exp_on")+" "+fmtDateShort(x.date));
+    if(modo==="open") meta.push(`<span class="${x.dias>30?"rc-late":""}">${splIdade(x.dias)}</span>`);
+    valor=x.saldo;
+  }
+  const parcial=(modo!=="pay"&&x.recebido>0.005)
+    ?`<div class="rc-m">${t("rc_recv_of").replace("{a}",fmtCur(x.recebido,x.cur)).replace("{b}",fmtCur(x.amount,x.cur))}</div>`:"";
+  const tagP=(modo==="pay"&&!x.settled)?` <span class="rc-tag">${t("rc_partial")}</span>`:"";
+  const btn=(modo==="open"||modo==="fut")
+    ?`<button class="rc-btn" onclick="event.stopPropagation();openSplReceive('${x.key}')">${t("rc_receive")}</button>`:"";
+  return `<div class="rc-row" onclick="openSplReceive('${x.key}')">
+    ${splAv(x.name)}
+    <div class="rc-body">
+      <div class="rc-t">${c.emoji} ${escapeHtml(x.e.desc||"")}</div>
+      <div class="rc-m">${tagP?tagP.trim()+" ":""}${meta.join(" · ")}</div>${parcial}
+    </div>
+    <div class="rc-r"><div class="rc-v${cls}">${fmtCur(valor,x.cur)}</div>${btn}</div>
+  </div>`;
+}
+/* eventos de baixa (cada recebimento parcial é um evento) */
+function splEventos(L){
+  const ev=[];
+  L.forEach(x=>{
+    if(x.legacy){ ev.push({x,pay:{d:null,legacy:true}}); return; }
+    x.pags.forEach(p=>ev.push({x,pay:p}));
   });
-  // sort by date desc
-  open.forEach(o=>{o.futuro=splitFuturo(o.e);});
-  settled.forEach(o=>{o.futuro=false;});
-  const sortFn=(a,b)=>b.e.date.localeCompare(a.e.date);
-  open.sort(sortFn); settled.sort(sortFn);
+  ev.sort((a,b)=>String(b.pay.d||"").localeCompare(String(a.pay.d||""))||String(b.x.date).localeCompare(String(a.x.date)));
+  return ev;
+}
+function splBlocoAbertos(arr,semNome){
+  if(!arr.length) return `<div class="rc-empty">${t("rc_none_open")}</div>`;
+  const G=splGrupos(arr.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))),x=>x.ym);
+  return [...G.entries()].map(([k,its])=>`
+    <div class="rc-grp"><span>${t("rc_comp")} ${splMesLongo(k)}</span><b>${fmt(its.reduce((s,x)=>s+x.saldo,0))}</b></div>
+    <div class="rc-list">${its.map(x=>splRow(x,"open",null,semNome)).join("")}</div>`).join("");
+}
+function splBlocoFuturos(arr,semNome){
+  const G=splGrupos(arr.slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))),x=>x.ym);
+  return [...G.entries()].map(([k,its])=>`
+    <div class="rc-grp"><span>${t("rc_comp")} ${splMesLongo(k)}</span><b>${fmt(its.reduce((s,x)=>s+x.saldo,0))}</b></div>
+    <div class="rc-list">${its.map(x=>splRow(x,"fut",null,semNome)).join("")}</div>`).join("");
+}
+function splBlocoRecebidos(ev,semNome){
+  if(!ev.length) return `<div class="rc-empty">${t("rc_none_rec")}</div>`;
+  const G=splGrupos(ev,o=>o.pay.d?String(o.pay.d).slice(0,7):"~");
+  const blocos=[...G.entries()].map(([k,its])=>`
+    <div class="rc-grp"><span>${k==="~"?t("rc_no_date_grp"):t("rc_recv_in")+" "+splMesLongo(k)}</span><b class="ok">${fmt(its.reduce((s,o)=>s+(o.pay.legacy?o.x.amount:(+o.pay.v||0)),0))}</b></div>
+    <div class="rc-list">${its.map(o=>splRow(o.x,"pay",o.pay,semNome)).join("")}</div>`);
+  if(blocos.length<=3) return blocos.join("");
+  return blocos.slice(0,3).join("")+`<details class="rc-det"><summary>${t("rc_older")}</summary>${blocos.slice(3).join("")}</details>`;
+}
 
-  /* o previsto não entra no total devido */
-  const totalFut=open.filter(i=>i.futuro).reduce((s,i)=>s+i.amount,0);
-  const totalOpen=open.filter(i=>!i.futuro).reduce((s,i)=>s+i.amount,0);
-  const totalSettled=settled.reduce((s,i)=>s+i.amount,0);
-  const cur=open[0]?.cur||settled[0]?.cur||"BRL";
-  const person=PEOPLE.find(p=>p.name===personName);
-  const avatarColor=person?.color||"var(--green)";
-  const initials=personInitials(personName);
+function renderSplits(){
+  const L=splLedger();
+  const nomes=[...new Set(L.map(x=>x.name))];
+  if(splitsPersonFilter&&!nomes.includes(splitsPersonFilter)) splitsPersonFilter=null;
+  const F=splitsPersonFilter?L.filter(x=>x.name===splitsPersonFilter):L;
 
-  // header
-  document.getElementById("person-detail-header").innerHTML=`
-    <div style="display:flex;align-items:center;gap:12px">
-      <div style="width:44px;height:44px;border-radius:50%;background:${avatarColor};color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${initials}</div>
-      <div>
-        <div style="font-family:var(--serif);font-size:22px;color:var(--body)">${personName}</div>
-        <div style="font-size:11px;color:var(--ink-2)">${open.length} ${t("w_pending_lc")} · ${settled.length} ${t("w_received_lc")}</div>
-      </div>
-    </div>`;
-
-  // summary pills
-  document.getElementById("person-detail-summary").innerHTML=`
-    <div class="pd-summary-pill">
-      <div style="font-size:10px;color:var(--ink-2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">${t("w_open_label")}</div>
-      <span style="color:var(--wood)">${fmtCur(totalOpen,cur)}</span>
-    </div>
-    ${totalFut>0?`<div class="pd-summary-pill">
-      <div style="font-size:10px;color:var(--ink-2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">${t("w_forecast")}</div>
-      <span style="color:var(--ink-3)">${fmtCur(totalFut,cur)}</span>
-    </div>`:""}
-    <div class="pd-summary-pill">
-      <div style="font-size:10px;color:var(--ink-2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">${t("received")}</div>
-      <span style="color:var(--green)">${fmtCur(totalSettled,cur)}</span>
-    </div>
-    <div class="pd-summary-pill">
-      <div style="font-size:10px;color:var(--ink-2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">${t("total")}</div>
-      <span style="color:var(--body)">${fmtCur(totalOpen+totalSettled,cur)}</span>
-    </div>`;
-
-  function renderItem(item, isSettled){
-    const c=gc(item.e.category);
-    const pctInfo=item.e.split?.mode==="pct"
-      ?`${item.e.split.rows.find((_,i)=>i===item.idx)?.val||"?"}% ${t("w_of2")} ${fmtCur(item.e.amount,item.cur)}`
-      :`${t("w_of2")} ${fmtCur(item.e.amount,item.cur)}`;
-    return `<div class="pd-item">
-      <div class="pd-cat-icon" style="background:${c.color}18">${c.emoji}</div>
-      <div class="pd-body">
-        <div class="pd-desc">${item.e.desc}${item.futuro?` <span style="font-size:10px;color:var(--ink-3)">· ${t("w_forecast_lc")} ${monthFullLabel(ym(item.e.date))}</span>`:""}</div>
-        <div class="pd-meta">${item.e.date} · ${pctInfo}</div>
-      </div>
-      <div class="pd-right">
-        <div class="pd-amount${isSettled?" settled":""}">${fmtCur(item.amount,item.cur)}</div>
-        ${isSettled
-          ?`<button class="pd-unsettle-btn" onclick="toggleSettle(${item.e.id},${item.idx});openPersonDetail('${personName.replace(/'/g,"\\'")}')">↩ ${t("w_reopen")}</button>`
-          :`<button class="pd-settle-btn" onclick="toggleSettle(${item.e.id},${item.idx});openPersonDetail('${personName.replace(/'/g,"\\'")}')">✓ ${t("received")}</button>`}
-      </div>
-    </div>`;
+  /* filtro por pessoa */
+  const filterEl=document.getElementById("splits-person-filter");
+  if(filterEl){
+    if(nomes.length>1){
+      filterEl.innerHTML=
+        `<button class="rc-chip${splitsPersonFilter===null?" on":""}" onclick="splitsPersonFilter=null;renderSplits()">${t("rc_all")}</button>`+
+        nomes.map(nm=>`<button class="rc-chip${splitsPersonFilter===nm?" on":""}" onclick="setSplitsPersonFilter(decodeURIComponent('${encodeURIComponent(nm)}'));renderSplits()"><i style="background:${splCor(nm)}"></i>${escapeHtml(nm)}</button>`).join("");
+      filterEl.style.display="flex";
+    } else { filterEl.innerHTML=""; filterEl.style.display="none"; }
   }
 
-  const openEl=document.getElementById("person-detail-open");
-  openEl.innerHTML=open.length
-    ? open.map(i=>renderItem(i,false)).join("")
-    : `<div style="color:var(--ink-2);font-size:12px;padding:8px 0">${t("no_pending")}</div>`;
+  const abertos=F.filter(x=>!x.settled&&!x.futuro), prev=F.filter(x=>!x.settled&&x.futuro);
+  const totA=abertos.reduce((s,x)=>s+x.saldo,0), totP=prev.reduce((s,x)=>s+x.saldo,0);
+  const ev=splEventos(F), mesA=cym();
+  const recMes=ev.filter(o=>o.pay.d&&String(o.pay.d).slice(0,7)===mesA).reduce((s,o)=>s+(+o.pay.v||0),0);
+  const prazo=totA>0?Math.round(abertos.reduce((s,x)=>s+x.dias*x.saldo,0)/totA):0;
+  const atras=abertos.filter(x=>x.dias>30).reduce((s,x)=>s+x.saldo,0);
 
-  const settledEl=document.getElementById("person-detail-settled");
-  settledEl.innerHTML=settled.length
-    ? settled.map(i=>renderItem(i,true)).join("")
-    : `<div style="color:var(--ink-2);font-size:12px;padding:8px 0">${t("no_received")}</div>`;
+  const kp=document.getElementById("splits-kpis");
+  if(kp) kp.innerHTML=`
+    <div class="rc-kpi"><div class="k">${t("rc_kpi_open")}</div><div class="v wood">${fmt(totA)}</div><div class="s">${abertos.length} ${t("rc_items")}</div></div>
+    <div class="rc-kpi"><div class="k">${t("rc_kpi_month")}</div><div class="v ok">${fmt(recMes)}</div><div class="s">${splMesLongo(mesA)}</div></div>
+    <div class="rc-kpi"><div class="k">${t("rc_kpi_age")}</div><div class="v">${abertos.length?prazo+" "+t("rc_days"):"—"}</div><div class="s">${atras>0?`<span class="rc-late">${fmt(atras)} ${t("rc_late")}</span>`:t("rc_weighted")}</div></div>
+    <div class="rc-kpi"><div class="k">${t("rc_kpi_fut")}</div><div class="v muted">${fmt(totP)}</div><div class="s">${t("rc_until")} ${splMesCurto(splHorizonte())}</div></div>`;
 
+  /* pessoas */
+  const summEl=document.getElementById("splits-summary-cards");
+  if(summEl){
+    const pp=nomes.map(nm=>{
+      const a=L.filter(x=>x.name===nm&&!x.settled&&!x.futuro);
+      return {nm,v:a.reduce((s,x)=>s+x.saldo,0),n:a.length,old:a.reduce((m,x)=>Math.max(m,x.dias),0)};
+    }).filter(p=>p.v>0).sort((a,b)=>b.v-a.v);
+    summEl.innerHTML=pp.length?pp.map(p=>`
+      <button class="rc-person" onclick="openPersonDetail(decodeURIComponent('${encodeURIComponent(p.nm)}'))">
+        <div class="rc-person-h">${splAv(p.nm)}<span>${escapeHtml(p.nm)}</span></div>
+        <div class="rc-person-v">${fmt(p.v)}</div>
+        <div class="rc-person-s">${p.n} ${t("rc_items")} · ${t("rc_oldest")} ${splIdade(p.old)}</div>
+      </button>`).join(""):`<div class="rc-empty" style="grid-column:1/-1">${t("rc_none_open")}</div>`;
+  }
+
+  const listEl=document.getElementById("splits-list");
+  if(listEl) listEl.innerHTML=splBlocoAbertos(abertos);
+  const fw=document.getElementById("splits-fut-wrap"), fl=document.getElementById("splits-future");
+  if(fw&&fl){
+    fw.style.display=prev.length?"block":"none";
+    const sm=fw.querySelector("summary");
+    if(sm) sm.innerHTML=`<span>${t("rc_fut_title")}</span><b>${fmt(totP)}</b>`;
+    fl.innerHTML=prev.length?`<div class="rc-note">${t("rc_fut_note")}</div>`+splBlocoFuturos(prev):"";
+  }
+  const settledEl=document.getElementById("splits-settled");
+  if(settledEl) settledEl.innerHTML=splBlocoRecebidos(ev);
+}
+
+/* ── popup: registrar recebimento / detalhe ── */
+function splModal(){
+  let ov=document.getElementById("modal-spl");
+  if(!ov){
+    ov=document.createElement("div");
+    ov.className="overlay"; ov.id="modal-spl"; ov.style.zIndex="170";
+    ov.innerHTML=`<div class="sheet rc-sheet"><div class="sheet-handle"></div><div id="spl-body"></div></div>`;
+    document.body.appendChild(ov);
+  }
+  return ov;
+}
+function splFechar(){ const ov=document.getElementById("modal-spl"); if(ov) ov.classList.remove("open"); }
+function splCab(nm,titulo){
+  return `<div class="rc-head">${splAv(nm,40)}<div class="rc-head-t"><div class="rc-h1">${titulo}</div><div class="rc-h2">${escapeHtml(nm)}</div></div>
+    <button class="rc-x" onclick="splFechar()" aria-label="close">✕</button></div>`;
+}
+function openSplReceive(key){
+  splLedger();
+  const x=SPL_IDX[key]; if(!x){ toast(t("rc_not_found")); return; }
+  splModal();
+  const c=gc(x.e.category);
+  const pct=x.e.split.mode==="pct"?` (${String(x.e.split.rows[x.idx]?.val||0).replace(".",",")}%)`:"";
+  const dl=[
+    [t("rc_comp"),splMesLongo(x.ym)],
+    [t("rc_exp_date"),fmtDateShort(x.date)+(x.e.recurrence&&x.e.recurrence!=="none"?` <span class="rc-tag">${t("rc_recurring")}</span>`:"")],
+    [t("rc_exp_total"),fmtCur(x.e.amount,x.cur)],
+    [t("rc_share_of")+" "+escapeHtml(x.name)+pct,fmtCur(x.amount,x.cur)],
+  ];
+  if(x.recebido>0.005) dl.push([t("rc_received_so_far"),`<span class="ok">${fmtCur(x.recebido,x.cur)}</span>`]);
+  dl.push([t("rc_balance"),`<b class="${x.settled?"ok":"wood"}">${x.settled?t("rc_settled_full"):fmtCur(x.saldo,x.cur)}</b>`]);
+  if(!x.settled) dl.push([t("rc_status"),x.futuro?t("rc_fut_short"):`<span class="${x.dias>30?"rc-late":""}">${splIdade(x.dias)}</span>`]);
+
+  let form="";
+  if(!x.settled){
+    form=`<div class="rc-form">
+      <label class="f-label" for="rc-data">${t("rc_pay_date")}</label>
+      <input id="rc-data" class="f-input rc-in" type="date" value="${today()}"/>
+      <label class="f-label" for="rc-valor">${t("rc_pay_value")}</label>
+      <input id="rc-valor" class="f-input rc-in" type="text" inputmode="decimal" oninput="maskCurrencyInput(this)"/>
+      <div class="rc-quick">
+        <button class="rc-chip" onclick="setCurrencyInput(document.getElementById('rc-valor'),${x.saldo})">${t("rc_full")}</button>
+        <button class="rc-chip" onclick="setCurrencyInput(document.getElementById('rc-valor'),${Math.round(x.saldo*50)/100})">${t("rc_half")}</button>
+      </div>
+      <label class="f-label" for="rc-nota">${t("rc_note")}</label>
+      <input id="rc-nota" class="f-input rc-in" type="text" maxlength="60" placeholder="${escapeHtml(t("rc_note_ph"))}"/>
+      <div class="rc-actions">
+        <button class="rc-b2" onclick="splFechar()">${t("rc_cancel")}</button>
+        <button class="rc-b1" onclick="splConfirmar('${x.key}')">${t("rc_confirm")}</button>
+      </div></div>`;
+  }
+  let hist="";
+  if(x.legacy||x.pags.length){
+    const linhas=x.legacy
+      ?`<div class="rc-hrow"><div><div class="rc-t">${t("rc_no_date")}</div><div class="rc-m">${t("rc_legacy_hint")}</div></div><div class="rc-v ok">${fmtCur(x.amount,x.cur)}</div><button class="rc-undo" onclick="splReabrir('${x.key}')">${t("rc_undo")}</button></div>`
+      :x.pags.map(p=>`<div class="rc-hrow"><div><div class="rc-t">${fmtDateShort(p.d)}</div><div class="rc-m">${p.n?escapeHtml(p.n):"&nbsp;"}</div></div><div class="rc-v ok">${fmtCur(+p.v||0,x.cur)}</div><button class="rc-undo" onclick="splDesfazer('${x.key}',${p.j})">${t("rc_undo")}</button></div>`).join("");
+    hist=`<div class="rc-sub">${t("rc_history")}</div><div class="rc-list">${linhas}</div>`;
+  }
+  const reabrir=(x.settled&&!x.legacy&&x.pags.length>1)?`<button class="rc-b2 rc-wide" onclick="splReabrir('${x.key}')">${t("rc_reopen")}</button>`:"";
+  document.getElementById("spl-body").innerHTML=
+    splCab(x.name,x.settled?t("rc_detail_title"):t("rc_receive_title"))+
+    `<div class="rc-card"><div class="rc-t" style="margin-bottom:8px">${c.emoji} ${escapeHtml(x.e.desc||"")}</div>
+      <dl class="rc-dl">${dl.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl></div>`+
+    form+hist+reabrir;
+  const ov=splModal(); ov.classList.add("open");
+  const v=document.getElementById("rc-valor"); if(v) setCurrencyInput(v,x.saldo);
+}
+function splRegistrar(key,d,v,n){
+  const r=splReg(key);
+  const p=(r&&!r.legacy)?r.p.slice():[];
+  p.push({d,v:Math.round(v*100)/100,n:n||""});
+  SETTLED[key]={p};
+}
+function splConfirmar(key){
+  const x=SPL_IDX[key]; if(!x) return;
+  const d=(document.getElementById("rc-data")||{}).value||today();
+  let v=unmaskCurrency(document.getElementById("rc-valor"));
+  const n=((document.getElementById("rc-nota")||{}).value||"").trim();
+  if(!(v>0)){ toast(t("rc_invalid")); return; }
+  let aviso="";
+  if(v>x.saldo+0.005){ v=x.saldo; aviso=t("rc_capped"); }
+  splRegistrar(key,d,v,n);
+  splFechar();
+  splRefresh();
+  toast(aviso||(v<x.saldo-0.005?t("rc_partial_saved"):t("rc_saved")));
+}
+function splDesfazer(key,j){
+  const r=splReg(key); if(!r||r.legacy) return;
+  const p=r.p.slice(); p.splice(j,1);
+  if(p.length) SETTLED[key]={p}; else delete SETTLED[key];
+  splRefresh(); toast(t("rc_undo_ok"));
+  if(SPL_IDX[key]) openSplReceive(key); else splFechar();
+}
+function splReabrir(key){
+  delete SETTLED[key];
+  splRefresh(); toast(t("rc_undo_ok"));
+  openSplReceive(key);
+}
+function splRefresh(){
+  try{ persist(); }catch(e){}
+  try{ const v=document.getElementById("view-splits"); if(v&&v.style.display!=="none") renderSplits(); }catch(e){}
+  try{ updateHero(); }catch(e){}
+  try{ if(typeof renderStats==="function") renderStats(); }catch(e){}
+  try{ const pd=document.getElementById("modal-person-detail"); if(pd&&pd.classList.contains("open")&&SPL_PD) openPersonDetail(SPL_PD); }catch(e){}
+}
+
+/* ── baixa em lote por pessoa ── */
+function openSplBatch(nm){
+  const its=splLedger().filter(x=>x.name===nm&&!x.settled&&!x.futuro).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  if(!its.length){ toast(t("rc_none_open")); return; }
+  splModal();
+  const G=splGrupos(its,x=>x.ym);
+  document.getElementById("spl-body").innerHTML=
+    splCab(nm,t("rc_batch_title"))+
+    `<div class="rc-note">${t("rc_batch_hint")}</div>`+
+    [...G.entries()].map(([k,g])=>`<div class="rc-grp"><span>${t("rc_comp")} ${splMesLongo(k)}</span></div>
+      <div class="rc-list">${g.map(x=>`<label class="rc-crow">
+        <input type="checkbox" class="rc-ck" data-k="${x.key}" data-v="${x.saldo}" checked onchange="splBatchTot()"/>
+        <div class="rc-body"><div class="rc-t">${gc(x.e.category).emoji} ${escapeHtml(x.e.desc||"")}</div>
+        <div class="rc-m">${t("rc_exp_on")} ${fmtDateShort(x.date)} · ${splIdade(x.dias)}</div></div>
+        <div class="rc-v">${fmtCur(x.saldo,x.cur)}</div></label>`).join("")}</div>`).join("")+
+    `<div class="rc-form" style="margin-top:16px">
+      <label class="f-label" for="rc-bdata">${t("rc_pay_date")}</label>
+      <input id="rc-bdata" class="f-input rc-in" type="date" value="${today()}"/>
+      <label class="f-label" for="rc-bnota">${t("rc_note")}</label>
+      <input id="rc-bnota" class="f-input rc-in" type="text" maxlength="60" placeholder="${escapeHtml(t("rc_note_ph"))}"/>
+      <div class="rc-sumline"><span>${t("rc_selected")}</span><b id="rc-btot"></b></div>
+      <div class="rc-actions">
+        <button class="rc-b2" onclick="splFechar()">${t("rc_cancel")}</button>
+        <button class="rc-b1" id="rc-bgo" onclick="splBatchGo()"></button>
+      </div></div>`;
+  splModal().classList.add("open");
+  splBatchTot();
+}
+function splBatchTot(){
+  const ck=[...document.querySelectorAll("#spl-body .rc-ck:checked")];
+  const tot=ck.reduce((s,c)=>s+(+c.dataset.v||0),0);
+  const a=document.getElementById("rc-btot"); if(a) a.textContent=fmt(tot);
+  const b=document.getElementById("rc-bgo");
+  if(b){ b.textContent=t("rc_batch_confirm").replace("{n}",ck.length); b.disabled=!ck.length; }
+}
+function splBatchGo(){
+  const ck=[...document.querySelectorAll("#spl-body .rc-ck:checked")]; if(!ck.length) return;
+  const d=(document.getElementById("rc-bdata")||{}).value||today();
+  const n=((document.getElementById("rc-bnota")||{}).value||"").trim();
+  ck.forEach(c=>splRegistrar(c.dataset.k,d,+c.dataset.v||0,n));
+  splFechar(); splRefresh();
+  toast(t("rc_batch_ok").replace("{n}",ck.length));
+}
+/* ── cobrança: texto pronto para mandar pelo WhatsApp/mensagem ── */
+function splCobranca(nm){
+  const its=splLedger().filter(x=>x.name===nm&&!x.settled&&!x.futuro).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  if(!its.length){ toast(t("rc_none_open")); return; }
+  const tot=its.reduce((s,x)=>s+x.saldo,0);
+  const txt=t("rc_charge_hi").replace("{nome}",nm)+"\n\n"+
+    its.map(x=>`• ${splMesCurto(x.ym)} — ${x.e.desc||""}: ${fmtCur(x.saldo,x.cur)}`).join("\n")+
+    `\n\n${t("rc_charge_total")}: ${fmt(tot)}`;
+  const copiar=()=>{
+    try{ navigator.clipboard.writeText(txt).then(()=>toast(t("rc_copied")),()=>toast(t("rc_copied"))); }
+    catch(e){ toast(t("rc_copied")); }
+  };
+  if(navigator.share){ navigator.share({text:txt}).catch(err=>{ if(!err||err.name!=="AbortError") copiar(); }); }
+  else copiar();
+}
+
+function openPersonDetail(personName){
+  SPL_PD=personName;
+  const L=splLedger().filter(x=>x.name===personName);
+  const ab=L.filter(x=>!x.settled&&!x.futuro), fu=L.filter(x=>!x.settled&&x.futuro);
+  const ev=splEventos(L);
+  const tA=ab.reduce((s,x)=>s+x.saldo,0), tF=fu.reduce((s,x)=>s+x.saldo,0);
+  const tR=ev.reduce((s,o)=>s+(o.pay.legacy?o.x.amount:(+o.pay.v||0)),0);
+  const nmJs=`decodeURIComponent('${encodeURIComponent(personName)}')`;
+  document.getElementById("person-detail-header").innerHTML=`
+    <div class="rc-head" style="margin-bottom:0">${splAv(personName,44)}<div class="rc-head-t">
+      <div class="rc-h1" style="font-size:20px">${escapeHtml(personName)}</div>
+      <div class="rc-h2">${ab.length} ${t("rc_items")} · ${ev.length} ${t("rc_payments")}</div></div></div>`;
+  document.getElementById("person-detail-summary").innerHTML=`
+    <div class="rc-kpis" style="width:100%;margin-bottom:10px">
+      <div class="rc-kpi full"><div class="k">${t("rc_kpi_open")}</div><div class="v wood">${fmt(tA)}</div></div>
+      <div class="rc-kpi"><div class="k">${t("rc_fut_short")}</div><div class="v muted">${fmt(tF)}</div></div>
+      <div class="rc-kpi"><div class="k">${t("rc_received_total")}</div><div class="v ok">${fmt(tR)}</div></div>
+    </div>
+    ${ab.length?`<div class="rc-actions eq" style="width:100%;margin-top:0">
+      <button class="rc-b2" onclick="splCobranca(${nmJs})">${t("rc_send_charge")}</button>
+      <button class="rc-b1" onclick="openSplBatch(${nmJs})">${t("rc_receive_all")}</button></div>`:""}`;
+  document.getElementById("person-detail-open").innerHTML=splBlocoAbertos(ab,true)+
+    (fu.length?`<details class="rc-det"><summary><span>${t("rc_fut_title")}</span><b>${fmt(tF)}</b></summary>${splBlocoFuturos(fu,true)}</details>`:"");
+  document.getElementById("person-detail-settled").innerHTML=splBlocoRecebidos(ev,true);
   document.getElementById("modal-person-detail").classList.add("open");
 }
 
@@ -8463,129 +9153,6 @@ function setSplitsPersonFilter(name){
   renderSplits();
 }
 
-function renderSplits(){
-  // Summary cards per person (open only)
-  const open=buildOpenSplits();
-  const byPerson={};
-  open.items.forEach(item=>{
-    if(!byPerson[item.name]) byPerson[item.name]={count:0,val:0,cur:item.cur};
-    byPerson[item.name].count++;
-    byPerson[item.name].val+=item.amount;
-  });
-  const summEl=document.getElementById("splits-summary-cards");
-  if(Object.keys(byPerson).length===0){
-    summEl.innerHTML=`<div style="grid-column:1/-1;color:var(--muted);font-size:13px;text-align:center;padding:16px 0">${t("no_open_pending")}</div>`;
-  } else {
-    summEl.innerHTML=Object.entries(byPerson).map(([name,d])=>{
-      const p=PEOPLE.find(x=>x.name===name);
-      const col=p?.color||"var(--green)";
-      const isActive=splitsPersonFilter===name;
-      return `<div class="split-person-card" onclick="setSplitsPersonFilter('${name.replace(/'/g,"\\'")}');updateSplits();"
-        style="cursor:pointer;transition:box-shadow .15s;${isActive?'box-shadow:0 0 0 2px var(--green);background:var(--green-bg)':''}">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-          <div style="width:24px;height:24px;border-radius:50%;background:${col};color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${personInitials(name)}</div>
-          <div class="split-person-name" style="margin-bottom:0">${name}</div>
-        </div>
-        <div class="split-person-val">${fmtCur(d.val,d.cur)}</div>
-        <div class="split-person-count">${d.count} ${t('w_open_count')}${isActive?' · ✓':''}</div>
-      </div>`;
-    }).join("");
-  }
-
-  // Person filter chips (all people who appear in any split)
-  const allSplitPeople=new Set();
-  EX.forEach(e=>{e.split?.rows?.forEach(r=>{if(r.name)allSplitPeople.add(r.name);});});
-  const filterEl=document.getElementById("splits-person-filter");
-  if(filterEl&&allSplitPeople.size>0){
-    filterEl.innerHTML=
-      `<button class="filter-btn${splitsPersonFilter===null?' on':''}" onclick="splitsPersonFilter=null;renderSplits()" style="font-size:11px">${t("all_types")}</button>`+
-      [...allSplitPeople].map(name=>{
-        const p=PEOPLE.find(x=>x.name===name);
-        const col=p?.color||"var(--green)";
-        const isActive=splitsPersonFilter===name;
-        return `<button onclick="setSplitsPersonFilter('${name.replace(/'/g,"\\'")}');renderSplits()"
-          style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;border:1.5px solid ${isActive?col:'var(--line)'};background:${isActive?col+'18':'none'};color:${isActive?col:'var(--ink-2)'};font-size:11px;cursor:pointer;font-weight:${isActive?'600':'400'}">
-          <div style="width:14px;height:14px;border-radius:50%;background:${col};flex-shrink:0"></div>
-          ${name}
-        </button>`;
-      }).join("");
-    filterEl.style.display="flex";
-  } else if(filterEl){
-    filterEl.style.display="none";
-  }
-
-  // Expense rows — filter by person if active
-  const expWithSplit=EX.filter(e=>e.split&&e.split.mode!=="none"&&e.split.rows?.length>0);
-
-  // Filter by selected person
-  const filtered=splitsPersonFilter
-    ? expWithSplit.filter(e=>e.split.rows.some(r=>r.name===splitsPersonFilter))
-    : expWithSplit;
-
-  const openExps=filtered.filter(e=>{
-    const rows=splitsPersonFilter
-      ? e.split.rows.map((r,i)=>({r,i})).filter(x=>x.r.name===splitsPersonFilter)
-      : e.split.rows.map((r,i)=>({r,i}));
-    return rows.some(x=>!isSettled(e,x.i));
-  });
-  const settledExps=filtered.filter(e=>{
-    const rows=splitsPersonFilter
-      ? e.split.rows.map((r,i)=>({r,i})).filter(x=>x.r.name===splitsPersonFilter)
-      : e.split.rows.map((r,i)=>({r,i}));
-    return rows.every(x=>isSettled(e,x.i));
-  });
-
-  function renderExpRow(e, dimmed){
-    const cur=e.currency||"BRL";
-    const c=gc(e.category);
-    // filter person rows
-    const rowsToShow=e.split.rows.map((row,idx)=>({row,idx}))
-      .filter(x=>!splitsPersonFilter||x.row.name===splitsPersonFilter);
-    return `<div class="split-expense-row${dimmed?' settled-row':''}">
-      <div class="split-exp-header">
-        <div>
-          <div class="split-exp-desc">${c.emoji} ${e.desc}</div>
-          <div class="split-exp-date">${e.date}</div>
-        </div>
-        <div class="split-exp-total">${fmtCur(e.amount,cur)}</div>
-      </div>
-      ${rowsToShow.map(({row,idx})=>{
-        const amt=personAmount(e,idx);
-        const settled=isSettled(e,idx);
-        const pctInfo=e.split.mode==="pct"?`${row.val}% do total`:`de ${fmtCur(e.amount,cur)}`;
-        const p2=PEOPLE.find(x=>x.name===row.name);
-        const col2=p2?.color||"var(--green)";
-        const initials=(row.name||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
-        return `<div class="split-person-row">
-          <div class="split-person-info">
-            <div class="split-person-avatar" style="background:${col2}">${initials}</div>
-            <div>
-              <div style="font-size:13px;font-weight:600">${row.name||"Sem nome"}</div>
-              <div class="split-pct-info">${pctInfo}</div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div class="split-person-debt" style="${settled?'text-decoration:line-through;color:var(--muted)':''}">${fmtCur(amt,cur)}</div>
-            <button class="${settled?'btn-settled':'btn-settle'}" onclick="toggleSettle(${e.id},${idx});renderSplits()">
-              ${settled?'↩ '+t('w_reopen'):'✓ '+t('received')}
-            </button>
-          </div>
-        </div>`;
-      }).join("")}
-    </div>`;
-  }
-
-  const listEl=document.getElementById("splits-list");
-  listEl.innerHTML=openExps.length
-    ? openExps.sort((a,b)=>b.id-a.id).map(e=>renderExpRow(e,false)).join("")
-    : `<div class="empty">${t("no_open_charges")}</div>`;
-
-  const settledEl=document.getElementById("splits-settled");
-  settledEl.innerHTML=settledExps.length
-    ? settledExps.sort((a,b)=>b.id-a.id).map(e=>renderExpRow(e,true)).join("")
-    : `<div style="color:var(--muted);font-size:12px;padding:8px 0">${t("no_settled_yet")}</div>`;
-}
-
 /* ══════════════════════════════════════════════════════════════════════
    HISTÓRICO DE DESPESAS
    A aba tinha três defeitos: desenhava em canvas sem densidade de pixel
@@ -8806,7 +9373,7 @@ function renderHistSearch(){
       const g=pes[nm]=pes[nm]||{n:nm,val:0,pago:0,qt:0};
       g.val+=v; g.qt++;
       /* instância recorrente carrega o id do pai com sufixo: a baixa é do pai */
-      if(isSettled({id:e._parentId||e.id},i)) g.pago+=v;
+      g.pago+=splRecebidoKey(settleKey(e,i),v);
     });
   });
   const pesArr=Object.values(pes).sort((a,b)=>b.val-a.val);
@@ -10023,7 +10590,7 @@ function astChipMesAst(){
   const ymS=activeYMAst();
   if(ymS===cym()) return "";
   const futuro=ymS>cym();
-  const rot=(MPT[activeMonthAst]||"").slice(0,3)+"/"+String(activeYearAst).slice(2);
+  const rot=(MS[activeMonthAst]||"")+"/"+String(activeYearAst).slice(2);
   return `<div style="background:rgba(255,255,255,.18);border-radius:20px;padding:3px 10px;font-size:11px;white-space:nowrap">`
     +(futuro?"🔮 "+t("ast_month_proj"):"🕘 "+t("ast_month_past"))+" "+rot+`</div>`;
 }
@@ -10156,7 +10723,7 @@ function renderAssets(){
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">📈 ${t("monthly_yield")} ${fmt(monthYield)}</div>
       ${astChipMesAst()}
       ${aporteProj>0?`<div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">💰 ${t("ast_contrib")} ${fmt(aporteProj)}</div>`:""}
-      ${(noMes&&rendAcum>0)?`<div style="background:rgba(127,228,160,.18);border-radius:20px;padding:3px 10px;font-size:11px;color:#CFF3DA">⏱ ${SGP("+")}${fmt(rendAcum)} ${t("since_position")}</div>`:""}
+      ${(noMes&&rendAcum>0)?`<button class="ast-rend-chip" onclick="event.stopPropagation();openAstRendPopup()" style="background:rgba(127,228,160,.18);border-radius:20px;padding:3px 10px;font-size:11px;color:#CFF3DA">⏱ ${SGP("+")}${fmt(rendAcum)} ${t("ar_chip")} ⓘ</button>`:""}
       ${(FA.length<astBaseLista().filter(a=>!astVencidaFora(a)).length)?`<div style="background:rgba(255,255,255,.18);border-radius:20px;padding:3px 10px;font-size:11px">🔍 ${t("w_filtered")}</div>`:""}
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">${FA.length} ${t("w_holdings")}</div>
     </div>`;
@@ -16398,7 +16965,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.04";
+const APP_VERSION="11.05";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
