@@ -14176,6 +14176,7 @@ function parseInvoiceText(text){
     let line=raw.replace(/\u00a0/g," ").replace(/\s+/g," ").trim();
     if(!line||line.length<4) return;
     if(skipRe.test(line)) return;
+    if(/\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\s+(?:a|at[eé]|to|bis|-|–)\s+\d{1,2}\/\d{1,2}/i.test(line)) return;
 
     /* "12/09", "12/09/26" ou "12 SET" (Nubank, C6, Inter…) — vale a que vier primeiro */
     let dm=line.match(dateRe);
@@ -14211,6 +14212,8 @@ function parseInvoiceText(text){
     while((m=moneyRe.exec(rest))!==null){
       const tok=m[0].trim();
       if(!tok){ if(m.index===moneyRe.lastIndex) moneyRe.lastIndex++; continue; }
+      const antes=rest.charAt(m.index+(m[0].length-m[0].trimStart().length)-1);
+      if(antes&&/[A-Za-zÀ-ÿ\/*]/.test(antes)&&!/[R$€]/.test(tok)){ if(m.index===moneyRe.lastIndex) moneyRe.lastIndex++; continue; }
       const hasCur=/[R$€]|US\$|\$/i.test(tok), hasDec=/[.,]\d{1,2}$/.test(tok);
       const digits=tok.replace(/[^\d]/g,"");
       if(!digits) { if(m.index===moneyRe.lastIndex) moneyRe.lastIndex++; continue; }
@@ -14221,7 +14224,7 @@ function parseInvoiceText(text){
 
     // pick value: prefer tokens with decimals or currency; usually the last one is the amount.
     let cands=matches.filter(x=>!isNaN(x.val)&&(x.hasDec||x.hasCur));
-    if(!cands.length) cands=matches.filter(x=>!isNaN(x.val));
+    if(!cands.length) return;   /* "26", "1566": número solto não é valor de compra */
     // drop trailing zero-only USD column if a non-zero BRL precedes it
     let chosen=cands[cands.length-1];
     let currency="BRL";
@@ -14236,10 +14239,13 @@ function parseInvoiceText(text){
 
     // description = rest minus all money tokens
     let desc=rest;
-    matches.slice().sort((a,b)=>b.index-a.index).forEach(x=>{ desc=desc.slice(0,x.index)+" "+desc.slice(x.end); });
+    /* saem os valores (com centavos ou moeda); números do nome ficam —
+       "POSTO 7 DIAS", "LOJA 2000" */
+    matches.filter(x=>x.hasDec||x.hasCur||x===chosen).sort((a,b)=>b.index-a.index).forEach(x=>{ desc=desc.slice(0,x.index)+" "+desc.slice(x.end); });
+    desc=desc.replace(/^\s*\d{1,2}\s+(?=[A-Za-zÀ-ÿ])/,"");   /* marcador solto antes do nome (ícone de aproximação) */
     desc=desc.replace(/[|•»()]/g," ").replace(/\s+[-–]\s+/g," ").replace(/\s+/g," ").trim();
     desc=desc.replace(/^[-–\s]+|[-–\s]+$/g,"").trim();
-    if(!desc||desc.length<2) desc="Lançamento";
+    if(!/[A-Za-zÀ-ÿ]{2}/.test(desc||"")) return;   /* só data e valor: resto de cabeçalho */
 
     entries.push({
       id:Date.now()+Math.random(),
@@ -17444,7 +17450,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.13";
+const APP_VERSION="11.14";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -32766,7 +32772,11 @@ async function pdfTexto(bytes){
         /* "12 SET" pode vir em dois pedaços: olha o item e o seguinte juntos */
         const j=L[L.indexOf(i)+1];
         const comeca=ehDataIni(i.s)||(j&&ehDataIni(i.s+" "+j.s));
-        if(!cur||(vao>28&&comeca&&/\d[.,]\d{2}/.test(cur.t))){ cur={x0:i.x,t:i.s}; segs.push(cur); }
+        /* nova coluna: vão largo e (a) começa outra data depois de um valor,
+           ou (b) a linha já fechou num valor e vem texto de outro quadro
+           ("27/07 SCP MAIS 17,59" ao lado de "(-) Total de créditos 0,00") */
+        const fechouValor=cur&&/\d[.,]\d{2}$/.test(cur.t)&&!/^-?(R\$|US\$)?\s?\d[\d.,]*$/.test(i.s);
+        if(!cur||(vao>28&&comeca&&/\d[.,]\d{2}/.test(cur.t))||(vao>40&&fechouValor)){ cur={x0:i.x,t:i.s}; segs.push(cur); }
         else cur.t+=(vao>8?"  ":" ")+i.s;
         fimX=i.x+i.w;
       });
