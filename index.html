@@ -4298,7 +4298,7 @@ const I18N={
     opt_type:"💼 Tipo",
     rate_btn:"🔄 Cotação",
     use_brl:"R$ Usar",
-    w_dupes_exist:"lançamento(s) já estão no app — aparecem identificados na revisão, com a sua classificação e rateio.",
+    w_dupes_exist:"lançamento(s) parecidos com itens já lançados no mês — aparecem sinalizados na revisão, mas entram na importação.",
     err_cat_name:"Digite o nome da categoria",
     err_link_name:"Digite um nome para o link",
     err_name:"Digite um nome",
@@ -5420,7 +5420,7 @@ const I18N={
     opt_type:"💼 Type",
     rate_btn:"🔄 Rate",
     use_brl:"R$ Use",
-    w_dupes_exist:"transaction(s) are already in the app — they show up flagged in the review, with your classification and splits.",
+    w_dupes_exist:"transaction(s) look like items already recorded this month — flagged in the review, but still imported.",
     err_cat_name:"Enter the category name",
     err_link_name:"Enter a name for the link",
     err_name:"Enter a name",
@@ -6542,7 +6542,7 @@ const I18N={
     opt_type:"💼 Typ",
     rate_btn:"🔄 Kurs",
     use_brl:"R$ Nutzen",
-    w_dupes_exist:"Buchung(en) sind bereits in der App — sie erscheinen in der Prüfung markiert, mit Ihrer Einordnung und Aufteilung.",
+    w_dupes_exist:"Buchung(en) ähneln bereits erfassten Posten im Monat — markiert in der Prüfung, werden aber importiert.",
     err_cat_name:"Kategorienamen eingeben",
     err_link_name:"Namen für den Link eingeben",
     err_name:"Namen eingeben",
@@ -13991,7 +13991,7 @@ function checkDupes(){
     try{ d=importMode==="native"?parseNativeRow(r):parseBankRow(r); }catch(e){ d=null; }
     if(d) lista.push({...d,_fDate:d.date});
   });
-  const n=impCasar(impCarimbar(lista)).filter(Boolean).length;
+  const n=impSemelhantes(impCarimbar(lista),null).filter(Boolean).length;
   if(n){ warn.style.display="block"; warn.textContent=`✓ ${n} ${t("w_dupes_exist")}`; }
   else warn.style.display="none";
 }
@@ -14279,10 +14279,15 @@ function impCarimbar(lista){
 /* Casa cada linha com um lançamento já existente. Primeiro pela impressão
    digital; para lançamentos anteriores a ela, por data, descrição e valor —
    na data do arquivo ou na data escolhida para a importação. */
-function impCasar(lista){
+/* Só uma REIMPORTAÇÃO casa linhas com o que já existe — e só com as
+   linhas daquela mesma importação. Uma fatura nova nunca tem linhas
+   retiradas por parecerem lançamentos antigos: o chocolate de R$ 6,99
+   comprado de novo é outra compra. Semelhanças viram só uma observação. */
+function impCasar(lista,loteId){
+  if(!loteId) return lista.map(()=>null);
   const porFp={}, legado={}, usados=new Set();
   EX.forEach(e=>{
-    if(!e) return;
+    if(!e||e.importId!==loteId) return;
     if(e.impFp){ porFp[e.impFp]=e; return; }
     const k=(e.date||"")+"|"+impNorm(e.desc)+"|"+impCent(e.amount);
     (legado[k]=legado[k]||[]).push(e);
@@ -14299,6 +14304,57 @@ function impCasar(lista){
     return null;
   });
 }
+/* Observação "item semelhante no mês": mesma descrição (ou a mesma
+   palavra principal) e mesmo valor, no mesmo mês, fora da importação que
+   está sendo atualizada. Não tira nada da importação. */
+function impSemelhantes(lista,loteId){
+  const idx={};
+  EX.forEach(e=>{
+    if(!e||(loteId&&e.importId===loteId)) return;
+    const k=String(e.date||"").slice(0,7)+"|"+impCent(e.amount);
+    (idx[k]=idx[k]||[]).push(e);
+  });
+  const chave=d=>{ const w=impNorm(d).replace(/[^a-z0-9 ]/g," ").split(" ").filter(x=>x.length>=3); return w[0]||impNorm(d); };
+  return lista.map(e=>{
+    const meses=[...new Set([String(e.date||"").slice(0,7),String(e._fDate||"").slice(0,7)].filter(Boolean))];
+    for(const m of meses){
+      const c=(idx[m+"|"+impCent(e.amount)]||[]).find(x=>impNorm(x.desc)===impNorm(e.desc)||chave(x.desc)===chave(e.desc));
+      if(c) return c;
+    }
+    return null;
+  });
+}
+/* Uma importação nova que repete as linhas de uma importação anterior é,
+   quase certamente, a mesma fatura de novo (parcial → fechada). Quem
+   decide é o titular; o nome do arquivo não entra na conta. */
+function impLoteParecido(lista){
+  const porLote={};
+  const fps=new Set(lista.map(e=>e._fp));
+  EX.forEach(e=>{ if(e&&e.importId&&e.impFp&&fps.has(e.impFp)) porLote[e.importId]=(porLote[e.importId]||0)+1; });
+  let melhor=null;
+  Object.keys(porLote).forEach(id=>{
+    const l=LOTES.find(x=>x.id===id); if(!l) return;
+    const n=porLote[id], tot=EX.filter(e=>e&&e.importId===id).length;
+    if(n>=Math.min(3,lista.length)&&(n>=lista.length*0.5||n>=tot*0.5)&&(!melhor||n>melhor.n)) melhor={l,n,tot};
+  });
+  return melhor;
+}
+/* Nome da importação pelo conteúdo, não pelo arquivo: banco (se o texto
+   disser), vencimento e período dos lançamentos */
+function impNomeLote(datas){
+  const o=IMPORT_ORIGEM||{};
+  const ds=(datas||[]).filter(Boolean).sort();
+  const per=ds.length?(ds[0].slice(0,7)===ds[ds.length-1].slice(0,7)?ymRotulo(ds[0].slice(0,7)):ymRotulo(ds[0].slice(0,7))+"–"+ymRotulo(ds[ds.length-1].slice(0,7))):"";
+  const base=o.banco?TXd("Fatura ","Bill ","Rechnung ")+o.banco:(o.tipo==="texto"?TXd("Texto colado","Pasted text","Eingefügter Text"):TXd("Importação","Import","Import"));
+  return base+(o.venc?" · "+TXd("venc. ","due ","fällig ")+o.venc:(per?" · "+per:""));
+}
+function impBancoTexto(txt){
+  const t0=impNorm(txt).slice(0,4000);
+  const B=[["nubank","Nubank"],["nu pagamentos","Nubank"],["itaucard","Itaú"],["itau","Itaú"],["bradesco","Bradesco"],["santander","Santander"],["caixa","Caixa"],["banco do brasil","Banco do Brasil"],["ourocard","Banco do Brasil"],["banco inter","Inter"],["c6 bank","C6"],["c6 carbon","C6"],["xp visa","XP"],["btg","BTG"],["porto seguro","Porto"],["sicredi","Sicredi"],["sicoob","Sicoob"],["mercado pago","Mercado Pago"],["picpay","PicPay"],["americanas","Americanas"],["renner","Renner"]];
+  const b=B.find(x=>t0.indexOf(x[0])>=0);
+  const v=t0.match(/vencimento[^0-9]{0,20}(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?/);
+  return {banco:b?b[1]:null,venc:v?(v[1].padStart(2,"0")+"/"+v[2].padStart(2,"0")+(v[3]?"/"+v[3].slice(-2):"")):null};
+}
 /* Classificação já dada pelo titular a uma descrição igual */
 function impHistorico(){
   const m={};
@@ -14311,7 +14367,7 @@ function impLoteRotulo(e){
   const l=e&&e.importId?LOTES.find(x=>x.id===e.importId):null;
   if(!l) return t("rv_manual");
   let d=""; try{ d=impBr(String(l.ts).slice(0,10)).slice(0,5); }catch(x){}
-  return (l.nome||t("rv_lote"))+(d?" · "+d:"");
+  return (l.nome||t("rv_lote"))+(d?" · "+TXd("importada ","imported ","importiert ")+d:"");
 }
 
 function importPastedText(){
@@ -14322,6 +14378,7 @@ function importPastedText(){
   if(!parsed.length){ toast(t("paste_none")); return; }
   /* veio de um PDF: o lote guarda o arquivo como origem */
   if(IMP_PDF_NOME) setImportOrigem("arquivo",IMP_PDF_NOME); else setImportOrigem("texto","");
+  Object.assign(IMPORT_ORIGEM,impBancoTexto(txt));
   IMP_PDF_NOME=""; IMP_PDF_TXT="";
   const inf=document.getElementById("paste-pdf-info"); if(inf){ inf.style.display="none"; inf.innerHTML=""; }
   document.getElementById("modal-import").classList.remove("open");
@@ -14408,7 +14465,35 @@ function applyDateChoice(mode){
   parsed=parsed.map(e=>({...e,_fDate:e._fDate||e.date}));
   if(mode==="month") parsed=parsed.map(e=>({...e,date:ym+"-01"}));
   impCarimbar(parsed);
-  const casados=impCasar(parsed);
+  if(!REIMP_LOTE){
+    const par=impLoteParecido(parsed);
+    if(par){ impPerguntarReimp(par,parsed); return; }
+  }
+  impMontarRevisao(parsed);
+}
+function impPerguntarReimp(par,parsed){
+  document.getElementById("modal-imp-reimp")?.remove();
+  const l=par.l;
+  let quando=""; try{ quando=impBr(String(l.ts).slice(0,10)); }catch(e){}
+  const ov=document.createElement("div");
+  ov.className="overlay open"; ov.id="modal-imp-reimp"; ov.style.zIndex="260";
+  ov.innerHTML=`<div class="sheet" style="max-height:80dvh">
+    <div class="sheet-handle"></div>
+    <div style="font-size:18px;font-weight:700;letter-spacing:-.02em;color:var(--body);margin-bottom:6px">${TXd("Parece a mesma fatura","Looks like the same bill","Scheint dieselbe Rechnung")}</div>
+    <div style="font-size:13px;color:var(--ink-2);line-height:1.5;margin-bottom:14px">${TXd(
+      par.n+" dos "+parsed.length+" lançamentos são idênticos aos de <b>"+escapeHtml(l.nome||"")+"</b>, importada em "+quando+". Atualizar aquela importação mantém o que você já classificou e traz só o que é novo.",
+      par.n+" of "+parsed.length+" transactions match <b>"+escapeHtml(l.nome||"")+"</b>, imported on "+quando+". Updating keeps your classification and adds only what's new.",
+      par.n+" von "+parsed.length+" Buchungen entsprechen <b>"+escapeHtml(l.nome||"")+"</b> vom "+quando+". Aktualisieren behält Ihre Einordnung und ergänzt nur Neues.")}</div>
+    <button class="btn-primary" style="width:100%;margin-bottom:8px" id="imp-reimp-sim">${TXd("Atualizar essa importação","Update that import","Diesen Import aktualisieren")}</button>
+    <button class="btn-cancel-f" style="width:100%" id="imp-reimp-nao">${TXd("Importar como nova fatura","Import as a new bill","Als neue Rechnung importieren")}</button>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector("#imp-reimp-sim").onclick=()=>{ ov.remove(); REIMP_LOTE=l.id; impMontarRevisao(parsed); };
+  ov.querySelector("#imp-reimp-nao").onclick=()=>{ ov.remove(); REIMP_LOTE=null; impMontarRevisao(parsed); };
+}
+function impMontarRevisao(parsed){
+  const casados=impCasar(parsed,REIMP_LOTE);
+  const pareci=impSemelhantes(parsed,REIMP_LOTE);
   const hist=impHistorico();
 
   reviewEntries=parsed.map((entry,i)=>{
@@ -14417,7 +14502,7 @@ function applyDateChoice(mode){
     const rm=applyRulesToDesc(entry.desc);
     const hm=rm?null:hist[impNorm(entry.desc)];
     return {
-      entry,ja:null,
+      entry,ja:null,parecido:pareci[i]||null,
       selected:true,
       catId:rm?rm.catId:hm?hm.catId:(entry.category||"other"),
       typeId:rm?rm.type:hm?hm.type:(entry.type||"variable"),
@@ -14512,6 +14597,7 @@ function renderReviewModal(){
       <div class="review-body">
         <div class="review-desc" title="${escapeHtml(r.entry.desc)}">${escapeHtml(r.entry.desc)}</div>
         <div class="review-meta">${impBr(r.entry.date)}${badge}</div>
+        ${r.parecido?`<div class="review-sim">≈ ${TXd("item semelhante no mês","similar item this month","ähnlicher Posten im Monat")} · ${impBr(r.parecido.date).slice(0,5)} · ${escapeHtml(impLoteRotulo(r.parecido))}</div>`:""}
         <div class="review-controls">
           <select class="review-sel" onchange="reviewEntries[${i}].catId=this.value;autoClassifySimilar(${i});updateReviewRow(${i});updateReviewTotal()">${catOpts}</select>
           <select class="review-sel" onchange="reviewEntries[${i}].typeId=this.value">${typeOpts}</select>
@@ -14613,7 +14699,9 @@ function commitReview(){
       id:"L"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
       ts:new Date().toISOString(),
       origem:(IMPORT_ORIGEM&&IMPORT_ORIGEM.tipo)||"arquivo",
-      nome:(IMPORT_ORIGEM&&IMPORT_ORIGEM.nome)||"",
+      nome:impNomeLote(sel.map(r=>r.entry._fDate||r.entry.date)),
+      arquivo:(IMPORT_ORIGEM&&IMPORT_ORIGEM.nome)||"",
+      banco:(IMPORT_ORIGEM&&IMPORT_ORIGEM.banco)||"",
       modo:(IMPORT_ORIGEM&&IMPORT_ORIGEM.modo)||"file",
       n:0,total:0,ymIni:"",ymFim:""
     };
@@ -17356,7 +17444,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.12";
+const APP_VERSION="11.13";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -26532,7 +26620,7 @@ function renderLotes(){
           <div style="font-size:13px;font-weight:600;color:var(--body);overflow:hidden;
             text-overflow:ellipsis;white-space:nowrap">${raw(l.nome||loteFonte(l.origem))}</div>
           <div style="font-size:10.5px;color:var(--ink-3);margin-top:2px">${raw(dt(l.ts))}${
-            periodo?" · "+raw(periodo):""}</div>
+            periodo?" · "+raw(periodo):""}${l.arquivo&&l.arquivo!==l.nome?" · "+raw(l.arquivo):""}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-size:13px;font-weight:700;color:${r.vivos?"var(--body)":"var(--ink-4)"}">${V(r.total)}</div>
@@ -32954,6 +33042,7 @@ button:focus-visible,[role="button"]:focus-visible{ outline:2px solid var(--acce
 
 /* texto da fatura: uma linha por lançamento, sem quebra — rola na horizontal */
 #paste-text-input{ white-space:pre !important; overflow:auto !important; overflow-wrap:normal !important; line-height:1.55 !important; }
+.review-sim{ font-size:11px; line-height:1.35; color:#8A5A00; background:rgba(214,158,46,.12); border-radius:6px; padding:2px 7px; margin-top:3px; display:inline-block; max-width:100%; white-space:normal; }
 /* faixa da fatura em PDF */
 .ap-pdfinfo{ align-items:center; gap:10px; background:var(--paper); border-radius:14px; padding:10px 12px; margin-bottom:12px; box-shadow:var(--ap-shadow); }
 .ap-pdfinfo-ic{ width:30px; height:30px; border-radius:9px; background:rgba(47,125,79,.12); color:#2F7D4F; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0; }
