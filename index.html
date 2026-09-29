@@ -13644,6 +13644,73 @@ function handleFileInput(ev){
   if(f) processImportFile(f);
 }
 
+/* Toda fatura imprime os próprios totais. A soma do que foi lido é
+   confrontada com eles: batendo, o titular sabe que nada ficou de fora;
+   não batendo, vê a diferença e as linhas que o app não transformou em
+   lançamento — em qualquer banco, sem depender do layout. */
+function faturaConferir(txt,itens,diag){
+  const L=String(txt||"").split(/\r?\n/).map(normLinhaFatura);
+  const achar=res=>{
+    for(const re of res){
+      for(const l of L){
+        const n=impNorm(l).replace(/\s+/g," ");
+        const nj=n.replace(/\s+/g,"");
+        if(re.test(n)||re.test(nj)){
+          const vs=(l.match(/-?(?:R\$\s?)?\d{1,3}(?:\.\d{3})*,\d{2}\b|-?(?:R\$\s?)?\d+,\d{2}\b/g)||[]);
+          if(vs.length){ const v=Math.abs(impNumBR(vs[vs.length-1])); if(v>0) return v; }
+        }
+      }
+    }
+    return null;
+  };
+  /* compras do período (o que a importação deve reproduzir) e total a pagar */
+  const lanc=achar([/lancamentos atuais/,/lancamentosatuais/,/total (dos |de )?lancamentos/,/totaldoslancamentos/,/lancamentos no cartao/,/total despesas/,/despesas\/debitos no brasil/,/total (de |das )?compras/,/compras nacionais/,/total purchases/,/new charges/]);
+  const fat=achar([/total desta fatura/,/totaldestafatura/,/saldo desta fatura/,/total da (sua )?fatura/,/totaldafatura/,/total a pagar/,/valor total da fatura/,/new balance/,/total due/,/statement balance/]);
+  const ant=achar([/total da fatura anterior/,/saldo anterior/,/previous balance/]);
+  const pagos=achar([/total (dos |de )?pagamentos/,/pagamentos efetuados/,/pagamento efetuado/,/payments/]);
+  const brl=itens.filter(e=>(e.currency||"BRL")==="BRL");
+  const soma=Math.round(brl.reduce((a,e)=>a+e.amount,0)*100)/100;
+  const compras=Math.round(brl.filter(e=>e.amount>0).reduce((a,e)=>a+e.amount,0)*100)/100;
+  const perto=(a,b)=>a!=null&&Math.abs(a-b)<0.015;
+  /* aceita: soma líquida (com estornos) ou só as compras, contra o total de
+     lançamentos; ou contra o total da fatura, descontado o saldo anterior
+     não pago */
+  let ok=false, alvo=null, rot="";
+  if(lanc!=null){ alvo=lanc; rot="lanc"; ok=perto(lanc,soma)||perto(lanc,compras); }
+  if(!ok&&fat!=null){
+    const semAnterior=(ant!=null&&pagos!=null)?Math.round((fat-ant+pagos)*100)/100:null;
+    if(perto(fat,soma)||perto(fat,compras)||(semAnterior!=null&&(perto(semAnterior,soma)||perto(semAnterior,compras)))){ ok=true; alvo=fat; rot="fat"; }
+    else if(alvo==null){ alvo=fat; rot="fat"; }
+  }
+  const base=(alvo!=null)?(perto(alvo,compras)?compras:soma):soma;
+  const dif=alvo!=null?Math.round((alvo-base)*100)/100:null;
+  const fora=((diag&&diag.ignoradas)||[]).filter(x=>x.motivo!=="pagamento");
+  return {alvo,rot,soma,compras,ok,dif,fora};
+}
+function impNumBR(t){
+  let s=String(t).replace(/R\$|\s/g,""); const neg=/^-/.test(s); s=s.replace(/^-/,"");
+  const v=parseFloat(s.replace(/\./g,"").replace(",","."));
+  return isNaN(v)?0:(neg?-v:v);
+}
+function faixaPdfHtml(nome,txt){
+  const diag={};
+  const itens=parseInvoiceText(txt,diag);
+  const c=faturaConferir(txt,itens,diag);
+  const fmtR=v=>fmt(v);
+  let conf="";
+  if(c.alvo!=null){
+    conf=c.ok
+      ?`<div class="ap-pdfconf ok">✓ ${TXd("Confere com o total da fatura","Matches the bill total","Stimmt mit der Rechnungssumme")}: ${fmtR(c.alvo)}</div>`
+      :`<div class="ap-pdfconf warn">! ${TXd("Soma lida","Sum read","Gelesene Summe")} ${fmtR(c.compras)} · ${TXd("fatura","bill","Rechnung")} ${fmtR(c.alvo)} · ${TXd("diferença","difference","Differenz")} ${fmtR(Math.abs(c.dif))}</div>`;
+  }
+  const lista=c.fora.length?`<div class="ap-pdffora"><div class="ap-pdffora-t">${TXd("Linhas com data e valor que não viraram lançamento — corrija no texto se forem compras:","Lines with date and amount not imported — fix them in the text if they are purchases:","Zeilen mit Datum und Betrag, die nicht übernommen wurden — im Text korrigieren, falls Käufe:")}</div>${c.fora.slice(0,8).map(x=>`<code>${esc_(x.linha)}</code>`).join("")}${c.fora.length>8?`<small>+${c.fora.length-8}</small>`:""}</div>`:"";
+  return {n:itens.length,html:`<div class="ap-pdfinfo-ic${c.alvo!=null&&!c.ok?" warn":""}">${itens.length?(c.alvo!=null&&!c.ok?"!":"✓"):"!"}</div>
+    <div style="min-width:0;flex:1"><b>${esc_(nome)}</b>
+    <small>${itens.length
+      ?TXd(itens.length+" lançamentos reconhecidos no texto abaixo. Confira e toque em Identificar e revisar.",itens.length+" transactions found below. Check and tap Identify and review.",itens.length+" Buchungen erkannt. Prüfen und auf Erkennen tippen.")
+      :TXd("Nenhuma linha com data e valor. Se o PDF for uma imagem (escaneado), copie os lançamentos do app do banco.","No line with date and amount. If the PDF is a scanned image, copy the transactions from your bank app.","Keine Zeile mit Datum und Betrag. Bei gescanntem PDF die Buchungen aus der Bank-App kopieren.")}</small>
+    ${conf}${lista}</div>`};
+}
 /* Fatura em PDF: o mesmo leitor da importação de dívidas extrai o texto
    linha a linha (separando as colunas lado a lado que muitas faturas usam),
    o texto aparece na aba "Colar texto" para conferir, e daí em diante é o
@@ -13656,7 +13723,6 @@ function processarFaturaPdf(file){
   const rd=new FileReader();
   rd.onload=ev=>{
     IMPDIV.pdfTexto(new Uint8Array(ev.target.result),file.name).then(txt=>{
-      const itens=parseInvoiceText(txt);
       IMP_PDF_NOME=file.name; IMP_PDF_TXT=txt;
       const ta=document.getElementById("paste-text-input");
       if(ta) ta.value=txt;
@@ -13664,11 +13730,7 @@ function processarFaturaPdf(file){
       const inf=document.getElementById("paste-pdf-info");
       if(inf){
         inf.style.display="flex";
-        inf.innerHTML=`<div class="ap-pdfinfo-ic">${itens.length?"✓":"!"}</div>
-          <div style="min-width:0;flex:1"><b>${esc_(file.name)}</b>
-          <small>${itens.length
-            ?TXd(itens.length+" lançamentos reconhecidos no texto abaixo. Confira e toque em Identificar e revisar.",itens.length+" transactions found in the text below. Check it and tap Identify and review.",itens.length+" Buchungen im Text erkannt. Prüfen und auf Erkennen tippen.")
-            :TXd("Nenhuma linha com data e valor. Se o PDF for uma imagem (escaneado), copie os lançamentos do app do banco.","No line with date and amount. If the PDF is a scanned image, copy the transactions from your bank app.","Keine Zeile mit Datum und Betrag. Bei gescanntem PDF die Buchungen aus der Bank-App kopieren.")}</small></div>`;
+        inf.innerHTML=faixaPdfHtml(file.name,txt).html;
       }
       if(ta){ ta.scrollTop=0; }
     }).catch(err=>{
@@ -13685,9 +13747,8 @@ function pdfTextoEditado(){
   const ta=document.getElementById("paste-text-input");
   const inf=document.getElementById("paste-pdf-info");
   if(!ta||!inf||inf.style.display==="none"||!IMP_PDF_TXT) return;
-  const n=parseInvoiceText(ta.value).length;
-  const sm=inf.querySelector("small");
-  if(sm) sm.textContent=TXd(n+" lançamentos reconhecidos no texto (editado).",n+" transactions found (edited).",n+" Buchungen erkannt (bearbeitet).");
+  clearTimeout(pdfTextoEditado._t);
+  pdfTextoEditado._t=setTimeout(()=>{ inf.innerHTML=faixaPdfHtml(IMP_PDF_NOME||"",ta.value).html; },250);
 }
 
 function processImportFile(file,origem){
@@ -14143,8 +14204,25 @@ function parseBankRow(r){
 /* ── Parse pasted invoice/statement TEXT (offline, OCR-free) ──
    Tolerant of many layouts: "date desc value", "desc date value",
    values with , or . decimals, optional R$/US$, parcela markers, estornos. */
-function parseInvoiceText(text){
+/* Normaliza uma linha de fatura antes de qualquer leitura. Cobre os
+   defeitos de extração que aparecem em PDFs de bancos diferentes:
+   letras e números separados por espaçamento ("20/ 03", "183 ,46",
+   "262, 34", "1,4 8"), sinais de menos tipográficos, "R$ -12,00",
+   valores com D/C (débito/crédito) e menos no fim ("12,00-"). */
+function normLinhaFatura(raw){
+  let l=String(raw||"").replace(/[\u00a0\u2007\u202f]/g," ").replace(/[\u2212\u2013\u2014]/g,"-").replace(/\s+/g," ").trim();
+  l=l.replace(/(\d)\s+\/\s*(\d)/g,"$1/$2").replace(/(\d)\/\s+(\d)/g,"$1/$2")      // datas: "20/ 03", "11/05 /2026"
+     .replace(/(\d)\s+([.,]\d{1,3}\b)/g,"$1$2")                                       // "183 ,46"
+     .replace(/(\d[.,])\s+(\d{1,3}\b)/g,"$1$2")                                       // "262, 34" "49. 737"
+     .replace(/(\d[.,]\d)\s+(\d)\b/g,"$1$2")                                          // "1,4 8"
+     .replace(/(R\$|US\$|€)\s*-\s*(\d)/gi,"-$1$2")                                     // "R$ -12,00"
+     .replace(/-\s+(R\$|US\$)/gi,"-$1")                                                 // "- R$ 12,00"
+     .replace(/(^|[^\d.,])(\d[\d.,]*[.,]\d{2})\s*-(?=\s|$)/g,"$1-$2");                 // "12,00-"
+  return l;
+}
+function parseInvoiceText(text,diag){
   const lines=String(text||"").split(/\r?\n/);
+  const ignorar=(linha,motivo)=>{ if(diag) (diag.ignoradas=diag.ignoradas||[]).push({linha,motivo}); };
   const entries=[];
   const now=new Date();
   const dateRe=/\b(\d{1,2})[\/\.\-](\d{1,2})(?:[\/\.\-](\d{2,4}))?\b/;
@@ -14173,19 +14251,19 @@ function parseInvoiceText(text){
     return isNaN(v)?NaN:(neg?-v:v);
   }
 
+  /* linha que começa com data e tem valor: se não virar lançamento, vai para
+     o diagnóstico — é assim que o titular vê o que ficou de fora */
+  const pareceLanc=l=>/[1-9]\d*[.,]\d{2}\b|0[.,](?!00)\d{2}\b/.test(l)&&/^\D{0,4}\d{1,2}\s?[\/.\-]\s?\d{1,2}\b|^\D{0,4}\d{1,2}\s*(jan|fev|feb|mar|abr|apr|mai|may|jun|jul|ago|aug|set|sep|out|oct|okt|nov|dez|dec)[a-z]*\b|^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}\b/i.test(l)&&/\d[.,]\d{2}\b/.test(l);
   lines.forEach(raw=>{
-    let line=raw.replace(/\u00a0/g," ").replace(/\s+/g," ").trim();
-    /* PDFs com espaçamento de letras quebram os números: "183 ,46", "262, 34",
-       "1,4 8", "49. 737,66" — as partes voltam a ser um valor só */
-    line=line.replace(/(\d)\s+([.,]\d{1,3}\b)/g,"$1$2")
-             .replace(/(\d[.,])\s+(\d{1,3}\b)/g,"$1$2")
-             .replace(/(\d[.,]\d)\s+(\d)\b/g,"$1$2");
+    let line=normLinhaFatura(raw);
     if(!line||line.length<4) return;
-    if(skipRe.test(line)) return;
+    const semEsp0=impNorm(line).replace(/\s+/g,"");
+    if(/pagamentoefetuado|pagamentorecebido|pagamentodeb|pagtodeb|debautom|debitoautom|pagamentodefatura|pagamentofatura|pgtofatura|creditodepagamento|paymentreceived|paymentthankyou|autopay|lastschrift/.test(semEsp0)){ if(pareceLanc(line)) ignorar(line,"pagamento"); return; }
+    if(skipRe.test(line)){ if(pareceLanc(line)&&!/\b(total|subtotal|saldo|limite|vencimento|fechamento)\b/i.test(line)) ignorar(line,"palavra"); return; }
     /* pagamento da fatura anterior não é despesa — mesmo com as letras
        separadas ("PAG AM ENT O DEB AU TOM ATIC") */
     const semEsp=impNorm(line).replace(/\s+/g,"");
-    if(/pagamentoefetuado|pagamentorecebido|pagamentodeb|pagtodeb|debautom|debitoautom|pagamentodefatura|pagamentofatura|pgtofatura|creditodepagamento|paymentreceived|paymentthankyou/.test(semEsp)) return;
+    if(/pagamentoefetuado|pagamentorecebido|pagamentodeb|pagtodeb|debautom|debitoautom|pagamentodefatura|pagamentofatura|pgtofatura|creditodepagamento|paymentreceived|paymentthankyou|autopay|lastschrift/.test(semEsp)){ if(pareceLanc(line)) ignorar(line,"pagamento"); return; }
     if(/\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\s+(?:a|at[eé]|to|bis|-|–)\s+\d{1,2}\/\d{1,2}/i.test(line)) return;
 
     /* "12/09", "12/09/26" ou "12 SET" (Nubank, C6, Inter…) — vale a que vier primeiro */
@@ -14194,6 +14272,14 @@ function parseInvoiceText(text){
     if(dmN&&dmN.index<=3&&(!dm||dmN.index<dm.index)){
       dm=[dmN[0],dmN[1],String(MES_FAT[dmN[2].toLowerCase().slice(0,3)]),dmN[3]];
       dm.index=dmN.index;
+    }
+    /* ISO "2026-09-12" (extratos exportados) — antes que o "26-09" engane */
+    const dmI=line.match(/\b(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})\b/);
+    if(dmI&&(!dm||dmI.index<=dm.index)){ dm=[dmI[0],dmI[3],dmI[2],dmI[1]]; dm.index=dmI.index; }
+    const dmE=line.match(/^\W{0,3}(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})\b(?:,?\s*(\d{4}))?/i);
+    if(dmE&&(!dm||dmE.index<dm.index)){
+      dm=[dmE[0],dmE[2],String(MES_FAT[dmE[1].toLowerCase().slice(0,3)]),dmE[3]];
+      dm.index=dmE.index;
     }
     if(!dm) return;
     const mm=parseInt(dm[2],10), dd=parseInt(dm[1],10);
@@ -14234,7 +14320,7 @@ function parseInvoiceText(text){
 
     // pick value: prefer tokens with decimals or currency; usually the last one is the amount.
     let cands=matches.filter(x=>!isNaN(x.val)&&(x.hasDec||x.hasCur));
-    if(!cands.length) return;   /* "26", "1566": número solto não é valor de compra */
+    if(!cands.length){ if(pareceLanc(line)||/^\D{0,4}\d{1,2}\s?[\/.\-]\s?\d{1,2}\b.*[A-Za-zÀ-ÿ]{2}.*\d\s*$/.test(line)) ignorar(line,"valor"); return; }   /* "26", "1566": número solto não é valor de compra */
     // drop trailing zero-only USD column if a non-zero BRL precedes it
     let chosen=cands[cands.length-1];
     let currency="BRL";
@@ -14246,6 +14332,9 @@ function parseInvoiceText(text){
     if(/US\$/i.test(chosen.tok)) currency="USD";
     let amount=chosen.val;
     if(isNaN(amount)||amount===0) return;
+    /* "50,00 C" / "50,00 CR" = crédito; "D" = débito */
+    const depois=rest.slice(chosen.end,chosen.end+4);
+    if(/^\s?(c|cr)\b/i.test(depois)&&amount>0) amount=-amount;
 
     // description = rest minus all money tokens
     let desc=rest;
@@ -14255,6 +14344,7 @@ function parseInvoiceText(text){
     desc=desc.replace(/^\s*\d{1,2}\s+(?=[A-Za-zÀ-ÿ])/,"");   /* marcador solto antes do nome (ícone de aproximação) */
     desc=desc.replace(/[|•»()]/g," ").replace(/\s+[-–]\s+/g," ").replace(/\s+/g," ").trim();
     desc=desc.replace(/^[-–\s]+|[-–\s]+$/g,"").trim();
+    desc=desc.replace(/\s\b(D|C|CR)\b\s*$/,"").replace(/^[.\-–:;,|\s]+/,"").trim();
     if(!/[A-Za-zÀ-ÿ]{2}/.test(desc||"")) return;   /* só data e valor: resto de cabeçalho */
 
     entries.push({
@@ -17460,7 +17550,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.16";
+const APP_VERSION="11.17";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -32834,6 +32924,90 @@ async function abrirPdf(bytes,nome){
     throw err;
   }
 }
+/* ── Espaços de verdade ─────────────────────────────────────────────
+   Alguns bancos desenham cada par de letras separadamente ("Ca" "so"
+   "v" "o" "cê"). O leitor padrão do pdf.js enxerga os vãos entre os
+   pedaços e inventa espaços: "CA FE GO SAO PA ULOBR A". Aqui o app refaz a
+   conta pelos próprios comandos de desenho do PDF: posição e largura de
+   cada pedaço, em unidades da fonte. Vão menor que ~0,18 da altura da
+   letra é espaçamento de letras (junta); maior, é espaço entre palavras.
+   Depois, cada texto do pdf.js é trocado pela versão limpa — os caracteres
+   são os mesmos, só os espaços mudam; se algo não bater, fica como estava. */
+async function frasesLimpas(page){
+  const O=pdfjsLib.OPS;
+  const ol=await page.getOperatorList();
+  let tm=[1,0,0,1,0,0], lm=[1,0,0,1,0,0], fs=10, Tc=0, Tw=0, Th=1, TL=0;
+  const pedacos=[];
+  const mover=(tx,ty)=>{ lm=[lm[0],lm[1],lm[2],lm[3],lm[4]+tx*lm[0]+ty*lm[2],lm[5]+tx*lm[1]+ty*lm[3]]; tm=lm.slice(); };
+  for(let k=0;k<ol.fnArray.length;k++){
+    const fn=ol.fnArray[k], a=ol.argsArray[k];
+    if(fn===O.beginText){ tm=[1,0,0,1,0,0]; lm=tm.slice(); }
+    else if(fn===O.setTextMatrix){ const m=a.length===6?a:(a[0]||[1,0,0,1,0,0]); tm=m.slice(); lm=m.slice(); }
+    else if(fn===O.moveText) mover(a[0],a[1]);
+    else if(fn===O.setLeadingMoveText){ TL=-a[1]; mover(a[0],a[1]); }
+    else if(fn===O.nextLine) mover(0,-TL);
+    else if(fn===O.setLeading) TL=a[0];
+    else if(fn===O.setFont) fs=a[1]||fs;
+    else if(fn===O.setCharSpacing) Tc=a[0]||0;
+    else if(fn===O.setWordSpacing) Tw=a[0]||0;
+    else if(fn===O.setHScale) Th=(a[0]||100)/100;
+    else if(fn===O.showText||fn===O.showSpacedText){
+      const gl=a[0]||[];
+      const esc_=Math.hypot(tm[0],tm[1])||1, em=fs*esc_;
+      let x=tm[4], y=tm[5], cur=null;
+      const abrir=()=>{ cur={x,y,em,t:""}; pedacos.push(cur); };
+      gl.forEach(g=>{
+        if(typeof g==="number"){
+          const dx=-g/1000*fs*Th*esc_;
+          x+=dx;
+          if(dx>0.18*em&&cur&&cur.t&&!/ $/.test(cur.t)) cur.t+=" ";
+          return;
+        }
+        if(!g) return;
+        if(!cur) abrir();
+        const ch=g.isSpace?" ":(g.unicode||"");
+        cur.t+=ch;
+        x+=((g.width||0)/1000*fs+Tc+(g.isSpace?Tw:0))*Th*esc_;
+        cur.fim=x;
+      });
+      tm=[tm[0],tm[1],tm[2],tm[3],x,y];
+    }
+  }
+  /* junta os pedaços da mesma linha pelo vão entre eles */
+  const frases=[]; let f=null, ult=null;
+  pedacos.forEach(p=>{
+    if(!p.t) return;
+    const mesma=ult&&Math.abs(p.y-ult.y)<0.5*p.em&&(p.x-(ult.fim||ult.x))>-0.5*p.em&&(p.x-(ult.fim||ult.x))<3*p.em;
+    if(mesma){
+      const vao=p.x-(ult.fim||ult.x);
+      f.t+=(vao>0.18*p.em&&!/ $/.test(f.t)&&!/^ /.test(p.t)?" ":"")+p.t;
+    }else{ f={t:p.t}; frases.push(f); }
+    ult=p;
+  });
+  return frases.map(x=>x.t.replace(/\s+/g," ").trim()).filter(Boolean);
+}
+async function desespacar(page,items){
+  let frases;
+  try{ frases=await frasesLimpas(page); }catch(e){ return; }
+  if(!frases.length) return;
+  /* fluxo de caracteres sem espaço, marcando onde há espaço de verdade */
+  const ch=[], esp=[];
+  frases.forEach(t=>{ let antes=true; for(const c of t){ if(c===" "){ antes=true; continue; } ch.push(c); esp.push(antes); antes=false; } });
+  const fluxo=ch.join("");
+  let cursor=0;
+  items.forEach(it=>{
+    if(!it.str||!/\S\s\S/.test(it.str)) { if(it.str){ const k=it.str.replace(/\s+/g,""); const p=fluxo.indexOf(k,cursor); if(p>=0&&p-cursor<400) cursor=p+k.length; } return; }
+    const k=it.str.replace(/\s+/g,"");
+    if(!k) return;
+    let p=fluxo.indexOf(k,cursor);
+    if(p<0||p-cursor>400) p=fluxo.indexOf(k);
+    if(p<0) return;
+    let out="";
+    for(let j=0;j<k.length;j++){ if(j>0&&esp[p+j]) out+=" "; out+=ch[p+j]; }
+    it.str=out;
+    cursor=p+k.length;
+  });
+}
 /* Texto de fatura, linha a linha. Muitas faturas põem duas colunas de
    lançamentos lado a lado: a linha é cortada onde começa outra data depois
    de um vão largo, e cada lado vira uma linha. A coluna da esquerda vem
@@ -32845,6 +33019,7 @@ async function pdfTexto(bytes,nome){
   for(let p=1;p<=doc.numPages;p++){
     const pg=await doc.getPage(p);
     const tc=await pg.getTextContent();
+    await desespacar(pg,tc.items);
     const its=tc.items.filter(i=>i.str&&i.str.trim()).map(i=>({s:i.str.trim(),x:i.transform[4],y:Math.round(i.transform[5]),w:i.width||0,fs:Math.abs(i.transform[0])||8}));
     const porY={};
     its.forEach(i=>{ const k=Object.keys(porY).find(y=>Math.abs(+y-i.y)<=2.5); (porY[k||i.y]=porY[k||i.y]||[]).push(i); });
@@ -32883,6 +33058,7 @@ async function lerPdf(bytes,nome){
   for(let p=1;p<=doc.numPages;p++){
     const pg=await doc.getPage(p);
     const tc=await pg.getTextContent();
+    await desespacar(pg,tc.items);
     const its=tc.items.filter(i=>i.str&&i.str.trim()).map(i=>({s:i.str.trim(),x:i.transform[4],y:Math.round(i.transform[5]),w:i.width||0}));
     const porY={};
     its.forEach(i=>{ const k=Object.keys(porY).find(y=>Math.abs(+y-i.y)<=2.5); (porY[k||i.y]=porY[k||i.y]||[]).push(i); });
@@ -33144,6 +33320,14 @@ button:focus-visible,[role="button"]:focus-visible{ outline:2px solid var(--acce
 .ap-pdfinfo-ic{ width:30px; height:30px; border-radius:9px; background:rgba(47,125,79,.12); color:#2F7D4F; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0; }
 .ap-pdfinfo b{ display:block; font-size:13px; color:var(--body); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ap-pdfinfo small{ display:block; font-size:11.5px; color:var(--ink-2); line-height:1.4; }
+.ap-pdfinfo-ic.warn{ background:rgba(214,158,46,.16); color:#8A5A00; }
+.ap-pdfconf{ font-size:11.5px; font-weight:600; margin-top:5px; border-radius:8px; padding:4px 8px; display:inline-block; }
+.ap-pdfconf.ok{ background:rgba(47,125,79,.1); color:#2F6B3F; }
+.ap-pdfconf.warn{ background:rgba(214,158,46,.14); color:#8A5A00; }
+.ap-pdffora{ margin-top:6px; }
+.ap-pdffora-t{ font-size:11px; color:var(--ink-2); margin-bottom:4px; line-height:1.4; }
+.ap-pdffora code{ display:block; font:11px/1.4 ui-monospace,Menlo,monospace; color:var(--body); background:var(--ap-fill-2); border-radius:6px; padding:3px 6px; margin-bottom:3px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.ap-pdffora small{ font-size:11px; color:var(--ink-3); }
 /* validador de aplicações */
 .ap-vrow{ display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px solid var(--ap-sep); }
 .ap-vn{ font-size:13px; font-weight:600; color:var(--body); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
