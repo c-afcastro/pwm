@@ -2445,7 +2445,6 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     </div>
 
     <div id="view-chart" style="display:none">
-      <div class="sec-label" data-i18n="tab_history">Histórico</div>
       <!-- janela de meses do gráfico: anda por meses passados e projetados -->
       <div class="chart-win-nav">
         <button class="chart-win-btn" id="chart-win-prev" aria-label="prev">‹</button>
@@ -2713,6 +2712,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <!-- RESUMO TAB -->
     <div id="ast-view-dashboard">
       <div id="ast-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px"></div>
+      <div id="ast-validador"></div>
 
       <!-- Snapshot save -->
       <div style="background:var(--surface);border-radius:12px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
@@ -10691,6 +10691,90 @@ function initAstHeroScroll(){
 }
 
 /* ── RENDER ASSETS (main, called on section enter) ── */
+/* ══ VALIDADOR DE APLICAÇÕES DO MÊS ════════════════════════════════════
+   Soma o que foi aplicado com data no mês e confronta com a sobra de caixa
+   (entradas líquidas − despesas − parcelas). Uma reaplicação — dinheiro
+   que venceu de um papel e foi para outro — não é dinheiro novo: o titular
+   marca, e ela sai da conta. O FGTS não passa pelo caixa e fica de fora. */
+function astYMAtivo(){ return activeYearAst+"-"+String(activeMonthAst+1).padStart(2,"0"); }
+function astAplicacoesDoMes(ymStr){
+  const novas=[], aportes=[];
+  ASSETS.forEach(a=>{
+    if(a.class==="fgts") return;
+    let p; try{ p=(window.PRO&&PRO.astPro)?PRO.astPro(a):(a.pro||{}); }catch(e){ p=a.pro||{}; }
+    const dt=String(p.aplic||a.lastUpdate||"");
+    const ymA=dt.slice(0,7);
+    if(ymA===ymStr){
+      novas.push({a,dt,valor:R2c(+p.custo>0?+p.custo:(parseFloat(a.balance)||0)),reap:!!a.reaplic,
+        reapV:(a.reaplic&&+a.reaplicValor>0)?R2c(Math.min(+a.reaplicValor,+p.custo||+a.balance||0)):null});
+    }else if(ymA&&ymA<ymStr&&(+p.aporte||0)>0&&(!p.venc||String(p.venc).slice(0,7)>=ymStr)){
+      aportes.push({a,valor:R2c(+p.aporte)});
+    }
+  });
+  novas.sort((x,y)=>x.dt<y.dt?-1:1);
+  return {novas,aportes};
+}
+function astMarcarReaplic(id){
+  const a=ASSETS.find(x=>String(x.id)===String(id)); if(!a) return;
+  a.reaplic=!a.reaplic;
+  if(!a.reaplic) delete a.reaplicValor;
+  persist();
+  renderAstValidador();
+  toast(a.reaplic?"✓ "+TXd("Marcada como reaplicação","Marked as reinvestment","Als Wiederanlage markiert"):TXd("Conta como dinheiro novo","Counts as new money","Zählt als neues Geld"));
+}
+function astReaplicParcial(id){
+  const a=ASSETS.find(x=>String(x.id)===String(id)); if(!a) return;
+  const cur=+a.reaplicValor>0?String(a.reaplicValor).replace(".",","):"";
+  const v=prompt(TXd("Quanto desta aplicação veio de um resgate? (vazio = tudo)","How much of this came from a redemption? (empty = all)","Wie viel stammt aus einer Rücknahme? (leer = alles)"),cur);
+  if(v===null) return;
+  const n=parseFloat(String(v).replace(/\./g,"").replace(",","."));
+  a.reaplic=true;
+  if(isFinite(n)&&n>0) a.reaplicValor=R2c(n); else delete a.reaplicValor;
+  persist(); renderAstValidador();
+}
+function renderAstValidador(){
+  const el=document.getElementById("ast-validador"); if(!el) return;
+  const ymS=astYMAtivo();
+  const {novas,aportes}=astAplicacoesDoMes(ymS);
+  const totNovas=R2c(novas.reduce((s,x)=>s+x.valor,0));
+  const totReap=R2c(novas.reduce((s,x)=>s+(x.reap?(x.reapV!=null?x.reapV:x.valor):0),0));
+  const totAport=R2c(aportes.reduce((s,x)=>s+x.valor,0));
+  const novo=R2c(totNovas-totReap+totAport);
+  let sobra=null;
+  try{ const cf=(window.PRO&&PRO.cashflowForYM)?PRO.cashflowForYM(ymS):null; if(cf&&isFinite(cf.caixaOper)) sobra=R2c(cf.caixaOper); }catch(e){}
+  const linha=(k,v,cl)=>`<div class="ap-vl${cl?" "+cl:""}"><span>${k}</span><b>${v}</b></div>`;
+  let veredito="";
+  if(sobra!==null&&(novo>0||sobra>0)){
+    const dif=R2c(novo-sobra), tol=Math.max(1,Math.abs(sobra)*0.02);
+    if(Math.abs(dif)<=tol) veredito=`<div class="ap-chk ok"><i>✓</i><span>${TXd("O dinheiro novo bate com a sobra de caixa do mês.","New money matches the month's cash surplus.","Neues Geld entspricht dem Überschuss.")}</span></div>`;
+    else if(dif>0) veredito=`<div class="ap-chk warn"><i>!</i><span>${TXd("Aplicou "+fmt(dif)+" a mais do que sobrou no mês. Se parte veio de um resgate, marque como reaplicação; senão, confira entradas e despesas do mês.","Invested "+fmt(dif)+" more than the surplus. Mark reinvestments or check income and expenses.","Mehr angelegt als übrig. Wiederanlagen markieren oder Monat prüfen.")}</span></div>`;
+    else veredito=`<div class="ap-chk"><i>·</i><span>${TXd("Sobraram "+fmt(-dif)+" sem aplicação registrada neste mês.",fmt(-dif)+" of surplus has no recorded investment.",fmt(-dif)+" Überschuss ohne Anlage.")}</span></div>`;
+  }
+  el.innerHTML=`<div class="ap-group" style="margin-bottom:14px">
+    <div class="ap-group-h">${TXd("Aplicações do mês","This month's investments","Anlagen des Monats")} · ${ymRotulo(ymS)}
+      <small>${TXd("Marque o que foi reaplicação de um resgate — não é dinheiro novo","Mark what was reinvested from a redemption — it isn't new money","Wiederanlagen markieren — kein neues Geld")}</small></div>
+    ${novas.length?novas.map(x=>`<div class="ap-vrow">
+        <div style="flex:1;min-width:0">
+          <div class="ap-vn">${x.a.name||"—"}</div>
+          <div class="ap-vs">${fmtDateShort(x.dt)}${x.a.instituicao?" · "+x.a.instituicao:""}${x.reap&&x.reapV!=null?" · "+TXd("reaplicado","reinvested","wiederangelegt")+" "+fmt(x.reapV):""}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="ap-vv${x.reap?" riscado":""}">${fmt(x.valor)}</div>
+          <button type="button" class="ap-pill${x.reap?" on":""}" onclick="astMarcarReaplic('${x.a.id}')" oncontextmenu="event.preventDefault();astReaplicParcial('${x.a.id}')">${x.reap?"↺ "+TXd("Reaplicação","Reinvested","Wiederanlage"):TXd("Dinheiro novo","New money","Neues Geld")}</button>
+          ${x.reap?`<button type="button" class="ap-link" style="font-size:11px;color:var(--ink-3);display:block;margin-left:auto" onclick="astReaplicParcial('${x.a.id}')">${TXd("valor parcial","partial","Teilbetrag")}</button>`:""}
+        </div></div>`).join("")
+      :`<div class="ap-vs" style="padding:8px 0 4px">${TXd("Nenhuma aplicação com data neste mês.","No investment dated this month.","Keine Anlage in diesem Monat.")}</div>`}
+    <div class="ap-vt">
+      ${linha(TXd("Aplicado no mês","Invested this month","Angelegt"),fmt(totNovas))}
+      ${totReap>0?linha("(−) "+TXd("Reaplicações","Reinvestments","Wiederanlagen"),"−"+fmt(totReap)):""}
+      ${totAport>0?linha("(+) "+TXd("Aportes mensais programados","Scheduled contributions","Sparraten"),fmt(totAport)):""}
+      ${linha("(=) "+TXd("Dinheiro novo","New money","Neues Geld"),fmt(novo),"tot")}
+      ${sobra!==null?linha(TXd("Sobra de caixa do mês","Month cash surplus","Überschuss"),fmt(sobra),"sub"):""}
+    </div>
+    ${veredito}
+  </div>`;
+}
+
 function renderAssets(){
   passoSeguro("ADVISOR/nota-ast",()=>window.ADVISOR&&window.ADVISOR.nota("patrimonio"));
   updateMonthNavAst();
@@ -10731,7 +10815,7 @@ function renderAssets(){
       ${(FA.length<astBaseLista().filter(a=>!astVencidaFora(a)).length)?`<div style="background:rgba(255,255,255,.18);border-radius:20px;padding:3px 10px;font-size:11px">🔍 ${t("w_filtered")}</div>`:""}
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">${FA.length} ${t("w_holdings")}</div>
     </div>`;
-  if(AST_V==="dashboard") renderAssetsDash();
+  if(AST_V==="dashboard"){ renderAssetsDash(); passoSeguro("AST/validador",renderAstValidador); }
   if(AST_V==="list") renderAssetList();
   if(AST_V==="history") renderAssetsHistory();
   if(AST_V==="goals") renderAstGoals();
@@ -17201,7 +17285,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.07";
+const APP_VERSION="11.08";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -20825,6 +20909,15 @@ const ymNow=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth
 
 /* Mês do cronograma correspondente a um AAAA-MM. O mês corrente é o mês 1,
    que é também a primeira prestação simulada. */
+/* Índice do mês sem limite inferior: 1 = mês corrente, 0 = mês passado,
+   −3 = quatro meses atrás. É o que ancora o calendário do FGTS. */
+function fgtsMesRaw(ym){
+  if(!ym) return 1;
+  const p=String(ym).split("-"), y=+p[0], m=+p[1];
+  if(!y||!m) return 1;
+  const d=new Date();
+  return (y-d.getFullYear())*12+(m-1-d.getMonth())+1;
+}
 function fgtsMesDe(ym){
   if(!ym) return 1;
   const p=String(ym).split("-"), y=+p[0], m=+p[1];
@@ -21011,8 +21104,18 @@ function debtScheduleFGTS(d,plano,opt){
   let pote=base;
   const pctMax=Math.min(FGTS_LIM_ABAT,Math.max(1,+P.pct||FGTS_LIM_ABAT));
 
-  let prox=liga?Math.max(fgtsMesDe(P.ym),OFF+1):1e9;
-  let janelaFim=0, janelaPote=0;
+  /* Calendário do FGTS ancorado no mês cadastrado pelo titular. Uma
+     utilização que começou no passado continua na janela dela — não é
+     empurrada para começar agora. */
+  const S0=liga?fgtsMesRaw(P.ym):1e9;
+  let prox=1e9;
+  if(liga&&modo!=="abater"){
+    /* amortização pontual: só se ainda não passou; se renovável, o próximo ciclo */
+    let s=S0;
+    if(P.repetir) while(s<1) s+=renova;
+    prox=(s>=1)?Math.max(s,OFF+1):1e9;
+  }
+  let janelaFim=0, janelaPote=0, janelaIni=-1e9;
   /* Regra do FGTS: iniciada a utilização, os depósitos que entram durante a
      leva ficam retidos e só voltam a ser sacáveis quando o intervalo legal
      se encerra. Eles rendem na conta, mas não financiam esta utilização. */
@@ -21117,13 +21220,22 @@ function debtScheduleFGTS(d,plano,opt){
     /* ── abatimento: reparte o saldo pelas DOZE prestações da janela ── */
     let cob=0;
     if(liga&&modo==="abater"){
-      if(i===prox){
-        janelaFim=i+FGTS_MESES_ABAT-1;
-        pote=base;
-        janelaPote=base>0?(usaPat?Math.min(base,saldoPat):base):(usaPat?saldoPat:0);
-        travadoAte=i+renova-1;
-        /* renovável a cada 12 meses, findo o período */
-        prox=P.repetir?(janelaFim+1):1e9;
+      /* qual janela de 12 meses contém este mês, pelo calendário cadastrado */
+      let ini=null;
+      if(i>=S0){
+        const w=Math.floor((i-S0)/FGTS_MESES_ABAT);
+        if(w===0||P.repetir) ini=S0+w*FGTS_MESES_ABAT;
+      }
+      if(ini!==null&&ini!==janelaIni){
+        janelaIni=ini;
+        janelaFim=ini+FGTS_MESES_ABAT-1;
+        /* janela já em curso: sobra só a parte dos meses que ainda faltam */
+        const falta=janelaFim-i+1;
+        const prop=Math.min(1,falta/FGTS_MESES_ABAT);
+        const cheio=base>0?base:0;
+        pote=base>0?R2(cheio*prop):base;
+        janelaPote=base>0?(usaPat?Math.min(pote,saldoPat):pote):(usaPat?saldoPat:0);
+        travadoAte=ini+renova-1;
       }
       if(janelaFim>=i&&janelaPote>0.005){
         const restMeses=Math.max(1,janelaFim-i+1);
@@ -21211,8 +21323,10 @@ function fgtsModosComparados(d,plano){
 function fgtsBloqueio(d){
   const P=fgtsPlano(d);
   if(!P.on||!fgtsPlanoTemFonte(P)) return null;
-  const ini=fgtsMesDe(P.ym);
+  let ini=fgtsMesRaw(P.ym);
   const renova=fgtsModo(P.modo).ren;
+  /* renovável: vale o ciclo em curso, contado a partir do mês cadastrado */
+  if(P.repetir) while(ini+renova-1<1) ini+=renova;
   const fim=ini+renova-1;
   if(fim<1) return null;
   return {ini,fim,renova,modo:P.modo,
@@ -31707,6 +31821,22 @@ button:focus-visible,[role="button"]:focus-visible{ outline:2px solid var(--acce
 #debt-pay-break b{ color:var(--body); }
 @keyframes apPop{ from{ transform:scale(.6); opacity:0 } to{ transform:none; opacity:1 } }
 
+/* validador de aplicações */
+.ap-vrow{ display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px solid var(--ap-sep); }
+.ap-vn{ font-size:13px; font-weight:600; color:var(--body); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ap-vs{ font-size:11px; color:var(--ink-3); }
+.ap-vv{ font-size:13px; font-weight:600; color:var(--body); }
+.ap-vv.riscado{ color:var(--ink-3); text-decoration:line-through; }
+.ap-pill{ margin-top:4px; border:1px solid var(--line); background:var(--paper); color:var(--ink-2); border-radius:999px;
+  padding:3px 9px; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap; }
+.ap-pill.on{ background:rgba(26,58,92,.1); border-color:rgba(26,58,92,.25); color:#1A3A5C; }
+.ap-vt{ border-top:1px solid var(--ap-sep); margin-top:2px; padding-top:6px; }
+.ap-vl{ display:flex; justify-content:space-between; font-size:12px; color:var(--ink-2); padding:3px 0; }
+.ap-vl b{ font-weight:600; color:var(--body); }
+.ap-vl.tot{ font-size:13px; color:var(--body); } .ap-vl.tot b{ font-weight:700; }
+.ap-vl.sub{ color:var(--ink-3); } .ap-vl.sub b{ color:var(--ink-2); font-weight:500; }
+.ap-chk:not(.ok):not(.warn) i{ background:var(--ap-fill); color:var(--ink-2); }
+
 /* ═══ GUIA INTERATIVO ═══ */
 .ap-help{
   width:30px; height:30px; border-radius:50%; border:none; flex-shrink:0;
@@ -31828,6 +31958,7 @@ const ROT={
  patrimonio:[
   {sel:"#assets-hero",t:["Seu patrimônio","Your wealth"],x:["O valor atualizado de cada aplicação pelo índice dela, já com imposto provisionado.","Each holding updated by its index, with tax provisioned."]},
   {sel:"#screen-patrimonio [onclick='openAsset()']",t:["Registrar uma aplicação","Add a holding"],x:["Escolha o produto (CDB, LCI, Tesouro…) e o app sugere índice e tributação.","Pick the product and the app suggests index and taxation."]},
+  {sel:"#ast-validador",antes:()=>{ try{ showAst("dashboard"); }catch(e){} },t:["Aplicações do mês","This month's investments"],x:["Soma o que foi aplicado no mês e compara com a sobra de caixa. Se uma aplicação veio de um resgate, toque em <b>Dinheiro novo</b> para marcá-la como reaplicação.","Sums what was invested this month against the cash surplus. If one came from a redemption, tap <b>New money</b> to mark it as reinvested."]},
   {sel:"#nav-patrimonio",t:["Visões","Views"],x:["Resumo, aplicações, histórico, metas e rendimento.","Summary, holdings, history, goals and returns."]}
  ],
  simulacoes:[
