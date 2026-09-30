@@ -2396,7 +2396,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <div id="view-list" style="display:none">
       <!-- Search bar -->
       <div style="position:relative;margin-top:12px;margin-bottom:6px">
-        <input id="list-search" class="campo-sm" type="text" placeholder="🔍 Pesquisar por nome…"
+        <input id="list-search" class="campo-sm" type="text" placeholder="Pesquisar por nome…"
           data-i18n="search_expense"
           oninput="renderList()"
           style="width:100%;background:var(--surface);border:1px solid var(--line);color:var(--body);border-radius:8px;padding:5px 30px 5px 10px;font-size:11px;box-sizing:border-box"
@@ -2471,7 +2471,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <!-- busca por nome: responde "quanto gastei com X neste período" -->
       <div style="position:relative;margin-top:10px">
         <input id="hist-search" type="text" class="chart-search campo-sm"
-          data-i18n="hs_ph" placeholder="🔍 Quanto gastei com…"
+          data-i18n="hs_ph" placeholder="Quanto gastei com…"
           oninput="renderHistSearch()" autocomplete="off" autocorrect="off" spellcheck="false"/>
         <button id="hist-search-clear" onclick="document.getElementById('hist-search').value='';renderHistSearch()"
           style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--ink-3);font-size:17px;cursor:pointer;line-height:1;padding:0 2px">×</button>
@@ -2607,7 +2607,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <!-- LANÇAMENTOS TAB -->
     <div id="inc-view-list" style="display:none">
       <div style="position:relative;margin-bottom:6px">
-        <input id="inc-list-search" class="campo-sm" type="text" placeholder="🔍 Pesquisar receita…" data-i18n="search_income"
+        <input id="inc-list-search" class="campo-sm" type="text" placeholder="Pesquisar receita…" data-i18n="search_income"
           oninput="renderIncomeList()"
           style="width:100%;background:rgba(26,58,92,.08);border:1px solid rgba(26,58,92,.2);color:var(--body);border-radius:10px;padding:7px 32px 7px 12px;box-sizing:border-box"/>
         <button onclick="document.getElementById('inc-list-search').value='';renderIncomeList()"
@@ -2733,7 +2733,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <!-- APLICAÇÕES TAB -->
     <div id="ast-view-list" style="display:none">
       <div style="position:relative;margin-bottom:6px">
-        <input id="ast-list-search" class="campo-sm" type="text" placeholder="🔍 Pesquisar aplicação…" data-i18n="search_asset"
+        <input id="ast-list-search" class="campo-sm" type="text" placeholder="Pesquisar aplicação…" data-i18n="search_asset"
           oninput="renderAssetList()"
           style="width:100%;background:rgba(15,36,64,.08);border:1px solid rgba(15,36,64,.2);color:var(--body);border-radius:10px;padding:7px 32px 7px 12px;box-sizing:border-box"/>
         <button onclick="document.getElementById('ast-list-search').value='';renderAssetList()"
@@ -2856,7 +2856,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <!-- DÍVIDAS TAB (list) -->
     <div id="debt-view-list" style="display:none">
       <div style="position:relative;margin-bottom:6px">
-        <input id="debt-list-search" class="campo-sm" type="text" placeholder="🔍 Pesquisar dívida…" data-i18n="search_debt"
+        <input id="debt-list-search" class="campo-sm" type="text" placeholder="Pesquisar dívida…" data-i18n="search_debt"
           oninput="renderDebtList()"
           style="width:100%;background:rgba(110,43,58,.08);border:1px solid rgba(110,43,58,.2);color:var(--body);border-radius:10px;padding:7px 32px 7px 12px;box-sizing:border-box"/>
         <button onclick="document.getElementById('debt-list-search').value='';renderDebtList()"
@@ -3727,7 +3727,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       </button>
     </div>
     <div style="position:relative;margin-bottom:10px">
-      <input id="rules-search" class="campo-sm" type="text" placeholder="🔍 Buscar regra…" data-i18n="search_rule"
+      <input id="rules-search" class="campo-sm" type="text" placeholder="Buscar regra…" data-i18n="search_rule"
         oninput="renderRulesList()"
         style="width:100%;background:var(--surface);border:1px solid var(--line);color:var(--body);border-radius:10px;padding:7px 32px 7px 12px;font-size:12px;box-sizing:border-box"/>
       <button onclick="document.getElementById('rules-search').value='';renderRulesList()"
@@ -3955,7 +3955,7 @@ const I18N={
     export:"Exportar",
     rules:"Regras",
     categories:"Categorias",
-    hs_ph:"🔍 Quanto gastei com…",
+    hs_ph:"Quanto gastei com…",
     hs_none:"Nenhum lançamento com esse nome no período.",
     hs_your_share:"Sua parte no período",
     hs_gross:"Valor cheio",
@@ -4581,7 +4581,7 @@ const I18N={
     payment_history:"Histórico de pagamentos",
     no_payments:"Nenhum pagamento registrado ainda.",
     register:"Registrar",
-    search_debt:"🔍 Pesquisar dívida…",
+    search_debt:"Pesquisar dívida…",
     no_debts:"Nenhuma dívida cadastrada.",
     no_upcoming:"Nenhum vencimento próximo.",
     schedule_need_data:"Adicione parcela e juros às dívidas para ver o cronograma.",
@@ -5078,7 +5078,7 @@ const I18N={
     export:"Export",
     rules:"Rules",
     categories:"Categories",
-    hs_ph:"🔍 How much did I spend on…",
+    hs_ph:"How much did I spend on…",
     hs_none:"No entries with that name in the period.",
     hs_your_share:"Your share in the period",
     hs_gross:"Full amount",
@@ -5703,7 +5703,7 @@ const I18N={
     payment_history:"Payment history",
     no_payments:"No payments recorded yet.",
     register:"Register",
-    search_debt:"🔍 Search debt…",
+    search_debt:"Search debt…",
     no_debts:"No debts added.",
     no_upcoming:"No upcoming due dates.",
     schedule_need_data:"Add payment and interest to debts to see the schedule.",
@@ -6200,7 +6200,7 @@ const I18N={
     export:"Exportieren",
     rules:"Regeln",
     categories:"Kategorien",
-    hs_ph:"🔍 Wie viel gab ich aus für…",
+    hs_ph:"Wie viel gab ich aus für…",
     hs_none:"Keine Buchungen mit diesem Namen im Zeitraum.",
     hs_your_share:"Ihr Anteil im Zeitraum",
     hs_gross:"Gesamtbetrag",
@@ -6825,7 +6825,7 @@ const I18N={
     payment_history:"Zahlungsverlauf",
     no_payments:"Noch keine Zahlungen erfasst.",
     register:"Erfassen",
-    search_debt:"🔍 Schuld suchen…",
+    search_debt:"Schuld suchen…",
     no_debts:"Keine Schulden erfasst.",
     no_upcoming:"Keine anstehenden Fälligkeiten.",
     schedule_need_data:"Rate und Zinsen hinzufügen, um den Zeitplan zu sehen.",
@@ -17606,7 +17606,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.20";
+const APP_VERSION="11.21";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -21032,10 +21032,26 @@ function astEvolucao(a,mesesFuturos){
       liquido:R2(saldo-prov.total),rendLiqAcum:R2(ganho-prov.total)});
   };
 
-  /* ── histórico, na grade mensal a partir da data de aplicação ── */
+  /* ── histórico, na grade do FECHAMENTO MENSAL ──
+     Cada ponto passado é o último dia de um mês de calendário (o primeiro é
+     a própria aplicação). Antes a grade era o aniversário da aplicação (dia
+     9, por exemplo): o ponto de 09/09 ficava escondido na tabela por cair no
+     mesmo mês que "Hoje", e a linha de hoje mostrava só o rendimento de 09
+     a 30 — um terço de mês a menos, parecendo que a aplicação rendia pouco.
+     Com o fechamento no fim do mês, "Hoje" mede do último fechamento até
+     hoje, e cada linha é um mês de calendário, como num balanço. */
   let ccPago=0;
-  for(let m=0;m<=decorridos;m++){
-    const data=m===0?inicio:addMonths(inicio,m);
+  const gradeH=[inicio];
+  { let [gy,gm]=String(inicio).slice(0,7).split("-").map(Number);
+    for(let g=0;g<1200;g++){
+      const fim=new Date(gy,gm,0);
+      const iso=fim.getFullYear()+"-"+String(fim.getMonth()+1).padStart(2,"0")+"-"+String(fim.getDate()).padStart(2,"0");
+      if(iso>=hoje) break;
+      if(iso>inicio) gradeH.push(iso);
+      gm++; if(gm>12){ gm=1; gy++; }
+    } }
+  for(let m=0;m<gradeH.length;m++){
+    const data=gradeH[m];
     const d=Math.max(0,dias(inicio,data));
     /* quantos meses da série já correram até esta data */
     let k=0; while(k<S.length&&S[k].ate<=data) k++;
@@ -31907,25 +31923,46 @@ window.SIM={
      render:"renderList"},
     {id:"inc", ancora:"inc-type-filter", busca:["inc-list-search"], sels:["inc-type-filter","inc-recur-filter"], render:"renderIncomeList"},
     {id:"ast", ancora:"ast-class-filter", busca:["ast-list-search"], sels:["ast-inst-filter","ast-class-filter"], render:"renderAssets"},
-    {id:"debt", ancora:"debt-type-filter", busca:["debt-list-search"], sels:["debt-inst-filter","debt-type-filter"], render:"renderDebts"}
+    {id:"debt", ancora:"debt-type-filter", busca:["debt-list-search"], sels:["debt-inst-filter","debt-type-filter"], render:"renderDebts"},
+    {id:"hist", ancora:"chart-type", busca:["hist-search"], sels:["chart-type","chart-category"], render:"renderChart",
+     limpar:()=>{ try{ renderHistSearch(); }catch(e){} }}
   ];
+  /* selects que ordenam ou escolhem a janela: estilo de filtro, mas não
+     contam como filtro ativo */
+  const SO_ESTILO=["list-sort","inc-sort","ast-sort","debt-sort","review-sort","chart-period","chart-group","chart-scope","sched-debt-sel","batch-cat-sel","batch-type-sel"];
   const $=id=>document.getElementById(id);
   const sujo=g=>g.busca.some(id=>(($(id)||{}).value||"").trim()!=="")
     ||g.sels.some(id=>{ const s=$(id); return s&&s.options.length&&s.value!==s.options[0].value; })
     ||(g.extra?g.extra():false);
+  /* Barra de filtros: busca em cima, pílulas de filtro numa linha só (rola
+     na horizontal se não couber) e o "Limpar" como a última pílula — só
+     aparece quando há algo filtrado. Filtro ativo fica destacado. */
+  function marcar(){
+    const sels=[].concat(...GRUPOS.map(g=>g.sels),SO_ESTILO);
+    sels.forEach(id=>{ const s=$(id); if(!s) return;
+      s.classList.add("ap-fsel"); if(SO_ESTILO.indexOf(id)>=0) s.classList.add("ap-ord"); });
+    /* só as linhas de filtro viram barra — nunca o contêiner de uma tela */
+    ["cat-filter-sel","inc-type-filter","ast-class-filter","debt-type-filter","chart-type","chart-group"].forEach(id=>{
+      const s=$(id); if(s&&s.parentElement&&s.parentElement.querySelectorAll("select").length>=2) s.parentElement.classList.add("ap-fbar"); });
+    document.querySelectorAll('input[id$="-search"],#man-search').forEach(i=>{
+      i.classList.add("ap-fsearch"); if(i.parentElement&&i.parentElement.style.position==="relative") i.parentElement.classList.add("ap-fsearch-w"); });
+    document.querySelectorAll(".lf-row").forEach(r=>r.remove());
+  }
   function montar(g){
     if($("lf-"+g.id)) return;
     const a=$(g.ancora); if(!a) return;
-    const linha=a.parentElement;
-    linha.insertAdjacentHTML("afterend",
-      `<div class="lf-row" id="lf-${g.id}" style="display:none"><button class="btn-limpar-filtro" onclick="LIMPAR_FILTRO('${g.id}')"></button></div>`);
+    a.parentElement.insertAdjacentHTML("afterbegin",
+      `<button type="button" class="ap-flimpar" id="lf-${g.id}" onclick="LIMPAR_FILTRO('${g.id}')" style="display:none"><i>✕</i><span></span></button>`);
   }
   function sinc(){
+    marcar();
     GRUPOS.forEach(g=>{
       montar(g);
       const r=$("lf-"+g.id); if(!r) return;
-      r.style.display=sujo(g)?"flex":"none";
-      r.firstElementChild.textContent="✕ "+t("clear_filter");
+      r.style.display=sujo(g)?"inline-flex":"none";
+      r.querySelector("span").textContent=TXd("Limpar","Clear","Zurücksetzen");
+      r.setAttribute("aria-label",t("clear_filter"));
+      g.sels.forEach(id=>{ const s=$(id); if(s&&s.options.length) s.classList.toggle("ativo",s.value!==s.options[0].value); });
     });
     sincPessoa();
   }
@@ -31936,10 +31973,10 @@ window.SIM={
     const ativo=(typeof splitsPersonFilter!=="undefined")&&splitsPersonFilter!==null;
     if(!ativo){ if(b) b.remove(); return; }
     if(!b){
-      box.insertAdjacentHTML("beforeend",`<button class="btn-limpar-filtro" style="margin-left:auto" onclick="splitsPersonFilter=null;renderSplits()"></button>`);
+      box.insertAdjacentHTML("beforeend",`<button type="button" class="btn-limpar-filtro ap-flimpar" style="display:inline-flex" onclick="splitsPersonFilter=null;renderSplits()"><i>✕</i><span></span></button>`);
       b=box.querySelector(".btn-limpar-filtro");
     }
-    b.textContent="✕ "+t("clear_filter");
+    b.querySelector("span").textContent=TXd("Limpar","Clear","Zurücksetzen");
   }
   window.LIMPAR_FILTRO=function(id){
     const g=GRUPOS.find(x=>x.id===id); if(!g) return;
@@ -31950,12 +31987,14 @@ window.SIM={
     sinc();
   };
   /* depois de cada renderização de lista, o botão acompanha o estado */
-  ["renderList","renderIncomeList","renderAssets","renderAssetList","renderDebts","renderDebtList","renderSplits"].forEach(fn=>{
+  ["renderList","renderIncomeList","renderAssets","renderAssetList","renderDebts","renderDebtList","renderSplits","renderChart","renderManual","renderRulesList"].forEach(fn=>{
     const orig=window[fn]; if(typeof orig!=="function") return;
     window[fn]=function(){ const r=orig.apply(this,arguments); try{ sinc(); }catch(e){} return r; };
   });
   document.addEventListener("input",e=>{ if(e.target&&/-search$/.test(e.target.id||"")) try{ sinc(); }catch(x){} },true);
   document.addEventListener("change",e=>{ if(e.target&&e.target.tagName==="SELECT") try{ sinc(); }catch(x){} },true);
+  window.addEventListener("load",()=>{ try{ sinc(); }catch(e){} });
+  setTimeout(()=>{ try{ sinc(); }catch(e){} },300);
 })();
 </script>
 <div class="overlay" id="modal-imp-div" style="z-index:185">
@@ -33427,6 +33466,93 @@ button:focus-visible,[role="button"]:focus-visible{ outline:2px solid var(--acce
 .ap-vl.tot{ font-size:13px; color:var(--body); } .ap-vl.tot b{ font-weight:700; }
 .ap-vl.sub{ color:var(--ink-3); } .ap-vl.sub b{ color:var(--ink-2); font-weight:500; }
 .ap-chk:not(.ok):not(.warn) i{ background:var(--ap-fill); color:var(--ink-2); }
+
+
+/* ═══ BUSCA E FILTROS — um só desenho em todo o app ═══ */
+:is(#app,body) input.ap-fsearch.ap-fsearch.ap-fsearch{
+  -webkit-appearance:none; appearance:none; box-sizing:border-box !important;
+  width:100% !important; height:40px !important; min-height:40px !important;
+  border-radius:12px !important; border:1px solid var(--line) !important;
+  background:var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238A8A8E' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.6-3.6'/%3E%3C/svg%3E") no-repeat 12px center/16px !important;
+  padding:0 38px 0 36px !important; font-size:16px !important; color:var(--body) !important;
+  box-shadow:none !important; transition:border-color .15s ease, box-shadow .15s ease;
+}
+:is(#app,body) input.ap-fsearch.ap-fsearch.ap-fsearch::placeholder{ color:var(--ink-3); opacity:1; }
+:is(#app,body) input.ap-fsearch.ap-fsearch.ap-fsearch:focus{ outline:none; border-color:var(--accent) !important; box-shadow:0 0 0 4px var(--accent-soft) !important; }
+:is(#app,body) input.ap-fsearch[type=search]::-webkit-search-cancel-button{ -webkit-appearance:none; }
+.ap-fsearch-w{ position:relative; margin:12px 0 8px !important; }
+/* o "×" dentro da busca: círculo cinza, como no iOS */
+:is(#app,body) [id$="-search-clear"]{
+  right:10px !important; width:20px !important; height:20px !important; padding:0 !important;
+  border-radius:50% !important; background:rgba(118,118,128,.28) !important; color:#fff !important;
+  font-size:14px !important; line-height:20px !important; text-align:center !important; font-weight:600 !important;
+}
+/* linha de filtros: pílulas do mesmo tamanho, numa linha só */
+:is(#app,body) .ap-fbar.ap-fbar.ap-fbar{
+  display:flex !important; flex-wrap:nowrap !important; align-items:center !important; gap:8px !important;
+  overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
+  padding:2px 1px 4px !important; margin:0 0 10px !important;
+}
+:is(#app,body) .ap-fbar.ap-fbar.ap-fbar::-webkit-scrollbar{ display:none; }
+:is(#app,body) select.ap-fsel.ap-fsel.ap-fsel{
+  -webkit-appearance:none; appearance:none; box-sizing:border-box !important;
+  flex:0 0 auto !important; width:auto !important; min-width:0 !important; max-width:46vw;
+  height:34px !important; min-height:34px !important; margin:0 !important;
+  padding:0 30px 0 13px !important; border-radius:999px !important;
+  border:1px solid var(--line) !important;
+  background:var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238A8A8E' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center/10px !important;
+  color:var(--body) !important; font-size:13px !important; font-weight:500 !important; line-height:32px !important;
+  text-overflow:ellipsis; white-space:nowrap; cursor:pointer; box-shadow:none !important;
+  transition:background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+:is(#app,body) select.ap-fsel.ap-fsel.ap-fsel:focus{ outline:none; border-color:var(--accent) !important; box-shadow:0 0 0 3px var(--accent-soft) !important; }
+/* filtro aplicado: a pílula fica preenchida */
+:is(#app,body) select.ap-fsel.ap-fsel.ap-fsel.ativo{
+  background-color:var(--accent-soft) !important; border-color:var(--accent-line) !important;
+  color:var(--accent) !important; font-weight:600 !important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%231A3A5C' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+}
+/* ordenação e janela: mesma pílula, sem fundo — não é filtro */
+:is(#app,body) select.ap-fsel.ap-fsel.ap-fsel.ap-ord{ background-color:transparent !important; border-color:transparent !important; color:var(--ink-2) !important; padding-left:8px !important; }
+:is(#app,body) select.ap-fsel.ap-fsel.ap-fsel.ap-ord:focus{ border-color:var(--line) !important; }
+/* "Limpar": discreto, no fim da linha de filtros, só quando há filtro */
+.ap-flimpar{
+  flex:0 0 auto; height:34px; margin-left:0; padding:0 4px 0 2px;
+  border:none; background:none; cursor:pointer; align-items:center; gap:5px;
+  color:var(--ink-2); font-size:12.5px; font-weight:600; white-space:nowrap; text-decoration:none !important;
+}
+.ap-flimpar i{
+  font-style:normal; width:18px; height:18px; border-radius:50%;
+  background:var(--ap-fill); color:var(--ink-2);
+  display:inline-flex; align-items:center; justify-content:center; font-size:9.5px; font-weight:700;
+}
+.ap-flimpar:active{ opacity:.6; }
+.lf-row{ display:none !important; }
+/* classificação linha a linha (revisão da importação): duas pílulas de
+   largura fixa lado a lado — nada trunca de um jeito diferente do outro */
+:is(#app,body) .review-controls{ display:grid !important; grid-template-columns:minmax(0,1fr) auto; gap:8px !important; margin-top:8px; width:100%; }
+/* a linha vira grade: descrição e valor em cima; as pílulas ocupam a largura
+   toda embaixo, inclusive a coluna do valor */
+:is(#app,body) .review-row:has(.review-controls){ display:grid !important; grid-template-columns:auto minmax(0,1fr) auto; column-gap:10px; row-gap:0 !important; align-items:start; }
+:is(#app,body) .review-row:has(.review-controls) > .review-body{ display:contents; }
+:is(#app,body) .review-row:has(.review-controls) > .review-check{ grid-column:1; grid-row:1 / span 4; }
+:is(#app,body) .review-row:has(.review-controls) .review-desc{ grid-column:2; grid-row:1; }
+:is(#app,body) .review-row:has(.review-controls) > .review-amount{ grid-column:3; grid-row:1; }
+:is(#app,body) .review-row:has(.review-controls) .review-meta{ grid-column:2 / span 2; grid-row:2; }
+:is(#app,body) .review-row:has(.review-controls) .review-sim{ grid-column:2 / span 2; justify-self:start; }
+:is(#app,body) .review-row:has(.review-controls) .review-controls{ grid-column:2 / span 2; margin-top:6px !important; }
+:is(#app,body) .review-row:has(.review-controls) .review-desc{ margin-bottom:1px !important; }
+:is(#app,body) .review-row:has(.review-controls) > .review-check{ grid-row:1 / span 2; align-self:start; }
+:is(#app,body) select.review-sel{
+  -webkit-appearance:none; appearance:none; box-sizing:border-box !important; width:100% !important; min-width:0 !important; max-width:none !important;
+  height:34px !important; min-height:34px !important; padding:0 28px 0 12px !important; border-radius:999px !important;
+  border:1px solid var(--line) !important;
+  background:var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238A8A8E' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 11px center/10px !important;
+  color:var(--body) !important; font-size:13px !important; font-weight:500 !important; line-height:32px !important;
+  text-overflow:ellipsis; white-space:nowrap; overflow:hidden; cursor:pointer;
+}
+:is(#app,body) .review-controls select.review-sel:nth-of-type(2){ width:auto !important; }
+:is(#app,body) select.review-sel:focus{ outline:none; border-color:var(--accent) !important; box-shadow:0 0 0 3px var(--accent-soft) !important; }
 
 /* ═══ GUIA INTERATIVO ═══ */
 .ap-help{
