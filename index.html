@@ -14558,10 +14558,19 @@ function showDateChoiceModal(parsed){
         <div class="dc-opt-t">📅 ${t("date_use_file")}</div>
         <div class="dc-opt-s">${dateRange}</div>
       </button>
-      <button onclick="applyDateChoice('month')" class="dc-opt" style="margin-bottom:16px">
+      <button onclick="applyDateChoice('month')" class="dc-opt">
         <div class="dc-opt-t">📆 ${t("date_use_month")}</div>
         <div class="dc-opt-s">${selectedMonthLabel} — ${t("date_month_hint")}</div>
       </button>
+      <div class="dc-opt dc-pag" style="margin-bottom:16px">
+        <div class="dc-opt-t">💳 ${TXd("Data de pagamento","Payment date","Zahlungsdatum")}</div>
+        <div class="dc-opt-s">${TXd("Todos os lançamentos no dia em que a fatura é paga — o vencimento do cartão. A data da compra fica guardada.","All transactions on the day the bill is paid — the card due date. The purchase date is kept.","Alle Buchungen am Zahltag der Rechnung — Fälligkeit der Karte. Das Kaufdatum bleibt erhalten.")}</div>
+        <div class="dc-pag-row">
+          <input type="date" id="dc-pag-data" value="${impDataPagSugerida(parsed,alvo)}" aria-label="${TXd("Data de pagamento","Payment date","Zahlungsdatum")}"/>
+          <button type="button" onclick="applyDateChoice('pay')">${TXd("Usar esta data","Use this date","Dieses Datum")}</button>
+        </div>
+        ${impVencDetectado()?`<div class="dc-pag-tip">${TXd("Vencimento lido na fatura","Due date read from the bill","Fälligkeit aus der Rechnung")}: ${impBr(impVencDetectado())}</div>`:""}
+      </div>
       <button onclick="cancelDateChoice()"
         style="width:100%;padding:12px;border-radius:12px;border:none;background:none;color:var(--ink-2);font-size:13px;cursor:pointer">
         ${t("cancel")}
@@ -14570,6 +14579,27 @@ function showDateChoiceModal(parsed){
   document.body.appendChild(modal);
   modal.addEventListener("click",e=>{if(e.target===modal)cancelDateChoice();});
 }
+/* Vencimento escrito na própria fatura (PDF ou texto colado) */
+function impVencDetectado(){
+  const v=IMPORT_ORIGEM&&IMPORT_ORIGEM.venc;
+  if(!v) return null;
+  const p=String(v).split("/"); if(p.length<2) return null;
+  let y=p[2]?(p[2].length===2?"20"+p[2]:p[2]):String(new Date().getFullYear());
+  return y+"-"+p[1].padStart(2,"0")+"-"+p[0].padStart(2,"0");
+}
+/* Data de pagamento sugerida: a do lote (reimportação) > o vencimento lido
+   na fatura > o dia de vencimento usado da última vez, no mês seguinte à
+   compra mais recente */
+function impDataPagSugerida(parsed,alvo){
+  if(alvo&&alvo.modo==="pay"&&alvo.dataPag) return alvo.dataPag;
+  const v=impVencDetectado(); if(v) return v;
+  const datas=(parsed||[]).map(e=>e._fDate||e.date).filter(Boolean).sort();
+  const ult=datas.length?datas[datas.length-1]:new Date().toISOString().slice(0,10);
+  let dia=10; try{ dia=parseInt(localStorage.getItem("imp_dia_pag_v1"))||10; }catch(e){}
+  let [y,m]=ult.split("-").map(Number); m+=1; if(m>12){ m=1; y++; }
+  const fim=new Date(y,m,0).getDate();
+  return y+"-"+String(m).padStart(2,"0")+"-"+String(Math.min(dia,fim)).padStart(2,"0");
+}
 function cancelDateChoice(){
   document.getElementById("modal-date-choice")?.remove();
   _pendingImport=null; REIMP_LOTE=null;
@@ -14577,14 +14607,22 @@ function cancelDateChoice(){
 
 function applyDateChoice(mode){
   if(!_pendingImport) return;
+  let dataPag=null;
+  if(mode==="pay"){
+    dataPag=(document.getElementById("dc-pag-data")||{}).value||"";
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(dataPag)){ toast(TXd("Escolha a data de pagamento.","Choose the payment date.","Zahlungsdatum wählen.")); return; }
+    try{ localStorage.setItem("imp_dia_pag_v1",String(+dataPag.slice(8,10))); }catch(e){}
+  }
   let {parsed,ym}=_pendingImport;
   _pendingImport=null;
   document.getElementById("modal-date-choice")?.remove();
 
   IMPORT_ORIGEM.modo=mode;
+  IMPORT_ORIGEM.dataPag=dataPag;
   /* a data do arquivo fica guardada: é ela que identifica a linha */
   parsed=parsed.map(e=>({...e,_fDate:e._fDate||e.date}));
   if(mode==="month") parsed=parsed.map(e=>({...e,date:ym+"-01"}));
+  if(mode==="pay") parsed=parsed.map(e=>({...e,date:dataPag}));
   impCarimbar(parsed);
   if(!REIMP_LOTE){
     const par=impLoteParecido(parsed);
@@ -14717,7 +14755,7 @@ function renderReviewModal(){
       <div class="review-check${r.selected?" checked":""}" onclick="toggleReviewRow(${i})" id="rcheck-${i}"></div>
       <div class="review-body">
         <div class="review-desc" title="${escapeHtml(r.entry.desc)}">${escapeHtml(r.entry.desc)}</div>
-        <div class="review-meta">${impBr(r.entry.date)}${badge}</div>
+        <div class="review-meta">${impBr(r.entry.date)}${r.entry._fDate&&r.entry._fDate!==r.entry.date?` · ${TXd("compra","bought","Kauf")} ${impBr(r.entry._fDate).slice(0,5)}`:""}${badge}</div>
         ${r.parecido?`<div class="review-sim">≈ ${TXd("item semelhante no mês","similar item this month","ähnlicher Posten im Monat")} · ${impBr(r.parecido.date).slice(0,5)} · ${escapeHtml(impLoteRotulo(r.parecido))}</div>`:""}
         <div class="review-controls">
           <select class="review-sel" onchange="reviewEntries[${i}].catId=this.value;autoClassifySimilar(${i});updateReviewRow(${i});updateReviewTotal()">${catOpts}</select>
@@ -14824,6 +14862,7 @@ function commitReview(){
       arquivo:(IMPORT_ORIGEM&&IMPORT_ORIGEM.nome)||"",
       banco:(IMPORT_ORIGEM&&IMPORT_ORIGEM.banco)||"",
       modo:(IMPORT_ORIGEM&&IMPORT_ORIGEM.modo)||"file",
+      dataPag:(IMPORT_ORIGEM&&IMPORT_ORIGEM.dataPag)||"",
       n:0,total:0,ymIni:"",ymFim:""
     };
   }else{
@@ -14833,6 +14872,8 @@ function commitReview(){
   const datas=[];
   sel.forEach(r=>{
     const entry={...r.entry,category:r.catId,type:r.typeId,importId:lote.id,impFp:r.entry._fp};
+    /* data da compra preservada quando o lançamento vai para outra data */
+    if(r.entry._fDate&&r.entry._fDate!==entry.date) entry.dataCompra=r.entry._fDate;
     delete entry._fp; delete entry._fDate;
     lote.total=(+lote.total||0)+(parseFloat(entry.amount)||0);
     if(entry.date) datas.push(entry.date);
@@ -17565,7 +17606,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.18";
+const APP_VERSION="11.19";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -33351,6 +33392,12 @@ button:focus-visible,[role="button"]:focus-visible{ outline:2px solid var(--acce
 
 /* texto da fatura: uma linha por lançamento, sem quebra — rola na horizontal */
 #paste-text-input{ white-space:pre !important; overflow:auto !important; overflow-wrap:normal !important; line-height:1.55 !important; }
+.dc-pag{ cursor:default; }
+.dc-pag-row{ display:flex; gap:8px; margin-top:10px; align-items:center; }
+.dc-pag-row input{ flex:1; min-width:0; min-height:40px; border:1px solid var(--line); border-radius:11px; background:var(--paper); padding:6px 10px; font-size:16px; color:var(--body); }
+.dc-pag-row input:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-soft); }
+.dc-pag-row button{ flex-shrink:0; border:none; border-radius:11px; background:var(--accent); color:#fff; font-size:13px; font-weight:600; padding:10px 14px; cursor:pointer; min-height:40px; }
+.dc-pag-tip{ font-size:11px; color:var(--ink-3); margin-top:6px; }
 .review-sim{ font-size:11px; line-height:1.35; color:#8A5A00; background:rgba(214,158,46,.12); border-radius:6px; padding:2px 7px; margin-top:3px; display:inline-block; max-width:100%; white-space:normal; }
 /* faixa da fatura em PDF */
 .ap-pdfinfo{ align-items:center; gap:10px; background:var(--paper); border-radius:14px; padding:10px 12px; margin-bottom:12px; box-shadow:var(--ap-shadow); }
