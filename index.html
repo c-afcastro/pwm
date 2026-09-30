@@ -17606,7 +17606,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.19";
+const APP_VERSION="11.20";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -31959,22 +31959,22 @@ window.SIM={
 })();
 </script>
 <div class="overlay" id="modal-imp-div" style="z-index:185">
-  <div class="sheet imp-sheet" role="dialog" aria-modal="true" aria-labelledby="imp-tt">
+  <div class="sheet imp-sheet" role="dialog" aria-modal="true" aria-labelledby="impd-tt">
     <div class="sheet-handle"></div>
     <div class="imp-head">
       <div style="min-width:0">
-        <div class="imp-eb" id="imp-eb">Importar</div>
-        <div class="imp-tt" id="imp-tt">Evolução da dívida</div>
+        <div class="imp-eb" id="impd-eb">Importar</div>
+        <div class="imp-tt" id="impd-tt">Evolução da dívida</div>
       </div>
       <button type="button" class="imp-x" onclick="IMPDIV.fechar()" aria-label="Fechar">✕</button>
     </div>
-    <div class="imp-rail" id="imp-rail"></div>
-    <div class="imp-body" id="imp-body"></div>
-    <div class="imp-foot" id="imp-foot"></div>
+    <div class="imp-rail" id="impd-rail"></div>
+    <div class="imp-body" id="impd-body"></div>
+    <div class="imp-foot" id="impd-foot"></div>
   </div>
 </div>
 
-<style id="imp-css">
+<style id="impd-css">
 /* ═══ IMPORTAÇÃO DA EVOLUÇÃO DA DÍVIDA — mesma linguagem da camada Apple ═══ */
 .imp-sheet{ max-height:94dvh !important; display:flex !important; flex-direction:column; padding-bottom:0 !important; }
 .imp-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:10px; }
@@ -32066,7 +32066,7 @@ window.SIM={
 .imp-card-open b{ display:block; font-size:13px; color:var(--body); } .imp-card-open small{ display:block; font-size:11.5px; color:var(--ink-3); }
 </style>
 
-<script id="imp-div">
+<script id="impd-div">
 /* ═══════════════════════════════════════════════════════════════════════
    IMPORTAÇÃO DA EVOLUÇÃO DA DÍVIDA
    Lê a tabela que o banco entrega (CSV, Excel, PDF ou texto colado),
@@ -32572,10 +32572,10 @@ const PASSOS=()=>[X("Tabela","Table","Tabelle"),X("Colunas","Columns","Spalten")
 
 function desenhar(){
   if(!S) return;
-  document.getElementById("imp-eb").textContent=S.dest==="subst"?X("Substituir pela tabela do banco","Replace with the bank's table","Durch Banktabelle ersetzen"):X("Importar do banco","Import from the bank","Von der Bank importieren");
-  document.getElementById("imp-tt").textContent=X("Evolução da dívida","Debt statement","Schuldenverlauf");
-  document.getElementById("imp-rail").innerHTML=PASSOS().map((p,k)=>`<div class="${k===S.passo?"on":(k<S.passo?"ok":"")}"><i></i><span>${k+1}. ${p}</span></div>`).join("");
-  const B=document.getElementById("imp-body"), F=document.getElementById("imp-foot");
+  document.getElementById("impd-eb").textContent=S.dest==="subst"?X("Substituir pela tabela do banco","Replace with the bank's table","Durch Banktabelle ersetzen"):X("Importar do banco","Import from the bank","Von der Bank importieren");
+  document.getElementById("impd-tt").textContent=X("Evolução da dívida","Debt statement","Schuldenverlauf");
+  document.getElementById("impd-rail").innerHTML=PASSOS().map((p,k)=>`<div class="${k===S.passo?"on":(k<S.passo?"ok":"")}"><i></i><span>${k+1}. ${p}</span></div>`).join("");
+  const B=document.getElementById("impd-body"), F=document.getElementById("impd-foot");
   B.scrollTop=0;
   [p0,p1,p2,p3][S.passo](B,F);
 }
@@ -32598,10 +32598,10 @@ function p0(B,F){
       <input type="file" accept=".csv,.txt,.tsv,.xlsx,.xls,.pdf,text/plain,text/csv,application/pdf" onchange="IMPDIV.arquivo(this)"/>
     </label>
     <div class="imp-or">${X("ou cole a tabela","or paste the table","oder Tabelle einfügen")}</div>
-    <textarea class="imp-ta" id="imp-txt" wrap="off" spellcheck="false" placeholder="${X("Nº  Vencimento  Amortização  Juros  Seguro  Prestação  Saldo devedor","No.  Due  Principal  Interest  Insurance  Instalment  Balance","Nr.  Fällig  Tilgung  Zinsen  Versicherung  Rate  Restschuld")}&#10;1  05/02/2020  833,33  1.750,00  80,00  2.663,33  249.166,67" oninput="IMPDIV.texto(this.value)">${esc(S.txt)}</textarea>
+    <textarea class="imp-ta" id="impd-txt" wrap="off" spellcheck="false" placeholder="${X("Nº  Vencimento  Amortização  Juros  Seguro  Prestação  Saldo devedor","No.  Due  Principal  Interest  Insurance  Instalment  Balance","Nr.  Fällig  Tilgung  Zinsen  Versicherung  Rate  Restschuld")}&#10;1  05/02/2020  833,33  1.750,00  80,00  2.663,33  249.166,67" oninput="IMPDIV.texto(this.value)">${esc(S.txt)}</textarea>
     <div class="imp-tip">${X("No app ou site do banco, procure por “extrato de evolução do financiamento” ou “planilha de evolução”. Copie a tabela inteira, com o cabeçalho — incluindo as parcelas futuras, se houver.","In your bank's app, look for the loan statement or amortisation schedule. Copy the whole table with its header — future instalments too, if shown.","Suchen Sie in der Bank-App den Tilgungsplan oder Kontoauszug des Darlehens. Kopieren Sie die ganze Tabelle mit Kopfzeile.")}</div>`;
   F.innerHTML=`<button type="button" class="imp-b2" onclick="IMPDIV.fechar()">${X("Cancelar","Cancel","Abbrechen")}</button>
-    <button type="button" class="imp-b1" id="imp-go" ${S.txt.trim()?"":"disabled"} onclick="IMPDIV.ler()">${X("Ler tabela","Read table","Tabelle lesen")}</button>`;
+    <button type="button" class="imp-b1" id="impd-go" ${S.txt.trim()?"":"disabled"} onclick="IMPDIV.ler()">${X("Ler tabela","Read table","Tabelle lesen")}</button>`;
 }
 function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
@@ -32676,19 +32676,19 @@ function p2(B,F){
     <div class="imp-lbl">${X("Contrato","Contract","Vertrag")}</div>
     <div class="ap-group" style="padding:10px 14px 12px">
       <div class="imp-lbl" style="margin-top:0">${X("Nome","Name","Name")}</div>
-      <input class="imp-in" id="imp-f-nome" value="${esc(f.nome)}"/>
+      <input class="imp-in" id="impd-f-nome" value="${esc(f.nome)}"/>
       <div class="imp-grid2">
         <div><div class="imp-lbl">${X("Tipo","Type","Art")}</div>
-          <select class="imp-in" id="imp-f-tipo">${DEBT_TYPES.map(t=>`<option value="${t.id}"${t.id===f.tipo?" selected":""}>${t.emoji} ${typeof catLabel==="function"?catLabel(t):t.label}</option>`).join("")}</select></div>
-        <div><div class="imp-lbl">${X("Credor","Lender","Gläubiger")}</div><input class="imp-in" id="imp-f-cred" value="${esc(f.cred)}"/></div>
+          <select class="imp-in" id="impd-f-tipo">${DEBT_TYPES.map(t=>`<option value="${t.id}"${t.id===f.tipo?" selected":""}>${t.emoji} ${typeof catLabel==="function"?catLabel(t):t.label}</option>`).join("")}</select></div>
+        <div><div class="imp-lbl">${X("Credor","Lender","Gläubiger")}</div><input class="imp-in" id="impd-f-cred" value="${esc(f.cred)}"/></div>
         <div><div class="imp-lbl">${X("Taxa (% a.m.)","Rate (% / month)","Zins (% / Monat)")}</div>
-          <input class="imp-in" id="imp-f-taxa" inputmode="decimal" value="${f.taxa!=null?String(f.taxa).replace(".",","):""}"/></div>
+          <input class="imp-in" id="impd-f-taxa" inputmode="decimal" value="${f.taxa!=null?String(f.taxa).replace(".",","):""}"/></div>
         <div><div class="imp-lbl">${X("Parcelas restantes","Payments left","Restraten")}</div>
-          <input class="imp-in" id="imp-f-rest" inputmode="numeric" value="${f.rest||""}"/></div>
+          <input class="imp-in" id="impd-f-rest" inputmode="numeric" value="${f.rest||""}"/></div>
         <div><div class="imp-lbl">${X("Indexador","Index","Index")}</div>
-          <select class="imp-in" id="imp-f-idx"><option value="">${X("Nenhum","None","Keiner")}</option>${IDXS().map(i=>`<option value="${i.id}"${i.id===f.idx?" selected":""}>${i.lbl}</option>`).join("")}</select></div>
+          <select class="imp-in" id="impd-f-idx"><option value="">${X("Nenhum","None","Keiner")}</option>${IDXS().map(i=>`<option value="${i.id}"${i.id===f.idx?" selected":""}>${i.lbl}</option>`).join("")}</select></div>
         <div><div class="imp-lbl">${X("Dia do vencimento","Due day","Fälligkeitstag")}</div>
-          <input class="imp-in" id="imp-f-dia" inputmode="numeric" value="${f.dia||""}"/></div>
+          <input class="imp-in" id="impd-f-dia" inputmode="numeric" value="${f.dia||""}"/></div>
       </div>
       <div class="imp-lbl">${X("Sistema","System","System")}</div>
       <div class="ap-seg" style="margin-bottom:6px">
@@ -32739,7 +32739,7 @@ function p3(B,F){
 
 /* ── ações ─────────────────────────────────────────────────────────── */
 function ir(p){ S.passo=p; desenhar(); }
-function texto(v){ S.txt=v; S.fonte=S.fonte||"texto"; const b=document.getElementById("imp-go"); if(b) b.disabled=!v.trim(); }
+function texto(v){ S.txt=v; S.fonte=S.fonte||"texto"; const b=document.getElementById("impd-go"); if(b) b.disabled=!v.trim(); }
 function dest(v){ S.dest=v; if(v==="subst"&&!S.alvo&&DEBTS.length) S.alvo=String(DEBTS[0].id); desenhar(); }
 function ler(){
   const M=paraMatriz(S.txt);
@@ -32760,7 +32760,7 @@ function ler(){
   S.passo=1; desenhar();
 }
 function manterRolagem(fn){
-  const B=document.getElementById("imp-body"), y=B?B.scrollTop:0;
+  const B=document.getElementById("impd-body"), y=B?B.scrollTop:0;
   fn(); if(B) B.scrollTop=y;
 }
 function tipo(k,v){
@@ -32792,13 +32792,13 @@ function conferir(){
 }
 function lerForm(){
   const v=id=>document.getElementById(id);
-  if(!v("imp-f-nome")) return;
-  S.form.nome=v("imp-f-nome").value.trim()||S.form.nome;
-  S.form.tipo=v("imp-f-tipo").value; S.form.cred=v("imp-f-cred").value.trim();
-  const tx=num(v("imp-f-taxa").value); S.form.taxa=isFinite(tx)?tx:null;
-  S.form.rest=parseInt(v("imp-f-rest").value)||0;
-  S.form.idx=v("imp-f-idx").value;
-  S.form.dia=parseInt(v("imp-f-dia").value)||null;
+  if(!v("impd-f-nome")) return;
+  S.form.nome=v("impd-f-nome").value.trim()||S.form.nome;
+  S.form.tipo=v("impd-f-tipo").value; S.form.cred=v("impd-f-cred").value.trim();
+  const tx=num(v("impd-f-taxa").value); S.form.taxa=isFinite(tx)?tx:null;
+  S.form.rest=parseInt(v("impd-f-rest").value)||0;
+  S.form.idx=v("impd-f-idx").value;
+  S.form.dia=parseInt(v("impd-f-dia").value)||null;
 }
 function sis(x){ lerForm(); S.form.sis=x; manterRolagem(desenhar); }
 /* atalho no formulário de dívida */
