@@ -3368,11 +3368,11 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
     </div>
     <div data-wz="nome">
-    <label class="f-label" data-i18n="name_institution">Nome / Instituição</label>
+    <label class="f-label" data-i18n="name_institution">Descrição</label>
     <input id="ast-name" class="f-input" placeholder="Ex: CDB Banco X, HGLG11, Tesouro IPCA…" data-i18n="ast_name_ph"/>
 
     <label class="f-label" data-i18n="institution">Instituição financeira</label>
-    <input id="ast-inst" class="f-input" list="lista-instituicoes" placeholder="Ex: Itaú, Nubank, XP…" data-i18n="inst_ph"/>
+    <input id="ast-inst" class="f-input" data-inst="1" list="lista-instituicoes" placeholder="Ex: Itaú, Nubank, XP…" data-i18n="inst_ph"/>
 
     </div>
     <div data-wz="saldo">
@@ -3421,7 +3421,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     </div>
     <div id="df-creditor" data-wz="cred">
       <label class="f-label" data-i18n="debt_creditor">Credor / Instituição financeira</label>
-      <input id="debt-creditor" class="f-input" list="lista-instituicoes" placeholder="Ex: Itaú, Nubank, XP…" data-i18n="debt_creditor_ph"/>
+      <input id="debt-creditor" class="f-input" data-inst="1" list="lista-instituicoes" placeholder="Ex: Itaú, Nubank, XP…" data-i18n="debt_creditor_ph"/>
     </div>
 
     <div data-wz="saldo">
@@ -4172,8 +4172,8 @@ const I18N={
     inc_desc_ph:"Ex: Salário empresa X, Aluguel apto…",
     once_single:"Único",
     asset_class:"Classe do ativo",
-    name_institution:"Nome / Instituição",
-    ast_name_ph:"Ex: CDB Banco X, HGLG11, Tesouro IPCA…",
+    name_institution:"Descrição",
+    ast_name_ph:"Ex: CDB 110% CDI, HGLG11, Tesouro IPCA+ 2035…",
     inst_ph:"Ex: Itaú, Nubank, XP…",
     balance_position:"Saldo / Posição atual",
     monthly_yield_label:"Rendimento ao mês (% opcional)",
@@ -5294,8 +5294,8 @@ const I18N={
     inc_desc_ph:"E.g.: Salary company X, Rent…",
     once_single:"One-time",
     asset_class:"Asset class",
-    name_institution:"Name / Institution",
-    ast_name_ph:"E.g.: Treasury bond, ETF, CDB…",
+    name_institution:"Description",
+    ast_name_ph:"E.g.: CDB 110% CDI, ETF, Treasury IPCA+ 2035…",
     inst_ph:"E.g.: Itaú, Nubank, XP…",
     balance_position:"Balance / Current position",
     monthly_yield_label:"Monthly yield (% optional)",
@@ -6416,8 +6416,8 @@ const I18N={
     inc_desc_ph:"Z.B.: Gehalt Firma X, Miete…",
     once_single:"Einmalig",
     asset_class:"Anlageklasse",
-    name_institution:"Name / Institut",
-    ast_name_ph:"Z.B.: Staatsanleihe, ETF, Festgeld…",
+    name_institution:"Beschreibung",
+    ast_name_ph:"Z.B.: CDB 110 % CDI, ETF, Staatsanleihe 2035…",
     inst_ph:"Z.B.: Itaú, Nubank, XP…",
     balance_position:"Saldo / Aktuelle Position",
     monthly_yield_label:"Monatsrendite (% optional)",
@@ -17752,7 +17752,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.27";
+const APP_VERSION="11.28";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -27746,18 +27746,19 @@ function renderParams(){
       <div class="pro-scale" style="margin-bottom:10px;width:fit-content;max-width:100%">
         ${seg("pos",PL("p_sav_pos"),!pre)}${seg("pre",PL("p_sav_pre"),pre)}
       </div>
-      <div class="pro-grid">
+      <div class="pro-grid" style="grid-template-columns:1fr">
         <div class="pro-f"><label>${PL("p_sav_rate_l")}</label>
           <div class="par-inp"><input id="par-sav-taxa" type="text" inputmode="decimal"
             value="${txt}" placeholder="${pre?"12,50":"100"}"
             oninput="PRO.parMask(this)" onchange="PRO.projSetSaving()"
             onblur="PRO.projSetSaving()"/><span class="par-un">${
             pre?PL("p_sav_un_pre"):PL("p_sav_un_pos")}</span></div></div>
-        <div class="pro-f"><label>${PL("p_sav_inst_l")}</label>
-          <div class="par-inp"><input id="par-sav-inst" type="text" autocomplete="off"
-            value="${raw(savEsc(PROJ.savInst))}" placeholder="${PL("p_sav_inst_p")}"
-            onchange="PRO.projSetSaving()" onblur="PRO.projSetSaving()"/></div></div>
       </div>
+      <!-- v11.28 — instituição em linha inteira, com a mesma lista e símbolo do resto do app -->
+      <div class="pro-f" style="margin-top:8px"><label>${PL("p_sav_inst_l")}</label>
+        <div class="par-inp"><input id="par-sav-inst" data-inst="1" type="text" autocomplete="off"
+          value="${raw(savEsc(PROJ.savInst))}" placeholder="${PL("p_sav_inst_p")}"
+          onchange="PRO.projSetSaving()" onblur="PRO.projSetSaving()"/></div></div>
       ${sug?`<div style="margin-top:9px">
         <span class="pro-pill" style="cursor:pointer"
           onclick="PRO.projSavDaCarteira()">↧ ${PL("p_sav_use")} ${
@@ -32884,10 +32885,11 @@ function p2(B,F){
     <div class="ap-group" style="padding:10px 14px 12px">
       <div class="imp-lbl" style="margin-top:0">${X("Nome","Name","Name")}</div>
       <input class="imp-in" id="impd-f-nome" value="${esc(f.nome)}"/>
+      <div class="imp-lbl">${X("Credor / Instituição financeira","Lender / Financial institution","Gläubiger / Finanzinstitut")}</div>
+      <input class="imp-in" id="impd-f-cred" data-inst="1" value="${esc(f.cred)}" placeholder="${X("Ex: Itaú, Caixa, Santander…","E.g.: Itaú, Caixa, Santander…","Z.B.: Itaú, Caixa, Santander…")}"/>
+      <div class="imp-lbl">${X("Tipo","Type","Art")}</div>
+          <select class="imp-in" id="impd-f-tipo">${DEBT_TYPES.map(t=>`<option value="${t.id}"${t.id===f.tipo?" selected":""}>${t.emoji} ${typeof catLabel==="function"?catLabel(t):t.label}</option>`).join("")}</select>
       <div class="imp-grid2">
-        <div><div class="imp-lbl">${X("Tipo","Type","Art")}</div>
-          <select class="imp-in" id="impd-f-tipo">${DEBT_TYPES.map(t=>`<option value="${t.id}"${t.id===f.tipo?" selected":""}>${t.emoji} ${typeof catLabel==="function"?catLabel(t):t.label}</option>`).join("")}</select></div>
-        <div><div class="imp-lbl">${X("Credor","Lender","Gläubiger")}</div><input class="imp-in" id="impd-f-cred" value="${esc(f.cred)}"/></div>
         <div><div class="imp-lbl">${X("Taxa (% a.m.)","Rate (% / month)","Zins (% / Monat)")}</div>
           <input class="imp-in" id="impd-f-taxa" inputmode="decimal" value="${f.taxa!=null?String(f.taxa).replace(".",","):""}"/></div>
         <div><div class="imp-lbl">${X("Parcelas restantes","Payments left","Restraten")}</div>
@@ -34383,24 +34385,33 @@ window.GUIA={iniciar,fechar,ROT};
   const TX=(pt,en,de)=>{ const l=(typeof LANG!=="undefined"?LANG:"pt"); return l==="en"?en:(l==="de"?de:pt); };
 
   function montar(id){
-    const inp=document.getElementById(id); if(!inp||inp.dataset.instOk) return;
+    const inp=typeof id==="string"?document.getElementById(id):id; if(!inp||inp.dataset.instOk) return;
+    const cs0=getComputedStyle(inp), padL0=cs0.paddingLeft||"13px", padR0=cs0.paddingRight||"13px";
+    const hIn=inp.getBoundingClientRect().height||38, bz=Math.max(18,Math.min(26,Math.round(hIn-12)));
     inp.dataset.instOk="1"; inp.removeAttribute("list"); inp.setAttribute("autocomplete","off");
-    const mb=getComputedStyle(inp).marginBottom||"0px";
-    const wrap=document.createElement("div"); wrap.className="inst-wrap"; wrap.style.marginBottom=mb;
+    /* campo com moldura própria (Parâmetros): o símbolo entra dentro da
+       moldura e a lista abre abaixo dela, não dentro da linha flexível */
+    const box=inp.parentElement&&inp.parentElement.classList.contains("par-inp")?inp.parentElement:null;
+    const mb=box?"0px":(getComputedStyle(inp).marginBottom||"0px");
+    const wrap=document.createElement("div"); wrap.className="inst-wrap"+(box?" inst-in-box":""); wrap.style.marginBottom=mb;
     inp.parentNode.insertBefore(wrap,inp); wrap.appendChild(inp); inp.style.marginBottom="0";
     const ico=document.createElement("span"); ico.className="inst-ico"; wrap.appendChild(ico);
     const chev=document.createElement("span"); chev.className="inst-chev"; chev.textContent="▾"; wrap.appendChild(chev);
     const dd=document.createElement("div"); dd.className="inst-dd"; dd.style.display="none";
-    dd.style.marginTop="calc(6px - "+mb+")"; dd.style.marginBottom=mb;
-    wrap.parentNode.insertBefore(dd,wrap.nextSibling);
+    dd.style.marginTop=box?"6px":"calc(6px - "+mb+")"; dd.style.marginBottom=box?"0":mb;
+    const ancora=box||wrap;
+    ancora.parentNode.insertBefore(dd,ancora.nextSibling);
     const pintar=()=>{
       const v=inp.value.trim();
-      ico.innerHTML=v?instBadge(v,26):"";
+      /* só mexe no DOM quando algo mudou: o observador geral não pode
+         reagir às próprias pinturas do campo */
+      if(inp._instUlt===v) return; inp._instUlt=v;
+      ico.innerHTML=v?instBadge(v,bz):"";
       wrap.classList.toggle("tem-ico",!!v);
       /* inline com !important: as regras de formulário do app fixam o
          padding dos inputs com seletores de id que nenhuma classe vence */
-      inp.style.setProperty("padding-left",v?"48px":"13px","important");
-      inp.style.setProperty("padding-right","34px","important");
+      inp.style.setProperty("padding-left",v?(bz+(box?8:22))+"px":padL0,"important");
+      inp.style.setProperty("padding-right",Math.max(30,parseFloat(padR0)||0)+"px","important");
     };
     const lista=()=>{
       const q=norm(inp.value);
@@ -34430,10 +34441,18 @@ window.GUIA={iniciar,fechar,ROT};
     });
     inp._instPintar=pintar; pintar();
   }
-  function repintar(){ ["ast-inst","debt-creditor"].forEach(id=>{ const e=document.getElementById(id); if(e&&e._instPintar) e._instPintar(); }); }
-  window.instRepintar=repintar;
+  function repintar(){ document.querySelectorAll("input[data-inst]").forEach(e=>{ if(e._instPintar) e._instPintar(); }); }
+  window.instRepintar=repintar; window.instMontar=montar;
+  const varrer=()=>document.querySelectorAll("input[data-inst]:not([data-inst-ok])").forEach(e=>{
+    /* só monta quando visível: a altura do campo define o tamanho do símbolo */
+    if(e.getBoundingClientRect().height>0) montar(e);
+  });
   function iniciar(){
-    ["ast-inst","debt-creditor"].forEach(montar);
+    varrer();
+    /* campos desenhados depois (importação, Parâmetros) ou que só ficam
+       visíveis ao abrir o formulário */
+    new MutationObserver(()=>{ clearTimeout(iniciar._t); iniciar._t=setTimeout(()=>{ varrer(); repintar(); },30); })
+      .observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});
     /* abrir/editar preenche o campo por código, sem evento: repinta ao abrir */
     ["modal-asset","modal-debt"].forEach(id=>{
       const m=document.getElementById(id); if(!m) return;
@@ -34460,6 +34479,10 @@ window.GUIA={iniciar,fechar,ROT};
   background:none; border-radius:10px; text-align:left; cursor:pointer; color:var(--body,#1C1C1C); font-size:15px; }
 .inst-op:active,.inst-op.on{ background:var(--surface,#F1EFEA); }
 .inst-op-n{ flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.inst-wrap.inst-in-box{ flex:1; min-width:0; align-self:stretch; display:flex; align-items:center; }
+.inst-wrap.inst-in-box>input{ width:100%; height:100%; border:none; background:transparent; outline:none; text-align:left!important; }
+.inst-wrap.inst-in-box>.inst-ico{ left:0; }
+.inst-wrap.inst-in-box>.inst-chev{ right:0; }
 .inst-op-livre{ border-top:1px solid var(--line,#E1DED7); border-radius:0 0 10px 10px; color:var(--ink-2,#67635C); }
 .inst-vazio{ padding:12px; font-size:13px; color:var(--ink-2,#67635C); }
 </style>
