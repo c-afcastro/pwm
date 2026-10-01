@@ -3426,12 +3426,17 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
 
     <div data-wz="saldo">
     <label class="f-label" data-i18n="debt_balance">Saldo devedor atual</label>
-    <input id="debt-balance" class="f-input" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this);updateDebtEstimate()"/>
+    <input id="debt-balance" class="f-input" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this);updateDebtEstimate();debtEntradaHint()"/>
 
     </div>
     <div id="df-principal" data-wz="orig">
       <label class="f-label" data-i18n="debt_principal">Valor original (opcional)</label>
-      <input id="debt-principal" class="f-input" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this);updateDebtEstimate()"/>
+      <input id="debt-principal" class="f-input" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this);updateDebtEstimate();debtEntradaHint()"/>
+      <div id="df-entrada" style="display:none">
+        <label class="f-label" id="debt-entrada-lbl">Entrada paga com recursos próprios</label>
+        <input id="debt-entrada" class="f-input" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this);debtEntradaHint()"/>
+        <div id="debt-entrada-hint" style="font-size:11px;color:var(--ink-2);line-height:1.45;margin:-4px 0 10px"></div>
+      </div>
     </div>
 
     <div style="display:flex;gap:8px" data-wz="juros">
@@ -7796,8 +7801,8 @@ function astRendAcum(a){ if(!a||a.virtual) return 0;
   return Math.round((astValorAtual(a)-(parseFloat(a&&a.balance)||0))*100)/100; }
 
 const DEBT_TYPES=[
-  {id:"mortgage",   label:"Financiamento Imob.", emoji:"🏠", color:"#6E2B3A", fields:["creditor","principal","rate","term","dueDay","amort"]},
-  {id:"auto",       label:"Financiamento Veíc.", emoji:"🚗", color:"#8A4A5A", fields:["creditor","principal","rate","term","dueDay","amort"]},
+  {id:"mortgage",   label:"Financiamento Imob.", emoji:"🏠", color:"#6E2B3A", fields:["creditor","principal","entrada","rate","term","dueDay","amort"]},
+  {id:"auto",       label:"Financiamento Veíc.", emoji:"🚗", color:"#8A4A5A", fields:["creditor","principal","entrada","rate","term","dueDay","amort"]},
   {id:"loan",       label:"Empréstimo",          emoji:"🏦", color:"#A84A5C", fields:["creditor","principal","rate","term","dueDay","amort"]},
   {id:"card",       label:"Cartão de Crédito",   emoji:"💳", color:"#B85A6A", fields:["creditor","rate","dueDay"]},
   {id:"installment",label:"Parcelamento",        emoji:"🧾", color:"#9A5A6A", fields:["creditor","principal","term","dueDay"]},
@@ -10572,7 +10577,18 @@ function astPosMapAst(){
    somatórios da tela — a alternativa seria repetir a regra em sete lugares
    e descobrir na sétima tela que um deles ficou para trás. */
 function astVencidaFora(a){
-  try{ return !!(a&&!a.virtual&&window.PRO&&PRO.astVencEfetivo&&PRO.astVencEfetivo(a)); }
+  /* v11.26 — relativo ao mês navegado: fora também a que ainda não tinha
+     sido aplicada; a vencida volta a contar nos meses anteriores ao
+     vencimento */
+  try{
+    if(!a||a.virtual||!window.PRO) return false;
+    if(PRO.astForaYM) return !!PRO.astForaYM(a,activeYMAst());
+    return !!(PRO.astVencEfetivo&&PRO.astVencEfetivo(a));
+  }catch(e){ return false; }
+}
+/* Ainda não aplicada no mês navegado: some da tela, inclusive da seção de vencidas */
+function astNaoAplicadaAst(a){
+  try{ return !!(a&&!a.virtual&&window.PRO&&PRO.astNaoAplicadaYM&&PRO.astNaoAplicadaYM(a,activeYMAst())); }
   catch(e){ return false; }
 }
 /* Valor que ENTRA no patrimônio (zero se venceu) — distinto de astValAst,
@@ -10994,8 +11010,8 @@ function renderAssetList(){
               ${prodLbl?`<span style="flex:0 1 auto;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:${c.color};background:${c.color}1F;border-radius:5px;padding:2px 5px;line-height:1.5">${prodLbl}</span>`:""}
             </div>
             <div style="font-size:11px;color:var(--ink-2);display:flex;align-items:center;gap:5px;min-width:0">
-              ${a.virtual?`<span style="flex-shrink:0;font-size:8.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#1A3A5C;background:rgba(26,58,92,.12);border-radius:5px;padding:1px 5px">${t("ast_simulated")}</span>`:""}
-              <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">${a.virtual?String((a.perfil&&a.perfil.pct)||100).replace(".",",")+"% CDI"+(a.instituicao?" · "+a.instituicao:""):catLabel(c)+(a.lastUpdate?" · "+a.lastUpdate:"")}</span>
+              ${a.virtual?`<span style="flex-shrink:0;font-size:8.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#1A3A5C;background:rgba(26,58,92,.12);border-radius:5px;padding:1px 5px">${t("ast_simulated")}</span>`:(a.instituicao&&window.instBadge?instBadge(a.instituicao,16):"")}
+              <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">${a.virtual?String((a.perfil&&a.perfil.pct)||100).replace(".",",")+"% CDI"+(a.instituicao?" · "+a.instituicao:""):(a.instituicao?a.instituicao+" · ":"")+catLabel(c)+(a.lastUpdate?" · "+a.lastUpdate:"")}</span>
             </div>
           </div>
         </div>
@@ -11470,6 +11486,7 @@ function homePatrimonioYM(ymStr){
        evolui pela curva dos Parâmetros mês a mês, para trás regride pelo
        mesmo fator. Antes o passado devolvia o saldo de HOJE, e navegar
        para meses anteriores não mudava um número. */
+    try{ if(window.PRO&&PRO.astForaYM&&PRO.astForaYM(a,alvo)) return; }catch(e){}
     let v=0;
     try{ v=window.astValorYM?window.astValorYM(a,alvo):astValorAtual(a); }
     catch(e){ v=parseFloat(a&&a.balance)||0; }
@@ -12049,6 +12066,7 @@ function computeFinMetrics(){
   const totalInc=(POS&&isFinite(POS.bruto)&&POS.bruto>0)
     ?POS.bruto:incomeItensYM(ymStr).reduce((s,i)=>s+i.amount,0);
   const ativosHoje=ASSETS.reduce((s,a)=>{
+    try{ if(window.PRO&&PRO.astForaYM&&PRO.astForaYM(a,ymStr)) return s; }catch(e){}
     try{ return s+(window.astValorYM?window.astValorYM(a,ymStr):astValorAtual(a)); }
     catch(e){ return s+astValorAtual(a); } },0);
   const dividaHoje=totalDebt();
@@ -12111,6 +12129,7 @@ function computeFinMetrics(){
   // Ativo (assets) grouped by class
   const assetByClass={};
   ASSETS.forEach(a=>{
+    try{ if(window.PRO&&PRO.astForaYM&&PRO.astForaYM(a,ymStr)) return; }catch(e){}
     let v=0; try{ v=window.astValorYM?window.astValorYM(a,ymStr):astValorAtual(a); }
     catch(e){ v=astValorAtual(a); }
     assetByClass[a.class]=(assetByClass[a.class]||0)+v; });
@@ -12660,8 +12679,8 @@ function generateIRPFReport(year){
   DEBTS.forEach(d=>{
     const m=IRPF_DEBT_MAP[d.type];
     if(m&&m.ficha==="bem"){
-      const paid=Math.max(0,(parseFloat(d.principal)||0)-(parseFloat(d.balance)||0));
-      bensFinanced.push({name:d.name,grupo:d.type==="mortgage"?"01":"02",label:m.label,paid,orig:parseFloat(d.principal)||0,bal:parseFloat(d.balance)||0});
+      const paid=Math.max(0,debtOriginal(d)-(parseFloat(d.balance)||0));
+      bensFinanced.push({name:d.name,grupo:d.type==="mortgage"?"01":"02",label:m.label,paid,orig:debtOriginal(d),bal:parseFloat(d.balance)||0});
     }
   });
   const totalBens=Object.values(bens).reduce((s,b)=>s+b.total,0)+bensFinanced.reduce((s,b)=>s+b.paid,0);
@@ -15394,7 +15413,14 @@ function persistDebts(){
 }
 
 const debtBalance=d=>parseFloat(d.balance)||0;
-const debtOriginal=d=>parseFloat(d.principal)||0;
+/* v11.25 — o "original" de um financiamento é o valor do BEM: o que o
+   banco financiou mais a entrada paga com recursos próprios. A tabela do
+   banco só conhece o financiado; sem a entrada, o progresso de quitação
+   do bem saía subestimado. Sem valor financiado informado, não há base. */
+const debtEntrada=d=>Math.max(0,parseFloat(d&&d.entrada)||0);
+const debtOriginal=d=>{ const p=parseFloat(d.principal)||0; return p>0?p+debtEntrada(d):0; };
+const debtPctFmt=p=>(p||0).toLocaleString(LANG==="en"?"en-US":(LANG==="de"?"de-DE":"pt-BR"),
+  {minimumFractionDigits:2,maximumFractionDigits:2})+"%";
 /* Um <select> devolve SEMPRE texto, e o id de uma dívida é o número que
    Date.now() gerou no cadastro. A comparação estrita entre os dois nunca
    casa: o simulador, o cronograma e a tabela de amortização recebiam a
@@ -15541,7 +15567,7 @@ function assetsFiltrados(){
     if(inst&&instDe(a)!==inst) return false;
     /* Vencida não é carteira: some do filtro normal e só volta quando o
        titular pede por ela, no filtro próprio ou na seção ao pé da lista. */
-    if(cl==="venc") return astVencidaFora(a);
+    if(cl==="venc") return astVencidaFora(a)&&!astNaoAplicadaAst(a);
     if(astVencidaFora(a)) return false;
     if(cl&&!astCasaFiltro(a,cl)) return false;
     return true;
@@ -15551,7 +15577,7 @@ function assetsFiltrados(){
    recolhível no fim da lista e a contagem do seletor. */
 function assetsVencidasInst(){
   const inst=instFiltroAtivo("ast-inst-filter");
-  return ASSETS.filter(a=>astVencidaFora(a)&&(!inst||instDe(a)===inst));
+  return ASSETS.filter(a=>astVencidaFora(a)&&!astNaoAplicadaAst(a)&&(!inst||instDe(a)===inst));
 }
 /* "prod:lca" filtra pelo produto, "cls:fixed_income" pela classe inteira.
    Um valor sem prefixo é de um backup antigo, quando o seletor guardava
@@ -15795,7 +15821,7 @@ function renderDebtDash(){
   const denom=origTotal>0?origTotal:total;
   const pct=denom>0?Math.min(100,(paidTotal/denom)*100):0;
   const pctEl=document.getElementById("debt-progress-pct");
-  if(pctEl) pctEl.textContent=pct.toFixed(0)+"%";
+  if(pctEl) pctEl.textContent=debtPctFmt(pct);
   const bar=document.getElementById("debt-progress-bar");
   if(bar) bar.style.width=pct+"%";
   const sub=document.getElementById("debt-progress-sub");
@@ -15825,7 +15851,7 @@ function renderDebtDash(){
           <div class="bar-anim" style="height:100%;background:${x.color};opacity:.35;width:${shareOfTotal}%;border-radius:3px;position:absolute;left:0;top:0"></div>
           <div style="height:100%;background:#5A8A4A;width:${x.orig>0?paidPct*shareOfTotal/100:0}%;border-radius:3px;position:absolute;left:0;top:0"></div>
         </div>
-        <div style="font-size:10px;color:var(--ink-2);margin-top:3px">${x.orig>0?paidPct.toFixed(0)+"% "+t("w_paid_off"):(shareOfTotal.toFixed(0)+"% "+t("w_of_total"))}</div>
+        <div style="font-size:10px;color:var(--ink-2);margin-top:3px">${x.orig>0?debtPctFmt(paidPct)+" "+t("w_paid_off"):(shareOfTotal.toFixed(0)+"% "+t("w_of_total"))}</div>
       </div>`;
     }).join("");
   }
@@ -15894,8 +15920,8 @@ function renderDebtList(){
   wrap.innerHTML=list.map(d=>{
     const dt=gDebtType(d.type);
     const bal=debtBalance(d);
-    const orig=parseFloat(d.principal)||0;
-    const paid=Math.max(0,debtOriginal(d)-debtBalance(d));
+    const orig=debtOriginal(d);
+    const paid=Math.max(0,orig-debtBalance(d));
     const pct=orig>0?Math.min(100,(paid/orig)*100):0;
     const rate=parseFloat(d.rate)||0;
     return `<div onclick="openDebtDetail('${d.id}')" style="background:var(--surface);border-radius:14px;padding:13px 15px;margin-bottom:9px;cursor:pointer;border-left:3px solid ${dt.color}">
@@ -15903,7 +15929,7 @@ function renderDebtList(){
         <div style="width:36px;height:36px;border-radius:10px;background:${dt.color}18;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">${dt.emoji}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:14px;font-weight:600;color:var(--body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}</div>
-          <div style="font-size:11px;color:var(--ink-2)">${catLabel(dt)}${d.creditor?" · "+d.creditor:""}${rate>0?" · "+(d.rateType==="year"?monthlyToAnnual(rate).toFixed(1)+"% "+t("w_per_year_short"):rate.toFixed(1)+"% "+t("w_per_month_short")):""}</div>
+          <div style="font-size:11px;color:var(--ink-2);display:flex;align-items:center;gap:5px;min-width:0">${d.creditor&&window.instBadge?instBadge(d.creditor,16):""}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">${catLabel(dt)}${d.creditor?" · "+d.creditor:""}${rate>0?" · "+(d.rateType==="year"?monthlyToAnnual(rate).toFixed(1)+"% "+t("w_per_year_short"):rate.toFixed(1)+"% "+t("w_per_month_short")):""}</span></div>
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-family:var(--serif);font-style:italic;font-size:17px;color:#6E2B3A">${fmt(bal)}</div>
@@ -15917,7 +15943,7 @@ function renderDebtList(){
       ${orig>0?`<div style="height:5px;background:rgba(110,43,58,.08);border-radius:3px;overflow:hidden">
         <div style="height:100%;background:${dt.color};width:${pct}%;border-radius:3px"></div>
       </div>
-      <div style="font-size:10px;color:var(--ink-2);margin-top:3px">${pct.toFixed(0)}% ${t("w_paid_off")} · ${fmt(paid)} ${t("w_of2")} ${fmt(orig)}</div>`:""}
+      <div style="font-size:10px;color:var(--ink-2);margin-top:3px">${debtPctFmt(pct)} ${t("w_paid_off")} · ${fmt(paid)} ${t("w_of2")} ${fmt(orig)}${debtEntrada(d)>0?" · "+TXd("entrada","down payment","Anzahlung")+" "+fmt(debtEntrada(d)):""}</div>`:""}
       <div style="display:flex;gap:6px;justify-content:space-between;border-top:1px solid var(--line);padding-top:6px;margin-top:8px">
         <button class="ap-link" style="color:#6E2B3A" onclick="event.stopPropagation();openDebtPayment('${d.id}')">${t("register_payment")}</button>
         <button style="background:none;border:none;color:#1A3A5C;font-size:12px;font-weight:600;cursor:pointer" onclick="event.stopPropagation();PRO.openImpactos('debt','${d.id}')">🔎 ${t("impacts")}</button>
@@ -16683,6 +16709,7 @@ function openDebt(id){
   document.getElementById("debt-creditor").value=d?(d.creditor||""):"";
   setCurrencyInput(document.getElementById("debt-balance"), d?parseFloat(d.balance):"");
   setCurrencyInput(document.getElementById("debt-principal"), d&&d.principal?parseFloat(d.principal):"");
+  setCurrencyInput(document.getElementById("debt-entrada"), d&&debtEntrada(d)>0?debtEntrada(d):"");
   // convert stored monthly rate to displayed unit
   let shownRate="";
   if(d&&d.rate){ shownRate=DEBT_RATE_TYPE==="year"?monthlyToAnnual(d.rate):d.rate; shownRate=Math.round(shownRate*100)/100; }
@@ -16781,6 +16808,19 @@ function amortSummary(balance, monthlyRate, n, system){
   };
 }
 
+function debtEntradaHint(){
+  const h=document.getElementById("debt-entrada-hint"); if(!h) return;
+  const fin=unmaskCurrency(document.getElementById("debt-principal"))||0;
+  const ent=unmaskCurrency(document.getElementById("debt-entrada"))||0;
+  const sal=unmaskCurrency(document.getElementById("debt-balance"))||0;
+  if(!(fin>0)){ h.textContent=TXd("A tabela do banco costuma trazer só o valor financiado. Informe a entrada para o progresso considerar o valor total do bem.",
+    "The bank's table usually shows only the financed amount. Enter the down payment so progress counts the full value of the asset.",
+    "Die Banktabelle zeigt meist nur den finanzierten Betrag. Geben Sie die Anzahlung an, damit der Fortschritt den vollen Wert berücksichtigt."); return; }
+  const bem=fin+ent, pago=Math.max(0,bem-sal);
+  h.innerHTML=TXd("Valor do bem","Asset value","Wert des Objekts")+" <b>"+fmt(bem)+"</b> = "+fmt(fin)+" + "+fmt(ent)
+    +(sal>0?" · "+TXd("quitado","paid off","getilgt")+" <b>"+debtPctFmt(bem>0?pago/bem*100:0)+"</b>":"");
+}
+window.debtEntradaHint=debtEntradaHint;
 function updateDebtEstimate(){
   const box=document.getElementById("debt-estimate");
   const amortRow=document.getElementById("debt-amort-row");
@@ -16874,7 +16914,17 @@ function renderDebtTypeGrid(){
 /* Show only the fields that make sense for the selected debt type */
 function applyDebtFieldProfile(){
   const fields=debtTypeFields(DEBT_TYPE_SEL);
-  const map={creditor:"df-creditor",principal:"df-principal",rate:"df-rate",term:"df-term",dueDay:"df-dueday"};
+  const map={creditor:"df-creditor",principal:"df-principal",entrada:"df-entrada",rate:"df-rate",term:"df-term",dueDay:"df-dueday"};
+  /* financiamento: o campo de valor original passa a ser o valor financiado */
+  try{
+    const lp=document.querySelector("#df-principal>label");
+    if(lp) lp.textContent=fields.includes("entrada")
+      ?TXd("Valor financiado pelo banco","Amount financed by the bank","Vom Kreditgeber finanzierter Betrag")
+      :t("debt_principal");
+    const le=document.getElementById("debt-entrada-lbl");
+    if(le) le.textContent=TXd("Entrada paga com recursos próprios","Down payment from own funds","Anzahlung aus Eigenmitteln");
+    debtEntradaHint();
+  }catch(e){}
   Object.entries(map).forEach(([key,id])=>{
     const el=document.getElementById(id);
     if(el) el.style.display=fields.includes(key)?"":"none";
@@ -16932,6 +16982,7 @@ function saveDebt(){
     type:DEBT_TYPE_SEL,
     balance,
     principal:unmaskCurrency(document.getElementById("debt-principal"))||null,
+    entrada:debtTypeFields(DEBT_TYPE_SEL).includes("entrada")?(unmaskCurrency(document.getElementById("debt-entrada"))||0):0,
     rate:(()=>{ const v=unmaskDecimal(document.getElementById("debt-rate"))||0; return DEBT_RATE_TYPE==="year"?Math.round(annualToMonthly(v)*10000)/10000:v; })(),
     rateType:DEBT_RATE_TYPE,
     amortSystem:DEBT_AMORT_SYS,
@@ -17140,8 +17191,8 @@ function openDebtDetail(id){
   const d=debtPorId(id); if(!d) return;
   const dt=gDebtType(d.type);
   const bal=debtBalance(d);
-  const orig=parseFloat(d.principal)||0;
-  const paid=Math.max(0,debtOriginal(d)-debtBalance(d));
+  const orig=debtOriginal(d);
+  const paid=Math.max(0,orig-debtBalance(d));
   const pct=orig>0?Math.min(100,(paid/orig)*100):0;
   /* quitação: a última linha do cronograma oficial */
   const schD=debtCron(d);
@@ -17173,7 +17224,8 @@ function openDebtDetail(id){
       <div style="font-family:var(--serif);font-style:italic;font-size:clamp(24px,7vw,32px);line-height:1;margin-bottom:12px">${fmt(bal)}</div>
       ${orig>0?`<div style="height:6px;background:rgba(255,255,255,.15);border-radius:3px;overflow:hidden;margin-bottom:5px">
         <div style="height:100%;background:#fff;width:${pct}%;border-radius:3px"></div></div>
-        <div style="font-size:11px;color:rgba(255,255,255,.7)">${pct.toFixed(0)}% ${t("w_paid_off")} · ${fmt(paid)} ${t("w_of2")} ${fmt(orig)}</div>`:""}
+        <div style="font-size:11px;color:rgba(255,255,255,.7)">${debtPctFmt(pct)} ${t("w_paid_off")} · ${fmt(paid)} ${t("w_of2")} ${fmt(orig)}</div>
+        ${debtEntrada(d)>0?`<div style="font-size:10.5px;color:rgba(255,255,255,.55);margin-top:2px">${TXd("Valor do bem","Asset value","Wert des Objekts")} = ${TXd("financiado","financed","finanziert")} ${fmt(parseFloat(d.principal)||0)} + ${TXd("entrada","down payment","Anzahlung")} ${fmt(debtEntrada(d))}</div>`:""}`:""}
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
@@ -17700,7 +17752,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.24";
+const APP_VERSION="11.27";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -20789,6 +20841,25 @@ function astVencEfetivo(a,p){
   const v=astVencData(a,p);
   return (v&&v<=today())?v:null;
 }
+/* v11.26 — A APLICAÇÃO NO TEMPO. Uma régua só para todas as telas:
+   a data de referência de um mês é HOJE no mês corrente e o último dia
+   do mês nos demais. Contra essa data:
+   · antes da data de aplicação, o papel ainda não existia — não entra;
+   · a partir do vencimento já ocorrido, saiu da carteira — não entra;
+   · entre as duas, entra, inclusive nos meses passados de uma vencida.
+   A conta vinculada de FGTS é saldo acumulado, sem data de início. */
+function astRefYM(ym){
+  const h=today();
+  return (!ym||ym===h.slice(0,7))?h:astFimDoMesYM(ym);
+}
+function astAplicIni(a){
+  if(!a||a.virtual||a.class==="fgts") return null;
+  const ap=String(astPro(a).aplic||"").slice(0,10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(ap)?ap:null;
+}
+function astNaoAplicadaYM(a,ym){ const ap=astAplicIni(a); return !!ap&&astRefYM(ym)<ap; }
+function astVencForaYM(a,ym){ const v=astVencEfetivo(a); return !!v&&astRefYM(ym)>=v; }
+function astForaYM(a,ym){ return astNaoAplicadaYM(a,ym)||astVencForaYM(a,ym); }
 /* Já venceu na data de referência (padrão: hoje) */
 function astVencido(a,ref){
   const v=astVencData(a); if(!v) return false;
@@ -21956,6 +22027,8 @@ function astValorEm(a,dataAlvo){
   const bal=parseFloat(a&&a.balance)||0;
   if(!a||(!(bal>0)&&!astEhFgtsAuto(a))||!dataAlvo) return bal;
   const p=astPro(a);
+  /* antes da data de aplicação o papel não existia: posição zero */
+  { const ap=astAplicIni(a); if(ap&&String(dataAlvo).slice(0,10)<ap) return 0; }
   const de=a.lastUpdate||p.aplic||today();
   if(dataAlvo===de) return R2(bal);
   const ck=[a.id,bal,de,dataAlvo,p.idx,p.idxVal,p.aporte,fgtsDiaParam(),
@@ -26076,7 +26149,7 @@ function cfMes(ym,k,st){
   /* A posição por aplicação continua sendo devolvida mesmo para a vencida
      — é o número que o aviso mostra e que serve de referência ao novo
      cadastro. O que ela não faz mais é somar no patrimônio. */
-  const foraPatr=x=>{ try{ return !!astVencEfetivo(x); }catch(e){ return false; } };
+  const foraPatr=x=>{ try{ return astForaYM(x,ym); }catch(e){ return false; } };
   if(proj&&st) st.forEach(x=>{
     apSaldos[x.a.id]=R2(x.saldo);
     if(!foraPatr(x.a)) saldoPatr+=x.saldo;
@@ -28766,6 +28839,7 @@ window.PRO={
   astResgates,astResgAssin,astResgatadoTotal,astPrazoIR,astLiquidacao,astResgateEm,
   astFaixaIR,astTabelaIR,astProxFaixaIR,
   astEvoluirEventos,limparCachesAplic,vencDoMes,renderVencAviso,
+  astRefYM,astNaoAplicadaYM,astVencForaYM,astForaYM,
   openVencimentos,astVencEfetivo,vcAbrir,vcResgatar,vcNova,vcFechar,
   vcIgnorar,vcRestaurar,vcRestaurarMes,vcIgnorado,vcRedesenhar,
   exportProj,refreshRates:()=>fetchMarket(false),
@@ -32823,6 +32897,9 @@ function p2(B,F){
         <div><div class="imp-lbl">${X("Dia do vencimento","Due day","Fälligkeitstag")}</div>
           <input class="imp-in" id="impd-f-dia" inputmode="numeric" value="${f.dia||""}"/></div>
       </div>
+      <div class="imp-lbl">${X("Entrada paga com recursos próprios","Down payment from own funds","Anzahlung aus Eigenmitteln")}</div>
+      <input class="imp-in" id="impd-f-entrada" inputmode="decimal" placeholder="0,00" value="${f.entrada!=null?String(f.entrada.toFixed(2)).replace(".",","):""}"/>
+      <div style="font-size:11px;color:var(--ink-2);line-height:1.45;margin:4px 0 6px">${X("A tabela do banco traz só o valor financiado. Para imóvel ou veículo, informe a entrada: o progresso passa a considerar o valor total do bem.","The bank's table only has the financed amount. For property or a vehicle, enter the down payment so progress counts the full value of the asset.","Die Banktabelle enthält nur den finanzierten Betrag. Bei Immobilie oder Fahrzeug die Anzahlung angeben, damit der Fortschritt den vollen Wert berücksichtigt.")}</div>
       <div class="imp-lbl">${X("Sistema","System","System")}</div>
       <div class="ap-seg" style="margin-bottom:6px">
         <button type="button" class="${f.sis==="sac"?"on":""}" onclick="IMPDIV.sis('sac')">SAC</button>
@@ -32918,7 +32995,8 @@ function conferir(){
     rest:A.futuras.length||MT.restantes||(alvo?parseInt(alvo.term)||"":""),
     idx:A.corrTot>0?((alvo&&alvo.indexador)||"tr"):((alvo&&alvo.indexador)||""),
     dia:A.dueDay||(alvo?alvo.dueDay:"")||"",
-    sis:MT.sistema||A.sistema
+    sis:MT.sistema||A.sistema,
+    entrada:alvo&&parseFloat(alvo.entrada)>0?parseFloat(alvo.entrada):null
   };
   S.aplicarFgts=!!(A.fgts&&A.fgts.vigente);
   S.passo=2; desenhar();
@@ -32932,6 +33010,7 @@ function lerForm(){
   S.form.rest=parseInt(v("impd-f-rest").value)||0;
   S.form.idx=v("impd-f-idx").value;
   S.form.dia=parseInt(v("impd-f-dia").value)||null;
+  { const en=v("impd-f-entrada"); if(en){ const x=num(en.value); S.form.entrada=isFinite(x)&&x>0?x:null; } }
 }
 function sis(x){ lerForm(); S.form.sis=x; manterRolagem(desenhar); }
 /* atalho no formulário de dívida */
@@ -32970,6 +33049,7 @@ function aplicar(){
     name:f.nome, type:f.tipo, creditor:f.cred,
     balance:R2(A.saldoAtual), principal:A.principal!=null?R2(A.principal):(alvo?alvo.principal:R2(A.saldoAtual)),
     rate:f.taxa, rateType:"month", amortSystem:f.sis, term:Math.max(0,f.rest),
+    entrada:(f.tipo==="mortgage"||f.tipo==="auto"||f.tipo==="vehicle")&&f.entrada>0?R2(f.entrada):0,
     dueDay:dia, indexador:f.idx||"", seguro:R2(A.seguro||0), taxaAdm:R2(A.taxaAdm||0),
     payments:pays, lastPaymentYM:ult?ult.ym:null, motorV:2,
     importado:{em:new Date().toISOString().slice(0,10),fonte:S.arquivo||X("texto colado","pasted text","eingefügter Text"),
@@ -33721,6 +33801,13 @@ button:focus-visible,[role="button"]:focus-visible{ outline:2px solid var(--acce
 #screen-home .home-cards{ gap:var(--home-gap)!important; }
 #home-health-card>div{ border-radius:20px!important; padding-left:16px!important; padding-right:16px!important; }
 #screen-home #home-content>.ap-hint{ margin-bottom:var(--home-gap)!important; }
+/* v11.25 — a coluna de cada indicador passa a medir pelo maior entre
+   rótulo e valor. Antes o rótulo tinha largura zero e seguia o valor: com
+   os valores ocultos ("—") as colunas encolhiam e os rótulos quebravam
+   palavra a palavra, aumentando a altura do quadro. */
+#screen-home .hc-kpi{ flex:0 1 auto!important; min-width:0; }
+#screen-home .hc-kpi .hc-k{ width:auto!important; min-width:0!important; white-space:nowrap!important;
+  overflow:hidden!important; text-overflow:ellipsis; line-height:1.5!important; }
 </style>
 
 <script id="ap-guia">
@@ -34239,5 +34326,142 @@ window.GUIA={iniciar,fechar,ROT};
 })();
 </script>
 
+<script id="inst-picker">
+/* v11.27 — INSTITUIÇÕES FINANCEIRAS
+   O <datalist> nativo quase não aparece no Safari do iPhone: a lista só
+   surgia digitando, acima do teclado. Agora o campo abre uma lista própria,
+   com busca, logo abaixo dele, e mostra o símbolo da instituição escolhida.
+   O símbolo é um monograma do app (sigla + cor neutra da paleta) — não a
+   marca registrada do banco. O campo continua aceitando qualquer texto. */
+(function(){
+  const L=[
+    ["Banco do Brasil","BB",["bb","banco do brasil"]],["Caixa Econômica Federal","CX",["caixa","cef"]],
+    ["Itaú Unibanco","IT",["itau","itaú","personnalite","unibanco"]],["Bradesco","BR",["bradesco","next"]],
+    ["Santander","ST",["santander"]],["Nubank","NU",["nubank","nu pagamentos","nu invest"]],
+    ["Banco Inter","IN",["inter"]],["BTG Pactual","BTG",["btg"]],["XP Investimentos","XP",["xp"]],
+    ["Rico","RI",["rico"]],["Clear","CL",["clear"]],["Banco Safra","SF",["safra"]],
+    ["Sicoob","SC",["sicoob"]],["Sicredi","SI",["sicredi"]],["Banrisul","BRS",["banrisul"]],
+    ["Banco Original","OR",["original"]],["C6 Bank","C6",["c6"]],["PicPay","PP",["picpay"]],
+    ["Mercado Pago","MP",["mercado pago"]],["PagBank","PB",["pagbank","pagseguro"]],["Neon","NE",["neon"]],
+    ["Will Bank","WB",["will"]],["Banco Pan","PAN",["pan"]],["BV","BV",["bv","votorantim"]],
+    ["Modalmais","MM",["modal"]],["Genial Investimentos","GN",["genial"]],["Avenue","AV",["avenue"]],
+    ["Nomad","NO",["nomad"]],["Warren","WR",["warren"]],["Órama","OM",["orama"]],
+    ["Easynvest","EZ",["easynvest"]],["Tesouro Direto","TD",["tesouro"]],["Banco Daycoval","DY",["daycoval"]],
+    ["Banco ABC Brasil","ABC",["abc"]],["Banco Master","MS",["master"]],["Sofisa Direto","SO",["sofisa"]],
+    ["Banco Agibank","AG",["agibank"]],["Banco BMG","BMG",["bmg"]],["Banco Digio","DG",["digio"]],
+    ["Ágora Investimentos","AGR",["agora"]],["Toro Investimentos","TR",["toro"]],["Banco Mercantil","MC",["mercantil"]],
+    ["Banco Pine","PI",["pine"]],["BNB","BNB",["banco do nordeste","bnb"]],["Banco BRB","BRB",["brb"]]
+  ];
+  const PAL=["#1A3A5C","#B5543C","#B08528","#3F6B33","#5E5A53","#6E2B3A","#2E5E6B","#7A5A3A"];
+  const norm=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\s+/g," ").trim();
+  function achar(nome){
+    const n=norm(nome); if(!n) return null;
+    let hit=L.find(x=>norm(x[0])===n); if(hit) return hit;
+    hit=L.find(x=>x[2].some(a=>n===a||n.startsWith(a+" ")||n.indexOf(" "+a)>=0&&a.length>=4));
+    return hit||null;
+  }
+  function sigla(nome){
+    const h=achar(nome); if(h) return h[1];
+    const w=String(nome||"").trim().split(/\s+/).filter(p=>p.length>2||/^[A-Z0-9]{2,}$/.test(p));
+    const base=w.length?w:String(nome||"").trim().split(/\s+/);
+    return (base.length>1?base[0][0]+base[1][0]:String(base[0]||"?").slice(0,2)).toUpperCase();
+  }
+  function cor(nome){
+    const k=norm((achar(nome)||[nome])[0]); let h=0;
+    for(let i=0;i<k.length;i++) h=(h*31+k.charCodeAt(i))>>>0;
+    return PAL[h%PAL.length];
+  }
+  function instBadge(nome,px){
+    if(!String(nome||"").trim()) return "";
+    const s=sigla(nome), z=px||28, fs=Math.round(z*(s.length>2?.34:.42));
+    return '<span class="inst-badge" aria-hidden="true" style="width:'+z+'px;height:'+z+'px;border-radius:'+Math.round(z*.3)+'px;background:'+cor(nome)
+      +';font-size:'+fs+'px">'+s+'</span>';
+  }
+  window.instBadge=instBadge; window.instNomeOficial=n=>{const h=achar(n);return h?h[0]:n;};
+
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+  const TX=(pt,en,de)=>{ const l=(typeof LANG!=="undefined"?LANG:"pt"); return l==="en"?en:(l==="de"?de:pt); };
+
+  function montar(id){
+    const inp=document.getElementById(id); if(!inp||inp.dataset.instOk) return;
+    inp.dataset.instOk="1"; inp.removeAttribute("list"); inp.setAttribute("autocomplete","off");
+    const mb=getComputedStyle(inp).marginBottom||"0px";
+    const wrap=document.createElement("div"); wrap.className="inst-wrap"; wrap.style.marginBottom=mb;
+    inp.parentNode.insertBefore(wrap,inp); wrap.appendChild(inp); inp.style.marginBottom="0";
+    const ico=document.createElement("span"); ico.className="inst-ico"; wrap.appendChild(ico);
+    const chev=document.createElement("span"); chev.className="inst-chev"; chev.textContent="▾"; wrap.appendChild(chev);
+    const dd=document.createElement("div"); dd.className="inst-dd"; dd.style.display="none";
+    dd.style.marginTop="calc(6px - "+mb+")"; dd.style.marginBottom=mb;
+    wrap.parentNode.insertBefore(dd,wrap.nextSibling);
+    const pintar=()=>{
+      const v=inp.value.trim();
+      ico.innerHTML=v?instBadge(v,26):"";
+      wrap.classList.toggle("tem-ico",!!v);
+      /* inline com !important: as regras de formulário do app fixam o
+         padding dos inputs com seletores de id que nenhuma classe vence */
+      inp.style.setProperty("padding-left",v?"48px":"13px","important");
+      inp.style.setProperty("padding-right","34px","important");
+    };
+    const lista=()=>{
+      const q=norm(inp.value);
+      let it=L.filter(x=>!q||norm(x[0]).indexOf(q)>=0||x[2].some(a=>a.indexOf(q)>=0));
+      const exato=L.some(x=>norm(x[0])===q);
+      let h="";
+      h+=it.map(x=>'<button type="button" class="inst-op'+(norm(x[0])===q?' on':'')+'" data-v="'+esc(x[0])+'">'
+        +instBadge(x[0],28)+'<span class="inst-op-n">'+esc(x[0])+'</span></button>').join("");
+      /* texto livre: outra instituição fica no fim, para não competir com a lista */
+      if(q&&!exato&&inp.value.trim().length>=2) h+='<button type="button" class="inst-op inst-op-livre" data-v="'+esc(inp.value.trim())+'">'+instBadge(inp.value.trim(),28)
+        +'<span class="inst-op-n">'+TX("Usar","Use","Verwenden")+' “'+esc(inp.value.trim())+'”</span></button>';
+      if(!h) h='<div class="inst-vazio">'+TX("Nenhuma instituição encontrada","No institution found","Kein Institut gefunden")+'</div>';
+      dd.innerHTML=h;
+    };
+    const abrir=()=>{ lista(); dd.style.display="block"; wrap.classList.add("aberto"); };
+    const fechar=()=>{ dd.style.display="none"; wrap.classList.remove("aberto"); };
+    inp.addEventListener("focus",abrir);
+    inp.addEventListener("input",()=>{ pintar(); abrir(); });
+    inp.addEventListener("blur",()=>setTimeout(fechar,180));
+    inp.addEventListener("keydown",e=>{ if(e.key==="Escape"||e.key==="Enter"){ fechar(); if(e.key==="Enter") inp.blur(); } });
+    /* pointerdown evita que o blur feche a lista antes do toque valer */
+    dd.addEventListener("pointerdown",e=>e.preventDefault());
+    dd.addEventListener("click",e=>{
+      const b=e.target.closest(".inst-op"); if(!b) return;
+      inp.value=b.dataset.v; pintar(); fechar(); inp.blur();
+      inp.dispatchEvent(new Event("change",{bubbles:true}));
+    });
+    inp._instPintar=pintar; pintar();
+  }
+  function repintar(){ ["ast-inst","debt-creditor"].forEach(id=>{ const e=document.getElementById(id); if(e&&e._instPintar) e._instPintar(); }); }
+  window.instRepintar=repintar;
+  function iniciar(){
+    ["ast-inst","debt-creditor"].forEach(montar);
+    /* abrir/editar preenche o campo por código, sem evento: repinta ao abrir */
+    ["modal-asset","modal-debt"].forEach(id=>{
+      const m=document.getElementById(id); if(!m) return;
+      new MutationObserver(()=>{ if(m.classList.contains("open")) setTimeout(repintar,0); })
+        .observe(m,{attributes:true,attributeFilter:["class"]});
+    });
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",iniciar); else iniciar();
+})();
+</script>
+<style id="inst-picker-css">
+.inst-badge{ display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; color:#fff;
+  font-weight:700; letter-spacing:.3px; line-height:1; font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
+.inst-wrap{ position:relative; }
+.inst-wrap>.f-input{ width:100%; box-sizing:border-box; padding-right:38px!important; }
+.inst-wrap.tem-ico>.f-input{ padding-left:50px!important; }
+.inst-wrap>.inst-ico{ position:absolute; left:12px; top:50%; transform:translateY(-50%); display:flex; pointer-events:none; }
+.inst-wrap>.inst-chev{ position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:12px;
+  color:var(--ink-3,#8A857D); pointer-events:none; transition:transform .15s; }
+.inst-wrap.aberto>.inst-chev{ transform:translateY(-50%) rotate(180deg); }
+.inst-dd{ position:relative; background:var(--paper,#fff); border:1px solid var(--line,#E1DED7); border-radius:14px;
+  max-height:252px; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:4px; box-sizing:border-box; }
+.inst-op{ display:flex; align-items:center; gap:12px; width:100%; min-height:44px; padding:8px 10px; border:none;
+  background:none; border-radius:10px; text-align:left; cursor:pointer; color:var(--body,#1C1C1C); font-size:15px; }
+.inst-op:active,.inst-op.on{ background:var(--surface,#F1EFEA); }
+.inst-op-n{ flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.inst-op-livre{ border-top:1px solid var(--line,#E1DED7); border-radius:0 0 10px 10px; color:var(--ink-2,#67635C); }
+.inst-vazio{ padding:12px; font-size:13px; color:var(--ink-2,#67635C); }
+</style>
 </body>
 </html>
