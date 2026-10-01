@@ -11047,7 +11047,7 @@ function renderAssetsHistory(){
   if(sorted.length<2){
     canvas.style.display="none";
     listEl.innerHTML=(sorted.length===0)
-      ?`<div style="color:var(--ink-2);font-size:12px;text-align:center;padding:16px 0">Salve posições mensais para ver o histórico.</div>`
+      ?`<div style="color:var(--ink-2);font-size:12px;text-align:center;padding:16px 0">${({pt:"Salve posições mensais para ver o histórico.",en:"Save monthly positions to see the history.",de:"Monatliche Positionen speichern, um den Verlauf zu sehen."})[LANG]||"Salve posições mensais para ver o histórico."}</div>`
       :`<div style="font-size:12px;color:var(--ink-2);text-align:center;padding:8px 0">${t("add_month_chart")}</div>`;
     if(sorted.length===1){
       const [y,v]=sorted[0],[yr,m]=y.split("-");
@@ -11059,30 +11059,65 @@ function renderAssetsHistory(){
     return;
   }
   canvas.style.display="block";
-  const W=canvas.parentElement.offsetWidth-32;
-  canvas.width=W; canvas.height=150;
+  /* v11.23 — gráfico redesenhado: rótulos de mês no eixo inferior (antes x/y
+     estavam trocados e "Set 26" saía da área), valores das pontas alinhados
+     para dentro (antes eram cortados: "255.236,39" virava ".236,39"),
+     nitidez em Retina (DPR) e cores do tema. */
+  const H=170, dpr=window.devicePixelRatio||1;
+  const W=Math.max(200,canvas.parentElement.clientWidth-32);
+  canvas.style.width=W+"px"; canvas.style.height=H+"px";
+  canvas.width=Math.round(W*dpr); canvas.height=Math.round(H*dpr);
   const ctx=canvas.getContext("2d");
-  ctx.clearRect(0,0,W,150);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  const cs=getComputedStyle(document.documentElement);
+  const cv=(n,f)=>(cs.getPropertyValue(n)||"").trim()||f;
+  const cInk=cv("--ink","#0F2440"), cMut=cv("--ink-2","#9B9790"), cLine=cv("--line","#E6E3DE");
+  const FONT="-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif";
   const vals=sorted.map(s=>s[1]);
   const labels=sorted.map(([ym])=>{ const[yr,m]=ym.split("-"); return MS[parseInt(m)-1].slice(0,3)+" "+yr.slice(2); });
-  const minV=Math.min(...vals)*0.97,maxV=Math.max(...vals)*1.03;
-  const range=maxV-minV||1;
-  const pad={t:20,b:30,l:10,r:10};
-  const cW=W-pad.l-pad.r,cH=150-pad.t-pad.b;
+  const vMin=Math.min(...vals), vMax=Math.max(...vals);
+  const spanV=(vMax-vMin)||Math.abs(vMax)*0.05||1;
+  const minV=vMin-spanV*0.45, maxV=vMax+spanV*0.25, range=maxV-minV;
+  const pad={t:28,b:26,l:16,r:16};
+  const cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
   const step=cW/(sorted.length-1);
+  const X=i=>pad.l+i*step, Y=v=>pad.t+cH-((v-minV)/range)*cH;
+  /* linha de base */
+  ctx.strokeStyle=cLine; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad.l,pad.t+cH+.5); ctx.lineTo(W-pad.r,pad.t+cH+.5); ctx.stroke();
+  /* área */
   const grad=ctx.createLinearGradient(0,pad.t,0,pad.t+cH);
-  grad.addColorStop(0,"rgba(15,36,64,.25)"); grad.addColorStop(1,"rgba(15,36,64,.02)");
+  grad.addColorStop(0,"rgba(15,36,64,.18)"); grad.addColorStop(1,"rgba(15,36,64,0)");
   ctx.beginPath();
-  sorted.forEach(([,v],i)=>{ const x=pad.l+i*step,y=pad.t+cH-(((v-minV)/range)*cH); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
-  ctx.strokeStyle="#0F2440";ctx.lineWidth=2;ctx.stroke();
-  sorted.forEach(([,v],i)=>{ const x=pad.l+i*step,y=pad.t+cH-(((v-minV)/range)*cH); ctx.lineTo(x,y); });
-  ctx.lineTo(pad.l+(sorted.length-1)*step,pad.t+cH);ctx.lineTo(pad.l,pad.t+cH);ctx.closePath();
-  ctx.fillStyle=grad;ctx.fill();
+  sorted.forEach(([,v],i)=>{ i===0?ctx.moveTo(X(i),Y(v)):ctx.lineTo(X(i),Y(v)); });
+  ctx.lineTo(X(sorted.length-1),pad.t+cH); ctx.lineTo(X(0),pad.t+cH); ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
+  /* linha */
+  ctx.beginPath();
+  sorted.forEach(([,v],i)=>{ i===0?ctx.moveTo(X(i),Y(v)):ctx.lineTo(X(i),Y(v)); });
+  ctx.strokeStyle=cInk; ctx.lineWidth=2; ctx.lineJoin="round"; ctx.stroke();
+  /* rótulos de mês: no máx. ~6 para não sobrepor */
+  const n=sorted.length, every=Math.max(1,Math.ceil(n/6));
+  const alignAt=i=>i===0?"left":(i===n-1?"right":"center");
+  const xAt=i=>i===0?pad.l-4:(i===n-1?W-pad.r+4:X(i));
+  ctx.textBaseline="alphabetic";
   sorted.forEach(([,v],i)=>{
-    const x=pad.l+i*step,y=pad.t+cH-(((v-minV)/range)*cH);
-    ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fillStyle="#0F2440";ctx.fill();
-    ctx.fillStyle="#9B9790";ctx.font="8px system-ui";ctx.textAlign="center";ctx.fillText(labels[i],150-10,x);
-    if(i===sorted.length-1||i===0){ ctx.fillStyle="#0F2440";ctx.font="bold 9px system-ui";ctx.fillText(fmt(v).replace("R$","").trim(),x,y-8); }
+    const x=X(i), y=Y(v), last=i===n-1;
+    ctx.beginPath(); ctx.arc(x,y,last?4:3,0,Math.PI*2);
+    ctx.fillStyle=last?cInk:"#fff"; ctx.fill();
+    ctx.lineWidth=2; ctx.strokeStyle=cInk; ctx.stroke();
+    if(i===0||last||i%every===0){
+      ctx.fillStyle=cMut; ctx.font="11px "+FONT; ctx.textAlign=alignAt(i);
+      ctx.fillText(labels[i],xAt(i),H-6);
+    }
+    if(!VALORES_OCULTOS&&(i===0||last)){
+      ctx.fillStyle=cInk; ctx.font="600 12px "+FONT; ctx.textAlign=alignAt(i);
+      /* rótulo acima ou abaixo do ponto, do lado oposto à linha (não sobrepõe) */
+      const viz=last?vals[n-2]:vals[1];
+      const below=viz>v&&(y+20)<=pad.t+cH-2;
+      ctx.fillText(fmt(v).replace("R$","").trim(),xAt(i),below?y+20:Math.max(14,y-10));
+    }
   });
   // history list
   listEl.innerHTML=[...sorted].reverse().map(([ymKey,val])=>{
@@ -11090,12 +11125,12 @@ function renderAssetsHistory(){
     const prev=sorted.find(([k])=>k<ymKey);
     const diff=prev?val-prev[1]:null;
     const isActive=ymKey===activeYMAst();
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);${isActive?"background:rgba(15,36,64,.06);margin:0 -4px;padding:8px 4px;border-radius:6px":""}">
-      <div>
+    return `<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);${isActive?"background:rgba(15,36,64,.06);margin:0 -4px;padding:8px 4px;border-radius:6px":""}">
+      <div style="display:flex;flex-wrap:wrap;align-items:baseline;column-gap:6px;row-gap:2px;min-width:0">
         <span style="font-size:12px;font-weight:${isActive?"700":"400"};color:var(--body)">${MPT[parseInt(m)-1]} ${yr}</span>
-        ${diff!==null?`<span style="font-size:10px;color:${diff>=0?"var(--green)":"var(--warn)"};margin-left:6px">${SGP(diff>=0?"+":"")}${fmt(diff)}</span>`:""}
+        ${diff!==null?`<span style="font-size:10px;color:${diff>=0?"var(--green)":"var(--warn)"}">${SGP(diff>=0?"+":"")}${fmt(diff)}</span>`:""}
       </div>
-      <div style="display:flex;align-items:center;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
         <span style="font-family:var(--serif);font-style:italic;font-size:15px;color:#0F2440">${fmt(val)}</span>
         <button onclick="deleteAssetSnapshot('${ymKey}')" style="background:none;border:none;color:var(--ink-4);font-size:12px;cursor:pointer;padding:2px 4px">×</button>
       </div>
@@ -12190,7 +12225,7 @@ function renderFinLife(){
 
   el.innerHTML=`
     <!-- Score hero -->
-    <div style="background:linear-gradient(135deg,#1A2E1A 0%,#243524 100%);border-radius:20px;padding:20px;color:#fff;margin-bottom:12px;position:relative;overflow:hidden">
+    <div data-tour="vf-nota" style="background:linear-gradient(135deg,#1A2E1A 0%,#243524 100%);border-radius:20px;padding:20px;color:#fff;margin-bottom:12px;position:relative;overflow:hidden">
       <div style="position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.04)"></div>
       <div style="display:flex;align-items:center;gap:16px;position:relative">
         <div style="width:80px;height:80px;border-radius:50%;border:5px solid ${m.gColor};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
@@ -12212,7 +12247,7 @@ function renderFinLife(){
 
     <!-- Score composition -->
     <!-- Cash flow history button -->
-    <button onclick="openCashFlowHistory()" style="width:100%;display:flex;align-items:center;gap:12px;background:var(--surface);border:none;border-radius:14px;padding:14px 16px;margin-bottom:12px;cursor:pointer;text-align:left">
+    <button data-tour="vf-hist" onclick="openCashFlowHistory()" style="width:100%;display:flex;align-items:center;gap:12px;background:var(--surface);border:none;border-radius:14px;padding:14px 16px;margin-bottom:12px;cursor:pointer;text-align:left">
       <span class="oi oi-round oi-ring oi-projecoes" style="width:40px;height:40px;flex-shrink:0" aria-hidden="true"></span>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600;color:var(--body)">${t("cashflow_title")}</div>
@@ -12222,7 +12257,7 @@ function renderFinLife(){
     </button>
 
     <!-- IRPF report button -->
-    <button onclick="openIRPFReport()" style="width:100%;display:flex;align-items:center;gap:12px;background:var(--surface);border:none;border-radius:14px;padding:14px 16px;margin-bottom:12px;cursor:pointer;text-align:left">
+    <button data-tour="vf-irpf" onclick="openIRPFReport()" style="width:100%;display:flex;align-items:center;gap:12px;background:var(--surface);border:none;border-radius:14px;padding:14px 16px;margin-bottom:12px;cursor:pointer;text-align:left">
       <span class="oi oi-round oi-ring oi-cafe" style="width:40px;height:40px;flex-shrink:0" aria-hidden="true"></span>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px;min-width:0">
@@ -12236,7 +12271,7 @@ function renderFinLife(){
     </button>
 
     <div class="sec-label">${t("score_breakdown")}</div>
-    <div style="background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+    <div data-tour="vf-comp" style="background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:12px">
       ${compBar(t("kpi_savings_rate"),comp.sSave,30)}
       ${compBar(t("kpi_dti"),comp.sDti,25)}
       ${compBar(t("kpi_emergency"),comp.sEmerg,25)}
@@ -12245,7 +12280,7 @@ function renderFinLife(){
 
     <!-- KPIs -->
     <div class="sec-label">${t("kpis_today")}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+    <div data-tour="vf-kpis" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
       ${kpi(t("kpi_savings_rate"),(m.savingsRate>=0?"":"−")+Math.abs(m.savingsRate).toFixed(0)+"%",t("kpi_savings_sub"),cl(20,10,m.savingsRate),m.savingsRate)}
       ${kpi(t("kpi_dti"),m.dti.toFixed(0)+"%",t("kpi_dti_sub"),cl(30,40,m.dti,true),m.dti)}
       ${kpi(t("kpi_emergency"),m.emergencyMonths.toFixed(1)+" "+t("w_months_short"),t("kpi_emergency_sub"),cl(6,3,m.emergencyMonths),m.emergencyMonths/6*100)}
@@ -12254,7 +12289,7 @@ function renderFinLife(){
 
     <!-- Balance composition (income vs expense vs savings) -->
     <div class="sec-label">${t("month_breakdown")}</div>
-    <div style="background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+    <div data-tour="vf-mes" style="background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:12px">
       <div style="display:flex;height:24px;border-radius:8px;overflow:hidden;margin-bottom:10px">
         ${m.totalInc>0?`
         <div style="background:#5A8A4A;width:${m.totalInc>0?Math.max(0,(m.balance/m.totalInc)*100):0}%" title="poupança"></div>
@@ -12269,7 +12304,7 @@ function renderFinLife(){
 
     <!-- BALANÇO PATRIMONIAL -->
     <div class="sec-label">${t("balance_sheet")}</div>
-    <div style="background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+    <div data-tour="vf-balanco" style="background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:12px">
 
       <!-- ATIVO -->
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
@@ -12304,7 +12339,7 @@ function renderFinLife(){
 
     <!-- Projections -->
     <div class="sec-label">${t("projections")}</div>
-    <div style="background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+    <div data-tour="vf-proj" style="background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line)">
         <span style="font-size:12px;color:var(--body)">${t("proj_networth_12")}</span>
         <span style="font-size:14px;font-weight:600;color:${projNetWorth12>=m.netWorth?"#5A8A4A":"#B85A6A"}">${SGP(projNetWorth12<0?"−":"")}${fmt(Math.abs(projNetWorth12))}</span>
@@ -12335,7 +12370,7 @@ function getHealthTip(savingsRate,dti,emergencyMonths,netWorth,monthsToDebtFree)
   else if(netWorth<0) tip=t("tip_networth");
   else if(savingsRate>=20&&emergencyMonths>=6&&dti<=30) tip=t("tip_great");
   if(!tip) return "";
-  return `<div class="dica"><span class="oi oi-dica" aria-hidden="true"></span>
+  return `<div class="dica" data-tour="vf-dica"><span class="oi oi-dica" aria-hidden="true"></span>
     <div style="flex:1;min-width:0">${tip}</div></div>`;
 }
 
@@ -17665,7 +17700,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.22";
+const APP_VERSION="11.24";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -23966,7 +24001,7 @@ function renderCashFlow(){
       <span>Fluxo de caixa</span>
       <div class="pro-scale">${sc("dia","Diário")}${sc("mes","Mensal")}${sc("ano","Anual")}</div>
     </div>
-    <div style="background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+    <div data-tour="vf-dre" style="background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:12px">
 
       <div class="pro-cfh">Entradas</div>
       ${entradas}
@@ -24010,7 +24045,7 @@ function renderCashFlow(){
     </div>
 
     <div class="sec-label">Quanto guardar por mês</div>
-    <div style="background:linear-gradient(135deg,#1A3A5C 0%,#0F2440 100%);border-radius:14px;padding:16px 18px;margin-bottom:12px;color:#fff">
+    <div data-tour="vf-guardar" style="background:linear-gradient(135deg,#1A3A5C 0%,#0F2440 100%);border-radius:14px;padding:16px 18px;margin-bottom:12px;color:#fff">
       <div style="display:flex;justify-content:space-between;align-items:baseline">
         <span style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.55)">Sugestão de poupança</span>
         <span style="font-size:10px;color:rgba(255,255,255,.55)">${String(sg.pct).replace(".",",")}% da renda líquida</span>
@@ -33678,6 +33713,14 @@ button:focus-visible,[role="button"]:focus-visible{ outline:2px solid var(--acce
 #screen-home .home-cards>button [style*="color:#9be8c0"],
 #screen-home .home-cards>button [style*="color:#7FE4A0"]{ color:#2F6B3F !important; font-weight:600 !important; }
 #screen-home .home-cards>button [id$="-x-label"]{ color:var(--ink-3) !important; }
+/* v11.24 — quadro de Vida financeira com a mesma régua dos cartões:
+   mesmo intervalo vertical, mesmo recuo lateral e mesmo raio, para que
+   o anel da nota e os ícones dos módulos fiquem na mesma vertical. */
+#screen-home{ --home-gap:10px; }
+#screen-home .home-health{ margin:0 0 var(--home-gap)!important; border-radius:20px!important; }
+#screen-home .home-cards{ gap:var(--home-gap)!important; }
+#home-health-card>div{ border-radius:20px!important; padding-left:16px!important; padding-right:16px!important; }
+#screen-home #home-content>.ap-hint{ margin-bottom:var(--home-gap)!important; }
 </style>
 
 <script id="ap-guia">
@@ -33691,58 +33734,341 @@ button:focus-visible,[role="button"]:focus-visible{ outline:2px solid var(--acce
 (function(){
 "use strict";
 const L=()=> (typeof LANG!=="undefined"?LANG:"pt");
-const X=(pt,en)=> L()==="pt"?pt:en;
+const X=(pt,en,de)=>{ const l=L(); return l==="pt"?pt:(l==="de"&&de!==undefined?de:en); };
 const KEY="ap_guia_visto_v1";
 let visto={}; try{ visto=JSON.parse(localStorage.getItem(KEY)||"{}"); }catch(e){}
 const marcar=s=>{ visto[s]=1; try{ localStorage.setItem(KEY,JSON.stringify(visto)); }catch(e){} };
 
-const NOMES={home:["Início","Home"],despesas:["Despesas","Expenses"],entradas:["Entradas","Income"],
-  patrimonio:["Patrimônio","Wealth"],dividas:["Dívidas","Debts"],simulacoes:["Simulações","Simulations"],
-  vidafinanceira:["Vida financeira","Financial life"]};
+const NOMES={home:["Início","Home","Start"],despesas:["Despesas","Expenses","Ausgaben"],entradas:["Entradas","Income","Einnahmen"],
+  patrimonio:["Patrimônio","Wealth","Vermögen"],dividas:["Dívidas","Debts","Schulden"],simulacoes:["Simulações","Simulations","Simulationen"],
+  vidafinanceira:["Vida financeira","Financial life","Finanzleben"]};
 
-/* roteiros: sel = elemento real; antes = navegação dentro da seção */
+/* v11.24 — troca de aba pelas funções reais de cada tela */
+const DSP=v=>()=>{ try{ show(v); }catch(e){} };
+const INC=v=>()=>{ try{ showInc(v); }catch(e){} };
+const AST=v=>()=>{ try{ showAst(v); }catch(e){} };
+const DEB=v=>()=>{ try{ showDebt(v); }catch(e){} };
+const SIMA=v=>()=>{ try{ SIM.aba(v); }catch(e){} };
+/* ao terminar, cada tela volta ao seu resumo */
+const FIM={despesas:DSP("dashboard"),entradas:INC("dashboard"),patrimonio:AST("dashboard"),
+  dividas:DEB("dashboard"),simulacoes:SIMA("projetos")};
+const VF=s=>"#vidafin-content [data-tour='"+s+"']";
+
+/* roteiros: sel = elemento real; antes = navegação dentro da seção; up = subir n níveis */
 const ROT={
  home:[
-  {sel:"#home-health-card",t:["Sua saúde financeira","Your financial health"],x:["Uma nota de A a E que junta poupança, comprometimento com dívidas e reserva. Toque para ver como ela é calculada.","A grade from A to E combining savings, debt load and reserve. Tap to see how it is calculated."]},
-  {sel:"#home-month-nav",t:["O mês que você está vendo","The month you are viewing"],x:["Todas as telas seguem este mês. Avance para ver a projeção; volte para ver o histórico.","Every screen follows this month. Go forward for projections, back for history."]},
-  {sel:"#screen-home .home-cards",t:["Uma porta por assunto","One door per topic"],x:["Despesas, Dívidas, Entradas, Patrimônio e Simulações. Cada cartão mostra o total do mês e leva à seção.","Expenses, Debts, Income, Wealth and Simulations. Each card shows the month total and opens the section."]},
-  {sel:"#btn-params",t:["Parâmetros","Parameters"],x:["Selic, IPCA, TR e as regras de imposto. É daqui que sai toda projeção — vale acertar antes de tudo.","Rates and tax rules. Every projection comes from here — set it first."]},
-  {sel:"#btn-adv-home",t:["Análise","Analysis"],x:["Um resumo com pontos de atenção do mês, em linguagem direta.","A summary of this month's points of attention."]},
-  {sel:"#screen-home .btn-manual",t:["Manual passo a passo","Step-by-step manual"],x:["Procedimentos completos, com busca. O botão <b>?</b> de cada tela abre um guia como este.","Full procedures with search. The <b>?</b> button on each screen opens a tour like this one."]}
- ],
- dividas:[
-  {sel:"#debt-hero",antes:()=>showDebt("dashboard"),t:["Quanto você deve","What you owe"],x:["O saldo somado das dívidas e quanto sai do caixa <b>neste mês</b>. Um ✓ aparece quando a parcela do mês já foi registrada.","Total balance and what leaves cash <b>this month</b>. A ✓ appears once the month's instalment is recorded."]},
-  {sel:"#debt-stats",t:["A próxima parcela, aberta","The next instalment, broken down"],x:["Juros + amortização + encargos = parcela. A conta aparece embaixo para você conferir.","Interest + principal + fees = instalment. The sum is shown below so you can check it."]},
-  {sel:"#debt-upcoming",t:["Próximos vencimentos","Upcoming payments"],x:["Ordenados pela data. <b>Toque em um</b> para registrar o pagamento direto daqui.","Sorted by date. <b>Tap one</b> to record the payment right here."]},
-  {sel:"#debt-list",antes:()=>showDebt("list"),t:["Cada dívida","Each debt"],x:["Mostra a próxima parcela e quantas faltam. Registrar um pagamento <b>desconta uma parcela</b> e baixa o saldo pela amortização.","Shows next instalment and how many are left. Recording a payment <b>removes one instalment</b> and lowers the balance by the principal."]},
-  {sel:"#debt-view-schedule",antes:()=>showDebt("schedule"),t:["Cronograma oficial","Official schedule"],x:["Mês a mês até a quitação. Parcelas pagas ficam no topo com ✓; a próxima fica destacada. É a mesma tabela que o simulador e o fluxo de caixa usam.","Month by month to payoff. Paid rows stay on top with ✓; the next one is highlighted. Simulator and cash flow use this same table."]},
-  {sel:"#debt-view-simulator",antes:()=>showDebt("simulator"),t:["E se eu amortizar?","What if I pay extra?"],x:["Digite um valor extra e escolha reduzir o <b>prazo</b> ou a <b>parcela</b>. O app compara com a sua aplicação e diz se vale a pena.","Enter an extra amount and choose to cut the <b>term</b> or the <b>instalment</b>. The app compares it with investing and tells you if it pays off."]},
-  {sel:"#screen-dividas [onclick='openDebt()']",antes:()=>showDebt("dashboard"),t:["Cadastrar ou importar","Add or import"],x:["Informe o saldo de hoje e as <b>parcelas restantes</b> — ou, no topo do formulário, <b>importe a tabela de evolução do banco</b>: saldo, parcelas pagas, taxa, encargos e FGTS saem dela.","Enter today's balance and <b>payments left</b> — or, at the top of the form, <b>import the bank's statement</b>: balance, paid instalments, rate, fees and FGTS come from it."]}
- ],
- despesas:[
-  {sel:"#hero-despesas",t:["Total do mês","Month total"],x:["Quanto você gastou, separado em fixo e variável. Toque para recolher e ganhar espaço.","What you spent, split into fixed and variable. Tap to collapse."]},
-  {sel:"#btn-open-add",t:["Lançar um gasto","Add an expense"],x:["Valor, categoria e se é fixo ou variável. Valor negativo registra estorno.","Amount, category and fixed/variable. A negative amount records a refund."]},
-  {sel:"#btn-open-import",t:["Importar fatura","Import a statement"],x:["CSV, Excel ou a <b>fatura do cartão em PDF</b> — ou cole o texto. O app reconhece data, descrição e valor, sugere a categoria e você revisa o que entra.","CSV, Excel or the <b>credit card bill as PDF</b> — or paste the text. The app reads date, description and amount, suggests a category, and you review what goes in."]},
-  {sel:"#nav-despesas",t:["Visões","Views"],x:["Resumo, lista de gastos, histórico, metas e rateios.","Summary, list, history, goals and splits."]},
-  {sel:"#cat-bars",t:["Por categoria","By category"],x:["Toque numa categoria para filtrar a lista por ela.","Tap a category to filter the list."]}
- ],
- entradas:[
-  {sel:"#income-hero",t:["Entradas do mês","Month income"],x:["Salário, extras e rendimentos, com o líquido depois dos descontos.","Salary, extras and returns, net of deductions."]},
-  {sel:"#screen-entradas [onclick='openIncome()']",t:["Nova entrada","New income"],x:["Informe se é fixa: as fixas se repetem sozinhas nos meses seguintes.","Mark it as fixed and it repeats in the following months."]},
-  {sel:"#nav-entradas",t:["Visões","Views"],x:["Resumo, lançamentos, histórico e impostos.","Summary, entries, history and taxes."]}
- ],
- patrimonio:[
-  {sel:"#assets-hero",t:["Seu patrimônio","Your wealth"],x:["O valor atualizado de cada aplicação pelo índice dela, já com imposto provisionado.","Each holding updated by its index, with tax provisioned."]},
-  {sel:"#screen-patrimonio [onclick='openAsset()']",t:["Registrar uma aplicação","Add a holding"],x:["Escolha o produto (CDB, LCI, Tesouro…) e o app sugere índice e tributação.","Pick the product and the app suggests index and taxation."]},
-  {sel:"#ast-validador",antes:()=>{ try{ showAst("dashboard"); }catch(e){} },t:["Aplicações do mês","This month's investments"],x:["Soma o que foi aplicado no mês e compara com a sobra de caixa. Se uma aplicação veio de um resgate, toque em <b>Dinheiro novo</b> para marcá-la como reaplicação.","Sums what was invested this month against the cash surplus. If one came from a redemption, tap <b>New money</b> to mark it as reinvested."]},
-  {sel:"#nav-patrimonio",t:["Visões","Views"],x:["Resumo, aplicações, histórico, metas e rendimento.","Summary, holdings, history, goals and returns."]}
- ],
- simulacoes:[
-  {sel:"#sim-hero",t:["Projetos de investimento","Investment projects"],x:["Cada projeto é um fluxo de caixa: sai dinheiro agora, entra depois. O app calcula VPL, TIR e payback.","Each project is a cash flow. The app computes NPV, IRR and payback."]},
-  {sel:"#nav-simulacoes",t:["Da premissa ao resultado","From assumptions to result"],x:["Siga as abas em ordem: Projetos, Premissas, Fluxo e Resultado.","Follow the tabs in order: Projects, Assumptions, Flow, Result."]}
+  {sel:"#home-health-card",t:["Sua nota financeira","Your financial grade","Ihre Finanznote"],
+   x:["Nota de <b>A a E</b> (0 a 100) que soma quatro pilares: taxa de poupança, peso das dívidas na renda, reserva de emergência e patrimônio líquido. Toque no quadro para abrir a <b>Vida financeira</b> com o balanço e o fluxo de caixa completos.",
+      "A grade from <b>A to E</b> (0 to 100) built on four pillars: savings rate, debt load on income, emergency fund and net worth. Tap the card to open <b>Financial life</b> with the full balance sheet and cash flow.",
+      "Note von <b>A bis E</b> (0 bis 100) aus vier Säulen: Sparquote, Schuldenlast im Verhältnis zum Einkommen, Notgroschen und Nettovermögen. Tippen Sie auf die Karte, um <b>Finanzleben</b> mit Bilanz und Cashflow zu öffnen."]},
+  {sel:"#home-health-card .hc-kpis",t:["Os três números do mês","The month's three numbers","Die drei Zahlen des Monats"],
+   x:["<b>Patrimônio líquido</b> = aplicações − dívidas. <b>Fluxo de caixa</b> = entradas líquidas − despesas − parcelas. <b>Guardar por mês</b> = quanto separar: primeiro completa a reserva, depois segue a sua meta.",
+      "<b>Net worth</b> = holdings − debts. <b>Cash flow</b> = net income − expenses − instalments. <b>Save per month</b> = what to set aside: the emergency fund first, then your target.",
+      "<b>Nettovermögen</b> = Anlagen − Schulden. <b>Cashflow</b> = Nettoeinkommen − Ausgaben − Raten. <b>Monatlich sparen</b> = was zurückzulegen ist: zuerst der Notgroschen, dann Ihr Ziel."]},
+  {sel:"#home-month-nav",t:["O mês que você está vendo","The month you are viewing","Der angezeigte Monat"],
+   x:["Todas as telas seguem este mês. <b>Para trás</b>: o realizado. <b>Para frente</b>: a projeção, calculada pelos Parâmetros. <b>Hoje</b> volta ao mês corrente.",
+      "Every screen follows this month. <b>Back</b>: what happened. <b>Forward</b>: the projection, built from the Parameters. <b>Today</b> returns to the current month.",
+      "Alle Bildschirme folgen diesem Monat. <b>Zurück</b>: das Erreichte. <b>Vor</b>: die Projektion aus den Parametern. <b>Heute</b> springt zum laufenden Monat."]},
+  {sel:"#btn-params",t:["Parâmetros — a base de tudo","Parameters — the foundation","Parameter — die Grundlage"],
+   x:["Curvas de Selic, CDI, IPCA e TR, percentual a guardar, meses de reserva, investir a sobra e tabelas de imposto. <b>Toda projeção do app sai daqui</b>: vale acertar antes de lançar o resto.",
+      "Selic, CDI, inflation and TR curves, share to save, months of emergency fund, invest the surplus and tax tables. <b>Every projection in the app comes from here</b>: set it before anything else.",
+      "Kurven für Selic, CDI, Inflation und TR, Sparquote, Monate Notgroschen, Überschuss anlegen und Steuertabellen. <b>Jede Projektion der App stammt von hier</b>: zuerst einstellen."]},
+  {sel:"#screen-home .home-cards>button:nth-child(1)",t:["Despesas","Expenses","Ausgaben"],
+   x:["Total gasto no mês e quanto é fixo. Lá dentro: lançar, <b>importar fatura</b>, metas por categoria e rateios com outras pessoas.",
+      "Total spent this month and how much is fixed. Inside: add entries, <b>import a statement</b>, category goals and splits with others.",
+      "Monatsausgaben und Fixanteil. Darin: buchen, <b>Abrechnung importieren</b>, Kategorieziele und Aufteilungen mit anderen."]},
+  {sel:"#screen-home .home-cards>button:nth-child(2)",t:["Dívidas","Debts","Schulden"],
+   x:["Saldo devedor e parcela do mês. Lá dentro: cronograma até a quitação, <b>registrar pagamento</b> e simulador de amortização extra.",
+      "Outstanding balance and this month's instalment. Inside: schedule to payoff, <b>record a payment</b> and an extra-payment simulator.",
+      "Restschuld und Monatsrate. Darin: Tilgungsplan, <b>Zahlung erfassen</b> und Simulator für Sondertilgungen."]},
+  {sel:"#screen-home .home-cards>button:nth-child(3)",t:["Entradas","Income","Einnahmen"],
+   x:["Renda bruta do mês e o <b>líquido</b> depois de INSS e IR. Salário, 13º, aluguéis, PJ e rendimentos.",
+      "Gross income for the month and the <b>net</b> after social security and income tax. Salary, bonuses, rent, freelance and returns.",
+      "Bruttoeinkommen des Monats und das <b>Netto</b> nach Sozialabgaben und Steuer. Gehalt, Boni, Mieten, Freiberuf und Erträge."]},
+  {sel:"#screen-home .home-cards>button:nth-child(4)",t:["Patrimônio","Wealth","Vermögen"],
+   x:["Soma das aplicações e o <b>rendimento do mês</b>. Lá dentro: liquidez, imposto provisionado e a projeção do patrimônio.",
+      "Total holdings and <b>this month's return</b>. Inside: liquidity, provisioned tax and the wealth projection.",
+      "Summe der Anlagen und <b>Monatsertrag</b>. Darin: Liquidität, Steuerrückstellung und Vermögensprojektion."]},
+  {sel:"#screen-home .home-cards>button:nth-child(5)",t:["Simulações","Simulations","Simulationen"],
+   x:["Avalie um projeto antes de investir — imóvel para alugar, negócio, equipamento — com <b>VPL, TIR e payback</b>.",
+      "Assess a project before investing — rental property, business, equipment — with <b>NPV, IRR and payback</b>.",
+      "Bewerten Sie ein Projekt vor der Investition — Mietobjekt, Geschäft, Gerät — mit <b>Kapitalwert, IRR und Amortisation</b>."]},
+  {sel:"#btn-adv-home",t:["Análise do mês","Monthly analysis","Monatsanalyse"],
+   x:["Os pontos de atenção do mês em linguagem direta, com a conta por trás de cada um.",
+      "This month's points of attention in plain words, with the working behind each one.",
+      "Die Auffälligkeiten des Monats in klaren Worten, mit der Rechnung dahinter."]},
+  {sel:"#screen-home [onclick^='toggleValores']",t:["Ocultar valores","Hide amounts","Beträge ausblenden"],
+   x:["Troca todo valor em dinheiro por um traço, em todas as telas. Útil para abrir o app perto de outras pessoas.",
+      "Replaces every money figure with a dash on every screen. Handy when others are around.",
+      "Ersetzt jeden Geldbetrag auf allen Bildschirmen durch einen Strich. Praktisch in Gesellschaft."]},
+  {sel:"#lang-seg",t:["Idioma","Language","Sprache"],
+   x:["Cada toque troca: português → inglês → alemão. Vale para o app inteiro, inclusive manual e este guia.",
+      "Each tap switches: Portuguese → English → German. It applies to the whole app, manual and this tour included.",
+      "Jeder Tipp wechselt: Portugiesisch → Englisch → Deutsch. Gilt für die ganze App, inklusive Handbuch und Rundgang."]},
+  {sel:"#btn-backup",t:["Backup","Backup","Sicherung"],
+   x:["Os dados ficam só neste aparelho. Exporte um backup de tempos em tempos e <b>guarde fora do celular</b>.",
+      "Data lives only on this device. Export a backup now and then and <b>keep it off the phone</b>.",
+      "Die Daten liegen nur auf diesem Gerät. Exportieren Sie regelmäßig eine Sicherung und <b>bewahren Sie sie extern auf</b>."]},
+  {sel:"#screen-home .btn-manual",t:["Manual passo a passo","Step-by-step manual","Schritt-für-Schritt-Handbuch"],
+   x:["Procedimentos completos com busca. Em cada tela, o botão <b>?</b> abre um guia como este.",
+      "Full procedures with search. On every screen, the <b>?</b> button opens a tour like this one.",
+      "Vollständige Abläufe mit Suche. Auf jedem Bildschirm öffnet <b>?</b> einen Rundgang wie diesen."]}
  ],
  vidafinanceira:[
-  {sel:"#vidafin-content",t:["Vida financeira","Financial life"],x:["A nota da tela inicial aberta: cada indicador, quanto pontua e o que falta para subir.","The home grade in detail: each indicator, its score and what's missing."]}
+  {sel:VF("vf-nota"),t:["Sua nota, aberta","Your grade, opened up","Ihre Note im Detail"],
+   x:["A mesma nota da tela inicial, com <b>patrimônio líquido</b> e <b>fluxo de caixa</b> do mês escolhido. Passado é realizado; futuro é projetado pelos Parâmetros.",
+      "The same grade as the home screen, with <b>net worth</b> and <b>cash flow</b> for the chosen month. Past is actual; future is projected from the Parameters.",
+      "Dieselbe Note wie auf dem Start, mit <b>Nettovermögen</b> und <b>Cashflow</b> des gewählten Monats. Vergangenheit ist Ist, Zukunft ist aus den Parametern projiziert."]},
+  {sel:VF("vf-hist"),t:["Histórico do fluxo de caixa","Cash-flow history","Cashflow-Verlauf"],
+   x:["Entradas contra saídas, <b>mês a mês ou dia a dia</b>. Mostra em que época do ano o caixa aperta.",
+      "Inflows against outflows, <b>month by month or day by day</b>. Shows when in the year cash gets tight.",
+      "Zuflüsse gegen Abflüsse, <b>monatlich oder täglich</b>. Zeigt, wann im Jahr es knapp wird."]},
+  {sel:VF("vf-irpf"),t:["Informe para o IRPF","Tax-return report","Bericht zur Steuererklärung"],
+   x:["Rendimentos, bens e dívidas organizados para a declaração anual. Em construção.",
+      "Income, assets and debts organised for the annual tax return. Under construction.",
+      "Einkünfte, Vermögen und Schulden für die Jahreserklärung aufbereitet. In Arbeit."]},
+  {sel:VF("vf-comp"),t:["De onde vêm os pontos","Where the points come from","Woher die Punkte kommen"],
+   x:["<b>Poupança</b> até 30 (cheio com 20% da renda guardada) · <b>Comprometimento</b> até 25 (zera com 40% da renda em parcelas) · <b>Reserva</b> até 25 (cheio com 6 meses de saídas) · <b>Patrimônio líquido</b> até 20. Ataque a barra mais curta.",
+      "<b>Savings</b> up to 30 (full at 20% of income saved) · <b>Debt load</b> up to 25 (zero at 40% of income in instalments) · <b>Reserve</b> up to 25 (full at 6 months of outflows) · <b>Net worth</b> up to 20. Work on the shortest bar.",
+      "<b>Sparquote</b> bis 30 (voll bei 20 % gespart) · <b>Schuldenlast</b> bis 25 (null bei 40 % des Einkommens in Raten) · <b>Reserve</b> bis 25 (voll bei 6 Monaten Ausgaben) · <b>Nettovermögen</b> bis 20. Am kürzesten Balken ansetzen."]},
+  {sel:VF("vf-kpis"),t:["Indicadores de hoje","Today's indicators","Heutige Kennzahlen"],
+   x:["A cor diz a situação: <b>verde</b> saudável, <b>âmbar</b> atenção, <b>vermelho</b> agir. Juros das dívidas é o custo puro do mês — dinheiro que não reduz nenhum saldo.",
+      "The colour tells the story: <b>green</b> healthy, <b>amber</b> watch, <b>red</b> act. Debt interest is the month's pure cost — money that reduces no balance.",
+      "Die Farbe zeigt die Lage: <b>grün</b> gesund, <b>gelb</b> beobachten, <b>rot</b> handeln. Schuldzinsen sind reine Monatskosten — Geld, das keinen Saldo senkt."]},
+  {sel:VF("vf-mes"),t:["Composição do mês","The month at a glance","Monat im Überblick"],
+   x:["A barra parte das entradas líquidas: <b>verde</b> é o que sobra, <b>terracota</b> é o que sai em despesas e parcelas.",
+      "The bar starts from net income: <b>green</b> is what is left, <b>terracotta</b> is what goes to expenses and instalments.",
+      "Der Balken geht vom Nettoeinkommen aus: <b>grün</b> bleibt übrig, <b>terrakotta</b> fließt in Ausgaben und Raten."]},
+  {sel:VF("vf-balanco"),t:["Balanço patrimonial","Balance sheet","Vermögensbilanz"],
+   x:["<b>Ativo</b> (aplicações por classe) − <b>Passivo</b> (saldo devedor por tipo) = <b>Patrimônio líquido</b>. É o fechamento do mês navegado; avance o mês para ver o balanço projetado.",
+      "<b>Assets</b> (holdings by class) − <b>Liabilities</b> (balances by debt type) = <b>Net worth</b>. It is the close of the month in view; move forward to see the projected balance sheet.",
+      "<b>Aktiva</b> (Anlagen nach Klasse) − <b>Passiva</b> (Restschuld nach Art) = <b>Nettovermögen</b>. Abschluss des gewählten Monats; blättern Sie vor für die projizierte Bilanz."]},
+  {sel:VF("vf-dre"),t:["Demonstrativo do fluxo de caixa","Cash-flow statement","Cashflow-Rechnung"],
+   x:["Bruto → impostos → <b>entradas líquidas</b>; menos despesas, juros, amortização e encargos; mais o rendimento líquido das aplicações = <b>caixa operacional</b>. Troque a escala em <b>Diário · Mensal · Anual</b> e toque em <b>ver detalhe</b> para abrir INSS e IR por fonte.",
+      "Gross → taxes → <b>net income</b>; less expenses, interest, principal and fees; plus net investment return = <b>operating cash</b>. Switch the scale with <b>Daily · Monthly · Annual</b> and tap <b>see detail</b> for tax by source.",
+      "Brutto → Steuern → <b>Nettoeinnahmen</b>; minus Ausgaben, Zinsen, Tilgung und Gebühren; plus Nettoertrag der Anlagen = <b>operativer Cashflow</b>. Skala über <b>Täglich · Monatlich · Jährlich</b>; <b>Detail</b> zeigt Abgaben je Quelle."]},
+  {sel:VF("vf-guardar"),t:["Quanto guardar por mês","How much to save","Wie viel sparen"],
+   x:["Enquanto a reserva não fecha, a sugestão é guardar <b>toda a sobra</b>. Com a reserva completa, vale a <b>meta %</b> dos Parâmetros. Mês negativo: o app diz que não há o que guardar.",
+      "Until the emergency fund is full, the suggestion is to save <b>all the surplus</b>. Once full, your <b>target %</b> from Parameters applies. Negative month: the app says there is nothing to save.",
+      "Solange der Notgroschen nicht voll ist, lautet der Vorschlag: <b>den ganzen Überschuss</b> sparen. Danach gilt Ihr <b>Ziel in %</b> aus den Parametern. Negativer Monat: nichts zu sparen."]},
+  {sel:VF("vf-proj"),t:["Projeções","Projections","Projektionen"],
+   x:["Patrimônio em 12 meses, poupança do ano e, se houver dívida, a <b>data de quitação</b> e os juros que ainda faltam pagar — tudo pelo mesmo motor e Parâmetros do resto do app.",
+      "Net worth in 12 months, the year's savings and, with debt, the <b>payoff date</b> and interest still to pay — all from the same engine and Parameters as the rest of the app.",
+      "Vermögen in 12 Monaten, Jahresersparnis und bei Schulden das <b>Tilgungsdatum</b> und die noch offenen Zinsen — alles mit demselben Modell und denselben Parametern."]},
+  {sel:VF("vf-dica"),t:["Próximo passo","Next step","Nächster Schritt"],
+   x:["A prioridade número um, escolhida pelo pilar que mais pesa contra a sua nota.",
+      "The number-one priority, chosen by the pillar that weighs most against your grade.",
+      "Die wichtigste Priorität, gewählt nach der Säule, die Ihre Note am stärksten drückt."]}
+ ],
+ despesas:[
+  {sel:"#hero-despesas",antes:DSP("dashboard"),t:["Total do mês","Month total","Monatssumme"],
+   x:["Quanto você gastou — <b>só a sua parte</b> quando há rateio — separado em fixo e variável. As pílulas por categoria levam à lista já filtrada.",
+      "What you spent — <b>only your share</b> when split — broken into fixed and variable. Category pills open the list already filtered.",
+      "Ihre Ausgaben — bei Aufteilung <b>nur Ihr Anteil</b> — getrennt in fix und variabel. Die Kategorie-Pillen öffnen die gefilterte Liste."]},
+  {sel:"#month-nav-despesas",t:["Mês","Month","Monat"],
+   x:["Navegue entre meses. Meses futuros já trazem as despesas recorrentes e a estimativa das variáveis.",
+      "Move between months. Future months already include recurring expenses and the variable estimate.",
+      "Zwischen Monaten wechseln. Künftige Monate enthalten schon wiederkehrende Ausgaben und die Schätzung der variablen."]},
+  {sel:"#btn-open-add",t:["Lançar um gasto","Add an expense","Ausgabe buchen"],
+   x:["Valor, categoria e <b>fixo ou variável</b>. Ligue a recorrência para contas mensais e use o rateio quando dividir com alguém. Valor negativo registra estorno.",
+      "Amount, category and <b>fixed or variable</b>. Turn on recurrence for monthly bills and use split when sharing. A negative amount records a refund.",
+      "Betrag, Kategorie und <b>fix oder variabel</b>. Wiederholung für Monatsrechnungen, Aufteilung beim Teilen. Negativer Betrag = Erstattung."]},
+  {sel:"#btn-open-import",t:["Importar fatura","Import a statement","Abrechnung importieren"],
+   x:["CSV, Excel, <b>PDF da fatura</b> ou texto colado. Você revisa antes de confirmar; cada categoria corrigida vira regra para a próxima importação.",
+      "CSV, Excel, the <b>card bill PDF</b> or pasted text. You review before confirming; each corrected category becomes a rule for next time.",
+      "CSV, Excel, <b>Kartenabrechnung als PDF</b> oder eingefügter Text. Vor dem Bestätigen prüfen; jede korrigierte Kategorie wird zur Regel."]},
+  {sel:"#desp-header-actions [onclick^='openRulesModal']",t:["Regras de classificação","Classification rules","Zuordnungsregeln"],
+   x:["“Descrição contém X → categoria Y.” As regras classificam sozinhas tudo o que entra por importação.",
+      "“Description contains X → category Y.” Rules classify everything that comes in by import automatically.",
+      "„Beschreibung enthält X → Kategorie Y.“ Regeln ordnen alles Importierte automatisch zu."]},
+  {sel:"#desp-header-actions [onclick^='openCatsModal']",t:["Categorias","Categories","Kategorien"],
+   x:["Crie, renomeie e escolha ícone e cor das categorias.",
+      "Create and rename categories and pick their icon and colour.",
+      "Kategorien anlegen, umbenennen, Symbol und Farbe wählen."]},
+  {sel:"#btn-open-export",t:["Exportar","Export","Exportieren"],
+   x:["Gera planilha com os lançamentos do período escolhido.",
+      "Creates a spreadsheet with the entries for the chosen period.",
+      "Erstellt eine Tabelle mit den Buchungen des gewählten Zeitraums."]},
+  {sel:"#stats-grid",antes:DSP("dashboard"),t:["Resumo do mês","Month summary","Monatsübersicht"],
+   x:["Total, <b>a receber</b> de rateios em aberto, fixos e variáveis. Fixos se repetem; variáveis alimentam a média que projeta os próximos meses.",
+      "Total, <b>receivable</b> from open splits, fixed and variable. Fixed repeat; variable feed the average that projects the months ahead.",
+      "Summe, <b>offene Forderungen</b> aus Aufteilungen, fix und variabel. Fixe wiederholen sich; variable speisen den Schnitt für die Folgemonate."]},
+  {sel:"#cat-bars",t:["Por categoria","By category","Nach Kategorie"],
+   x:["O peso de cada categoria no mês. <b>Toque numa barra</b> para ver só os gastos dela.",
+      "Each category's share of the month. <b>Tap a bar</b> to see only its expenses.",
+      "Anteil jeder Kategorie am Monat. <b>Balken antippen</b> zeigt nur deren Ausgaben."]},
+  {sel:"#view-list",antes:DSP("list"),t:["Gastos — lista completa","Expenses — full list","Ausgaben — vollständige Liste"],
+   x:["Busque, filtre por categoria e tipo e ordene. Marque as caixas para <b>alterar vários de uma vez</b>. O × limpa os filtros.",
+      "Search, filter by category and type, and sort. Tick the boxes to <b>change several at once</b>. The × clears filters.",
+      "Suchen, nach Kategorie und Art filtern, sortieren. Kästchen markieren, um <b>mehrere gleichzeitig</b> zu ändern. × löscht Filter."]},
+  {sel:"#view-chart",antes:DSP("chart"),t:["Histórico","History","Verlauf"],
+   x:["Compare meses: janela de 3 a 24 meses, filtro fixo/variável e categoria, com a média. A rosca agrupa por categoria, tipo, recorrência, pessoa, mês ou item.",
+      "Compare months: a 3–24 month window, fixed/variable and category filters, with the average. The donut groups by category, type, recurrence, person, month or item.",
+      "Monate vergleichen: Fenster von 3 bis 24 Monaten, Filter fix/variabel und Kategorie, mit Durchschnitt. Der Ring gruppiert nach Kategorie, Art, Wiederholung, Person, Monat oder Posten."]},
+  {sel:"#view-goals",antes:DSP("goals"),t:["Metas","Goals","Ziele"],
+   x:["Um teto mensal por categoria. A barra avisa quando o mês passa do limite.",
+      "A monthly ceiling per category. The bar warns when the month goes over.",
+      "Monatliche Obergrenze je Kategorie. Der Balken warnt bei Überschreitung."]},
+  {sel:"#view-splits",antes:DSP("splits"),t:["Rateios","Splits","Aufteilungen"],
+   x:["Quem deve quanto: valores <b>em aberto</b>, futuros e já recebidos, por pessoa. Marque como recebido quando acertarem.",
+      "Who owes what: <b>open</b>, upcoming and received amounts, by person. Mark as received when settled.",
+      "Wer schuldet was: <b>offene</b>, künftige und erhaltene Beträge je Person. Als erhalten markieren, wenn beglichen."]}
+ ],
+ entradas:[
+  {sel:"#income-hero",antes:INC("dashboard"),t:["Entradas do mês","Month income","Monatseinnahmen"],
+   x:["Bruto do mês, separado em fixas e variáveis, e o <b>líquido após impostos</b> — o que de fato chega à conta.",
+      "Gross for the month, split into fixed and variable, and the <b>net after tax</b> — what actually reaches your account.",
+      "Brutto des Monats, getrennt in fix und variabel, und das <b>Netto nach Steuern</b> — was wirklich ankommt."]},
+  {sel:"#month-nav-inc",t:["Mês","Month","Monat"],
+   x:["Meses futuros já mostram as entradas fixas e os reajustes declarados.",
+      "Future months already show fixed income and declared raises.",
+      "Künftige Monate zeigen bereits feste Einnahmen und erklärte Erhöhungen."]},
+  {sel:"#screen-entradas [onclick^='openIncome']",t:["Nova entrada","New income","Neue Einnahme"],
+   x:["Escolha o tipo (salário, 13º, aluguel, PJ, dividendos…), informe o <b>valor bruto</b>, a data e se é fixa. Fixas se repetem sozinhas; o imposto é calculado pelo regime e pelas faixas dos Parâmetros.",
+      "Pick the type (salary, bonus, rent, freelance, dividends…), enter the <b>gross amount</b>, date and whether it is fixed. Fixed income repeats; tax follows the regime and the Parameter bands.",
+      "Art wählen (Gehalt, Bonus, Miete, Freiberuf, Dividenden…), <b>Bruttobetrag</b>, Datum und ob fest. Feste wiederholen sich; Steuern folgen Regime und Stufen der Parameter."]},
+  {sel:"#inc-stats",antes:INC("dashboard"),t:["Resumo","Summary","Übersicht"],
+   x:["Total, meta, fixas e variáveis do mês. As fixas são a base mais segura para o seu orçamento.",
+      "Total, target, fixed and variable for the month. Fixed income is the safest base for your budget.",
+      "Summe, Ziel, fest und variabel im Monat. Feste Einnahmen sind die sicherste Budgetbasis."]},
+  {sel:"#income-by-type",t:["Por tipo de receita","By income type","Nach Einnahmeart"],
+   x:["Quanto cada fonte pesa. Depender de uma só fonte aumenta o risco — diversificar renda também é construir patrimônio.",
+      "How much each source weighs. Relying on a single source raises risk — diversifying income is also wealth building.",
+      "Gewicht jeder Quelle. Eine einzige Quelle erhöht das Risiko — Einkommen streuen baut ebenfalls Vermögen auf."]},
+  {sel:"#inc-view-list",antes:INC("list"),t:["Lançamentos","Entries","Buchungen"],
+   x:["Busca, filtro por tipo e fixa/variável e ordenação. Toque numa entrada para editar ou excluir.",
+      "Search, filter by type and fixed/variable, and sort. Tap an entry to edit or delete it.",
+      "Suche, Filter nach Art und fest/variabel, Sortierung. Eintrag antippen zum Bearbeiten oder Löschen."]},
+  {sel:"#inc-view-chart",antes:INC("chart"),t:["Histórico","History","Verlauf"],
+   x:["Evolução <b>bruto × líquido</b> e de cada tipo ao longo do tempo. A distância entre as linhas é o imposto.",
+      "<b>Gross × net</b> over time, and each type. The gap between the lines is tax.",
+      "<b>Brutto × Netto</b> im Zeitverlauf und je Art. Der Abstand der Linien ist die Steuer."]},
+  {sel:"#inc-view-tax",antes:INC("tax"),t:["Impostos","Taxes","Steuern"],
+   x:["INSS e IR por fonte e a <b>alíquota efetiva</b>. As faixas vêm dos Parâmetros — ajuste lá se a lei mudar.",
+      "Social security and income tax by source, and the <b>effective rate</b>. Bands come from Parameters — change them there if the law changes.",
+      "Sozialabgaben und Steuer je Quelle sowie der <b>effektive Satz</b>. Die Stufen stammen aus den Parametern."]},
+  {sel:"#btn-open-export-inc",t:["Exportar","Export","Exportieren"],
+   x:["Planilha com as entradas do período.","A spreadsheet with the period's income.","Tabelle mit den Einnahmen des Zeitraums."]}
+ ],
+ patrimonio:[
+  {sel:"#assets-hero",antes:AST("dashboard"),t:["Seu patrimônio","Your wealth","Ihr Vermögen"],
+   x:["Valor de cada aplicação atualizado pelo seu índice, o <b>rendimento do mês</b> e quantas aplicações você tem.",
+      "Each holding updated by its own index, <b>this month's return</b> and how many holdings you have.",
+      "Jede Anlage mit ihrem Index fortgeschrieben, <b>Monatsertrag</b> und Anzahl der Anlagen."]},
+  {sel:"#month-nav-ast",t:["Mês","Month","Monat"],
+   x:["Avance para ver quanto cada aplicação valerá, rendendo pela curva dos Parâmetros.",
+      "Move forward to see what each holding will be worth, growing along the Parameter curves.",
+      "Vorblättern zeigt den künftigen Wert jeder Anlage entlang der Parameterkurven."]},
+  {sel:"#screen-patrimonio [onclick^='openAsset']",t:["Registrar uma aplicação","Add a holding","Anlage erfassen"],
+   x:["Informe o <b>saldo de hoje</b> do extrato, a data da aplicação e o indexador (% do CDI, IPCA+, prefixado…). O app deduz quanto foi aplicado e provisiona o IR.",
+      "Enter <b>today's balance</b> from the statement, the investment date and the benchmark (% of CDI, inflation+, fixed…). The app derives the amount invested and provisions tax.",
+      "<b>Heutigen Saldo</b> laut Auszug, Anlagedatum und Index (% CDI, Inflation+, fest…) angeben. Die App leitet den Anlagebetrag ab und bildet die Steuerrückstellung."]},
+  {sel:"#ast-stats",antes:AST("dashboard"),t:["Resumo","Summary","Übersicht"],
+   x:["Total, meta, rendimento do mês e rendimento médio da carteira.",
+      "Total, target, monthly return and the portfolio's average yield.",
+      "Summe, Ziel, Monatsertrag und Durchschnittsrendite des Portfolios."]},
+  {sel:"#ast-validador",t:["Aplicações do mês","This month's investments","Anlagen des Monats"],
+   x:["Compara o que foi aplicado com a <b>sobra de caixa</b> do mês. Se veio de um resgate, toque em <b>Dinheiro novo</b> para marcar como reaplicação.",
+      "Compares what was invested with the month's <b>cash surplus</b>. If it came from a redemption, tap <b>New money</b> to mark it as reinvested.",
+      "Vergleicht Angelegtes mit dem <b>Überschuss</b> des Monats. Kam es aus einer Rücknahme, <b>Neues Geld</b> antippen und als Wiederanlage markieren."]},
+  {sel:"#ast-view-dashboard [onclick^='saveAssetSnapshot']",up:1,t:["Fotografar o mês","Snapshot the month","Monat festhalten"],
+   x:["Salva o total atual como posição do mês. Cada foto vira um ponto no <b>Histórico</b> — é assim que você acompanha a evolução real.",
+      "Saves the current total as the month's position. Each snapshot becomes a point in <b>History</b> — that is how you track real progress.",
+      "Speichert die aktuelle Summe als Monatsposition. Jede Aufnahme wird ein Punkt im <b>Verlauf</b>."]},
+  {sel:"#assets-by-class",t:["Alocação por classe","Allocation by class","Aufteilung nach Klasse"],
+   x:["Quanto está em renda fixa, tesouro, fundos, ações… Concentração alta é risco alto.",
+      "How much sits in fixed income, treasury, funds, equities… High concentration means high risk.",
+      "Wie viel in Festverzinslichem, Staatsanleihen, Fonds, Aktien… Hohe Konzentration ist hohes Risiko."]},
+  {sel:"#ast-view-list",antes:AST("list"),t:["Aplicações","Holdings","Anlagen"],
+   x:["Busca, filtro por instituição e classe e ordenação. Toque numa aplicação para abrir a ficha com a evolução mês a mês.",
+      "Search, filter by institution and class, and sort. Tap a holding to open its month-by-month record.",
+      "Suche, Filter nach Institut und Klasse, Sortierung. Anlage antippen öffnet den Monatsverlauf."]},
+  {sel:"#ast-view-history",antes:AST("history"),t:["Histórico","History","Verlauf"],
+   x:["As fotos mensais salvas, com a variação de um mês para o outro.",
+      "Saved monthly snapshots, with the change from one month to the next.",
+      "Gespeicherte Monatsaufnahmen mit der Veränderung zum Vormonat."]},
+  {sel:"#ast-view-goals",antes:AST("goals"),t:["Metas por classe","Goals by class","Ziele je Klasse"],
+   x:["Defina quanto quer ter em cada classe e acompanhe a distância até a alocação ideal.",
+      "Set how much you want in each class and track the gap to your ideal allocation.",
+      "Legen Sie den Zielbetrag je Klasse fest und verfolgen Sie den Abstand zur Wunschaufteilung."]},
+  {sel:"#ast-view-rend",antes:AST("rend"),t:["Rendimento","Returns","Erträge"],
+   x:["Rendimento acumulado, IR e IOF provisionados e o <b>ganho líquido se resgatasse hoje</b>, por aplicação.",
+      "Accumulated return, provisioned tax and the <b>net gain if redeemed today</b>, per holding.",
+      "Kumulierter Ertrag, Steuerrückstellung und <b>Nettogewinn bei heutiger Rücknahme</b>, je Anlage."]},
+  {sel:"#ast-view-liq",antes:AST("liq"),t:["Liquidez","Liquidity","Liquidität"],
+   x:["O que está <b>disponível hoje</b> e a escada de quando o resto libera. A reserva de emergência deve estar nos primeiros degraus.",
+      "What is <b>available today</b> and the ladder of when the rest unlocks. The emergency fund belongs on the first steps.",
+      "Was <b>heute verfügbar</b> ist und die Leiter, wann der Rest frei wird. Der Notgroschen gehört auf die ersten Stufen."]},
+  {sel:"#ast-view-proj",antes:AST("proj"),t:["Projeção do patrimônio","Wealth projection","Vermögensprojektion"],
+   x:["Escolha o horizonte e veja o patrimônio líquido ao final. As premissas — investir a sobra, destino da sobra, correção pela inflação — vêm dos <b>Parâmetros</b>.",
+      "Choose the horizon and see net worth at the end. Assumptions — invest the surplus, where it goes, inflation adjustment — come from <b>Parameters</b>.",
+      "Horizont wählen und Nettovermögen am Ende sehen. Annahmen — Überschuss anlegen, Ziel des Überschusses, Inflationsanpassung — stammen aus den <b>Parametern</b>."]}
+ ],
+ dividas:[
+  {sel:"#debt-hero",antes:DEB("dashboard"),t:["Quanto você deve","What you owe","Was Sie schulden"],
+   x:["Saldo somado das dívidas e quanto sai do caixa <b>neste mês</b>. Um ✓ aparece quando a parcela do mês já foi registrada.",
+      "Total balance and what leaves cash <b>this month</b>. A ✓ appears once the month's instalment is recorded.",
+      "Gesamtschuld und was <b>diesen Monat</b> abfließt. Ein ✓ erscheint, sobald die Monatsrate erfasst ist."]},
+  {sel:"#debt-stats",t:["A próxima parcela, aberta","The next instalment, broken down","Die nächste Rate im Detail"],
+   x:["Juros + amortização + encargos = parcela. Só a <b>amortização</b> reduz a dívida; juros e encargos são custo.",
+      "Interest + principal + fees = instalment. Only the <b>principal</b> reduces the debt; interest and fees are cost.",
+      "Zinsen + Tilgung + Gebühren = Rate. Nur die <b>Tilgung</b> senkt die Schuld; Zinsen und Gebühren sind Kosten."]},
+  {sel:"#debt-progress-pct",up:2,t:["Progresso de quitação","Payoff progress","Tilgungsfortschritt"],
+   x:["Quanto do valor original já foi quitado e quanto resta.",
+      "How much of the original amount is paid off and how much remains.",
+      "Wie viel der ursprünglichen Summe getilgt ist und wie viel bleibt."]},
+  {sel:"#debt-upcoming",t:["Próximos vencimentos","Upcoming payments","Nächste Fälligkeiten"],
+   x:["Ordenados pela data. <b>Toque em um</b> para registrar o pagamento direto daqui.",
+      "Sorted by date. <b>Tap one</b> to record the payment right here.",
+      "Nach Datum sortiert. <b>Antippen</b>, um die Zahlung direkt zu erfassen."]},
+  {sel:"#debt-list",antes:DEB("list"),t:["Cada dívida","Each debt","Jede Schuld"],
+   x:["Próxima parcela e quantas faltam. Registrar um pagamento <b>desconta uma parcela</b> e baixa o saldo pela amortização. Toque para abrir a ficha com a conferência.",
+      "Next instalment and how many are left. Recording a payment <b>removes one instalment</b> and lowers the balance by the principal. Tap to open the record and its reconciliation.",
+      "Nächste Rate und Restanzahl. Eine erfasste Zahlung <b>zieht eine Rate ab</b> und senkt den Saldo um die Tilgung. Antippen öffnet die Akte mit Abgleich."]},
+  {sel:"#debt-view-schedule",antes:DEB("schedule"),t:["Cronograma oficial","Official schedule","Offizieller Tilgungsplan"],
+   x:["Mês a mês até a quitação. Pagas ficam no topo com ✓; a próxima fica destacada. Simulador e fluxo de caixa usam esta mesma tabela.",
+      "Month by month to payoff. Paid rows on top with ✓; the next one highlighted. Simulator and cash flow use this same table.",
+      "Monat für Monat bis zur Tilgung. Bezahlte oben mit ✓, die nächste hervorgehoben. Simulator und Cashflow nutzen dieselbe Tabelle."]},
+  {sel:"#debt-view-simulator",antes:DEB("simulator"),t:["E se eu amortizar?","What if I pay extra?","Was, wenn ich sondertilge?"],
+   x:["Digite um valor extra e escolha reduzir o <b>prazo</b> ou a <b>parcela</b>. O app compara com deixar o dinheiro aplicado e diz se compensa.",
+      "Enter an extra amount and choose to cut the <b>term</b> or the <b>instalment</b>. The app compares it with keeping the money invested.",
+      "Sonderbetrag eingeben und <b>Laufzeit</b> oder <b>Rate</b> verkürzen. Die App vergleicht mit dem Anlegen des Geldes."]},
+  {sel:"#screen-dividas [onclick^='openDebt(']",antes:DEB("dashboard"),t:["Cadastrar ou importar","Add or import","Erfassen oder importieren"],
+   x:["Informe o saldo de hoje e as <b>parcelas restantes</b> — ou, no topo do formulário, <b>importe a tabela de evolução do banco</b>: saldo, parcelas pagas, taxa, encargos e FGTS saem dela.",
+      "Enter today's balance and <b>payments left</b> — or, at the top of the form, <b>import the bank's schedule</b>: balance, paid instalments, rate, fees and FGTS come from it.",
+      "Heutige Restschuld und <b>Restraten</b> eingeben — oder oben im Formular <b>den Tilgungsverlauf der Bank importieren</b>: Saldo, bezahlte Raten, Zins, Gebühren und FGTS kommen daraus."]},
+  {sel:"#btn-debt-archive",t:["Arquivo","Archive","Archiv"],
+   x:["Dívidas quitadas saem da lista e ficam guardadas aqui, com todo o histórico.",
+      "Paid-off debts leave the list and are kept here with their full history.",
+      "Getilgte Schulden verlassen die Liste und bleiben hier mit ihrem Verlauf erhalten."]}
+ ],
+ simulacoes:[
+  {sel:"#sim-hero",antes:SIMA("projetos"),t:["Projetos de investimento","Investment projects","Investitionsprojekte"],
+   x:["Cada projeto é um fluxo de caixa: sai dinheiro agora, entra depois. O app calcula <b>VPL, TIR, payback</b> e ponto de equilíbrio.",
+      "Each project is a cash flow: money out now, money in later. The app computes <b>NPV, IRR, payback</b> and break-even.",
+      "Jedes Projekt ist ein Cashflow: jetzt Geld hinaus, später hinein. Die App berechnet <b>Kapitalwert, IRR, Amortisation</b> und Break-even."]},
+  {sel:"#screen-simulacoes [onclick^='SIM.criar']",t:["Novo projeto","New project","Neues Projekt"],
+   x:["Comece pelo que quer avaliar: um imóvel para alugar, uma loja, um equipamento, uma sociedade.",
+      "Start with what you want to assess: a rental property, a shop, equipment, a partnership.",
+      "Beginnen Sie mit dem Vorhaben: Mietobjekt, Laden, Gerät, Beteiligung."]},
+  {sel:"#nav-simulacoes",t:["Siga as abas em ordem","Follow the tabs in order","Reiter der Reihe nach"],
+   x:["<b>Projetos → Premissas → Fluxo → Resultado.</b> Um projeto por vez; duplique para comparar cenários.",
+      "<b>Projects → Assumptions → Flow → Result.</b> One project at a time; duplicate it to compare scenarios.",
+      "<b>Projekte → Annahmen → Fluss → Ergebnis.</b> Ein Projekt zur Zeit; duplizieren, um Szenarien zu vergleichen."]},
+  {sel:"#sim-view-premissas",antes:SIMA("premissas"),t:["Premissas","Assumptions","Annahmen"],
+   x:["Nome, início e horizonte, periodicidade, fluxo nominal ou real e a <b>taxa de desconto</b> — que pode seguir o CDI dos Parâmetros.",
+      "Name, start and horizon, periodicity, nominal or real flow and the <b>discount rate</b> — which can follow the CDI from Parameters.",
+      "Name, Start und Horizont, Periodizität, nominaler oder realer Fluss und der <b>Diskontsatz</b> — optional CDI aus den Parametern."]},
+  {sel:"#sim-view-fluxo",antes:SIMA("fluxo"),t:["Fluxo, linha a linha","Flow, line by line","Fluss, Zeile für Zeile"],
+   x:["Receitas, deduções, custos, despesas, capex e outras saídas. Digite só o valor: <b>o sinal vem da natureza da linha</b>.",
+      "Revenue, deductions, costs, expenses, capex and other outflows. Type only the amount: <b>the sign comes from the line's nature</b>.",
+      "Erlöse, Abzüge, Kosten, Aufwände, Capex und sonstige Abflüsse. Nur den Betrag eingeben: <b>das Vorzeichen ergibt sich aus der Zeilenart</b>."]},
+  {sel:"#sim-view-result",antes:SIMA("result"),t:["Resultado","Result","Ergebnis"],
+   x:["<b>VPL &gt; 0</b>: o projeto rende mais que a taxa. <b>TIR</b> compara direto com a taxa. <b>Payback descontado</b>: quando o dinheiro volta, já corrigido. Abaixo, a DRE do projeto até o fluxo de caixa livre.",
+      "<b>NPV &gt; 0</b>: the project beats the rate. <b>IRR</b> compares directly with the rate. <b>Discounted payback</b>: when the money comes back, adjusted. Below, the project's P&amp;L down to free cash flow.",
+      "<b>Kapitalwert &gt; 0</b>: das Projekt schlägt den Satz. <b>IRR</b> direkt mit dem Satz vergleichen. <b>Diskontierte Amortisation</b>: wann das Geld zurück ist. Darunter die Erfolgsrechnung bis zum freien Cashflow."]},
+  {sel:"#btn-sim-csv",t:["Exportar","Export","Exportieren"],
+   x:["Leve o fluxo para uma planilha em CSV.","Take the flow to a spreadsheet as CSV.","Den Fluss als CSV in eine Tabelle übernehmen."]}
  ]
 };
 
@@ -33778,7 +34104,9 @@ function tecla(e){
   else if(e.key==="ArrowLeft") ir(T.i-1);
 }
 function alvo(p){
-  try{ const el=document.querySelector(p.sel); return visivel(el)?el:null; }catch(e){ return null; }
+  try{ let el=document.querySelector(p.sel);
+    for(let n=0;el&&n<(p.up||0)&&el.parentElement;n++) el=el.parentElement;
+    return visivel(el)?el:null; }catch(e){ return null; }
 }
 function ir(i,dir){
   if(!T) return;
@@ -33798,7 +34126,7 @@ function ir(i,dir){
     const rr=el.getBoundingClientRect();
     el.scrollIntoView({block:rr.height>innerHeight*0.45?"start":"center",behavior:"auto"});
     requestAnimationFrame(()=>{ desenhar(); posicionar(); });
-  },p.antes?160:0);
+  },p.antes?260:0);
 }
 function posicionar(){
   if(!T||!T.el) return;
@@ -33818,25 +34146,32 @@ function posicionar(){
   let ct;
   if(bot+M+ch<=vh-M) ct=bot+M;
   else if(top-M-ch>=M) ct=top-M-ch;
-  else ct=vh-M-ch;
+  else{
+    /* v11.24 — alvo alto: o recorte encolhe para o cartão caber embaixo,
+       sem nunca cobrir o elemento destacado */
+    ct=vh-M-ch;
+    bot=Math.min(bot,ct-M);
+    if(bot-top<40) top=Math.max(M/2,bot-40);
+    Object.assign(hole.style,{top:top+"px",height:Math.max(40,bot-top)+"px"});
+  }
   ct=Math.min(Math.max(M,ct),vh-M-ch);
   card.style.top=ct+"px"; card.style.bottom="auto";
   card.style.maxHeight=(vh-2*M)+"px";
 }
 function desenhar(){
   const p=T.P[T.i], n=T.P.length, card=T.root.querySelector(".ap-tour-card");
-  const k=(a)=>Array.isArray(a)?X(a[0],a[1]):a;
+  const k=(a)=>Array.isArray(a)?X(a[0],a[1],a[2]):a;
   card.classList.remove("in"); void card.offsetWidth; card.classList.add("in");
   card.style.top="-9999px";
   card.innerHTML=
-    '<div class="ap-tour-step">'+(NOMES[T.scr]?X(NOMES[T.scr][0],NOMES[T.scr][1]):"")+' · '+(T.i+1)+' '+X("de","of")+' '+n+'</div>'
+    '<div class="ap-tour-step">'+(NOMES[T.scr]?X(NOMES[T.scr][0],NOMES[T.scr][1],NOMES[T.scr][2]):"")+' · '+(T.i+1)+' '+X("de","of","von")+' '+n+'</div>'
    +'<div class="ap-tour-t">'+k(p.t)+'</div>'
    +'<div class="ap-tour-x">'+k(p.x)+'</div>'
    +'<div class="ap-tour-dots">'+T.P.map((_,j)=>'<i class="'+(j===T.i?"on":(j<T.i?"done":""))+'"></i>').join("")+'</div>'
    +'<div class="ap-tour-nav">'
-   +'<button class="ap-tour-skip" data-a="x">'+(T.i===n-1?X("Fechar","Close"):X("Pular","Skip"))+'</button>'
-   +(T.i>0?'<button class="ap-tour-prev" data-a="p">'+X("Voltar","Back")+'</button>':'')
-   +'<button class="ap-tour-next" data-a="n">'+(T.i===n-1?X("Concluir","Done"):X("Próximo","Next"))+'</button>'
+   +'<button class="ap-tour-skip" data-a="x">'+(T.i===n-1?X("Fechar","Close","Schließen"):X("Pular","Skip","Überspringen"))+'</button>'
+   +(T.i>0?'<button class="ap-tour-prev" data-a="p">'+X("Voltar","Back","Zurück")+'</button>':'')
+   +'<button class="ap-tour-next" data-a="n">'+(T.i===n-1?X("Concluir","Done","Fertig"):X("Próximo","Next","Weiter"))+'</button>'
    +'</div>';
   card.querySelector('[data-a="x"]').onclick=()=>fechar();
   const pv=card.querySelector('[data-a="p"]'); if(pv) pv.onclick=()=>ir(T.i-1,-1);
@@ -33849,8 +34184,8 @@ function fechar(fim){
   document.removeEventListener("keydown",tecla);
   window.removeEventListener("resize",posicionar);
   const scr=T.scr; T=null;
-  if(scr==="dividas"){ try{ showDebt("dashboard"); }catch(e){} }
-  if(fim&&typeof toast==="function") toast("✓ "+X("Tour concluído. O botão ? repete quando quiser.","Tour done. Tap ? to replay."));
+  try{ if(FIM[scr]) FIM[scr](); }catch(e){}
+  if(fim&&typeof toast==="function") toast("✓ "+X("Tour concluído. O botão ? repete quando quiser.","Tour done. Tap ? to replay.","Rundgang beendet. Mit ? jederzeit wiederholen."));
 }
 
 /* ── botão ? e convite de primeira visita ── */
@@ -33865,7 +34200,7 @@ function injetarBotao(scr){
   if(scrEl&&scrEl.querySelector(".ap-help")) return;
   const b=document.createElement("button");
   b.className="ap-help"; b.type="button"; b.textContent="?";
-  b.title=X("Guia desta tela","Tour of this screen"); b.setAttribute("aria-label",b.title);
+  b.title=X("Guia desta tela","Tour of this screen","Rundgang durch diesen Bildschirm"); b.setAttribute("aria-label",b.title);
   b.onclick=e=>{ e.stopPropagation(); iniciar(scr); };
   /* na tela inicial o título já disputa espaço: o ? vai para a barra do mês */
   const par=scr==="home"?document.getElementById("btn-adv-home"):null;
@@ -33884,9 +34219,9 @@ function convite(scr){
   const d=document.createElement("div");
   d.className="ap-hint";
   d.innerHTML='<div class="ap-hint-ic">?</div><div style="min-width:0"><div class="ap-hint-t">'
-    +X("Primeira vez aqui?","First time here?")+'</div><div class="ap-hint-s">'
-    +X("Tour de "+n+" passos pela tela","A "+n+"-step tour of this screen")+'</div></div>'
-    +'<button class="ap-hint-go">'+X("Começar","Start")+'</button><button class="ap-hint-x" aria-label="'+X("Dispensar","Dismiss")+'">×</button>';
+    +X("Primeira vez aqui?","First time here?","Zum ersten Mal hier?")+'</div><div class="ap-hint-s">'
+    +X("Tour de "+n+" passos pela tela","A "+n+"-step tour of this screen","Rundgang in "+n+" Schritten")+'</div></div>'
+    +'<button class="ap-hint-go">'+X("Começar","Start","Starten")+'</button><button class="ap-hint-x" aria-label="'+X("Dispensar","Dismiss","Ausblenden")+'">×</button>';
   d.querySelector(".ap-hint-go").onclick=()=>iniciar(scr);
   d.querySelector(".ap-hint-x").onclick=()=>{ marcar(scr); d.remove(); };
   c.insertBefore(d,c.firstChild);
