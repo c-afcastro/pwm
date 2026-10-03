@@ -13767,7 +13767,7 @@ function faixaPdfHtml(nome,txt){
     <small>${itens.length
       ?TXd(itens.length+" lançamentos reconhecidos no texto abaixo. Confira e toque em Identificar e revisar.",itens.length+" transactions found below. Check and tap Identify and review.",itens.length+" Buchungen erkannt. Prüfen und auf Erkennen tippen.")
       :TXd("Nenhuma linha com data e valor. Se o PDF for uma imagem (escaneado), copie os lançamentos do app do banco.","No line with date and amount. If the PDF is a scanned image, copy the transactions from your bank app.","Keine Zeile mit Datum und Betrag. Bei gescanntem PDF die Buchungen aus der Bank-App kopieren.")}</small>
-    ${conf}${lista}</div>`};
+    ${conf}${diag.futuras?`<div class="ap-pdffora-t" style="margin-top:6px">${TXd(diag.futuras+" parcelas de próximas faturas não entram agora — elas aparecem na fatura em que vencerem.",diag.futuras+" instalments from upcoming bills are left out — they come in on the bill where they fall due.",diag.futuras+" Raten künftiger Abrechnungen bleiben außen vor — sie kommen mit der Abrechnung, in der sie fällig werden.")}</div>`:""}${lista}</div>`};
 }
 /* Fatura em PDF: o mesmo leitor da importação de dívidas extrai o texto
    linha a linha (separando as colunas lado a lado que muitas faturas usam),
@@ -14322,9 +14322,24 @@ function parseInvoiceText(text,diag){
   /* linha que começa com data e tem valor: se não virar lançamento, vai para
      o diagnóstico — é assim que o titular vê o que ficou de fora */
   const pareceLanc=l=>/[1-9]\d*[.,]\d{2}\b|0[.,](?!00)\d{2}\b/.test(l)&&/^\D{0,4}\d{1,2}\s?[\/.\-]\s?\d{1,2}\b|^\D{0,4}\d{1,2}\s*(jan|fev|feb|mar|abr|apr|mai|may|jun|jul|ago|aug|set|sep|out|oct|okt|nov|dez|dec)[a-z]*\b|^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}\b/i.test(l)&&/\d[.,]\d{2}\b/.test(l);
+  /* v11.29 — "Compras parceladas - próximas faturas", "Lançamentos
+     futuros", "Parcelas a vencer"… é a prévia das faturas seguintes: as
+     mesmas compras, com a parcela de depois. Lê-las aqui duplicaria cada
+     parcelado. O quadro termina no total dele ou quando começa outro quadro
+     de lançamentos (outro cartão, lançamentos do período). Compras iguais
+     de verdade, fora desse quadro, continuam entrando uma a uma. */
+  let futuro=false;
+  const fimFuturo=n=>/total (para |das |de )?(as )?(proximas faturas|faturas futuras|lancamentos futuros|parcelas (futuras|a vencer))|total (futuro|a vencer)/.test(n);
+  const iniFuturo=(n,l)=>l.length<=70&&!/\d[.,]\d{2}\b/.test(l)&&/proximas? faturas|faturas (futuras|seguintes)|lancamentos futuros|parcelas? (futuras|a vencer|a faturar|das proximas)|compras parceladas.{0,12}(a vencer|futur)|next statements?|upcoming (installments|statements?)|future (installments|charges)|kunftige (raten|abrechnungen)/.test(n);
+  const novoQuadro=n=>/\(final \d{4}\)|cartao final \d{4}|final do cartao|lancamentos:? (compras|nacionais|internacionais|do periodo|do mes|atuais|no cartao)|compras e saques|despesas (do mes|nacionais|internacionais)|transacoes (nacionais|internacionais|do periodo)|purchases and|current charges/.test(n);
   lines.forEach(raw=>{
     let line=normLinhaFatura(raw);
     if(!line||line.length<4) return;
+    { const n=impNorm(line);
+      if(fimFuturo(n)){ futuro=false; return; }
+      if(iniFuturo(n,line)){ futuro=true; return; }
+      if(futuro&&novoQuadro(n)) futuro=false;
+      if(futuro){ if(diag) diag.futuras=(diag.futuras||0)+(comDataIni(line)&&/\d[.,]\d{2}\b/.test(line)?1:0); return; } }
     const semEsp0=impNorm(line).replace(/\s+/g,"");
     if(/pagamentoefetuado|pagamentorecebido|pagamentodeb|pagtodeb|debautom|debitoautom|pagamentodefatura|pagamentofatura|pgtofatura|creditodepagamento|paymentreceived|paymentthankyou|autopay|lastschrift/.test(semEsp0)){ if(pareceLanc(line)) ignorar(line,"pagamento"); return; }
     if(skipRe.test(line)||(skipSemData.test(line)&&!comDataIni(line))){ if(pareceLanc(line)&&!/\b(total|subtotal|saldo|limite|vencimento|fechamento)\b/i.test(line)) ignorar(line,"palavra"); return; }
@@ -14367,7 +14382,7 @@ function parseInvoiceText(text,diag){
     // remove date, parcela markers and standalone separator dashes
     let rest=(line.slice(0,dm.index)+" "+line.slice(dm.index+dm[0].length)).trim();
     rest=rest.replace(/\bparcela\b/ig," ")
-             .replace(/\b\d{1,2}\s*\/\s*\d{1,2}\b/g," ")  // 11/12 parcela
+             .replace(/-?\b\d{1,2}\s*\/\s*\d{1,2}\b/g," ")  // 11/12 parcela ("lojavivara-10/10": o hífen colado vai junto)
              .replace(/\s+[-–]\s+/g," ")                   // " - " separators (not minus)
              .replace(/\s+/g," ").trim();
 
@@ -14384,7 +14399,7 @@ function parseInvoiceText(text,diag){
       matches.push({tok, index:m.index, end:moneyRe.lastIndex, hasCur, hasDec, val:num(tok)});
       if(m.index===moneyRe.lastIndex) moneyRe.lastIndex++;
     }
-    if(!matches.length) return;
+    if(!matches.length){ if(pareceLanc(line)) ignorar(line,"valor"); return; }
 
     // pick value: prefer tokens with decimals or currency; usually the last one is the amount.
     let cands=matches.filter(x=>!isNaN(x.val)&&(x.hasDec||x.hasCur));
@@ -17752,7 +17767,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.28";
+const APP_VERSION="11.29";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -33301,6 +33316,58 @@ async function desespacar(page,items){
    de um vão largo, e cada lado vira uma linha. A coluna da esquerda vem
    antes da da direita, página a página. */
 const ehDataIni=s=>/^\d{1,2}[\/.\-]\d{1,2}\b/.test(s)||/^\d{1,2}\s*(jan|fev|feb|mar|abr|apr|mai|may|jun|jul|ago|aug|set|sep|out|oct|okt|nov|dez|dec)\b/i.test(s);
+/* Cortes verticais de uma página em colunas de lançamentos. Âncora é uma
+   data que abre lançamento: sem texto colado à esquerda (o "10/21" depois
+   do nome é parcela, não data) e com valor adiante na linha. Duas faixas de
+   âncoras bem afastadas, cada uma com valores do seu próprio lado, definem
+   uma calha; o corte fica no meio do trecho mais largo que nenhum texto
+   atravessa. Sem isso (uma coluna, quadros de taxas, tabelas com duas
+   datas), devolve null e a leitura linha a linha segue como sempre. */
+function colunasPdf(lin,pg){
+  const temValor=s=>/\d[.,]\d{2}\b/.test(s);
+  const anc=[];
+  lin.forEach((L,r)=>L.forEach((i,k)=>{
+    const j=L[k+1];
+    if(!(ehDataIni(i.s)||(j&&ehDataIni(i.s+" "+j.s)))) return;
+    const a=L[k-1];
+    if(a&&i.x-(a.x+a.w)<Math.max(28,4*(i.fs||8))) return;
+    if(!L.slice(k+1).some(z=>temValor(z.s))) return;
+    anc.push({x:i.x,r,k});
+  }));
+  if(anc.length<6) return null;
+  const xs=anc.slice().sort((a,b)=>a.x-b.x);
+  const gr=[]; xs.forEach(a=>{ const u=gr[gr.length-1]; if(u&&a.x-u.max<12){ u.max=a.x; u.v.push(a); } else gr.push({min:a.x,max:a.x,v:[a]}); });
+  const fortes=gr.filter(g=>g.v.length>=3);
+  if(fortes.length<2) return null;
+  let larg=0; try{ larg=pg.getViewport({scale:1}).width||0; }catch(e){}
+  const minVao=Math.max(100,0.18*(larg||595));
+  const cortes=[];
+  for(let n=0;n+1<fortes.length;n++){
+    const A=fortes[n], B=fortes[n+1];
+    if(B.min-A.max<minVao) continue;
+    /* só as linhas da faixa onde há lançamentos contam para achar a calha */
+    const rs=A.v.concat(B.v).map(a=>a.r), r0=Math.min(...rs), r1=Math.max(...rs);
+    const its=[]; for(let r=r0;r<=r1;r++) its.push(...lin[r]);
+    const ini=Math.ceil(A.max+10), fim=Math.floor(B.min-1);
+    if(fim<=ini) continue;
+    const cnt=[]; for(let s=ini;s<=fim;s++) cnt.push(its.filter(i=>i.x<s-0.5&&i.x+i.w>s+0.5).length);
+    const m=Math.min(...cnt);
+    if(m>Math.max(1,0.1*(r1-r0+1))) continue;
+    /* trechos livres: vale o mais largo em que o lado esquerdo fecha os
+       próprios lançamentos com valor (o vão entre descrição e valor da
+       coluna da esquerda não serve) */
+    const runs=[]; let k=0;
+    while(k<cnt.length){ if(cnt[k]!==m){ k++; continue; } let e=k; while(e+1<cnt.length&&cnt[e+1]===m) e++; runs.push({k,e}); k=e+1; }
+    let corte=null, lg=-1;
+    runs.forEach(u=>{
+      const s=ini+(u.k+u.e)/2;
+      const proprio=A.v.filter(a=>lin[a.r].slice(a.k+1).some(z=>z.x+z.w<=s&&temValor(z.s))).length;
+      if(proprio>=0.6*A.v.length&&u.e-u.k>=lg){ corte=s; lg=u.e-u.k; }
+    });
+    if(corte!=null) cortes.push(corte);
+  }
+  return cortes.length?cortes:null;
+}
 async function pdfTexto(bytes,nome){
   const doc=await abrirPdf(bytes,nome);
   const saida=[];
@@ -33311,6 +33378,27 @@ async function pdfTexto(bytes,nome){
     const its=tc.items.filter(i=>i.str&&i.str.trim()).map(i=>({s:i.str.trim(),x:i.transform[4],y:Math.round(i.transform[5]),w:i.width||0,fs:Math.abs(i.transform[0])||8}));
     const porY={};
     its.forEach(i=>{ const k=Object.keys(porY).find(y=>Math.abs(+y-i.y)<=2.5); (porY[k||i.y]=porY[k||i.y]||[]).push(i); });
+    /* v11.29 — página em colunas: as linhas de um lado nem sempre têm a
+       mesma altura das do outro, então cortar linha a linha mistura os
+       quadros. Se a página tem lançamentos começando em duas (ou mais)
+       faixas de x bem separadas, o corte é a calha vertical entre elas, e
+       cada coluna é lida inteira, de cima a baixo, antes da seguinte. */
+    const lin=Object.keys(porY).map(Number).sort((a,b)=>b-a).map(y=>porY[y].sort((a,b)=>a.x-b.x));
+    const cortes=colunasPdf(lin,pg);
+    if(cortes){
+      const cruza=i=>cortes.some(s=>i.x<s-0.5&&i.x+i.w>s+0.5);
+      const juntar=L=>{ let t="",fim=-1e9; L.forEach(i=>{ const vao=i.x-fim; t+=(t?(vao<0.2*(i.fs||8)?"":(vao>8?"  ":" ")):"")+i.s; fim=i.x+i.w; }); return t; };
+      let blocos=cortes.map(()=>[]).concat([[]]);
+      const despeja=()=>{ blocos.forEach(b=>saida.push(...b)); blocos=cortes.map(()=>[]).concat([[]]); };
+      lin.forEach(L=>{
+        if(L.some(cruza)){ despeja(); saida.push(juntar(L)); return; }
+        const partes=cortes.map(()=>[]).concat([[]]);
+        L.forEach(i=>{ let k=cortes.findIndex(s=>i.x+i.w/2<s); if(k<0) k=cortes.length; partes[k].push(i); });
+        partes.forEach((p,k)=>{ if(p.length) blocos[k].push(juntar(p)); });
+      });
+      despeja();
+      continue;
+    }
     const esq=[], dir=[];
     Object.keys(porY).map(Number).sort((a,b)=>b-a).forEach(y=>{
       const L=porY[y].sort((a,b)=>a.x-b.x);
