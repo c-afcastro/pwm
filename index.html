@@ -13742,7 +13742,15 @@ function faturaConferir(txt,itens,diag){
   }
   const base=(alvo!=null)?(perto(alvo,compras)?compras:soma):soma;
   const dif=alvo!=null?Math.round((alvo-base)*100)/100:null;
-  const fora=((diag&&diag.ignoradas)||[]).filter(x=>x.motivo!=="pagamento");
+  /* v11.30 — batendo o total, nada ficou de fora: a lista de linhas não
+     lidas só aparece quando falta dinheiro. E linhas cujo único valor é um
+     total da própria fatura (vencimento e valor do boleto) nunca são compra. */
+  const totais=[lanc,fat,ant,pagos].filter(v=>v!=null);
+  const fora=ok?[]:((diag&&diag.ignoradas)||[]).filter(x=>{
+    if(x.motivo==="pagamento") return false;
+    const vs=String(x.linha||"").match(/-?\d{1,3}(?:\.\d{3})*,\d{2}\b/g);
+    return !(vs&&vs.every(v=>totais.some(t=>perto(t,Math.abs(impNumBR(v))))));
+  });
   return {alvo,rot,soma,compras,ok,dif,fora};
 }
 function impNumBR(t){
@@ -14274,7 +14282,7 @@ function normLinhaFatura(raw){
      .replace(/(\d)\s+([.,]\d{1,3}\b)/g,"$1$2")                                       // "183 ,46"
      .replace(/(\d[.,])\s+(\d{1,3}\b)/g,"$1$2")                                       // "262, 34" "49. 737"
      .replace(/(\d[.,]\d)\s+(\d)\b/g,"$1$2")                                          // "1,4 8"
-     .replace(/([A-Za-zÀ-ÿ*)])-\s/g,"$1 - ")                                             // "AIRBNB*X- Parcela": hífen é separador
+     .replace(/([A-Za-zÀ-ÿ0-9*)])-\s/g,"$1 - ")                                          // "AIRBNB*X- Parcela", "LOJA - S018- 26,48": hífen é separador
      .replace(/(R\$|US\$|€)\s*-\s*(\d)/gi,"-$1$2")                                     // "R$ -12,00"
      .replace(/-\s+(R\$|US\$)/gi,"-$1")                                                 // "- R$ 12,00"
      .replace(/(^|[^\d.,])(\d[\d.,]*[.,]\d{2})\s*-(?=\s|$)/g,"$1-$2");                 // "12,00-"
@@ -14462,6 +14470,10 @@ function impNorm(s){
     .replace(/\s+/g," ").trim();
 }
 function impCent(v){ return Math.round((parseFloat(v)||0)*100); }
+/* descrição para comparar: só letras e números */
+function impChave(s){ return impNorm(s).replace(/[^a-z0-9]/g,""); }
+/* impressão digital com a descrição reduzida a letras e números */
+function impFpSolto(fp){ const p=String(fp||"").split("|"); if(p.length<4) return String(fp||""); p[1]=impChave(p[1]); return p.join("|"); }
 function impBase(e){ return [e._fDate||e.date||"",impNorm(e.desc),impCent(e.amount),e.currency||"BRL"].join("|"); }
 /* Numera as repetições: dois cafés iguais no mesmo dia são duas linhas */
 function impCarimbar(lista){
@@ -14490,12 +14502,18 @@ function impCasar(lista,loteId){
      impede o reconhecimento. */
   const base=EX.filter(e=>e&&e.importId===loteId);
   const usados=new Set();
-  const porFp={}, porData={}, porDesc={};
-  const k2=(d,e)=>d+"|"+impNorm(e.desc)+"|"+impCent(e.amount);
-  const kD=e=>impNorm(e.desc)+"|"+impCent(e.amount);
+  const porFp={}, porFpL={}, porData={}, porDesc={}, porDV={};
+  /* v11.30 — CSV e PDF do mesmo banco escrevem a mesma descrição com
+     espaços e pontuação diferentes ("MP *SHELLBOX" × "MP*SHELLBOX",
+     "HNT LOJA - S018 -" × "HNT LOJA S018"): a comparação usa só letras e
+     números */
+  const k2=(d,e)=>d+"|"+impChave(e.desc)+"|"+impCent(e.amount);
+  const kD=e=>impChave(e.desc)+"|"+impCent(e.amount);
+  const kV=(d,e)=>d+"|"+impCent(e.amount)+"|"+(e.currency||"BRL");
   base.forEach(e=>{
-    if(e.impFp) (porFp[e.impFp]=porFp[e.impFp]||[]).push(e);
-    [e.dataCompra,e.date].filter(Boolean).forEach(d=>{ (porData[k2(d,e)]=porData[k2(d,e)]||[]).push(e); });
+    if(e.impFp){ (porFp[e.impFp]=porFp[e.impFp]||[]).push(e); const L=impFpSolto(e.impFp); (porFpL[L]=porFpL[L]||[]).push(e); }
+    const ds=[...new Set([e.dataCompra,e.date,e.impFp&&String(e.impFp).split("|")[0]].filter(Boolean))];
+    ds.forEach(d=>{ (porData[k2(d,e)]=porData[k2(d,e)]||[]).push(e); (porDV[kV(d,e)]=porDV[kV(d,e)]||[]).push(e); });
     (porDesc[kD(e)]=porDesc[kD(e)]||[]).push(e);
   });
   const pega=arr=>{ if(!arr) return null; const x=arr.find(e=>!usados.has(e)); if(x) usados.add(x); return x||null; };
@@ -14503,6 +14521,7 @@ function impCasar(lista,loteId){
   /* passo 1 e 2 para todas as linhas antes do passo 3: o casamento exato
      tem prioridade sobre o aproximado */
   lista.forEach((e,i)=>{ res[i]=pega(porFp[e._fp]); });
+  lista.forEach((e,i)=>{ if(!res[i]) res[i]=pega(porFpL[impFpSolto(e._fp)]); });
   lista.forEach((e,i)=>{ if(res[i]) return;
     for(const d of [e._fDate,e.date].filter(Boolean)){ const x=pega(porData[k2(d,e)]); if(x){ res[i]=x; return; } } });
   lista.forEach((e,i)=>{ if(res[i]) return;
@@ -14511,6 +14530,19 @@ function impCasar(lista,loteId){
     /* entre os iguais, o de data de compra mais próxima */
     const alvo=e._fDate||e.date;
     cand.sort((x,y)=>Math.abs(new Date(x.dataCompra||x.date)-new Date(alvo))-Math.abs(new Date(y.dataCompra||y.date)-new Date(alvo)));
+    usados.add(cand[0]); res[i]=cand[0]; });
+  /* passo 4 — mesma compra, nome diferente: o banco às vezes rebatiza a
+     linha entre a prévia e a fatura fechada (o IOF de uma compra no
+     exterior sai no CSV com o nome da loja e no PDF como "IOF Transações
+     Exterior"). Mesma data da compra e mesmo valor, entre as sobras dos
+     dois lados, é a mesma linha. Havendo mais de uma, vale a de nome mais
+     parecido. Só dentro da importação que está sendo atualizada. */
+  lista.forEach((e,i)=>{ if(res[i]) return;
+    const cand=[e._fDate,e.date].filter(Boolean).flatMap(d=>porDV[kV(d,e)]||[]).filter(x=>!usados.has(x));
+    if(!cand.length) return;
+    const pal=s=>new Set(impNorm(s).replace(/[^a-z0-9 ]/g," ").split(" ").filter(w=>w.length>=3));
+    const pe=pal(e.desc), sim=x=>{ let n=0; pal(x.desc).forEach(w=>{ if(pe.has(w)) n++; }); return n; };
+    cand.sort((x,y)=>sim(y)-sim(x));
     usados.add(cand[0]); res[i]=cand[0]; });
   return res;
 }
@@ -14541,7 +14573,7 @@ function impLoteParecido(lista){
   /* por impressão digital ou, para importações antigas, por descrição e
      valor — cada lançamento do lote conta uma vez */
   const porLote={}, fps=new Set(lista.map(e=>e._fp));
-  const kD=e=>impNorm(e.desc)+"|"+impCent(e.amount);
+  const kD=e=>impChave(e.desc)+"|"+impCent(e.amount);
   const grupos={};
   EX.forEach(e=>{ if(e&&e.importId) (grupos[e.importId]=grupos[e.importId]||[]).push(e); });
   Object.keys(grupos).forEach(id=>{
@@ -14551,10 +14583,10 @@ function impLoteParecido(lista){
        fatura não pode fazer duas faturas parecerem a mesma) */
     const semFp=G.filter(x=>!x.impFp);
     const pool={}; semFp.forEach(e=>{ const k=kD(e); pool[k]=(pool[k]||0)+1; });
-    const fpsLote=new Set(G.map(x=>x.impFp).filter(Boolean));
+    const fpsLote=new Set(G.map(x=>x.impFp).filter(Boolean).map(impFpSolto));
     let n=0;
     lista.forEach(e=>{
-      if(fpsLote.has(e._fp)){ n++; return; }
+      if(fpsLote.has(impFpSolto(e._fp))){ n++; return; }
       const k=kD(e); if(pool[k]>0){ pool[k]--; n++; }
     });
     porLote[id]=n;
@@ -17767,7 +17799,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.29";
+const APP_VERSION="11.30";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -33375,7 +33407,12 @@ async function pdfTexto(bytes,nome){
     const pg=await doc.getPage(p);
     const tc=await pg.getTextContent();
     await desespacar(pg,tc.items);
-    const its=tc.items.filter(i=>i.str&&i.str.trim()).map(i=>({s:i.str.trim(),x:i.transform[4],y:Math.round(i.transform[5]),w:i.width||0,fs:Math.abs(i.transform[0])||8}));
+    /* v11.30 — o espaço que o próprio PDF escreve entre dois pedaços vale
+       como espaço, mesmo estreito: fontes condensadas põem "MP" " " "*"
+       a menos de 0,2 letra e a descrição virava "MP*SHELLBOX" — diferente
+       do CSV do mesmo banco ("MP *SHELLBOX") */
+    const its=[]; { let sp=false; tc.items.forEach(i=>{ if(!i.str) return; if(!i.str.trim()){ sp=true; return; } its.push({s:i.str.trim(),x:i.transform[4],y:Math.round(i.transform[5]),w:i.width||0,fs:Math.abs(i.transform[0])||8,sp:sp||/^\s/.test(i.str)}); sp=/\s$/.test(i.str); }); }
+    const colado=(i,vao)=>vao<0.2*(i.fs||8)&&!(i.sp&&vao>=0.1*(i.fs||8));
     const porY={};
     its.forEach(i=>{ const k=Object.keys(porY).find(y=>Math.abs(+y-i.y)<=2.5); (porY[k||i.y]=porY[k||i.y]||[]).push(i); });
     /* v11.29 — página em colunas: as linhas de um lado nem sempre têm a
@@ -33387,7 +33424,7 @@ async function pdfTexto(bytes,nome){
     const cortes=colunasPdf(lin,pg);
     if(cortes){
       const cruza=i=>cortes.some(s=>i.x<s-0.5&&i.x+i.w>s+0.5);
-      const juntar=L=>{ let t="",fim=-1e9; L.forEach(i=>{ const vao=i.x-fim; t+=(t?(vao<0.2*(i.fs||8)?"":(vao>8?"  ":" ")):"")+i.s; fim=i.x+i.w; }); return t; };
+      const juntar=L=>{ let t="",fim=-1e9; L.forEach(i=>{ const vao=i.x-fim; t+=(t?(colado(i,vao)?"":(vao>8?"  ":" ")):"")+i.s; fim=i.x+i.w; }); return t; };
       let blocos=cortes.map(()=>[]).concat([[]]);
       const despeja=()=>{ blocos.forEach(b=>saida.push(...b)); blocos=cortes.map(()=>[]).concat([[]]); };
       lin.forEach(L=>{
@@ -33418,7 +33455,7 @@ async function pdfTexto(bytes,nome){
         if(!cur||(vao>28&&comeca&&/\d[.,]\d{2}/.test(cur.t))||(vao>largo&&fechouValor)){ cur={x0:i.x,t:i.s}; segs.push(cur); }
         /* pedaços colados (vão < ~0,2 da letra) formam a mesma palavra:
            "632" "," "58" → "632,58"; "IFD" "*" "LA" → "IFD*LA" */
-        else cur.t+=(vao<0.2*(i.fs||8)?"":(vao>8?"  ":" "))+i.s;
+        else cur.t+=(colado(i,vao)?"":(vao>8?"  ":" "))+i.s;
         fimX=i.x+i.w;
       });
       segs.forEach((sg,k)=>(k===0?esq:dir).push(sg.t));
