@@ -17799,7 +17799,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.30";
+const APP_VERSION="11.31";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -19161,7 +19161,38 @@ const PDIC={
     "Der Betrag oben landet AUF DEM KONTO. Die App ermittelt, wie viel der Anlage entnommen werden muss, damit dies nach Steuern übrig bleibt — die Konvention der Bank-Apps, bei der die Steuer zusätzlich belastet wird."],
   rg_md_cap:["O saldo não cobre esse valor líquido: o resgate foi limitado ao saldo inteiro.",
     "The balance cannot cover that net amount: the redemption was capped at the whole balance.",
-    "Der Bestand deckt diesen Nettobetrag nicht: Die Auszahlung wurde auf den vollen Bestand begrenzt."]
+    "Der Bestand deckt diesen Nettobetrag nicht: Die Auszahlung wurde auf den vollen Bestand begrenzt."],
+
+  /* — v11.31: resgate pela posição real — */
+  rg_pos_in:["Posição na data do resgate","Position on the redemption date","Bestand am Auszahlungstag"],
+  rg_pos_note:["Saldo bruto de IR que o extrato mostra nesse dia, antes do resgate. É ele — e não a projeção pela taxa cadastrada — que define o rendimento, os impostos e as taxas; o que sobrar vira a nova posição.",
+    "Pre-tax balance shown on your statement that day, before the redemption. It — not the projection from the registered rate — sets the yield, taxes and fees; whatever is left becomes the new position.",
+    "Bestand vor Steuern laut Auszug an diesem Tag, vor der Auszahlung. Er — nicht die Projektion aus dem erfassten Satz — bestimmt Ertrag, Steuern und Gebühren; der Rest wird der neue Bestand."],
+  rg_proj:["Projeção do app:","App projection:","App-Projektion:"],
+  rg_use_proj:["Usar projeção","Use projection","Projektion übernehmen"],
+  rg_tx_q:["Essa posição já desconta as taxas do fundo?","Does this position already net out the fund fees?","Ist dieser Bestand bereits nach Fondsgebühren?"],
+  rg_tx_liq:["Já descontadas","Already netted","Bereits abgezogen"],
+  rg_tx_liq_s:["cota líquida","net unit price","Netto-Anteilswert"],
+  rg_tx_bru:["Antes das taxas","Before fees","Vor Gebühren"],
+  rg_tx_bru_s:["o app desconta","the app deducts","die App zieht ab"],
+  rg_tx_liq_n:["É o padrão dos fundos: administração e performance são provisionadas na cota todo dia, então o extrato já vem sem elas. O app mostra quanto cada uma levou do valor resgatado, sem descontar de novo.",
+    "This is how funds work: management and performance fees are accrued in the unit price every day, so the statement already comes without them. The app shows how much each took from the amount redeemed, without deducting it again.",
+    "So funktionieren Fonds: Verwaltungs- und Erfolgsgebühr werden täglich im Anteilswert abgegrenzt, der Auszug enthält sie also nicht mehr. Die App zeigt, wie viel jede vom ausgezahlten Betrag genommen hat, ohne erneut abzuziehen."],
+  rg_tx_bru_n:["A posição informada é antes das taxas: o app desconta administração e performance do valor resgatado, pelo prazo desde a aplicação, e o saldo que sobra fica líquido delas.",
+    "The position entered is before fees: the app deducts management and performance fees from the amount redeemed, over the period since the investment, and the remaining balance is kept net of them.",
+    "Der eingegebene Bestand ist vor Gebühren: Die App zieht Verwaltungs- und Erfolgsgebühr vom ausgezahlten Betrag ab, für den Zeitraum seit der Anlage, und der Restbestand bleibt netto."],
+  rg_adm_l:["Taxa de administração","Management fee","Verwaltungsgebühr"],
+  rg_perf_l:["Taxa de performance","Performance fee","Erfolgsgebühr"],
+  rg_perf_over:["do que excede o","of the excess over","des Ertrags über"],
+  rg_tx_in_h:["Taxas do fundo neste resgate · já na cota","Fund fees on this redemption · already in the unit price","Fondsgebühren dieser Auszahlung · bereits im Anteilswert"],
+  rg_rend_pre:["Rendimento antes das taxas","Yield before fees","Ertrag vor Gebühren"],
+  rg_ir_dev:["IR devido","Tax due","Fällige Steuer"],
+  rg_cc_abat:["(+) Come-cotas já antecipado","(+) Semi-annual tax already prepaid","(+) Bereits vorausgezahlte Halbjahressteuer"],
+  rg_pct_pos:["da posição","of the position","des Bestands"],
+  rg_pos_s:["Posição","Position","Bestand"],
+  rg_anc_note:["Ao registrar, o saldo que sobra ({v}) passa a ser a posição da aplicação em {d}; dali em diante ela segue pela taxa cadastrada e pelos Parâmetros.",
+    "When recorded, the remaining balance ({v}) becomes the holding's position on {d}; from there it follows the registered rate and the Parameters.",
+    "Beim Buchen wird der Restbestand ({v}) zum Bestand der Anlage am {d}; ab dann folgt sie dem erfassten Satz und den Parametern."]
   ,
   /* — ficha de impactos (v11.03) — */
   im_nf:["Item não encontrado.","Item not found.","Eintrag nicht gefunden."],
@@ -21007,29 +21038,118 @@ function astLiquidacao(a,dref){
           iofPct:iofP,iof,ir,liquido:R2(bruto-ir-iof)};
 }
 
+/* v11.31 — RESGATE PELA POSIÇÃO REAL.
+   O cadastro diz como a aplicação DEVERIA render (105% do CDI, IPCA+6…);
+   o extrato diz quanto ela RENDEU. No resgate vale o extrato: o titular
+   informa a posição na data, e tudo — rendimento, IOF, IR, taxa de
+   administração, performance e come-cotas — sai dessa posição, na
+   proporção do que foi resgatado. O que sobra vira a nova posição.
+
+   Fator acumulado do índice de referência da performance no período. */
+function astFatorBench(de,ate,bench){
+  if(!de||!ate||ate<=de) return 1;
+  const ip=bench==="ipca";
+  const pb={idx:ip?"ipca_spread":"cdi_pct",idxVal:ip?0:100,taxaAdm:0,taxaPerf:0,
+            venc:"",trib:"rf",aporte:0};
+  try{
+    const r=fatorProduto({class:"funds",balance:1,pro:pb},de,ate,pb);
+    return (r&&isFinite(r.fator)&&r.fator>0)?r.fator:1;
+  }catch(e){ return 1; }
+}
+/* Taxas do fundo sobre a posição inteira na data. Duas leituras do mesmo
+   saldo:
+   · "liq" (padrão dos fundos): a cota já vem líquida de administração e
+     performance — o app reconstrói quanto cada uma levou, sem descontar
+     de novo;
+   · "bru": o saldo informado é antes das taxas — o app desconta as duas
+     e a posição passa a valer o líquido.
+   Mesma ordem do motor de projeção: administração primeiro, performance
+   sobre o que exceder o índice de referência depois dela. */
+function astTaxasFundo(a,p,dt,pos,custo,modo){
+  const P=p||astPro(a);
+  const adm=Math.max(0,+P.taxaAdm||0), q=Math.max(0,Math.min(99,+P.taxaPerf||0))/100;
+  const out={tem:adm>0||q>0,modo:modo==="bru"?"bru":"liq",admPct:adm,perfPct:R2(q*100),
+    bench:P.benchPerf==="ipca"?"ipca":"cdi",anos:0,fb:1,adm:0,perf:0,
+    bruto:R2(pos),liquido:R2(pos)};
+  if(!out.tem||!(pos>0)) return out;
+  const ini=String(P.aplic||"").slice(0,10);
+  const anos=(ini&&dt>ini)?mesesEntre(ini,dt)/12:0;
+  out.anos=R2(anos);
+  const keep=Math.pow(Math.max(0,1-adm/100),anos);
+  const fb=astFatorBench(ini,dt,out.bench); out.fb=fb;
+  const ref=Math.max(0,+custo||0)*fb;          /* o custo corrigido pelo índice */
+  if(out.modo==="bru"){
+    const posAdm=pos*keep;
+    const perf=q>0?q*Math.max(0,posAdm-ref):0;
+    out.adm=R2(pos-posAdm); out.perf=R2(perf);
+    out.bruto=R2(pos); out.liquido=R2(posAdm-perf);
+  }else{
+    let pre=pos;
+    if(q>0&&pos>ref) pre=(pos-q*ref)/(1-q);
+    const g=keep>0?pre/keep:pre;
+    out.adm=R2(g-pre); out.perf=R2(pre-pos);
+    out.bruto=R2(g); out.liquido=R2(pos);
+  }
+  return out;
+}
 /* Resgate parcial numa data qualquer: quanto sai líquido e quanto do
-   custo é baixado junto. O custo precisa cair na mesma proporção, senão
-   o lucro tributável do saldo remanescente fica superestimado. */
-function astResgateEm(a,valor,data,encargo){
+   custo é baixado junto. O custo cai na mesma proporção, senão o lucro
+   tributável do saldo remanescente fica superestimado.
+   opt.pos   — posição informada na data (padrão: a projeção do app)
+   opt.modoTx— "liq" | "bru", como ler as taxas do fundo nessa posição */
+function astResgateEm(a,valor,data,encargo,opt){
+  const o=opt||{};
   const p=astPro(a);
   const dt=String(data||today()).slice(0,10);
-  const saldo=R2(astValorEm(a,dt));
-  const v=Math.max(0,Math.min(+valor||saldo,saldo));
+  const proj=R2(astValorEm(a,dt));
+  const informada=(+o.pos>0)&&Math.abs(R2(+o.pos)-proj)>=0.005;
+  const posInf=(+o.pos>0)?R2(+o.pos):proj;
+  const vIn=Math.max(0,Math.min(+valor||posInf,posInf));
+  const prop=posInf>0?vIn/posInf:0;
+  /* posição nas unidades do app (líquida de taxas do fundo) */
+  const tx0=astTaxasFundo(a,p,dt,posInf,Math.min(R2(+p.custo||0),posInf),o.modoTx);
+  const saldo=tx0.liquido;
   const custoT=Math.min(R2(+p.custo||0),saldo);
-  const prop=saldo>0?v/saldo:0;
+  const tx=astTaxasFundo(a,p,dt,posInf,custoT,o.modoTx);
+  const v=R2(saldo*prop);
   const custoBaixa=R2(custoT*prop);
   const ganho=Math.max(0,R2(v-custoBaixa));
+  const adm=R2(tx.adm*prop), perf=R2(tx.perf*prop);
   const d=astPrazoIR(a,p,dt);
   const aliq=astAliqIR(a,d);
   const iofP=(p.trib==="rf"||String(p.trib||"").indexOf("fundo")===0)?iofPct(d):0;
   const iof=R2(ganho*iofP/100);
-  const ir=R2(Math.max(0,ganho-iof)*aliq/100);
+  /* COME-COTAS. Nos fundos abertos o IR é antecipado em maio e novembro;
+     o que já foi recolhido abate o IR do resgate. O imposto devido é o da
+     faixa sobre o ganho inteiro (o que ficou na cota mais o que o
+     come-cotas levou), menos o que já foi pago. */
+  /* O valor recolhido é estimado pela curva cadastrada desde a aplicação
+     e ajustado ao ganho que a posição informada de fato mostra: o
+     come-cotas incide sobre o rendimento real, não sobre o previsto. */
+  let cc=0;
+  try{
+    const ccM=astComeCotasAte(a,dt);
+    if(ccM>0&&custoT>0){
+      const ini=String(p.aplic||"").slice(0,10);
+      let F=1; try{ const x=astFatorPeriodo(a,ini,dt); if(isFinite(x)&&x>0) F=x; }catch(e){}
+      const gM=custoT*F-custoT;               /* ganho previsto, antes do come-cotas */
+      const gR=saldo-custoT;                  /* ganho que ficou na cota, de fato */
+      const ccR=(gM-ccM>0&&gR>0)?ccM*gR/(gM-ccM):0;
+      cc=R2(Math.max(0,ccR)*prop);
+    }
+  }catch(e){ cc=0; }
+  const irDevido=R2(Math.max(0,ganho+cc-iof)*aliq/100);
+  const ir=R2(Math.max(0,irDevido-cc));
+  const ccAbat=R2(irDevido-ir);
   /* o encargo nunca pode passar do que resta depois dos impostos: uma
      cláusula não confisca mais do que existe */
   const enc=Math.max(0,Math.min(R2(+encargo||0),R2(v-iof-ir)));
-  return {data:dt,saldo,valor:R2(v),bruto:R2(v),custoBaixa,ganho,dias:d,
-          aliq,iofPct:iofP,iof,ir,encargo:enc,liquido:R2(v-iof-ir-enc),
-          restante:R2(saldo-v)};
+  return {data:dt,saldo,proj,posInf,informada,modoTx:tx.modo,prop:R2(prop*100),
+          valorInf:R2(vIn),valor:v,bruto:v,custoBaixa,ganho,
+          temTaxas:tx.tem,adm,perf,admPct:tx.admPct,perfPct:tx.perfPct,bench:tx.bench,
+          anosTx:tx.anos,rendPre:R2(ganho+(tx.modo==="liq"?adm+perf:0)),
+          dias:d,aliq,iofPct:iofP,iof,irDevido,cc,ccAbat,ir,encargo:enc,
+          liquido:R2(v-iof-ir-enc),restante:R2(Math.max(0,saldo-v))};
 }
 
 /* As posições são memorizadas por chave; um resgate novo entra em todas
@@ -21166,8 +21286,18 @@ function astEvolucao(a,mesesFuturos){
   const infor=parseFloat(a.balance)||0;
   const posData=(a.lastUpdate&&a.lastUpdate>inicio)?a.lastUpdate:inicio;
   const ancorado=posData>inicio;
+  /* v11.31 — um resgate total deixa a posição em zero, e zero também é
+     posição: a curva precisa encostar nele, não seguir pela projeção */
+  const temAnc=infor>0||(ancorado&&astResgates(a,p).some(r=>r.ancora&&r.data===posData));
   /* Saldo mês a mês: sai do custo pela série do indexador, encosta no saldo
      informado na data dele e segue corrigido daí até hoje. */
+  /* v11.31 — o que a aplicação RENDEU de fato até a posição informada.
+     A curva antes da âncora sai do montante aplicado pela taxa cadastrada;
+     na data da posição ela encontra o saldo real. A diferença era jogada
+     inteira no mês da âncora — um resgate com posição abaixo da projeção
+     aparecia como prejuízo naquele mês. Agora ela é distribuída pelo
+     tempo decorrido até a posição, e cada mês mostra o rendimento real. */
+  let ajPre=null;
   const saldoAte=[custo0], ccAte=[0]; {
     let sal=custo0, encostou=false, ccAcum=0, aportadoAc=custo0, ancJ=-1;
     const aliqCC=(p.trib==="fundoCP")?FISCAL.irFundoCP:FISCAL.irFundoLP;
@@ -21180,7 +21310,17 @@ function astEvolucao(a,mesesFuturos){
          senão o mês da posição entraria inteiro e a curva passaria por
          cima do valor que o titular declarou. */
       let fj=S[j].f;
-      if(!encostou&&infor>0&&S[j].ate>posData){
+      if(!encostou&&temAnc&&S[j].ate>posData){
+        if(posData>inicio){
+          let mPre=sal;
+          if(S[j].de<posData){
+            let fq=1;
+            try{ const r=fatorProduto(a,S[j].de,posData,p); if(r&&isFinite(r.fator)&&r.fator>0) fq=r.fator; }catch(e){}
+            mPre=Math.max(0,sal*fq-resgNo(S[j].de,posData));
+          }
+          const mm=mesesEntre(inicio,posData);
+          if(mm>0.03) ajPre={D:infor-mPre,m:mm};
+        }
         sal=infor; aportadoAc=infor; encostou=true; ancJ=j;
         if(S[j].de<posData){
           /* a fração sai do MESMO motor que a tela de Patrimônio usa, e não
@@ -21213,12 +21353,12 @@ function astEvolucao(a,mesesFuturos){
       }
       saldoAte[j+1]=sal; ccAte[j+1]=ccAcum;
     }
-    if(!encostou&&infor>0) saldoAte[S.length]=infor;   // posição é de hoje
+    if(!encostou&&temAnc) saldoAte[S.length]=infor;   // posição é de hoje
   }
   const valorHoje=R2(saldoAte[S.length]);
   const mesesPos=mesesEntre(inicio,posData);
   /* taxa realizada: só o trecho de fato observado, do aporte à posição */
-  const efet=(custo0>0&&mesesPos>0.03&&infor>0)
+  const efet=(custo0>0&&mesesPos>0.03&&temAnc)
     ?taxaImplicita(custo0,R2(infor+resgAte(posData)),mesesPos,aporte):iAM;
 
   const pts=[];
@@ -21277,6 +21417,7 @@ function astEvolucao(a,mesesFuturos){
     const aport=R2(custo0+(temAporte?(depAc[nt]||0):0));
     const modelo=R2(modelaAte(k));
     let saldo=R2(saldoAte[kk]);
+    const ajP=(ajPre&&data<posData)?ajPre.D*Math.min(1,mesesEntre(inicio,data)/ajPre.m):0;
     /* O balde da série fecha no dia 1º; o ponto é rotulado pelo aniversário
        da aplicação. Ler o saldo do balde fechado punha no dia 24 o valor do
        dia 1º: três semanas de rendimento escorregavam para o ponto seguinte,
@@ -21285,7 +21426,9 @@ function astEvolucao(a,mesesFuturos){
        do ponto — e, se a posição informada cair nesse intervalo, a correção
        parte dela. */
     let sb=(kk<=0)?inicio:(S[kk-1]?S[kk-1].ate:data);
-    if(infor>0&&posData>sb&&posData<=data){ sb=posData; saldo=R2(infor); }
+    /* v11.31 — posição no dia 1º (fronteira do balde) também ancora o
+       ponto: antes ela só valia se caísse DEPOIS do fechamento */
+    if(temAnc&&ancorado&&posData>=sb&&posData<=data){ sb=posData; saldo=R2(infor); }
     if(data>sb){
       let f=1;
       try{ const r=fatorProduto(a,sb,data,p); if(r&&isFinite(r.fator)&&r.fator>0) f=r.fator; }catch(e){}
@@ -21293,6 +21436,7 @@ function astEvolucao(a,mesesFuturos){
       const sai=resgNo(sb,data);
       if(sai>0) saldo=R2(Math.max(0,saldo-sai));
     }
+    if(ajP) saldo=R2(Math.max(0,saldo+ajP));
     const cc=R2((ccAte[kk]||0)-ccPago);
     ccPago=R2(ccAte[kk]||0);
     const ant=pts.length?pts[pts.length-1].saldo:custo0;
@@ -22072,7 +22216,10 @@ function astFimDoMesYM(ymS){
 const AST_YM_CACHE={};
 function astValorEm(a,dataAlvo){
   const bal=parseFloat(a&&a.balance)||0;
-  if(!a||(!(bal>0)&&!astEhFgtsAuto(a))||!dataAlvo) return bal;
+  if(!a||!dataAlvo) return bal;
+  /* v11.31 — saldo zerado por um resgate total ainda tem passado: antes
+     da data do resgate o dinheiro estava lá */
+  if(!(bal>0)&&!astEhFgtsAuto(a)&&!(String(dataAlvo)<String(a.lastUpdate||"")&&astResgates(a).length)) return bal;
   const p=astPro(a);
   /* antes da data de aplicação o papel não existia: posição zero */
   { const ap=astAplicIni(a); if(ap&&String(dataAlvo).slice(0,10)<ap) return 0; }
@@ -22091,6 +22238,16 @@ function astValorEm(a,dataAlvo){
       /* regressão: desfaz a correção do período pelo fator do produto */
       const f=fatorProduto(a,dataAlvo,de,p).fator;
       v=(isFinite(f)&&f>0)?R2(bal/f):R2(bal);
+      /* v11.31 — a foto da data informada já não contém os resgates feitos
+         até ela. Para uma data ANTERIOR a esses resgates, o dinheiro ainda
+         estava na aplicação: volta à posição, descontada a correção do
+         trecho entre a data pedida e o dia em que saiu. */
+      astResgates(a,p).forEach(r=>{
+        if(!(r.data>dataAlvo&&r.data<=de)) return;
+        let fr=1;
+        try{ const x=fatorProduto(a,dataAlvo,r.data,p).fator; if(isFinite(x)&&x>0) fr=x; }catch(e){}
+        v=R2(v+(+r.valor||0)/fr);
+      });
     }
   }catch(e){ v=R2(bal); }
   AST_YM_CACHE[ck]=v;
@@ -22458,6 +22615,26 @@ function ensureStyles(){
     padding:0 13px!important;border-radius:12px!important;font-size:13px!important;
     line-height:normal!important;margin-bottom:clamp(10px,2dvh,18px)!important}
   #modal-resgate #res-data::-webkit-datetime-edit{padding:0!important;line-height:normal!important}
+  /* v11.31 — posição informada, leitura das taxas e quadro das taxas */
+  #modal-resgate .rg-proj{display:flex;align-items:center;justify-content:space-between;gap:8px;
+    flex-wrap:wrap;margin:-4px 0 6px;min-height:22px;font-size:11.5px;color:var(--ink-2);line-height:1.4}
+  #modal-resgate .rg-proj-t{min-width:0;font-variant-numeric:tabular-nums}
+  #modal-resgate .rg-proj-b{background:none;border:1.5px solid var(--line);border-radius:9px;
+    padding:3px 10px;font-size:11px;font-weight:600;color:var(--ink-2);cursor:pointer;
+    white-space:nowrap;flex-shrink:0;line-height:1.3}
+  /* rótulos longos (DE, taxas com percentual) quebram linha em vez de
+     sumir em reticências; o valor fica alinhado à direita, no topo */
+  #modal-resgate .pro-cf{align-items:flex-start}
+  #modal-resgate .pro-cf span:first-child{white-space:normal;overflow:visible;line-height:1.35}
+  #modal-resgate .rg-seg{display:flex;gap:5px;margin-bottom:6px}
+  #modal-resgate .rg-seg-b{flex:1;min-width:0;border:1.5px solid var(--line);background:none;cursor:pointer;
+    line-height:1.25;padding:9px 6px;display:flex;flex-direction:column;align-items:center;gap:1px}
+  #modal-resgate .rg-seg-t{font-weight:700;font-size:12.5px}
+  #modal-resgate .rg-seg-s{font-size:10px;opacity:.85}
+  #modal-resgate .rg-tx-box{background:var(--paper,#fff);border:1px solid var(--line);border-radius:11px;
+    padding:6px 11px 4px;margin:4px 0 6px}
+  #modal-resgate .rg-tx-h{font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;
+    color:var(--ink-3);margin:2px 0 2px}
   /* Aviso de vencimento. A tarja à esquerda é o único ornamento: a cor
      diz o tom (âmbar para o que vence, terracota para o que já venceu) e
      o resto é a mesma tipografia das outras fichas. */
@@ -23651,11 +23828,27 @@ function openResgate(id){
     <label class="f-label">${PL("rg_when")}</label>
     <input id="res-data" class="f-input" type="date" value="${today()}"
       min="${raw(resgDataMin(a))}" max="${raw(addDays(today(),3650))}"
-      onchange="PRO.calcResgate('${id}')"/>
+      onchange="PRO.resgDataMudou('${id}')"/>
+
+    <label class="f-label">${PL("rg_pos_in")}</label>
+    <input id="res-pos" class="f-amount" type="text" inputmode="decimal" placeholder="0,00"
+      oninput="maskCurrencyInput(this);PRO.resgPosInput('${id}')"/>
+    <div class="rg-proj" id="rg-proj"></div>
+    <div class="pro-note" style="margin:0 0 14px">${PL("rg_pos_note")}</div>
+    ${(+p.taxaAdm>0||+p.taxaPerf>0)?`
+    <label class="f-label">${PL("rg_tx_q")}</label>
+    <div class="rg-seg">
+      ${["liq","bru"].map(m=>`<button id="rg-tx-${m}" onclick="PRO.setResgTx('${m}')"
+        class="pro-btn rg-seg-b">
+        <span class="rg-seg-t">${PX(m==="liq"?"rg_tx_liq":"rg_tx_bru")}</span>
+        <span class="rg-seg-s">${PX(m==="liq"?"rg_tx_liq_s":"rg_tx_bru_s")}</span>
+      </button>`).join("")}
+    </div>
+    <div class="pro-note" id="rg-tx-note" style="margin:0 0 14px"></div>`:""}
 
     <label class="f-label">${PL("rg_how")}</label>
     <input id="res-val" class="f-amount" type="text" inputmode="decimal" placeholder="0,00"
-      oninput="maskCurrencyInput(this);PRO.calcResgate('${id}')"/>
+      oninput="maskCurrencyInput(this);PRO.resgValInput('${id}')"/>
     <div style="display:flex;gap:5px;margin-bottom:8px">
       ${[25,50,100].map(q=>`<button onclick="PRO.setResgatePct('${id}',${q})" class="pro-btn"
         style="flex:1;border:1.5px solid var(--line);background:none;color:var(--ink-2);
@@ -23688,11 +23881,71 @@ function openResgate(id){
   ov.onclick=e=>{if(e.target===ov)closeOverlay(ov);};
   const dt=$("res-data");
   if(dt&&dt.min&&dt.value<dt.min) dt.value=dt.min;
-  RESG_MODO="bruto";
-  setCurrencyInput($("res-val"),astValorAtual(a));
+  RESG_MODO="bruto"; RESG_TX="liq"; RESG_POS_ED=false; RESG_PCT=null;
+  setCurrencyInput($("res-pos"),R2(astValorEm(a,resgDataSel(a))));
+  setCurrencyInput($("res-val"),$("res-pos")?unmaskCurrency($("res-pos")):astValorAtual(a));
+  setCurrencyInput($("res-enc"),0);
+  renderResgModo(); renderResgTx();
+  calcResgate(id);
+}
+/* ── POSIÇÃO INFORMADA (v11.31) ──────────────────────────────────────
+   A data muda a projeção; enquanto o titular não digitar a posição, o
+   campo acompanha a projeção. Digitada, ela manda — e um percentual
+   escolhido nos botões continua valendo sobre a posição nova. */
+let RESG_TX="liq", RESG_POS_ED=false, RESG_PCT=null;
+function resgPos(a,dt){
+  const el=$("res-pos");
+  const v=el?unmaskCurrency(el):0;
+  return v>0?v:R2(astValorEm(a,dt));
+}
+function resgOpt(a,dt){ return {pos:resgPos(a,dt),modoTx:RESG_TX}; }
+function resgAplicaPct(a){
+  if(RESG_PCT==null) return;
+  setCurrencyInput($("res-val"),R2(resgPos(a,resgDataSel(a))*RESG_PCT/100));
+}
+function resgDataMudou(id){
+  const a=resgAtivo(id); if(!a) return;
+  if(!RESG_POS_ED) setCurrencyInput($("res-pos"),R2(astValorEm(a,resgDataSel(a))));
+  resgAplicaPct(a);
+  calcResgate(id);
+}
+function resgPosInput(id){
+  const a=resgAtivo(id); if(!a) return;
+  RESG_POS_ED=true;
+  resgAplicaPct(a);
+  calcResgate(id);
+}
+function resgValInput(id){ RESG_PCT=null; calcResgate(id); }
+function resgReiniciar(a){
+  RESG_POS_ED=false; RESG_PCT=null; RESG_MODO="bruto";
+  const pos=R2(astValorEm(a,resgDataSel(a)));
+  setCurrencyInput($("res-pos"),pos);
+  setCurrencyInput($("res-val"),pos);
   setCurrencyInput($("res-enc"),0);
   renderResgModo();
+}
+function resgUsarProj(id){
+  const a=resgAtivo(id); if(!a) return;
+  RESG_POS_ED=false;
+  setCurrencyInput($("res-pos"),R2(astValorEm(a,resgDataSel(a))));
+  resgAplicaPct(a);
   calcResgate(id);
+}
+function setResgTx(m){
+  RESG_TX=(m==="bru")?"bru":"liq";
+  renderResgTx();
+  if(RESG_ID!=null) calcResgate(RESG_ID);
+}
+function renderResgTx(){
+  ["liq","bru"].forEach(m=>{
+    const b=$("rg-tx-"+m); if(!b) return;
+    const on=(RESG_TX===m);
+    b.style.background=on?"var(--accent)":"none";
+    b.style.borderColor=on?"var(--accent)":"var(--line)";
+    b.style.color=on?"var(--accent-ink)":"var(--ink-2)";
+  });
+  const n=$("rg-tx-note");
+  if(n) n.textContent=PX(RESG_TX==="bru"?"rg_tx_bru_n":"rg_tx_liq_n");
 }
 function resgDataSel(a){
   const el=$("res-data");
@@ -23704,8 +23957,8 @@ function resgDataSel(a){
 function setResgatePct(id,q){
   const a=resgAtivo(id);if(!a)return;
   RESG_MODO="bruto"; renderResgModo();
-  const saldo=R2(astValorEm(a,resgDataSel(a)));
-  setCurrencyInput($("res-val"),saldo*q/100);
+  RESG_PCT=q;
+  resgAplicaPct(a);
   calcResgate(id);
 }
 /* encargo informado na folha, se houver campo */
@@ -23748,34 +24001,61 @@ function renderResgModo(){
 function resgBruto(a,dt,enc){
   const v=$("res-val")?unmaskCurrency($("res-val")):0;
   if(RESG_MODO!=="liquido"||!(v>0)) return v;
-  const saldo=R2(astValorEm(a,dt));
+  const o=resgOpt(a,dt), saldo=R2(o.pos);
   if(!(saldo>0)) return v;
-  const probe=astResgateEm(a,saldo,dt,0);
-  const g=(probe.valor>0)?(probe.ganho/probe.valor):0;
-  const aliq=(+probe.aliq||0)/100, iofP=(+probe.iofPct||0)/100;
-  const k=1-g*iofP-g*(1-iofP)*aliq;
-  if(!(k>0)) return v;
-  return Math.min(saldo,R2((v+(+enc||0))/k));
+  const liq=x=>astResgateEm(a,x,dt,enc,o).liquido;
+  if(liq(saldo)<=v) return saldo;
+  let lo=0, hi=saldo;
+  for(let k=0;k<60;k++){ const m=(lo+hi)/2; if(liq(m)<v) lo=m; else hi=m; }
+  return Math.min(saldo,R2(hi));
 }
 /* o líquido pedido não cabe no saldo: a folha avisa em vez de mentir */
 function resgTeto(a,dt,enc){
   if(RESG_MODO!=="liquido") return false;
   const v=$("res-val")?unmaskCurrency($("res-val")):0;
   if(!(v>0)) return false;
-  const saldo=R2(astValorEm(a,dt));
+  const saldo=R2(resgPos(a,dt));
   return saldo>0 && resgBruto(a,dt,enc)>=saldo-0.005 && v>0;
 }
 function calcResgate(id){
   const a=resgAtivo(id);if(!a||!$("res-out"))return;
   const dt=resgDataSel(a);
   const enc=resgEncargo();
-  const r=astResgateEm(a,resgBruto(a,dt,enc),dt,enc);
+  const r=astResgateEm(a,resgBruto(a,dt,enc),dt,enc,resgOpt(a,dt));
   const teto=resgTeto(a,dt,enc);
   const p=astPro(a);
   const de=String(a.lastUpdate||p.aplic||today()).slice(0,10);
   const L=(lbl,val,cor,forte)=>`<div class="pro-cf${forte?" tot":""}">
     <span>${lbl}</span><span style="color:${cor||"var(--body)"}">${val}</span></div>`;
   const futuro=dt>today();
+  /* projeção x posição informada, logo abaixo do campo */
+  { const pj=$("rg-proj");
+    if(pj){
+      const dif=R2(r.posInf-r.proj), pc=r.proj>0?R2(dif/r.proj*100):0;
+      const cor=Math.abs(dif)<0.005?"var(--ink-3)":(dif>0?"#5A8A4A":"#B85A6A");
+      pj.innerHTML=`<span class="rg-proj-t">${PX("rg_proj")} ${fmt(r.proj)}${Math.abs(dif)>=0.005
+        ?` · <b style="color:${cor};font-weight:600">${dif>0?"+":"−"}${fmt(Math.abs(dif))} (${dif>0?"+":"−"}${P2(Math.abs(pc))}%)</b>`:""}</span>${
+        RESG_POS_ED&&Math.abs(dif)>=0.005?`<button type="button" class="rg-proj-b" onclick="PRO.resgUsarProj('${id}')">${PX("rg_use_proj")}</button>`:""}`;
+    } }
+  const BEN=r.bench==="ipca"?"IPCA":"CDI";
+  const txLin=(()=>{
+    if(!r.temTaxas) return "";
+    const lAdm=PX("rg_adm_l")+" ("+P2(r.admPct)+"% a.a.)";
+    const lPerf=PX("rg_perf_l")+" ("+P2(r.perfPct)+"% "+PX("rg_perf_over")+" "+BEN+")";
+    if(r.modoTx==="bru")
+      return (r.admPct>0?L("(−) "+lAdm,SGP("−")+fmt(r.adm),"#B85A6A"):"")
+            +(r.perfPct>0?L("(−) "+lPerf,SGP("−")+fmt(r.perf),r.perf>0?"#B85A6A":"var(--ink-3)"):"");
+    return `<div class="rg-tx-box">
+      <div class="rg-tx-h">${PX("rg_tx_in_h")}</div>
+      ${L(PX("rg_rend_pre"),fmt(r.rendPre),"var(--ink-2)")}
+      ${r.admPct>0?L(lAdm,fmt(r.adm),"var(--ink-2)"):""}
+      ${r.perfPct>0?L(lPerf,fmt(r.perf),"var(--ink-2)"):""}
+      ${L(PX("rg_gain"),fmt(r.ganho),"#5A8A4A")}</div>`;
+  })();
+  const irLin=r.ccAbat>0
+    ?L(PX("rg_ir_dev")+" ("+P2(r.aliq)+"% · "+r.dias+" "+PX("ap_days")+")",SGP("−")+fmt(r.irDevido),"#B85A6A")
+     +L(PX("rg_cc_abat"),"+"+fmt(r.ccAbat),"#5A8A4A")
+    :L("IR ("+P2(r.aliq)+"% · "+r.dias+" "+PX("ap_days")+")",SGP("−")+fmt(r.ir),"#B85A6A");
   /* De onde saiu a alíquota: a faixa da tabela dos Parâmetros em que o
      prazo caiu, e quando a próxima faixa começa contando desta data. */
   const fx=astFaixaIR(a,r.dias), prox=astProxFaixaIR(a,r.dias,dt);
@@ -23786,12 +24066,13 @@ function calcResgate(id){
         +PX("rg_band_to")+" "+P2(prox.aliq)+"%.":""}</div>`:"";
   $("res-out").innerHTML=H`
     <div style="background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:10px">
-      ${raw(L(PX("rg_pos"),fmt(r.saldo),"var(--ink-2)"))}
-      ${raw(L(PX("rg_val"),fmt(r.valor)))}
+      ${raw(L(PX("rg_pos"),fmt(r.posInf),"var(--ink-2)"))}
+      ${raw(L(PX("rg_val")+" · "+P2(r.prop)+"% "+PX("rg_pct_pos"),fmt(r.modoTx==="bru"&&r.temTaxas?r.valorInf:r.valor)))}
+      ${raw(r.modoTx==="bru"?txLin:"")}
       ${raw(L(PX("rg_cost"),SGP("−")+fmt(r.custoBaixa),"var(--ink-2)"))}
-      ${raw(L(PX("rg_gain"),fmt(r.ganho),"#5A8A4A"))}
+      ${raw(r.modoTx==="bru"||!txLin?L(PX("rg_gain"),fmt(r.ganho),"#5A8A4A"):txLin)}
       ${r.iof>0?raw(L("IOF ("+P2(r.iofPct)+"% · "+r.dias+"d)",SGP("−")+fmt(r.iof),"#B85A6A")):""}
-      ${raw(L("IR ("+P2(r.aliq)+"% · "+r.dias+" "+PX("ap_days")+")",SGP("−")+fmt(r.ir),"#B85A6A"))}
+      ${raw(irLin)}
       ${r.encargo>0?raw(L(PX("rg_enc"),SGP("−")+fmt(r.encargo),"#B85A6A")):""}
       <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;
         margin-top:6px;border-top:2px solid var(--line)">
@@ -23810,14 +24091,27 @@ function calcResgate(id){
     ${teto?`<div class="info-card" style="background:rgba(196,134,58,.12);color:#7A5A22;margin:0 0 10px">${PL("rg_md_cap")}</div>`:""}
     ${(()=>{const lb=astLiquidezData(a);
       if(!lb||!(dt<lb)) return "";
+      if(p.liq!=="venc"&&p.liq!=="car") return "";
       return `<div class="info-card" style="background:rgba(196,134,58,.12);color:#7A5A22;margin:0 0 10px">${
         raw(PXV("lq_rg_wait",{x:brDate(dt),l:astLiquidezLabel(a),d:brDate(lb)}))}</div>`;})()}
-    ${(!futuro&&dt<=de)?`<div class="pro-note" style="margin:0 0 10px">${PL("rg_after")}</div>`:""}`;
+    ${(!futuro&&dt<de)?`<div class="pro-note" style="margin:0 0 10px">${PL("rg_after")}</div>`:""}
+    ${(!futuro&&dt>=de)?`<div class="pro-note" style="margin:0 0 10px">${
+      raw(PXV("rg_anc_note",{v:fmt(r.restante),d:brDate(dt)}))}</div>`:""}`;
   renderResgHist(id);
 }
 /* percentual com vírgula, sem casas inúteis */
 function P2(v){ return String(R2(+v||0)).replace(".",","); }
 
+/* posição informada e taxas do fundo de um resgate gravado (v11.31) */
+function resgHistExtra(r){
+  const par=[];
+  if(+r.posInf>0) par.push(PX("rg_pos_s")+" "+fmt(r.posInf)+(+r.prop>0&&+r.prop<100?" · "+P2(r.prop)+"%":""));
+  if(+r.adm>0) par.push("Adm "+fmt(r.adm));
+  if(+r.perf>0) par.push("Perf "+fmt(r.perf));
+  if(+r.ccAbat>0) par.push(PX("p_cc")+" "+fmt(r.ccAbat));
+  return par.length?`<div style="font-size:10.5px;color:var(--ink-3);margin-top:1px;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap">${par.join(" · ")}</div>`:"";
+}
 /* ── histórico de resgates da aplicação ── */
 function renderResgHist(id){
   const el=$("res-hist"); if(!el) return;
@@ -23834,6 +24128,7 @@ function renderResgHist(id){
           <div style="font-size:10.5px;color:var(--ink-3);margin-top:2px">
             IR ${P2(r.aliq||0)}%${(+r.ir||0)>0?" · "+fmt(r.ir):""}${(+r.iof||0)>0?" · IOF "+fmt(r.iof):""}${
               (+r.encargo||0)>0?" · "+PX("rg_enc_s")+" "+fmt(r.encargo):""}</div>
+            ${resgHistExtra(r)}
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-size:13px;font-weight:600;color:var(--body);font-variant-numeric:tabular-nums">${fmt(r.valor)}</div>
@@ -23856,21 +24151,35 @@ function salvarResgate(id,btn){
   if(!(val>0)){ toast(PX("rg_novalue")); return; }
   if(dt>today()){ toast(PX("rg_future")); return; }
   if(dt<resgDataMin(a)){ toast(PX("rg_early")); return; }
-  const r=astResgateEm(a,val,dt,resgEncargo());
+  const r=astResgateEm(a,val,dt,resgEncargo(),resgOpt(a,dt));
   if(!(r.valor>0)){ toast(PX("rg_nobal")); return; }
   const de=String(a.lastUpdate||p.aplic||today()).slice(0,10);
-  /* a posição informada é posterior ao resgate: a foto já não contém esse
-     dinheiro, e descontá-lo de novo tiraria o mesmo montante duas vezes */
-  const baixado=dt<=de;
+  /* v11.31 — A POSIÇÃO DO RESGATE VIRA A FOTO DA APLICAÇÃO. Com data a
+     partir da última posição, o saldo que sobra (posição informada menos o
+     resgatado) passa a ser a posição na data do resgate: o fundo segue
+     dali, pela taxa cadastrada e pelos Parâmetros, proporcional ao que
+     ficou. Uma posição informada DEPOIS do resgate já não continha esse
+     dinheiro e continua valendo. Nos dois casos o resgate fica baixado. */
+  const ancora=dt>=de;
+  const baixado=true;
   const reg={id:"rg"+Date.now()+Math.floor(Math.random()*1000),
-    data:dt,valor:r.valor,ganho:r.ganho,ir:r.ir,iof:r.iof,aliq:r.aliq,
+    data:dt,valor:r.valor,valorInf:r.valorInf,ganho:r.ganho,ir:r.ir,iof:r.iof,aliq:r.aliq,
     iofPct:r.iofPct,dias:r.dias,encargo:r.encargo,liquido:r.liquido,
-    custoBaixa:r.custoBaixa,baixado};
+    custoBaixa:r.custoBaixa,baixado,
+    posInf:r.posInf,proj:r.proj,prop:r.prop,modoTx:r.modoTx,
+    adm:r.adm,perf:r.perf,irDevido:r.irDevido,ccAbat:r.ccAbat,restante:r.restante,
+    ancora,prevBal:ancora?(parseFloat(a.balance)||0):null,
+    prevData:ancora?(a.lastUpdate||null):null};
   const lista=(Array.isArray(p.resgates)?p.resgates.slice():[]).concat([reg]);
   a.pro=Object.assign({},a.pro||{},{resgates:lista,
-    custo:R2(Math.max(0,R2(+p.custo||0)-r.custoBaixa)),custoAuto:false});
+    custo:R2(Math.max(0,R2(+p.custo||0)-r.custoBaixa)),custoAuto:false,
+    /* a data de aplicação implícita vinha da data da posição: fixada aqui,
+       a nova foto não muda o prazo do IR */
+    aplic:String(p.aplic||de).slice(0,10)});
+  if(ancora){ a.balance=r.restante; a.lastUpdate=dt; }
   persist(); limparCachesAplic();
   toast("✓ "+PX("rg_saved")+" · "+fmt(r.liquido));
+  resgReiniciar(a);
   calcResgate(id);
   try{ if(typeof renderAssets==="function") renderAssets(); }catch(e){}
   refreshPro();
@@ -23883,8 +24192,15 @@ function excluirResgate(id,rid){
   const r=L.find(x=>x&&x.id===rid); if(!r) return;
   a.pro=Object.assign({},p,{resgates:L.filter(x=>x!==r),
     custo:R2(Math.max(0,R2(+p.custo||0)+(+r.custoBaixa||0)))});
+  /* v11.31 — desfaz a foto do resgate, desde que ela ainda seja a vigente:
+     uma posição informada depois prevalece sobre a de antes do resgate */
+  if(r.ancora&&a.lastUpdate===r.data&&Math.abs((parseFloat(a.balance)||0)-(+r.restante||0))<0.01){
+    a.balance=+r.prevBal||0;
+    if(r.prevData) a.lastUpdate=r.prevData; else delete a.lastUpdate;
+  }
   persist(); limparCachesAplic();
   toast("✓ "+PX("rg_removed"));
+  resgReiniciar(a);
   calcResgate(id);
   try{ if(typeof renderAssets==="function") renderAssets(); }catch(e){}
   refreshPro();
@@ -24522,6 +24838,7 @@ function renderRendimento(){
             <div style="font-size:10.5px;color:var(--ink-3);margin-top:2px">IR ${String(R2(r.aliq||0)).replace(".",",")}%${
               (+r.ir||0)>0?" · "+fmt(r.ir):""}${(+r.iof||0)>0?" · IOF "+fmt(r.iof):""}${
               (+r.encargo||0)>0?" · "+PX("rg_enc_s")+" "+fmt(r.encargo):""}</div>
+            ${resgHistExtra(r)}
           </div>
           <div style="text-align:right;flex-shrink:0">
             <div style="font-size:13px;font-weight:600;color:var(--body)">${fmt(r.valor)}</div>
@@ -28882,6 +29199,8 @@ window.PRO={
   openFiscal,saveFiscalForm,resetFiscal,toggleIsen,openResgate,calcResgate,setResgatePct,
   salvarResgate,excluirResgate,renderResgHist,resgDataMin,resgAtivo,resgEncargo,
   setResgModo,renderResgModo,resgBruto,resgModo:()=>RESG_MODO,
+  setResgTx,renderResgTx,resgPosInput,resgValInput,resgDataMudou,resgUsarProj,resgPos,
+  astTaxasFundo,astFatorBench,resgTx:()=>RESG_TX,
   astVencData,astTemVenc,astVencido,astVencidoYM,astVenceNoYM,astParteRendeMes,
   astLiquidezData,astLiqCalc,astLiquidezLabel,astIofAte,iofPct,proxDiaUtil,PXV,
   astResgates,astResgAssin,astResgatadoTotal,astPrazoIR,astLiquidacao,astResgateEm,
