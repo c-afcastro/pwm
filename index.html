@@ -10586,6 +10586,32 @@ function astVencidaFora(a){
     return !!(PRO.astVencEfetivo&&PRO.astVencEfetivo(a));
   }catch(e){ return false; }
 }
+/* v11.32 — resgatada por inteiro no mês navegado: sai da carteira e vai
+   para a seção própria, ao pé da lista */
+function astResgatadaFora(a){
+  try{ return !!(a&&!a.virtual&&window.PRO&&PRO.astEncerradaYM&&PRO.astEncerradaYM(a,activeYMAst())); }
+  catch(e){ return false; }
+}
+/* Rendimento realizado em resgates no mês navegado, respeitando os
+   filtros de instituição e de classe quando pedidos */
+function astRealizadoAst(comFiltro){ return astRealizadoAstDet(comFiltro).bruto; }
+function astRealizadoAstDet(comFiltro){
+  const z={bruto:0,realizado:0,antes:0};
+  try{
+    if(!window.PRO||!PRO.astRealizadoYM) return z;
+    const inst=comFiltro?instFiltroAtivo("ast-inst-filter"):"";
+    const cl=comFiltro?instFiltroAtivo("ast-class-filter"):"";
+    const ym=activeYMAst();
+    ASSETS.forEach(a=>{
+      if(!a||a.virtual) return;
+      if(inst&&instDe(a)!==inst) return;
+      if(cl&&cl!=="venc"&&cl!=="resg"&&!astCasaFiltro(a,cl)) return;
+      const R=PRO.astRealizadoYM(a,ym);
+      z.bruto+=R.bruto||0; z.realizado+=R.realizado||0; z.antes+=R.antes||0;
+    });
+  }catch(e){}
+  return z;
+}
 /* Ainda não aplicada no mês navegado: some da tela, inclusive da seção de vencidas */
 function astNaoAplicadaAst(a){
   try{ return !!(a&&!a.virtual&&window.PRO&&PRO.astNaoAplicadaYM&&PRO.astNaoAplicadaYM(a,activeYMAst())); }
@@ -10806,7 +10832,9 @@ function renderAssets(){
   const FA=assetsFiltrados();
   /* Tudo aqui é a posição do MÊS EXIBIDO, não a de hoje */
   const total=FA.reduce((s,a)=>s+astValPatr(a),0);
-  const monthYield=FA.reduce((s,a)=>s+(astValPatr(a)*astTaxaAst(a)/100),0);
+  /* v11.32 — o rendimento realizado em resgates do mês compõe o total */
+  const RZM=astRealizadoAstDet(true), realizadoMes=RZM.bruto;
+  const monthYield=FA.reduce((s,a)=>s+(astValPatr(a)*astTaxaAst(a)/100),0)+realizadoMes;
   const rendAcum=FA.reduce((s,a)=>s+(astVencidaFora(a)?0:astRendAcum(a)),0);
   const noMes=activeYMAst()===cym();
   /* A variação do mês é rendimento MAIS a sobra reinvestida. Antes só o
@@ -10830,6 +10858,7 @@ function renderAssets(){
         <div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,38px);line-height:1;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" data-total="${fmt(total)}">${fmt(total)}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">📈 ${t("monthly_yield")} ${fmt(monthYield)}</div>
+      ${(Math.abs(RZM.realizado)>=0.01||Math.abs(RZM.antes)>=0.01)?`<div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">✓ ${SGP("+")}${fmt(RZM.realizado)} ${PRO.PX("enc_rz_chip")}${RZM.antes>=0.01?` · ${SGP("−")}${fmt(RZM.antes)} ${PRO.PX("enc_rz_chip2")}`:""}</div>`:""}
       ${astChipMesAst()}
       ${aporteProj>0?`<div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">💰 ${t("ast_contrib")} ${fmt(aporteProj)}</div>`:""}
       ${(noMes&&rendAcum>0)?`<button class="ast-rend-chip" onclick="event.stopPropagation();openAstRendPopup()" style="background:rgba(127,228,160,.18);border-radius:20px;padding:3px 10px;font-size:11px;color:#CFF3DA">⏱ ${SGP("+")}${fmt(rendAcum)} ${t("ar_chip")} ⓘ</button>`:""}
@@ -10846,7 +10875,7 @@ function renderAssets(){
 function renderAssetsDash(){
   const BASE=astBaseLista();
   const total=BASE.reduce((s,a)=>s+astValPatr(a),0);
-  const monthYield=BASE.reduce((s,a)=>s+(astValPatr(a)*astTaxaAst(a)/100),0);
+  const monthYield=BASE.reduce((s,a)=>s+(astValPatr(a)*astTaxaAst(a)/100),0)+astRealizadoAst(false);
   const goalTotal=Object.values(astGoals).reduce((s,v)=>s+(parseFloat(v)||0),0);
   const avgYield=total>0?(monthYield/total*100):0;
 
@@ -10913,9 +10942,9 @@ function populateAstClassFilter(){
   const atual=sel.value;
   const base=(typeof astBaseLista==="function")?astBaseLista():ASSETS;
   const nClasse={}, nProd={};
-  let nVenc=0;
+  let nVenc=0, nResg=0;
   base.forEach(a=>{
-    if(astVencidaFora(a)){ nVenc++; return; }
+    if(astVencidaFora(a)){ if(astResgatadaFora(a)) nResg++; else nVenc++; return; }
     nClasse[a.class]=(nClasse[a.class]||0)+1;
     const pd=(typeof PRO!=="undefined"&&PRO.astProdutoId)?PRO.astProdutoId(a):"";
     if(pd) nProd[pd]=(nProd[pd]||0)+1;
@@ -10936,6 +10965,7 @@ function populateAstClassFilter(){
        +`</optgroup>`;
   });
   if(nVenc) html+=`<option value="venc">⏳ ${t("ast_f_venc")} (${nVenc})</option>`;
+  if(nResg) html+=`<option value="resg">✓ ${PRO.PX("enc_f")} (${nResg})</option>`;
   sel.innerHTML=html;
   /* Preserva a escolha ao redesenhar; se o produto sumiu da carteira,
      volta para "todas" em vez de filtrar por algo que não existe. */
@@ -10964,7 +10994,13 @@ function renderAssetList(){
   /* Vencidas: abaixo de todas, numa seção recolhida por padrão. Com o
      filtro "Vencidas" ativo, a lista inteira já é delas e a seção some. */
   const soVenc=instFiltroAtivo("ast-class-filter")==="venc";
-  let venc=soVenc?[]:assetsVencidasInst();
+  /* v11.32 — resgatadas por inteiro: seção própria, abaixo das vencidas.
+     Com o filtro "Resgatadas" ativo, a lista inteira é delas. */
+  const soResg=instFiltroAtivo("ast-class-filter")==="resg";
+  let resg=soResg?items.splice(0):assetsResgatadasInst();
+  if(q&&!soResg) resg=resg.filter(a=>(a.name||"").toLowerCase().includes(q));
+  resg.sort((x,y)=>String((PRO.astEncerradaEm&&PRO.astEncerradaEm(y))||"").localeCompare(String((PRO.astEncerradaEm&&PRO.astEncerradaEm(x))||"")));
+  let venc=(soVenc||soResg)?[]:assetsVencidasInst();
   if(q) venc=venc.filter(a=>(a.name||"").toLowerCase().includes(q));
   venc.sort((a,b)=>(a.name||"").localeCompare(b.name||"","pt-BR"));
   const nAtivas=items.length;
@@ -11039,9 +11075,22 @@ function renderAssetList(){
         <button style="background:none;border:none;color:#C47A5C;font-size:12px;cursor:pointer" onclick="confirmDelAsset(${a.id})">🗑️</button>`}
       </div>
     </div>`;};
-  const vazio=`<div style="color:var(--ink-2);font-size:12px;padding:16px 0;text-align:center">${t(soVenc?"ast_venc_none":"no_ast_found")}</div>`;
-  el.innerHTML=(nAtivas?items.slice(0,nAtivas).map(card).join(""):(venc.length?"":vazio))
-    +vencHd+items.slice(nAtivas).map(card).join("");
+  const vazio=`<div style="color:var(--ink-2);font-size:12px;padding:16px 0;text-align:center">${soResg?PRO.PX("enc_none"):t(soVenc?"ast_venc_none":"no_ast_found")}</div>`;
+  /* A seção inteira vai num bloco data-sep: o enriquecimento do módulo PRO
+     casa cartão a cartão pela ordem de AST_LIST_ORDER, e as resgatadas não
+     fazem parte dela. */
+  const resgAberto=soResg||window.AST_RESG_ABERTO;
+  const resgHd=(resg.length&&!soResg)?`<div onclick="window.AST_RESG_ABERTO=!window.AST_RESG_ABERTO;renderAssetList()"
+      style="display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;margin:14px 0 8px;padding:9px 12px;border-radius:12px;background:rgba(15,36,64,.06);border:1px solid rgba(15,36,64,.14)">
+      <span style="font-size:12px;font-weight:700;color:#0F2440;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">✓ ${PRO.PX("enc_sec")}</span>
+      <span style="flex-shrink:0;display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;font-weight:700;color:#0F2440;background:rgba(15,36,64,.1);border-radius:10px;padding:1px 8px">${resg.length}</span>
+        <span style="font-size:12px;color:#0F2440;display:inline-block;transform:rotate(${resgAberto?180:0}deg)">▾</span>
+      </span>
+    </div>`:"";
+  const resgBloco=resg.length?`<div data-sep="1">${resgHd}${resgAberto?resg.map(a=>{ try{ return PRO.encCard(a); }catch(e){ return ""; } }).join(""):""}</div>`:"";
+  el.innerHTML=(nAtivas?items.slice(0,nAtivas).map(card).join(""):((venc.length||(resg.length&&!soResg))?"":vazio))
+    +vencHd+items.slice(nAtivas).map(card).join("")+resgBloco;
 }
 
 /* ── HISTÓRICO TAB ── */
@@ -15614,7 +15663,8 @@ function assetsFiltrados(){
     if(inst&&instDe(a)!==inst) return false;
     /* Vencida não é carteira: some do filtro normal e só volta quando o
        titular pede por ela, no filtro próprio ou na seção ao pé da lista. */
-    if(cl==="venc") return astVencidaFora(a)&&!astNaoAplicadaAst(a);
+    if(cl==="venc") return astVencidaFora(a)&&!astResgatadaFora(a)&&!astNaoAplicadaAst(a);
+    if(cl==="resg") return astResgatadaFora(a);
     if(astVencidaFora(a)) return false;
     if(cl&&!astCasaFiltro(a,cl)) return false;
     return true;
@@ -15624,7 +15674,11 @@ function assetsFiltrados(){
    recolhível no fim da lista e a contagem do seletor. */
 function assetsVencidasInst(){
   const inst=instFiltroAtivo("ast-inst-filter");
-  return ASSETS.filter(a=>astVencidaFora(a)&&!astNaoAplicadaAst(a)&&(!inst||instDe(a)===inst));
+  return ASSETS.filter(a=>astVencidaFora(a)&&!astResgatadaFora(a)&&!astNaoAplicadaAst(a)&&(!inst||instDe(a)===inst));
+}
+function assetsResgatadasInst(){
+  const inst=instFiltroAtivo("ast-inst-filter");
+  return ASSETS.filter(a=>astResgatadaFora(a)&&(!inst||instDe(a)===inst));
 }
 /* "prod:lca" filtra pelo produto, "cls:fixed_income" pela classe inteira.
    Um valor sem prefixo é de um backup antigo, quando o seletor guardava
@@ -17799,7 +17853,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.31";
+const APP_VERSION="11.33";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -19192,7 +19246,54 @@ const PDIC={
   rg_pos_s:["Posição","Position","Bestand"],
   rg_anc_note:["Ao registrar, o saldo que sobra ({v}) passa a ser a posição da aplicação em {d}; dali em diante ela segue pela taxa cadastrada e pelos Parâmetros.",
     "When recorded, the remaining balance ({v}) becomes the holding's position on {d}; from there it follows the registered rate and the Parameters.",
-    "Beim Buchen wird der Restbestand ({v}) zum Bestand der Anlage am {d}; ab dann folgt sie dem erfassten Satz und den Parametern."]
+    "Beim Buchen wird der Restbestand ({v}) zum Bestand der Anlage am {d}; ab dann folgt sie dem erfassten Satz und den Parametern."],
+
+  /* — v11.32: aplicação resgatada por inteiro — */
+  enc_sec:["Resgatadas","Redeemed","Ausgezahlt"],
+  enc_f:["Resgatadas","Redeemed","Ausgezahlt"],
+  enc_none:["Nenhuma aplicação resgatada por inteiro.","No fully redeemed holding.","Keine vollständig ausgezahlte Anlage."],
+  enc_on:["Resgatada em","Redeemed on","Ausgezahlt am"],
+  enc_full:["100% resgatada","100% redeemed","100% ausgezahlt"],
+  enc_full_on:["Resgatada por inteiro em","Fully redeemed on","Vollständig ausgezahlt am"],
+  enc_n_resg:["resgates","redemptions","Auszahlungen"],
+  enc_open:["Ver resgate","View redemption","Auszahlung ansehen"],
+  enc_saved:["Aplicação resgatada por inteiro","Holding fully redeemed","Anlage vollständig ausgezahlt"],
+  enc_no_redeem:["Esta aplicação já foi resgatada por inteiro","This holding has already been fully redeemed","Diese Anlage wurde bereits vollständig ausgezahlt"],
+  enc_recebido:["Líquido recebido","Net received","Netto erhalten"],
+  enc_ganho:["Rendimento realizado","Realized yield","Realisierter Ertrag"],
+  enc_ganho_s:["Rendimento","Yield","Ertrag"],
+  enc_rent:["No período","Period","Zeitraum"],
+  enc_aa:["Ao ano","Per year","Pro Jahr"],
+  enc_pcdi:["% do CDI","% of CDI","% des CDI"],
+  enc_aplic:["Aplicado em","Invested on","Angelegt am"],
+  enc_resg:["Resgatado em","Redeemed on","Ausgezahlt am"],
+  enc_h_pos:["Posição no resgate","Position at redemption","Bestand bei Auszahlung"],
+  enc_pos:["Posição informada","Position entered","Erfasster Bestand"],
+  enc_proj:["Projeção do app na data","App projection on that date","App-Projektion am Stichtag"],
+  enc_dif:["Diferença para a projeção","Difference to projection","Abweichung zur Projektion"],
+  enc_prop:["Parcela resgatada","Share redeemed","Ausgezahlter Anteil"],
+  enc_txmode:["Taxas do fundo","Fund fees","Fondsgebühren"],
+  enc_h_apur:["Apuração do resgate","Redemption breakdown","Abrechnung der Auszahlung"],
+  enc_h_apur_c:["Apuração consolidada","Consolidated breakdown","Konsolidierte Abrechnung"],
+  enc_h_meses:["Rendimento nos meses","Yield by month","Ertrag nach Monaten"],
+  enc_m_antes:["Apropriado pela curva do app","Accrued along the app curve","Über die App-Kurve abgegrenzt"],
+  enc_m_resg:["no mês do resgate","in the redemption month","im Auszahlungsmonat"],
+  enc_m_note:["Enquanto aplicado, o dinheiro rende no app pela taxa cadastrada, mês a mês. No mês do resgate entra o realizado no resgate menos o que já tinha sido apropriado nos meses anteriores: o rendimento do mês até a data do resgate, mais o acerto entre a taxa cadastrada e o que o extrato mostrou — negativo quando a aplicação rendeu menos do que o previsto. Somados, os meses dão exatamente o rendimento realizado, sem contar nada duas vezes. Toque no mês para abrir o fluxo.",
+    "While invested, the money earns in the app at the registered rate, month by month. The redemption month takes the gain realized on redemption minus what had already been accrued in earlier months: the month's yield up to the redemption date, plus the true-up between the registered rate and what the statement showed — negative when the holding earned less than projected. Added up, the months equal exactly the realized yield, with nothing counted twice. Tap the month to open its cash flow.",
+    "Solange angelegt, verzinst sich das Geld in der App Monat für Monat zum erfassten Satz. Im Auszahlungsmonat zählt der bei der Auszahlung realisierte Ertrag abzüglich dessen, was in Vormonaten bereits abgegrenzt war: der Monatsertrag bis zum Auszahlungstag plus die Angleichung zwischen erfasstem Satz und Auszug — negativ, wenn die Anlage weniger als projiziert erzielte. Zusammen ergeben die Monate genau den realisierten Ertrag, nichts zählt doppelt. Monat antippen, um den Cashflow zu öffnen."],
+  enc_h_carac:["Características","Characteristics","Merkmale"],
+  enc_idx:["Rentabilidade cadastrada","Registered return","Erfasste Rendite"],
+  enc_poup:["Poupança","Savings account","Sparbuch"],
+  enc_evol:["Evolução","History","Verlauf"],
+  enc_undo:["Desfazer resgate","Undo redemption","Auszahlung zurücknehmen"],
+  enc_undo_note:["Desfazer apaga o último resgate e devolve a aplicação à carteira com a posição que ela tinha antes dele.",
+    "Undo deletes the last redemption and returns the holding to the portfolio with the position it had before it.",
+    "Zurücknehmen löscht die letzte Auszahlung und stellt die Anlage mit dem vorherigen Bestand wieder in das Portfolio."],
+  enc_rz_real:["realizado","realized","realisiert"],
+  enc_rz_antes:["já apropriado nos meses anteriores","already accrued in earlier months","in Vormonaten bereits abgegrenzt"],
+  enc_rz_chip:["realizado em resgates","realized in redemptions","in Auszahlungen realisiert"],
+  enc_rz_chip2:["já apropriado","already accrued","bereits abgegrenzt"],
+  enc_m_cc:["(−) Come-cotas já recolhido","(−) Semi-annual tax already paid","(−) Bereits gezahlte Halbjahressteuer"]
   ,
   /* — ficha de impactos (v11.03) — */
   im_nf:["Item não encontrado.","Item not found.","Eintrag nicht gefunden."],
@@ -19927,6 +20028,16 @@ function assetFlowForYM(ymStr){
     const p=astPro(a);
     /* A posição E a taxa são as do mês pedido. Antes ambas eram as de hoje:
        qualquer mês do fluxo rendia igual, e mudar a curva não mudava nada. */
+    /* v11.32 — rendimento realizado em resgates deste mês, inclusive o da
+       aplicação resgatada por inteiro, que já não tem posição */
+    try{
+      const RZ=astRealizadoYM(a,ymStr);
+      if(RZ.itens.length){
+        bruto+=RZ.bruto; ir+=RZ.ir;
+        RZ.itens.forEach(z=>itens.push({id:a.id,nome:a.name||"—",bruto:z.mes,ir:z.ir,
+          aliq:z.aliqEf,resg:true,data:z.r.data,realizado:z.realizado,antes:z.antes}));
+      }
+    }catch(e){}
     let bal=astValorAtual(a);
     try{ bal=astValorYM(a,ymStr); }catch(e){}
     if(bal<=0) return;
@@ -20937,7 +21048,7 @@ function astAplicIni(a){
 }
 function astNaoAplicadaYM(a,ym){ const ap=astAplicIni(a); return !!ap&&astRefYM(ym)<ap; }
 function astVencForaYM(a,ym){ const v=astVencEfetivo(a); return !!v&&astRefYM(ym)>=v; }
-function astForaYM(a,ym){ return astNaoAplicadaYM(a,ym)||astVencForaYM(a,ym); }
+function astForaYM(a,ym){ return astNaoAplicadaYM(a,ym)||astVencForaYM(a,ym)||astEncerradaYM(a,ym); }
 /* Já venceu na data de referência (padrão: hoje) */
 function astVencido(a,ref){
   const v=astVencData(a); if(!v) return false;
@@ -20979,6 +21090,94 @@ function astResgAssin(a,p){
 }
 function astResgatadoTotal(a,p){
   return R2(astResgates(a,p).reduce((s,r)=>s+(+r.valor||0),0));
+}
+
+/* ═══ v11.32 — APLICAÇÃO RESGATADA POR INTEIRO ═══════════════════════
+   Zerada por resgate, a aplicação sai da carteira, mas não da história:
+   continua consultável — com a posição que tinha, o que rendeu, o que
+   pagou de imposto e de taxa e o que caiu na conta.
+
+   Data de encerramento: a do último resgate, quando depois dele não
+   sobrou posição. Vale também para resgates gravados antes da v11.31,
+   em que o saldo não era reancorado e a posição zerava pelos eventos. */
+function astEncerradaEm(a){
+  if(!a||a.virtual||a.class==="fgts") return null;
+  const L=astResgates(a); if(!L.length) return null;
+  try{ if(astEhFgtsAuto(a)) return null; }catch(e){}
+  const ult=L[L.length-1];
+  const bal=parseFloat(a.balance)||0;
+  if(bal<=0.005) return String(ult.data).slice(0,10);
+  let v=bal; try{ v=astValorAtual(a); }catch(e){}
+  return (v<=0.01)?String(ult.data).slice(0,10):null;
+}
+/* Encerrada no mês navegado: nos meses anteriores ao resgate total ela
+   ainda era carteira e continua aparecendo como tal. */
+function astEncerradaYM(a,ym){
+  const d=astEncerradaEm(a);
+  return !!d&&astRefYM(ym)>=d;
+}
+
+/* RENDIMENTO REALIZADO NO MÊS DO RESGATE.
+   O rendimento de cada mês é a posição de fim de mês vezes a taxa. No mês
+   do resgate o dinheiro que saiu já não está na posição — e num resgate
+   total a aplicação inteira some da conta, levando junto o que rendeu.
+
+   Aqui o resgate devolve ao mês o que lhe cabe, sem contar duas vezes:
+   o ganho realizado no resgate MENOS o que os meses anteriores já
+   reconheceram para esse mesmo dinheiro (a parcela resgatada da posição
+   de cada fim de mês, pela taxa daquele mês). O que sobra é o rendimento
+   do mês até a data do resgate mais o acerto entre a curva do app e o
+   que o extrato mostrou. Somados todos os meses, dá exatamente o ganho
+   realizado. O IR acompanha na alíquota efetiva retida no resgate. */
+const AST_RZ_CACHE={};
+function astRealizResg(a,r){
+  const p=astPro(a);
+  const ck=[a.id,r.id||"",r.data,r.valor,r.ganho,r.ir,r.iof,r.ccAbat,p.aplic,p.idx,p.idxVal,
+    p.taxaAdm,p.taxaPerf,p.benchPerf,p.trib,today(),HIST.ts,PARAMS.ts,MARKET.ts,(FISCAL.ts||0)].join("|");
+  if(AST_RZ_CACHE[ck]) return AST_RZ_CACHE[ck];
+  const ini=String(p.aplic||"").slice(0,10);
+  const ymR=String(r.data).slice(0,7);
+  let antes=0;
+  const meses=[];
+  if(/^\d{4}-\d{2}-\d{2}$/.test(ini)&&ini.slice(0,7)<ymR){
+    let m=ini.slice(0,7), g=0;
+    while(m<ymR&&g++<600){
+      const fim=astFimDoMesYM(m);
+      let f=1;
+      try{ const x=fatorProduto(a,fim,r.data,p).fator; if(isFinite(x)&&x>0) f=x; }catch(e){}
+      let tx=0;
+      try{ tx=astLiquidoAM(a,m)/100; }catch(e){ tx=0; }
+      if(!isFinite(tx)) tx=0;
+      const v=(+r.valor||0)/f*tx;
+      antes+=v; meses.push({ym:m,v:R2(v)});
+      m=ymAdd(m,1);
+    }
+  }
+  /* O fluxo mostra o come-cotas numa linha própria, nos meses em que ele
+     é recolhido. O ganho do resgate já vem sem ele (a cota é líquida), e
+     por isso o realizado volta a incluí-lo — senão o mesmo imposto sairia
+     duas vezes. */
+  const ganho=R2(+r.ganho||0), cc=R2(+r.ccAbat||0);
+  const realizado=R2(ganho+cc);
+  const mes=R2(realizado-antes);
+  /* IR do fluxo: provisão sobre o que entra no mês, na mesma alíquota que
+     o fluxo aplica às demais aplicações — os meses anteriores provisionaram
+     o que apropriaram, este provisiona o acerto. O imposto efetivamente
+     retido no resgate está na ficha de encerramento. */
+  let aliqH=0;
+  try{ aliqH=astAliqIR(a,dias(p.aplic)); }catch(e){ aliqH=0; }
+  if(p.trib==="isento"||p.trib==="fii") aliqH=0;
+  const irTot=R2((+r.ir||0)+(+r.iof||0));
+  const out={r,ym:ymR,ganho,cc,realizado,antes:R2(antes),mes,meses,
+    irTot,ir:R2(mes*aliqH/100),aliqEf:R2(aliqH)};
+  AST_RZ_CACHE[ck]=out;
+  return out;
+}
+function astRealizadoYM(a,ym){
+  const M=String(ym||ymNow());
+  const its=astResgates(a).filter(r=>String(r.data).slice(0,7)===M).map(r=>astRealizResg(a,r));
+  const S=k=>R2(its.reduce((s,x)=>s+x[k],0));
+  return {bruto:S("mes"),ir:S("ir"),realizado:S("realizado"),antes:S("antes"),itens:its};
 }
 
 /* Evolução COM eventos: caminha de resgate em resgate, corrige o trecho e
@@ -22635,6 +22834,36 @@ function ensureStyles(){
     padding:6px 11px 4px;margin:4px 0 6px}
   #modal-resgate .rg-tx-h{font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;
     color:var(--ink-3);margin:2px 0 2px}
+  /* v11.32 — ficha de encerramento */
+  #modal-enc .pro-cf{align-items:flex-start}
+  #modal-enc .pro-cf span:first-child{white-space:normal;overflow:visible;line-height:1.35}
+  #modal-enc .pro-cf.clic{cursor:pointer}
+  #modal-enc .enc-box{background:var(--surface);border-radius:14px;padding:10px 14px}
+  #modal-enc .enc-tot{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    border-top:2px solid var(--line);margin-top:6px;padding-top:9px;font-size:13px;font-weight:700;color:var(--body)}
+  #modal-enc .enc-tot span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+  #modal-enc .enc-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+  #modal-enc .enc-row:last-child{border-bottom:none}
+  #modal-enc .enc-row div{white-space:normal!important;overflow:visible!important}
+  #modal-enc .enc-hero{background:#0F2440;color:#fff;border-radius:16px;padding:14px 16px 12px}
+  #modal-enc .enc-pill{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.02em;
+    background:rgba(255,255,255,.14);border-radius:20px;padding:3px 10px;margin-bottom:10px}
+  #modal-enc .enc-hero-l{font-size:11px;color:rgba(255,255,255,.7)}
+  #modal-enc .enc-hero-v{font-family:var(--serif);font-style:italic;font-size:30px;line-height:1.1;margin:2px 0 10px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #modal-enc .enc-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  #modal-enc .enc-kpi{background:rgba(255,255,255,.08);border-radius:10px;padding:6px 8px;min-width:0}
+  #modal-enc .enc-kpi-l{font-size:9.5px;color:rgba(255,255,255,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #modal-enc .enc-kpi-v{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  #modal-enc .enc-tl{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11px;color:var(--ink-3)}
+  #modal-enc .enc-tl>div{display:flex;flex-direction:column;gap:1px;min-width:0}
+  #modal-enc .enc-tl b{font-size:12.5px;color:var(--body);font-weight:600}
+  #modal-enc .enc-tl i{font-style:normal;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+  #modal-enc .enc-tl-mid{flex:1;align-items:center;position:relative;text-align:center}
+  #modal-enc .enc-tl-mid::before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1.5px dashed var(--line)}
+  #modal-enc .enc-tl-mid span{position:relative;background:var(--paper,#fff);padding:0 8px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+  #modal-enc .enc-btn{flex:1;border:1.5px solid var(--line);background:none;color:var(--ink-2);font-weight:600;cursor:pointer;
+    padding:10px 6px;white-space:nowrap}
   /* Aviso de vencimento. A tarja à esquerda é o único ornamento: a cor
      diz o tom (âmbar para o que vence, terracota para o que já venceu) e
      o resto é a mesma tipografia das outras fichas. */
@@ -23801,6 +24030,9 @@ function openResgate(id){
      vencimento e o dinheiro voltou para a conta. O caminho é cadastrar a
      aplicação nova, e é isso que o aviso oferece. */
   if(astVencEfetivo(a)){ toast(PX("vc_no_redeem")); return; }
+  if(astEncerradaEm(a)){ toast(PX("enc_no_redeem")); return openEncerrada(a.id); }
+  /* uma folha de resgate por vez: duas com o mesmo id confundiam os campos */
+  document.querySelectorAll("#modal-resgate").forEach(x=>x.remove());
   ensureStyles();
   const c=gAssetClass(a.class), p=astPro(a);
   const vc=astVencData(a,p), vencido=astVencido(a);
@@ -23918,6 +24150,7 @@ function resgPosInput(id){
 function resgValInput(id){ RESG_PCT=null; calcResgate(id); }
 function resgReiniciar(a){
   RESG_POS_ED=false; RESG_PCT=null; RESG_MODO="bruto";
+  if(!$("res-pos")) return;
   const pos=R2(astValorEm(a,resgDataSel(a)));
   setCurrencyInput($("res-pos"),pos);
   setCurrencyInput($("res-val"),pos);
@@ -24178,6 +24411,14 @@ function salvarResgate(id,btn){
     aplic:String(p.aplic||de).slice(0,10)});
   if(ancora){ a.balance=r.restante; a.lastUpdate=dt; }
   persist(); limparCachesAplic();
+  if(ancora&&r.restante<=0.005){
+    toast("✓ "+PX("enc_saved")+" · "+fmt(r.liquido));
+    document.querySelectorAll("#modal-resgate").forEach(x=>{ try{ closeOverlay(x); }catch(e){ x.remove(); } });
+    try{ if(typeof renderAssets==="function") renderAssets(); }catch(e){}
+    refreshPro();
+    setTimeout(()=>{ try{ openEncerrada(a.id); }catch(e){} },230);
+    return;
+  }
   toast("✓ "+PX("rg_saved")+" · "+fmt(r.liquido));
   resgReiniciar(a);
   calcResgate(id);
@@ -24204,6 +24445,238 @@ function excluirResgate(id,rid){
   calcResgate(id);
   try{ if(typeof renderAssets==="function") renderAssets(); }catch(e){}
   refreshPro();
+}
+
+/* ═══ 11.1 FICHA DE ENCERRAMENTO (v11.32) ═════════════════════════════
+   O que a aplicação foi, do primeiro ao último dia: quanto entrou, a
+   posição que tinha no resgate, o que rendeu, o que ficou com o fisco e
+   com o fundo, o que caiu na conta e em que mês esse rendimento entrou
+   na conta do mês. */
+const encEsc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const encYM=ym=>{ const m=+String(ym).slice(5,7); return ((typeof MS!=="undefined"&&MS[m-1])||String(ym).slice(5,7))+"/"+String(ym).slice(2,4); };
+function astEncResumo(a){
+  const dt=astEncerradaEm(a); if(!dt) return null;
+  const p=astPro(a), L=astResgates(a,p), ult=L[L.length-1];
+  const sum=k=>R2(L.reduce((s,r)=>s+(+r[k]||0),0));
+  const aplicado=sum("custoBaixa");
+  const ganho=sum("ganho");
+  const ini=String(p.aplic||"").slice(0,10);
+  const d=/^\d{4}-\d{2}-\d{2}$/.test(ini)?Math.max(0,dias(ini,dt)):0;
+  const rent=aplicado>0?R2(ganho/aplicado*100):0;
+  /* Taxa interna de retorno: com vários resgates o percentual simples
+     ignora quando cada parte saiu. Fluxos: o aplicado na data de
+     aplicação, cada resgate (antes do IR) na sua data. */
+  let tir=null;
+  if(aplicado>0&&d>0){
+    const fl=[{t:0,v:-aplicado}].concat(L.map(r=>({t:Math.max(0,dias(ini,r.data))/365,v:+r.valor||0})));
+    const vpl=i=>fl.reduce((s,f)=>s+f.v/Math.pow(1+i,f.t),0);
+    let lo=-0.99,hi=10;
+    if(vpl(lo)>0&&vpl(hi)<0){
+      for(let k=0;k<120;k++){ const m=(lo+hi)/2; if(vpl(m)>0) lo=m; else hi=m; }
+      tir=R2((lo+hi)/2*100);
+    }
+  }
+  const fb=d>0?astFatorBench(ini,dt,"cdi"):1;
+  const cdiPer=R2((fb-1)*100), cdiAA=d>0?R2((Math.pow(fb,365/d)-1)*100):0;
+  let pctCdi=null;
+  if(L.length===1&&cdiPer>0) pctCdi=R2(rent/cdiPer*100);
+  else if(L.length>1&&cdiAA>0&&tir!=null) pctCdi=R2(tir/cdiAA*100);
+  return {a,p,L,ult,data:dt,ini,dias:d,aplicado,ganho,rent,tir,cdiPer,cdiAA,pctCdi,
+    valor:sum("valor"),iof:sum("iof"),ir:sum("ir"),enc:sum("encargo"),liquido:sum("liquido"),
+    adm:sum("adm"),perf:sum("perf"),cc:sum("ccAbat"),irDev:sum("irDevido")};
+}
+/* Cartão da seção "Resgatadas" na lista de Aplicações */
+function encCard(a){
+  const S=astEncResumo(a); if(!S) return "";
+  const c=gAssetClass(a.class);
+  const pos=S.ganho>=0;
+  const tag=(txt,bg,cor)=>`<span style="font-size:10px;background:${bg};border-radius:7px;padding:2px 7px;color:${cor};white-space:nowrap">${txt}</span>`;
+  return `<div class="enc-card" style="background:var(--surface);border-radius:14px;padding:12px;margin-bottom:8px">
+    <div onclick="PRO.openEncerrada(${a.id})" style="cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+      <div style="display:flex;gap:10px;align-items:center;min-width:0">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;filter:grayscale(.55)">${c.emoji}</div>
+        <div style="min-width:0">
+          <div style="font-size:14px;font-weight:600;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${encEsc(a.name||"—")}</div>
+          <div style="font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${PX("enc_on")} ${brDate(S.data)}${a.instituicao?" · "+encEsc(a.instituicao):""}</div>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-family:var(--serif);font-style:italic;font-size:17px;color:var(--body)">${fmt(S.liquido)}</div>
+        <div style="font-size:10px;color:${pos?"var(--green)":"#B85A6A"}">${pos?SGP("+"):SGP("−")}${fmt(Math.abs(S.ganho))} · ${P2(S.rent)}%</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin:8px 0 8px">
+      ${tag(PX("enc_full"),"rgba(15,36,64,.08)","#0F2440")}
+      ${tag(S.dias+" "+PX("ap_days"),"rgba(0,0,0,.05)","var(--ink-2)")}
+      ${(S.ir+S.iof)>0?tag("IR "+fmt(S.ir+S.iof),"rgba(184,90,106,.1)","#B85A6A"):""}
+      ${S.L.length>1?tag(S.L.length+" "+PX("enc_n_resg"),"rgba(0,0,0,.05)","var(--ink-2)"):""}
+    </div>
+    <div style="display:flex;gap:6px;justify-content:flex-end;align-items:center;border-top:1px solid var(--line);padding-top:6px">
+      <button style="background:none;border:none;color:#0F2440;font-size:11.5px;font-weight:600;cursor:pointer;margin-right:auto" onclick="event.stopPropagation();PRO.openEncerrada(${a.id})">🧾 ${PX("enc_open")}</button>
+      <button style="background:none;border:none;color:#C47A5C;font-size:12px;cursor:pointer" onclick="event.stopPropagation();confirmDelAsset(${a.id})">🗑️</button>
+    </div>
+  </div>`;
+}
+let ENC_ID=null;
+function openEncerrada(id){
+  const a=resgAtivo(id); if(!a) return;
+  if(!astEncerradaEm(a)) return openRendimento(a.id,true);
+  ENC_ID=a.id;
+  ensureStyles();
+  const old=$("modal-enc"); if(old) old.remove();
+  const ov=document.createElement("div");
+  ov.className="overlay open"; ov.style.zIndex="215"; ov.style.alignItems="flex-end";
+  ov.id="modal-enc";
+  ov.innerHTML='<div class="sheet" style="max-height:92dvh;overflow-y:auto"><div class="sheet-handle"></div>'
+    +'<button class="sheet-close" onclick="closeOverlay(this)">✕</button><div id="enc-body"></div></div>';
+  document.body.appendChild(ov);
+  ov.onclick=e=>{ if(e.target===ov) closeOverlay(ov); };
+  renderEncerrada();
+}
+function renderEncerrada(){
+  const a=resgAtivo(ENC_ID), el=$("enc-body"); if(!a||!el) return;
+  const S=astEncResumo(a);
+  if(!S){ el.innerHTML=""; return; }
+  const c=gAssetClass(a.class), p=S.p, u=S.ult;
+  const GRN="#5A8A4A", RED="#B85A6A", NAV="#0F2440";
+  const L=(lbl,val,cor,cls)=>`<div class="pro-cf${cls?" "+cls:""}"><span>${lbl}</span><span style="color:${cor||"var(--body)"}">${val}</span></div>`;
+  const HD=t=>`<div class="pro-h" style="margin-top:16px"><b>${t}</b><i></i></div>`;
+  const BOX=h=>`<div class="enc-box">${h}</div>`;
+  const neg=v=>SGP("−")+fmt(Math.abs(v));
+  const sinal=v=>(v<0?SGP("−"):SGP("+"))+fmt(Math.abs(v));
+  const BEN=u.bench==="ipca"?"IPCA":"CDI";
+
+  /* ── posição no resgate final ── */
+  const temPos=(+u.posInf>0);
+  const dif=temPos?R2((+u.posInf)-(+u.proj||0)):0;
+  const posBox=BOX(
+    L(PX("enc_pos"),fmt(temPos?u.posInf:u.valor),"var(--body)")
+    +(temPos&&(+u.proj>0)?L(PX("enc_proj"),fmt(u.proj),"var(--ink-2)")
+      +(Math.abs(dif)>=0.005?L(PX("enc_dif"),sinal(dif)+" ("+(dif<0?"−":"+")+P2(Math.abs(u.proj>0?dif/u.proj*100:0))+"%)",dif<0?RED:GRN):""):"")
+    +(temPos&&+u.prop>0&&+u.prop<100?L(PX("enc_prop"),P2(u.prop)+"%","var(--ink-2)"):"")
+    +(u.modoTx&&(+u.adm>0||+u.perf>0)?L(PX("enc_txmode"),PX(u.modoTx==="bru"?"rg_tx_bru":"rg_tx_liq"),"var(--ink-2)"):"")
+  );
+
+  /* ── apuração (do resgate final, ou consolidada com vários) ── */
+  const R1=S.L.length===1;
+  const X=R1?{valor:u.valor,custo:u.custoBaixa,ganho:u.ganho,adm:+u.adm||0,perf:+u.perf||0,iof:+u.iof||0,
+      irDev:+u.irDevido||0,cc:+u.ccAbat||0,ir:+u.ir||0,enc:+u.encargo||0,liq:u.liquido,modo:u.modoTx}
+    :{valor:S.valor,custo:S.aplicado,ganho:S.ganho,adm:S.adm,perf:S.perf,iof:S.iof,irDev:S.irDev,cc:S.cc,ir:S.ir,enc:S.enc,liq:S.liquido,
+      modo:S.L.every(r=>r.modoTx==="bru")?"bru":""};
+  const taxasNaCota=X.modo!=="bru"&&(X.adm>0||X.perf>0);
+  const apur=BOX(
+    L(PX("rg_val"),fmt(X.valor))
+    +L(PX("rg_cost"),neg(X.custo),"var(--ink-2)")
+    +(taxasNaCota?L(PX("rg_rend_pre"),fmt(X.ganho+X.adm+X.perf),"var(--ink-2)")
+      +(X.adm>0?L(PX("rg_adm_l")+(p.taxaAdm>0?" ("+P2(p.taxaAdm)+"% a.a.)":""),neg(X.adm),"var(--ink-2)","sub"):"")
+      +(X.perf>0?L(PX("rg_perf_l")+(p.taxaPerf>0?" ("+P2(p.taxaPerf)+"% "+PX("rg_perf_over")+" "+BEN+")":""),neg(X.perf),"var(--ink-2)","sub"):""):"")
+    +(X.modo==="bru"&&X.adm>0?L("(−) "+PX("rg_adm_l"),neg(X.adm),RED):"")
+    +(X.modo==="bru"&&X.perf>0?L("(−) "+PX("rg_perf_l"),neg(X.perf),RED):"")
+    +L(PX("enc_ganho"),sinal(X.ganho),X.ganho<0?RED:GRN)
+    +(X.iof>0?L("IOF",neg(X.iof),RED):"")
+    +(X.cc>0&&X.irDev>0?L(PX("rg_ir_dev")+(R1?" ("+P2(u.aliq)+"%)":""),neg(X.irDev),RED)+L(PX("rg_cc_abat"),SGP("+")+fmt(X.cc),GRN)
+      :L("IR"+(R1?" ("+P2(u.aliq)+"% · "+(u.dias||S.dias)+" "+PX("ap_days")+")":""),neg(X.ir),RED))
+    +(X.enc>0?L(PX("rg_enc"),neg(X.enc),RED):"")
+    +`<div class="enc-tot"><span>${PX("enc_recebido")}</span><span>${fmt(X.liq)}</span></div>`
+  );
+
+  /* ── vários resgates ── */
+  const lista=S.L.length>1?HD(PX("rg_list"))+BOX(S.L.map(r=>`<div class="enc-row">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12.5px;color:var(--body);font-weight:600">${brDate(r.data)}</div>
+        <div style="font-size:10.5px;color:var(--ink-3);margin-top:2px">${PX("enc_ganho_s")} ${sinal(+r.ganho||0)} · IR ${P2(r.aliq||0)}%${(+r.ir||0)>0?" · "+fmt(r.ir):""}${(+r.iof||0)>0?" · IOF "+fmt(r.iof):""}</div>
+        ${resgHistExtra(r)}
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:13px;font-weight:600;color:var(--body);font-variant-numeric:tabular-nums">${fmt(r.valor)}</div>
+        <div style="font-size:10.5px;color:${GRN}">${fmt(r.liquido)}</div>
+      </div></div>`).join("")):"";
+
+  /* ── em que mês o rendimento entrou ── */
+  const rz=S.L.map(r=>astRealizResg(a,r));
+  const porMes={};
+  rz.forEach(z=>{ porMes[z.ym]=R2((porMes[z.ym]||0)+z.mes); });
+  const antesTot=R2(rz.reduce((s,z)=>s+z.antes,0));
+  const ccTot=R2(rz.reduce((s,z)=>s+z.cc,0));
+  const ymIni=S.ini?S.ini.slice(0,7):"";
+  const primRes=rz.length?rz[0].ym:"";
+  const meses=BOX(
+    (antesTot!==0&&ymIni&&primRes>ymIni?L(PX("enc_m_antes")+" "+encYM(ymIni)+(ymAdd(primRes,-1)>ymIni?"–"+encYM(ymAdd(primRes,-1)):""),sinal(antesTot),"var(--ink-2)"):"")
+    +Object.keys(porMes).sort().map(ym=>`<div class="pro-cf clic" onclick="PRO.encVerMes('${ym}')"><span>${encYM(ym)} · ${PX("enc_m_resg")}</span><span style="color:${porMes[ym]<0?RED:GRN}">${sinal(porMes[ym])} <span style="color:var(--ink-4)">›</span></span></div>`).join("")
+    +(ccTot>0?L(PX("enc_m_cc"),SGP("−")+fmt(ccTot),"var(--ink-2)"):"")
+    +`<div class="enc-tot"><span>${PX("enc_ganho")}</span><span style="color:${S.ganho<0?RED:GRN}">${sinal(S.ganho)}</span></div>`
+  )+`<div class="pro-note">${PX("enc_m_note")}</div>`;
+
+  /* ── características ── */
+  const idxN=astIdxNorm(p.idx);
+  const idxLbl=idxN==="cdi_pct"?P2(p.idxVal)+"% CDI":idxN==="cdi_spread"?"CDI + "+P2(p.idxVal)+"%":
+    idxN==="ipca_spread"?"IPCA + "+P2(p.idxVal)+"%":idxN==="pre"?P2(p.idxVal)+"% a.a.":idxN==="poupanca"?PX("enc_poup"):P2(p.idxVal)+"% a.m.";
+  const carac=BOX(
+    L(PX("enc_idx"),idxLbl,"var(--ink-2)")
+    +L(PX("ap_liq"),encEsc(astLiquidezLabel(a)),"var(--ink-2)")
+    +(p.taxaAdm>0?L(PX("rg_adm_l"),P2(p.taxaAdm)+"% a.a.","var(--ink-2)"):"")
+    +(p.taxaPerf>0?L(PX("rg_perf_l"),P2(p.taxaPerf)+"% "+PX("rg_perf_over")+" "+(p.benchPerf==="ipca"?"IPCA":"CDI"),"var(--ink-2)"):"")
+    +(p.comeCotas?L(PX("p_cc"),"mai/nov","var(--ink-2)"):"")
+  );
+
+  const kpi=(lbl,val,cor)=>`<div class="enc-kpi"><div class="enc-kpi-l">${lbl}</div><div class="enc-kpi-v" style="color:${cor||"#fff"}">${val}</div></div>`;
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px">
+      <div style="width:42px;height:42px;border-radius:12px;background:${c.color}18;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${c.emoji}</div>
+      <div style="min-width:0">
+        <div style="font-family:var(--serif);font-size:19px;color:var(--body);line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${encEsc(a.name||"—")}</div>
+        <div style="font-size:11px;color:var(--ink-2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${encEsc(catLabel(c))}${a.instituicao?" · "+encEsc(a.instituicao):""}</div>
+      </div>
+    </div>
+    <div class="enc-hero">
+      <div class="enc-pill">✓ ${PX("enc_full_on")} ${brDate(S.data)}</div>
+      <div class="enc-hero-l">${PX("enc_recebido")}</div>
+      <div class="enc-hero-v">${fmt(S.liquido)}</div>
+      <div class="enc-kpis">
+        ${kpi(PX("enc_ganho_s"),sinal(S.ganho),S.ganho<0?"#F2B8C2":"#BFE8C9")}
+        ${kpi(PX("enc_rent"),(S.rent<0?"−":"")+P2(Math.abs(S.rent))+"%")}
+        ${S.tir!=null?kpi(PX("enc_aa"),P2(S.tir)+"%"):""}
+        ${S.pctCdi!=null?kpi(PX("enc_pcdi"),P2(S.pctCdi)+"%"):""}
+      </div>
+    </div>
+    <div class="enc-tl">
+      <div><span>${PX("enc_aplic")}</span><b>${brDate(S.ini)}</b><i>${fmt(S.aplicado)}</i></div>
+      <div class="enc-tl-mid"><span>${S.dias} ${PX("ap_days")}</span></div>
+      <div style="text-align:right"><span>${PX("enc_resg")}</span><b>${brDate(S.data)}</b><i>${fmt(S.valor)}</i></div>
+    </div>
+    ${HD(PX("enc_h_pos")+(S.L.length>1?" · "+brDate(u.data):""))}${posBox}
+    ${HD(PX(R1?"enc_h_apur":"enc_h_apur_c"))}${apur}
+    ${lista}
+    ${HD(PX("enc_h_meses"))}${meses}
+    ${HD(PX("enc_h_carac"))}${carac}
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="pro-btn enc-btn" onclick="PRO.encEvolucao(${a.id})">📈 ${PX("enc_evol")}</button>
+      <button class="pro-btn enc-btn" onclick="PRO.encDesfazer(${a.id})">↺ ${PX("enc_undo")}</button>
+    </div>
+    <div class="pro-note" style="margin-top:8px">${PX("enc_undo_note")}</div>`;
+}
+function encFechar(){ try{ closeOverlay("modal-enc"); }catch(e){} }
+function encEvolucao(id){ encFechar(); setTimeout(()=>{ try{ openRendimento(id,true); }catch(e){} },210); }
+/* mês do resgate: o fluxo de caixa daquele mês, onde o realizado entrou */
+function encVerMes(ym){
+  encFechar();
+  setTimeout(()=>{ try{
+    const m=document.getElementById("modal-cashflow"); if(!m) return;
+    m.classList.add("open");
+    CFP.ym=ym; CFP.escala="mes"; CFP.aberto["c-apl"]=true;
+    renderCfPainel();
+  }catch(e){} },210);
+}
+/* desfaz o último resgate: a aplicação volta à carteira com a posição
+   que tinha antes dele */
+function encDesfazer(id){
+  const a=resgAtivo(id); if(!a) return;
+  const L=astResgates(a); if(!L.length) return;
+  const ult=L[L.length-1];
+  const antes=L.length;
+  excluirResgate(a.id,ult.id);
+  if(astResgates(a).length===antes) return;        /* cancelado */
+  if(astEncerradaEm(a)) renderEncerrada(); else encFechar();
 }
 
 /* ── Avisos dispensados ───────────────────────────────────────────────
@@ -24418,8 +24891,10 @@ function renderCashFlow(){
     ).join(""):"";
   const detDiv=FIN_OPEN?cf.divida.itens.map(x=>
       R("↳ "+(x.emoji||"")+" "+raw(x.nome)+(x.fgts>0?" · FGTS":""),SGP("−")+V(x.parcela),"sub",RED)).join(""):"";
-  const detApl=FIN_OPEN?cf.aplic.itens.filter(x=>x.bruto>0).slice(0,6).map(x=>
-      R("↳ "+raw(x.nome)+(x.aliq>0?" · IR "+String(x.aliq).replace(".",",")+"%":" · isento"),
+  const detApl=FIN_OPEN?cf.aplic.itens.filter(x=>x.bruto>0||x.resg).slice(0,6).map(x=>x.resg
+      ?R("↳ "+raw(x.nome)+" · "+PX("enc_rz_real"),SGP("+")+V(x.realizado),"sub",GRN)
+        +(x.antes>0.005?R("&nbsp;&nbsp;&nbsp;"+PX("enc_rz_antes"),SGP("−")+V(x.antes),"sub","var(--ink-3)"):"")
+      :R("↳ "+raw(x.nome)+(x.aliq>0?" · IR "+String(x.aliq).replace(".",",")+"%":" · isento"),
         SGP("+")+V(x.bruto),"sub",GRN)).join(""):"";
 
   /* trava do FGTS: o depósito do mês fica retido enquanto a leva corre */
@@ -24757,13 +25232,14 @@ function aplFechar(){
 function aplEditar(id){ aplFechar(); setTimeout(()=>{ try{ openAssetEdit(id); }catch(e){} },210); }
 function aplResgatar(id){ aplFechar(); setTimeout(()=>{ try{ openResgate(id); }catch(e){} },210); }
 function openAplicacao(id){ return openRendimento(id); }
-function openRendimento(id){
+function openRendimento(id,forcar){
   /* a aplicação simulada da projeção não vive em ASSETS: ela é montada pela
      lista, e o extrato dela é outra folha — a dos lotes de sobra */
   let a=ASSETS.find(x=>x.id===id);
   if(!a){ try{ a=astBaseLista().find(x=>String(x.id)===String(id)); }catch(e){} }
   if(!a) return;
   if(a.virtual){ try{ return openSavingExtrato(); }catch(e){ return; } }
+  if(!forcar&&astEncerradaEm(a)) return openEncerrada(a.id);
   REND_ID=id;
   const ov=document.createElement("div");
   ov.className="overlay open"; ov.style.zIndex="210"; ov.style.alignItems="flex-end";
@@ -26354,7 +26830,8 @@ function cfMes(ym,k,st){
   if(!proj||!st){
     const ap=assetFlowForYM(ym);
     apBruto=ap.bruto; apIr=ap.ir; apAportes=ap.aportes; apCc=ap.comeCotas;
-    ap.itens.forEach(x=>apItens.push({id:x.id,tipo:"asset",nome:x.nome,bruto:x.bruto,ir:x.ir,aliq:x.aliq}));
+    ap.itens.forEach(x=>apItens.push({id:x.id,tipo:x.resg?"resg":"asset",nome:x.nome,bruto:x.bruto,ir:x.ir,aliq:x.aliq,
+      resg:!!x.resg,data:x.data||"",realizado:x.realizado||0,antes:x.antes||0}));
   }else{
     st.forEach(x=>{
       /* a taxa é a do mês projetado, colhida da curva de parâmetros */
@@ -26454,7 +26931,9 @@ function cfMes(ym,k,st){
          papel encerrado seria inventar um produto que o titular não
          contratou. A decisão de reaplicar é dele. */
       const alvos=st.filter(x=>!x.fgtsAuto
-        &&!(x.venc&&String(ym)>=String(x.venc).slice(0,7)));
+        &&!(x.venc&&String(ym)>=String(x.venc).slice(0,7))
+        /* resgatada por inteiro: produto encerrado, não recebe sobra */
+        &&!(()=>{ try{ return !!astEncerradaEm(x.a); }catch(e){ return false; } })());
       if(typeof PROJ!=="undefined"&&PROJ.investir&&alvos.length){
         const sobraMes=R2(R2(inc.liquido)-despesas-dPago-apAportes);
         const sv=alvos.find(x=>x.saving);
@@ -26829,8 +27308,10 @@ function cfDemonstrativo(cf,pref){
     x.encargos>0?R("&nbsp;&nbsp;&nbsp;seguros e taxa adm.",SGP("−")+V(x.encargos),"sub","var(--ink-3)"):"",
     x.fgts>0?R("&nbsp;&nbsp;&nbsp;coberto pelo FGTS",SGP("+")+V(x.fgts),"sub",GRN):""
   ].filter(Boolean).join("")));
-  const apl=sub(ID("apl"),cf.aplic.itens.slice(0,20).map(x=>
-    RI(x,"↳ "+raw(x.nome)+(x.aliq>0?" · IR "+String(x.aliq).replace(".",",")+"%":" · isento"),
+  const apl=sub(ID("apl"),cf.aplic.itens.slice(0,20).map(x=>x.resg
+    ?RI(x,"↳ "+raw(x.nome)+" · "+PX("enc_rz_real"),SGP("+")+V(x.realizado),GRN)
+      +(x.antes>0.005?R("&nbsp;&nbsp;&nbsp;"+PX("enc_rz_antes"),SGP("−")+V(x.antes),"sub","var(--ink-3)"):"")
+    :RI(x,"↳ "+raw(x.nome)+(x.aliq>0?" · IR "+String(x.aliq).replace(".",",")+"%":" · isento"),
       SGP("+")+V(x.bruto),GRN)));
 
   return `<div class="cfp-card">
@@ -28741,6 +29222,7 @@ function impClamp(){
    caixa) já a recebe lendo aquele mês; das listas, abre no horizonte de
    12 meses com o mês da tela pronto para um toque em "Mês". */
 function openImpactos(tipo,id,ym){
+  if(tipo==="resg"){ try{ return openEncerrada(id); }catch(e){ tipo="asset"; } }
   IMP_TIPO=tipo; IMP_ID=String(id);
   const dado=(ym&&/^\d{4}-\d{2}$/.test(String(ym)))?String(ym):null;
   IMP_YM=dado||impMesBase(tipo); IMP_N=dado?"m":12; impClamp();
@@ -29201,6 +29683,8 @@ window.PRO={
   setResgModo,renderResgModo,resgBruto,resgModo:()=>RESG_MODO,
   setResgTx,renderResgTx,resgPosInput,resgValInput,resgDataMudou,resgUsarProj,resgPos,
   astTaxasFundo,astFatorBench,resgTx:()=>RESG_TX,
+  astEncerradaEm,astEncerradaYM,astRealizadoYM,astRealizResg,astEncResumo,encCard,
+  openEncerrada,renderEncerrada,encEvolucao,encDesfazer,encVerMes,encFechar,
   astVencData,astTemVenc,astVencido,astVencidoYM,astVenceNoYM,astParteRendeMes,
   astLiquidezData,astLiqCalc,astLiquidezLabel,astIofAte,iofPct,proxDiaUtil,PXV,
   astResgates,astResgAssin,astResgatadoTotal,astPrazoIR,astLiquidacao,astResgateEm,
@@ -30204,6 +30688,36 @@ html.wz-lock body{ touch-action:none; }
   .wz-ic.wz-bump,.wz-b.wz-shake{ animation:none!important; }
   .wz-ic.wz-draw svg *{ stroke-dashoffset:0!important; }
 }
+
+/* ══ v11.33 — CADASTROS EM TELA CHEIA ════════════════════════════════
+   Quem toca em "novo gasto", "nova entrada", "nova aplicação" ou "nova
+   dívida" está focado naquilo. A folha deixava de ser do tamanho do
+   conteúdo — uma etapa curta virava uma faixa no rodapé, com a tela de
+   trás disputando a atenção — e passa a ocupar a tela, deixando só uma
+   fresta no topo, como as folhas do iOS. Os botões ficam ancorados no
+   pé da folha em qualquer etapa.
+   A folha vira coluna flexível só nesses quatro cadastros; o × deixa de
+   flutuar (float não existe dentro de flex) e vai para o canto. */
+:is(#modal-add,#modal-income,#modal-asset,#modal-debt) > .sheet{
+  height:calc(100dvh - max(24px, env(safe-area-inset-top, 0px) + 10px))!important;
+  max-height:none!important;
+  display:flex!important; flex-direction:column; position:relative;
+}
+:is(#modal-add,#modal-income,#modal-asset,#modal-debt) > .sheet > *{ flex-shrink:0; }
+:is(#modal-add,#modal-income,#modal-asset,#modal-debt) > .sheet > .sheet-close{
+  position:absolute!important; top:16px; right:18px; z-index:8; margin:0!important; float:none;
+}
+:is(#form-title,#income-form-title,#asset-form-title,#debt-form-title){ padding-right:34px; }
+/* os botões descem para o pé da folha; o espaço livre fica acima deles */
+:is(#modal-add,#modal-income,#modal-asset,#modal-debt) > .sheet > .wz-foot{ margin-top:auto!important; padding-top:16px; }
+:is(#modal-add,#modal-income,#modal-asset,#modal-debt) > .sheet:not(.wz-sheet) > .f-actions{ margin-top:auto!important; }
+/* Formulário completo: o rodapé fica só com o link "voltar ao passo a
+   passo" e deixa de ser fixo. Fixo, a tampa logo abaixo dele cobria os
+   botões Cancelar/Adicionar no fim da folha. */
+.wz-foot.wz-solo{ position:relative!important; }
+.wz-foot.wz-solo::after, .wz-foot.wz-solo::before{ display:none!important; }
+:is(#modal-add,#modal-income,#modal-asset,#modal-debt) > .sheet > .wz-foot.wz-solo{ padding-top:6px; padding-bottom:0; }
+:is(#modal-add,#modal-income,#modal-asset,#modal-debt) > .sheet > .wz-foot.wz-solo .wz-alt{ margin-bottom:8px; }
 </style>
 <script id="wz-js">
 /* ══════════════════════════════════════════════════════════════
