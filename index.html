@@ -17853,7 +17853,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.33";
+const APP_VERSION="11.34";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -31134,18 +31134,18 @@ html.wz-lock body{ touch-action:none; }
    padronização geral força 42px/16px em qualquer input desta tela, e
    aqui a referência é a outra. Nada de escala própria: se um dia a
    forma compacta do app mudar, muda-se este bloco junto com ela. */
-#screen-simulacoes *, #modal-sim-line *{ box-sizing:border-box; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) *, #modal-sim-line *{ box-sizing:border-box; }
 
 /* ── o campo compacto ── */
-#screen-simulacoes .pro-f, #modal-sim-line .pro-f{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-f, #modal-sim-line .pro-f{
   display:flex; flex-direction:column; gap:5px; min-width:0;
 }
-#screen-simulacoes .pro-f>label, #modal-sim-line .pro-f>label{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-f>label, #modal-sim-line .pro-f>label{
   font-size:9px!important; letter-spacing:1px; text-transform:uppercase;
   color:var(--ink-3); font-weight:600; white-space:nowrap;
   overflow:hidden; text-overflow:ellipsis; margin:0!important; line-height:1.2;
 }
-#screen-simulacoes .pro-f>input, #screen-simulacoes .pro-f>select,
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-f>input, :is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-f>select,
 #modal-sim-line .pro-f>input, #modal-sim-line .pro-f>select,
 #modal-sim-line .sim-man-r>input{
   width:100%; min-width:0;
@@ -31156,123 +31156,123 @@ html.wz-lock body{ touch-action:none; }
   color:var(--body)!important; margin:0!important;
   -webkit-appearance:none; appearance:none;
 }
-#screen-simulacoes .pro-f>select, #modal-sim-line .pro-f>select{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-f>select, #modal-sim-line .pro-f>select{
   padding-right:26px!important; text-overflow:ellipsis; cursor:pointer;
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1.5l5 5 5-5' fill='none' stroke='%237A766D' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>")!important;
   background-repeat:no-repeat!important; background-position:right 9px center!important;
   background-size:10px 7px!important;
 }
-#screen-simulacoes .pro-f>input:focus, #screen-simulacoes .pro-f>select:focus,
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-f>input:focus, :is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-f>select:focus,
 #modal-sim-line .pro-f>input:focus, #modal-sim-line .pro-f>select:focus,
 #modal-sim-line .sim-man-r>input:focus{
   border-color:#6E4523!important; background:var(--paper)!important; outline:none;
 }
-#screen-simulacoes .pro-f>input:disabled, #modal-sim-line .pro-f>input:disabled{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-f>input:disabled, #modal-sim-line .pro-f>input:disabled{
   opacity:.55; color:var(--ink-3)!important;
 }
 /* grade de duas colunas, sem estouro */
-#screen-simulacoes .pro-grid, #modal-sim-line .pro-grid{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-grid, #modal-sim-line .pro-grid{
   display:grid; grid-template-columns:1fr 1fr; gap:9px;
 }
-#screen-simulacoes .pro-grid>*, #modal-sim-line .pro-grid>*{ min-width:0; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-grid>*, #modal-sim-line .pro-grid>*{ min-width:0; }
 /* cabeçalho de bloco e nota */
-#screen-simulacoes .pro-h, #modal-sim-line .pro-h{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-h, #modal-sim-line .pro-h{
   display:flex; align-items:center; gap:9px; margin:18px 0 10px;
 }
-#screen-simulacoes .pro-h b, #modal-sim-line .pro-h b{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-h b, #modal-sim-line .pro-h b{
   font-size:9px; letter-spacing:2px; text-transform:uppercase;
   color:var(--ink-3); font-weight:700; white-space:nowrap;
 }
-#screen-simulacoes .pro-h i, #modal-sim-line .pro-h i{ flex:1; height:1px; background:var(--line); }
-#screen-simulacoes .pro-note, #modal-sim-line .pro-note{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-h i, #modal-sim-line .pro-h i{ flex:1; height:1px; background:var(--line); }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-note, #modal-sim-line .pro-note{
   font-size:10.5px; color:var(--ink-3); line-height:1.5; margin:8px 0 0;
 }
 /* pílulas: a mesma do módulo, vestida de marrom como a seção */
-#screen-simulacoes .pro-chips, #modal-sim-line .pro-chips{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-chips, #modal-sim-line .pro-chips{
   display:flex; gap:5px; flex-wrap:wrap; align-items:center; margin-top:10px;
 }
-#screen-simulacoes .pro-pill, #modal-sim-line .pro-pill{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-pill, #modal-sim-line .pro-pill{
   display:inline-flex!important; align-items:center; justify-content:center; gap:5px;
   border:1.5px solid var(--line); background:var(--surface); color:var(--ink-2);
   font-size:11.5px!important; font-weight:500; white-space:nowrap;
   border-radius:20px!important; padding:0 13px!important; min-height:32px!important;
   height:auto; cursor:pointer; line-height:1!important;
 }
-#screen-simulacoes .pro-pill.on, #modal-sim-line .pro-pill.on{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-pill.on, #modal-sim-line .pro-pill.on{
   border-color:#6E4523; background:rgba(110,69,35,.10); color:#6E4523;
   font-weight:700; box-shadow:inset 0 0 0 1px rgba(110,69,35,.25);
 }
-#screen-simulacoes .pro-pill:disabled{ opacity:.4; cursor:default; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .pro-pill:disabled{ opacity:.4; cursor:default; }
 
 /* ── peças próprias da seção ── */
-#screen-simulacoes .sim-strip, #modal-sim-line .sim-strip{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .sim-strip, #modal-sim-line .sim-strip{
   background:rgba(110,69,35,.07); border-radius:12px; padding:9px 12px;
   font-size:11.5px; color:var(--ink-2); line-height:1.65; margin:10px 0 0;
 }
-#screen-simulacoes .sim-card{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .sim-card{
   background:var(--surface); border-radius:16px; padding:14px 15px; margin-bottom:4px;
 }
-#screen-simulacoes .sim-stats{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; }
-#screen-simulacoes .sim-pill{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .sim-stats{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .sim-pill{
   background:rgba(255,255,255,.14); border-radius:20px; padding:3px 9px;
   font-size:10.5px; color:rgba(255,255,255,.85); white-space:nowrap;
 }
-#screen-simulacoes .sim-gh{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .sim-gh{
   display:flex; align-items:center; justify-content:space-between; gap:10px; margin:16px 0 8px;
 }
-#screen-simulacoes .sim-vazio{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .sim-vazio{
   background:var(--surface); border-radius:12px; padding:12px 14px;
   font-size:11.5px; color:var(--ink-4); margin-bottom:4px;
 }
-#screen-simulacoes .sim-linha{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .sim-linha{
   background:var(--surface); border-radius:12px; padding:10px 13px; margin-bottom:6px;
   cursor:pointer; display:flex; align-items:center; gap:10px;
 }
-#screen-simulacoes .sim-linha.off{ opacity:.45; }
-#screen-simulacoes .sim-linha-t{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .sim-linha.off{ opacity:.45; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .sim-linha-t{
   font-size:12.5px; font-weight:600; color:var(--body);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-#screen-simulacoes .sim-linha-s{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .sim-linha-s{
   font-size:10px; color:var(--ink-3); margin-top:2px;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-#screen-simulacoes .sim-linha-v{ font-size:12px; flex-shrink:0; }
-#screen-simulacoes .sim-flag{ font-size:11.5px; color:var(--warn); line-height:1.5; margin-bottom:6px; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .sim-linha-v{ font-size:12px; flex-shrink:0; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .sim-flag{ font-size:11.5px; color:var(--warn); line-height:1.5; margin-bottom:6px; }
 
 /* ── tabelas: rolam dentro da própria caixa, cabeçalho grudado ── */
-#screen-simulacoes .sim-scroll{ padding:0; max-height:56dvh; overflow:auto; -webkit-overflow-scrolling:touch; }
-#screen-simulacoes table.sim-t{ border-collapse:collapse; width:max-content; min-width:100%; font-size:11px; }
-#screen-simulacoes table.sim-t th{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .sim-scroll{ padding:0; max-height:56dvh; overflow:auto; -webkit-overflow-scrolling:touch; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) table.sim-t{ border-collapse:collapse; width:max-content; min-width:100%; font-size:11px; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) table.sim-t th{
   font-size:9px; letter-spacing:.6px; text-transform:uppercase; color:var(--ink-3);
   font-weight:600; padding:8px 9px; text-align:right; white-space:nowrap;
   position:sticky; top:0; background:var(--surface);
 }
-#screen-simulacoes table.sim-t th.k, #screen-simulacoes table.sim-t td.k{ text-align:left; }
-#screen-simulacoes table.sim-t td{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) table.sim-t th.k, :is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) table.sim-t td.k{ text-align:left; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) table.sim-t td{
   padding:6px 9px; text-align:right; white-space:nowrap; color:var(--ink-2);
   border-top:1px solid var(--line);
 }
-#screen-simulacoes table.sim-t td.k{ color:var(--body); font-weight:600; }
-#screen-simulacoes table.sim-t td.b{ font-weight:600; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) table.sim-t td.k{ color:var(--body); font-weight:600; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) table.sim-t td.b{ font-weight:600; }
 
-#screen-simulacoes table.sim-t2{ width:100%; border-collapse:collapse; font-size:11.5px; }
-#screen-simulacoes table.sim-t2 th{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) table.sim-t2{ width:100%; border-collapse:collapse; font-size:11.5px; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) table.sim-t2 th{
   font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--ink-3);
   font-weight:600; padding:8px 0 5px; text-align:right;
 }
-#screen-simulacoes table.sim-t2 td{ padding:5px 0; color:var(--ink-2); border-top:1px solid var(--line); }
-#screen-simulacoes table.sim-t2 td.n{ text-align:right; white-space:nowrap; }
-#screen-simulacoes table.sim-t2 td.s{ font-size:10px; color:var(--ink-4); width:54px; }
-#screen-simulacoes table.sim-t2 tr.f td{ font-weight:700; color:var(--body); }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) table.sim-t2 td{ padding:5px 0; color:var(--ink-2); border-top:1px solid var(--line); }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) table.sim-t2 td.n{ text-align:right; white-space:nowrap; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) table.sim-t2 td.s{ font-size:10px; color:var(--ink-4); width:54px; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) table.sim-t2 tr.f td{ font-weight:700; color:var(--body); }
 
 /* ── gráficos: escala nos extremos, zero marcado, período nas pontas ── */
-#screen-simulacoes .sim-ax{ font-size:8.5px; fill:var(--ink-4); font-family:inherit; }
-#screen-simulacoes .sim-leg{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .sim-ax{ font-size:8.5px; fill:var(--ink-4); font-family:inherit; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .sim-leg{
   display:flex; gap:14px; justify-content:center; flex-wrap:wrap;
   font-size:10px; color:var(--ink-3); margin-top:8px;
 }
-#screen-simulacoes .sim-leg i{
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .sim-leg i{
   display:inline-block; width:10px; height:10px; border-radius:2px;
   vertical-align:-1px; margin-right:5px;
 }
@@ -31285,7 +31285,7 @@ html.wz-lock body{ touch-action:none; }
 #modal-sim-line .sim-man-r{ display:flex; align-items:center; gap:10px; margin-bottom:7px; }
 #modal-sim-line .sim-man-r>span{ font-size:11px; color:var(--ink-3); width:58px; flex-shrink:0; }
 #modal-sim-line .cat-grid{ border-color:rgba(110,69,35,.28); margin-bottom:14px; }
-#screen-simulacoes .btn-primary{ background:#6E4523; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov) .btn-primary{ background:#6E4523; }
 /* ── ficha da linha · v11.03: contadores, prévia, efeito no VPL ── */
 #modal-sim-line .pro-grid3{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
 #modal-sim-line .pro-grid3>*{ min-width:0; }
@@ -31343,6 +31343,110 @@ html.wz-lock body{ touch-action:none; }
 #modal-sim-line textarea.sim-mt-txt:focus{ border-color:#6E4523; outline:none; background:var(--paper); }
 
 
+
+/* ══ v11.34 — PLANILHA DO PROJETO ══════════════════════════════════ */
+#nav-simulacoes{ display:none!important; }
+#screen-simulacoes .simp-card{ background:var(--surface); border-radius:16px; padding:13px 15px 8px;
+  margin-bottom:10px; cursor:pointer; }
+#screen-simulacoes .simp-card:active{ transform:scale(.995); }
+#screen-simulacoes .simp-top{ display:flex; align-items:flex-start; gap:12px; }
+#screen-simulacoes .simp-n{ font-size:14px; font-weight:600; color:var(--body); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#screen-simulacoes .simp-s{ font-size:10.5px; color:var(--ink-3); margin-top:3px; line-height:1.4; }
+#screen-simulacoes .simp-v{ font-family:var(--serif); font-style:italic; font-size:17px; white-space:nowrap; }
+#screen-simulacoes .simp-kp{ display:flex; gap:14px; flex-wrap:wrap; font-size:11px; color:var(--ink-3); margin-top:8px; }
+#screen-simulacoes .simp-kp b{ color:var(--body); font-weight:600; }
+#screen-simulacoes .simp-act{ display:flex; align-items:center; gap:4px; border-top:1px solid var(--line); margin-top:9px; padding-top:5px; }
+#screen-simulacoes .simp-act button{ background:none; border:none; cursor:pointer; color:var(--ink-2); font-size:13px; padding:6px 9px; border-radius:9px; }
+#screen-simulacoes .simp-act .simp-open{ margin-right:auto; color:#6E4523; font-weight:700; font-size:12px; padding-left:0; }
+#screen-simulacoes .simp-act .simp-del{ color:#C47A5C; }
+
+html.sim-on, html.sim-on body{ overflow:hidden!important; }
+#sim-grid{ position:fixed; inset:0; z-index:205; background:var(--bg); color:var(--body);
+  display:flex; flex-direction:column; box-sizing:border-box;
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) 0 env(safe-area-inset-left,0px);
+  animation:ovFadeIn .22s ease backwards; }
+/* girada: o topo do aparelho (entalhe) fica à esquerda de quem lê e a
+   barra de início à direita */
+html.sim-rot :is(#sim-grid,#modal-sim-line,#sim-prem-ov,#sim-res-ov){
+  inset:auto!important; top:0!important; left:0!important; right:auto!important; bottom:auto!important;
+  width:var(--rot-w)!important; height:var(--rot-h)!important;
+  transform:translateX(var(--rot-x)) rotate(90deg)!important; transform-origin:0 0!important;
+  touch-action:none;
+}
+html.sim-rot #sim-grid{ padding:0 env(safe-area-inset-bottom,0px) 0 env(safe-area-inset-top,0px); }
+html.sim-rot :is(#modal-sim-line,#sim-prem-ov,#sim-res-ov) > .sheet{
+  max-height:calc(var(--rot-h) - 12px)!important; max-width:min(640px,94%)!important;
+}
+#sim-grid .sg-top{ display:flex; align-items:center; gap:8px; padding:8px 12px; min-height:52px;
+  border-bottom:1px solid var(--line); flex-shrink:0; box-sizing:border-box; }
+#sim-grid .sg-ic{ width:34px; height:34px; border-radius:50%; border:none; background:var(--surface);
+  color:#6E4523; font-size:20px; line-height:1; cursor:pointer; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; padding:0; }
+#sim-grid .sg-tt{ flex:1; min-width:0; cursor:pointer; }
+#sim-grid .sg-tt b{ display:block; font-family:var(--serif); font-weight:400; font-size:18px; color:var(--body);
+  line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#sim-grid .sg-tt small{ display:block; font-size:10.5px; color:var(--ink-3); margin-top:2px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#sim-grid .sg-seg{ display:flex; background:var(--surface); border-radius:10px; padding:2px; flex-shrink:0; }
+#sim-grid .sg-seg button{ border:none; background:none; font-size:11.5px; padding:6px 11px; border-radius:8px;
+  color:var(--ink-2); cursor:pointer; font-weight:500; white-space:nowrap; }
+#sim-grid .sg-seg button.on{ background:var(--paper,#fff); color:#6E4523; font-weight:700; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+#sim-grid .sg-b{ border:1.5px solid var(--line); background:none; border-radius:10px; padding:7px 11px;
+  font-size:11.5px; font-weight:600; color:var(--ink-2); cursor:pointer; white-space:nowrap; flex-shrink:0; }
+#sim-grid .sg-hint{ flex-shrink:0; font-size:11.5px; color:var(--ink-2); line-height:1.5;
+  background:rgba(110,69,35,.07); border-left:3px solid #6E4523; padding:8px 14px; }
+#sim-grid .sg-scroll{ flex:1; min-height:0; overflow:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+#sim-grid table.sg-t{ border-collapse:separate; border-spacing:0; font-size:12px; font-variant-numeric:tabular-nums;
+  width:max-content; min-width:100%; }
+#sim-grid .sg-t th, #sim-grid .sg-t td{ padding:0 11px; height:31px; text-align:right; white-space:nowrap;
+  border-bottom:1px solid var(--line); min-width:74px; box-sizing:border-box; color:var(--ink-2); background:var(--bg); }
+#sim-grid .sg-t thead th{ position:sticky; top:0; z-index:3; font-size:9.5px; letter-spacing:.6px;
+  text-transform:uppercase; color:var(--ink-3); font-weight:600; height:30px; border-bottom:1.5px solid var(--line); }
+#sim-grid .sg-t .sg-c0{ position:sticky; left:0; z-index:2; text-align:left; width:262px; min-width:262px; max-width:262px;
+  border-right:1px solid var(--line); padding-left:12px; }
+#sim-grid .sg-t thead .sg-c0{ z-index:4; }
+#sim-grid .sg-t thead .sg-c0 span{ font-weight:500; letter-spacing:.4px; color:var(--ink-4); }
+#sim-grid .sg-t .sg-tot{ font-weight:600; color:var(--body); border-right:1px solid var(--line);
+  background:linear-gradient(rgba(110,69,35,.04),rgba(110,69,35,.04)),var(--bg); }
+#sim-grid .sg-l{ display:flex; align-items:center; gap:8px; min-width:0; }
+#sim-grid .sg-lx{ display:flex; flex-direction:column; min-width:0; }
+#sim-grid .sg-lt{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--body); }
+#sim-grid .sg-lx small{ font-size:9.5px; color:var(--ink-3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:1px; }
+#sim-grid .sg-add{ width:18px; height:18px; border-radius:50%; background:#6E4523; color:#fff; font-size:13px;
+  line-height:18px; text-align:center; flex-shrink:0; font-weight:600; }
+#sim-grid tr[onclick]{ cursor:pointer; }
+#sim-grid tr[onclick]:active td{ background:linear-gradient(rgba(110,69,35,.10),rgba(110,69,35,.10)),var(--bg); }
+/* grupo: a natureza do fluxo */
+#sim-grid .sg-g td{ background:var(--surface); color:var(--body); font-weight:600; height:34px; }
+#sim-grid .sg-g .sg-lt{ font-size:10.5px; letter-spacing:.45px; text-transform:uppercase; font-weight:700; }
+/* sublinha: o que o usuário cadastrou */
+#sim-grid .sg-s td{ height:38px; }
+#sim-grid .sg-s .sg-c0{ padding-left:38px; }
+#sim-grid .sg-s .sg-lt{ font-size:12px; }
+#sim-grid .sg-s.off td{ opacity:.45; }
+/* subtotais, cálculo e resultado */
+#sim-grid .sg-r td{ font-weight:700; color:var(--body); border-top:1.5px solid var(--ink-4); }
+#sim-grid .sg-x .sg-lt{ font-style:italic; color:var(--ink-2); }
+#sim-grid .sg-m td{ font-size:10.5px; color:var(--ink-4); height:26px; }
+#sim-grid .sg-f td{ font-weight:700; color:var(--body); height:36px; border-top:1.5px solid #6E4523; border-bottom:1.5px solid #6E4523;
+  background:linear-gradient(rgba(110,69,35,.09),rgba(110,69,35,.09)),var(--bg); }
+#sim-grid .sg-f .sg-lt{ color:#6E4523; text-transform:uppercase; letter-spacing:.6px; font-size:11px; }
+#sim-grid .sg-a td{ font-weight:600; }
+#sim-grid .sg-v td{ font-weight:700; height:40px; border-bottom:none; }
+#sim-grid .sg-v .sg-lt{ font-family:var(--serif); font-size:15px; font-weight:400; }
+#sim-grid .sg-v .sg-tot{ font-size:14px; }
+#sim-grid td.neg{ color:var(--warn)!important; }
+#sim-grid .sg-a td.pos, #sim-grid .sg-v td.pos{ color:var(--green)!important; }
+#sim-grid .sg-foot{ flex-shrink:0; display:flex; align-items:stretch; gap:6px; padding:7px 12px;
+  border-top:1px solid var(--line); background:var(--bg); overflow-x:auto; cursor:pointer; scrollbar-width:none; }
+#sim-grid .sg-foot::-webkit-scrollbar{ display:none; }
+#sim-grid .sg-kpi{ flex:0 0 auto; min-width:92px; background:var(--surface); border-radius:10px; padding:5px 11px; }
+#sim-grid .sg-kpi small{ display:block; font-size:8.5px; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-3); white-space:nowrap; }
+#sim-grid .sg-kpi b{ display:block; font-size:13.5px; font-weight:700; white-space:nowrap; color:var(--body); }
+#sim-grid .sg-kpi.v{ background:#6E4523; }
+#sim-grid .sg-kpi.v small{ color:rgba(255,255,255,.7); }
+#sim-grid .sg-kpi.v b{ color:#fff; }
+#sim-grid .sg-more{ margin-left:auto; align-self:center; font-size:12px; font-weight:700; color:#6E4523; white-space:nowrap; padding:0 2px 0 10px; }
 </style>
 <script id="sim-js">
 /* ═══════════════════════════════════════════════════════════════════════
@@ -31646,6 +31750,50 @@ const DIC={
   s_f_semcdi:["Não há curva de CDI declarada nos Parâmetros: a taxa continua a que você digitou.",
     "No CDI curve is declared in Parameters: the rate remains the one you typed.",
     "In den Parametern ist keine CDI-Kurve erklärt: der Satz bleibt der eingegebene."],
+  /* — v11.34: planilha do projeto — */
+  gr_intro:["Cada projeto é um fluxo de caixa. Toque num projeto para abrir a planilha — em paisagem — e montar o fluxo linha a linha, da receita até o VPL.",
+    "Each project is a cash flow. Tap a project to open its spreadsheet — in landscape — and build the flow line by line, from revenue down to NPV.",
+    "Jedes Projekt ist ein Cashflow. Tippen Sie auf ein Projekt, um die Tabelle — im Querformat — zu öffnen und den Fluss Zeile für Zeile bis zum Kapitalwert aufzubauen."],
+  gr_open:["Abrir fluxo","Open flow","Fluss öffnen"],
+  gr_linhas:["{n} linhas","{n} lines","{n} Zeilen"],
+  gr_receita:["Receitas","Revenue","Erlöse"],
+  gr_deducao:["(−) Deduções da receita","(−) Revenue deductions","(−) Erlösminderungen"],
+  gr_custo:["(−) Custos","(−) Costs","(−) Kosten"],
+  gr_desp_adm:["(−) Despesas administrativas","(−) Administrative expenses","(−) Verwaltungsaufwand"],
+  gr_desp_com:["(−) Despesas comerciais","(−) Selling expenses","(−) Vertriebsaufwand"],
+  gr_capex:["(−) Capex · investimentos","(−) Capex · investments","(−) Capex · Investitionen"],
+  gr_outras:["(−) Outras saídas","(−) Other outflows","(−) Sonstige Abflüsse"],
+  gr_rl:["= Receita líquida","= Net revenue","= Nettoerlös"],
+  gr_mb:["= Margem bruta","= Gross margin","= Bruttomarge"],
+  gr_eb:["= EBITDA","= EBITDA","= EBITDA"],
+  gr_giro:["(−) Variação do capital de giro","(−) Change in working capital","(−) Veränderung Working Capital"],
+  gr_giro_d:["{x}% da receita líquida · toque para ajustar","{x}% of net revenue · tap to adjust","{x} % des Nettoerlöses · zum Anpassen tippen"],
+  gr_fcl:["= Fluxo de caixa livre","= Free cash flow","= Freier Cashflow"],
+  gr_tv:["(+) Valor terminal","(+) Terminal value","(+) Endwert"],
+  gr_fd:["Fator de desconto","Discount factor","Diskontfaktor"],
+  gr_fcd:["= Fluxo descontado","= Discounted flow","= Diskontierter Fluss"],
+  gr_acum:["= Acumulado descontado","= Discounted cumulative","= Diskontiert kumuliert"],
+  gr_vpl:["VPL a {t} a.a.","NPV at {t} p.a.","Kapitalwert zu {t} p. a."],
+  gr_vptv:["inclui VP do valor terminal","includes PV of terminal value","inkl. Barwert des Endwerts"],
+  gr_total:["Total","Total","Summe"],
+  gr_add_h:["toque para adicionar","tap to add","zum Hinzufügen tippen"],
+  gr_off:["fora do cálculo","out of the calculation","nicht gerechnet"],
+  gr_da_rb:["da receita bruta","of gross revenue","vom Bruttoerlös"],
+  gr_hint:["Toque numa linha do fluxo — Receitas, Custos, Capex… — para criar uma sublinha com as premissas dela. Toque numa sublinha para editar. O fluxo desce sozinho até o VPL.",
+    "Tap a flow line — Revenue, Costs, Capex… — to create a sub-line with its assumptions. Tap a sub-line to edit it. The flow rolls down to the NPV by itself.",
+    "Tippen Sie auf eine Flusszeile — Erlöse, Kosten, Capex … —, um eine Unterzeile mit ihren Annahmen anzulegen. Unterzeile antippen zum Bearbeiten. Der Fluss läuft von selbst bis zum Kapitalwert."],
+  gr_prem:["Premissas","Assumptions","Annahmen"],
+  gr_res:["Resultado","Result","Ergebnis"],
+  gr_rot:["Girar a planilha","Rotate the sheet","Tabelle drehen"],
+  nv_intro:["O essencial do projeto. Depois, na planilha, você monta o fluxo linha a linha.",
+    "The project's essentials. Then, in the spreadsheet, you build the flow line by line.",
+    "Das Wesentliche des Projekts. Danach bauen Sie in der Tabelle den Fluss Zeile für Zeile auf."],
+  nv_ph:["Ex.: Loja no shopping, sala comercial…","E.g. Mall store, office unit…","z. B. Laden im Einkaufszentrum, Büro …"],
+  nv_hz:["{a} a {b} · {n}","{a} to {b} · {n}","{a} bis {b} · {n}"],
+  nv_depois:["Tudo isso pode ser mudado depois, em Premissas, dentro da planilha.",
+    "All of this can be changed later, under Assumptions, inside the spreadsheet.",
+    "All das lässt sich später unter Annahmen in der Tabelle ändern."],
+  nv_criar:["Criar e abrir o fluxo","Create and open the flow","Anlegen und Fluss öffnen"],
   s_hint_pretax:["Fluxo antes de tributos sobre o lucro. Tributos sobre a receita entram como linhas de dedução.",
     "Flow before profit taxes. Taxes on revenue come in as deduction lines.",
     "Fluss vor Ertragsteuern. Umsatzsteuern kommen als Abzugszeilen."]
@@ -31846,16 +31994,16 @@ function calc(p,opt){
   const rec=z(),cus=z(),adm=z(),com=z(),cap=z(),out=z();
   const infl=(p.inflar&&p.tipo==="nominal")?fatoresInfl(p,N):null;
   const dest={receita:rec,custo:cus,desp_adm:adm,desp_com:com,capex:cap,outras:out};
-  const porLinha={};
+  const porLinha={}, porSerie={};
   (p.linhas||[]).forEach(l=>{
     if(l.off||l.tipo==="deducao") return;
     const alvo=dest[l.tipo]; if(!alvo) return;
     const s=serie(l,N,p);
     if(infl) for(let i=0;i<=N;i++) s[i]*=infl[i];
     const f=(l.tipo==="receita")?fRec:1;
-    let tot=0;
-    for(let i=0;i<=N;i++){ const v=s[i]*f; alvo[i]+=v; tot+=v; }
-    porLinha[l.id]=tot;
+    let tot=0; const sv=new Array(N+1).fill(0);
+    for(let i=0;i<=N;i++){ const v=s[i]*f; alvo[i]+=v; tot+=v; sv[i]=v; }
+    porLinha[l.id]=tot; porSerie[l.id]=sv;
   });
   const ded=z(); let pctDed=0;
   (p.linhas||[]).forEach(l=>{
@@ -31864,9 +32012,9 @@ function calc(p,opt){
     const ini=Math.max(0,parseInt(l.ini,10)||0);
     const rIn=parseInt(l.rep,10);
     const fim=(!isFinite(rIn)||rIn<=0)?N:(ini+rIn-1);
-    let tot=0;
-    for(let i=ini;i<=Math.min(N,fim);i++){ const v=rec[i]*pc; ded[i]+=v; tot+=v; }
-    porLinha[l.id]=tot; pctDed+=pc*100;
+    let tot=0; const sv=new Array(N+1).fill(0);
+    for(let i=ini;i<=Math.min(N,fim);i++){ const v=rec[i]*pc; ded[i]+=v; tot+=v; sv[i]=v; }
+    porLinha[l.id]=tot; porSerie[l.id]=sv; pctDed+=pc*100;
   });
   const rl=z(),mb=z(),eb=z(),dncg=z(),fcl=z();
   const gPct=(+p.ncg||0)/100; let ncgAnt=0;
@@ -31944,7 +32092,7 @@ function calc(p,opt){
            com:tot(com),eb:tot(eb),cap:tot(cap),dncg:tot(dncg),out:tot(out),fcl:tot(fcl)};
   return {N,PY,rec,ded,rl,cus,mb,adm,com,eb,cap,dncg,out,fcl,fcd,caixa,T,
           tv,vpTV,tvErro,vpl,vpIn,vpOut,tir,tirAA,mtir,mtirAA,pb,pbd,tx,
-          pi:(vpOut>0?vpIn/vpOut:null), porLinha, pctDed};
+          pi:(vpOut>0?vpIn/vpOut:null), porLinha, porSerie, pctDed};
 }
 /* O VPL é linear na receita — deduções e giro são proporções dela e o
    terminal é linear no fluxo. Dá para resolver o equilíbrio sem iterar. */
@@ -32008,6 +32156,7 @@ function perTxt(p,v){
 
 /* ── 6. HERO E ABAS ─────────────────────────────────────────────────── */
 function hero(){
+  try{ grAgendar(); }catch(e){}
   const el=document.getElementById("sim-hero"); if(!el) return;
   const p=proj();
   if(!p){
@@ -32028,7 +32177,9 @@ function hero(){
     </div>`;
 }
 function aba(v){
-  ABA=v;
+  /* v11.34 — a seção é a lista de projetos; premissas, fluxo e resultado
+     vivem na planilha do projeto */
+  v="projetos"; ABA=v;
   ["projetos","premissas","fluxo","result"].forEach(k=>{
     const el=document.getElementById("sim-view-"+k);
     if(el){ el.style.display=(k===v)?"block":"none"; el.classList.remove("tab-enter"); void el.offsetWidth; if(k===v) el.classList.add("tab-enter"); }
@@ -32048,33 +32199,39 @@ function aba(v){
 /* ── 7. ABA PROJETOS ────────────────────────────────────────────────── */
 function renderProjetos(){
   const el=document.getElementById("sim-view-projetos"); if(!el) return;
-  let h=`<div class="info-card" style="margin:0 0 14px">${E(P("s_intro"))}</div>`;
+  let h=`<div class="info-card" style="margin:0 0 14px">${E(P("gr_intro"))}</div>`;
   if(!L.length){
     h+=`<div style="background:var(--surface);border-radius:16px;padding:18px;text-align:center;font-size:12.5px;color:var(--ink-2);line-height:1.55;margin-bottom:12px">${E(P("s_none"))}</div>`;
   }else{
     L.slice().sort((a,b)=>(b.ts||0)-(a.ts||0)).forEach(p=>{
       let r=null; try{ r=calc(p); }catch(e){}
-      const vpl=r?r.vpl:0, sel=String(p.id)===String(SEL);
-      h+=`<div onclick="SIM.abrir('${E(p.id)}')" style="background:${sel?"var(--paper)":"var(--surface)"};${sel?"box-shadow:inset 0 0 0 1.5px #6E4523;":""}border-radius:14px;padding:13px 15px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13.5px;font-weight:600;color:var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(p.nome||P("s_new_name"))}</div>
-          <div style="font-size:10.5px;color:var(--ink-3);margin-top:3px">${E(labelPer(p,1))} · ${parseInt(p.n,10)||0} ${E(p.freq==="m"?P("s_freq_m"):P("s_freq_a"))} · ${E(p.tipo==="real"?P("s_real"):P("s_nominal"))}</div>
+      const vpl=r?r.vpl:0, N=NN(p), nl=(p.linhas||[]).length;
+      const id=E(p.id);
+      h+=`<div class="simp-card" onclick="SIM.abrir('${id}')">
+        <div class="simp-top">
+          <div style="flex:1;min-width:0">
+            <div class="simp-n">${E(p.nome||P("s_new_name"))}</div>
+            <div class="simp-s">${E(labelPer(p,1,true))} – ${E(labelPer(p,N,true))} · ${N} ${E(p.freq==="m"?P("s_meses"):P("s_anos"))} · ${E(p.tipo==="real"?P("s_real"):P("s_nominal"))} · ${E(PV("gr_linhas",{n:nl}))}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div class="simp-v" style="color:${vpl>=0?"var(--green)":"var(--warn)"}">${M(vpl)}</div>
+            <div class="simp-s">${E(P("s_vpl"))} · ${PCT(taxaEfetiva(p).ef*100,1)} ${E(P("s_aa"))}</div>
+          </div>
         </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-family:var(--serif);font-style:italic;font-size:16px;color:${vpl>=0?"var(--green)":"var(--warn)"}">${M(vpl)}</div>
-          <div style="font-size:10px;color:var(--ink-3);margin-top:2px">${E(P("s_tir"))} ${r&&r.tirAA!==null?PCT(r.tirAA*100,1):"—"}</div>
+        <div class="simp-kp">
+          <span>${E(P("s_tir"))} <b>${r&&r.tirAA!==null?PCT(r.tirAA*100,1):"—"}</b></span>
+          <span>${E(P("s_pbd"))} <b>${r?E(perTxt(p,r.pbd)):"—"}</b></span>
+        </div>
+        <div class="simp-act">
+          <button class="simp-open" onclick="event.stopPropagation();SIM.abrir('${id}')">▦ ${E(P("gr_open"))}</button>
+          <button title="${E(P("s_dup"))}" onclick="event.stopPropagation();SIM.dupId('${id}')">⧉</button>
+          <button title="${E(P("s_csv"))}" onclick="event.stopPropagation();SIM.csvId('${id}')">↓</button>
+          <button class="simp-del" title="${E(P("s_del"))}" onclick="event.stopPropagation();SIM.delId('${id}')">🗑️</button>
         </div>
       </div>`;
     });
   }
   h+=`<button class="btn-primary" style="background:#6E4523;width:100%;margin-top:4px" onclick="SIM.criar()">+ ${E(P("s_new"))}</button>`;
-  if(proj()){
-    h+=`<div style="display:flex;gap:8px;margin-top:10px">
-      <button class="btn-cancel-f" style="flex:1" onclick="SIM.duplicar()">⧉ ${E(P("s_dup"))}</button>
-      <button class="btn-cancel-f" style="flex:1" onclick="SIM.exportar()">↓ ${E(P("s_csv"))}</button>
-    </div>
-    <button class="btn-delete" style="display:block" onclick="SIM.excluir()">${E(P("s_del"))}</button>`;
-  }
   el.innerHTML=h;
   compactar(el);
 }
@@ -32084,7 +32241,7 @@ function semProjeto(){
   return `<div style="background:var(--surface);border-radius:16px;padding:20px;text-align:center;font-size:12.5px;color:var(--ink-2)">${E(P("s_pick"))}</div>`;
 }
 function renderPremissas(){
-  const el=document.getElementById("sim-view-premissas"); if(!el) return;
+  const el=document.getElementById("sim-prem-body")||document.getElementById("sim-view-premissas"); if(!el) return;
   const p=proj(); if(!p){ el.innerHTML=semProjeto(); return; }
   const ms=selMes("sim-ini",p.inicio,"SIM.setIni()");
   let h=`${bloco(P("s_h_ident"))}
@@ -32193,7 +32350,7 @@ function idxLbl(id){
 
 /* ── 10. ABA RESULTADO ──────────────────────────────────────────────── */
 function renderResult(){
-  const el=document.getElementById("sim-view-result"); if(!el) return;
+  const el=document.getElementById("sim-res-body")||document.getElementById("sim-view-result"); if(!el) return;
   const p=proj(); if(!p){ el.innerHTML=semProjeto(); return; }
   Object.keys(SEM_CURVA).forEach(k=>delete SEM_CURVA[k]);
   let r; try{ r=calc(p); }catch(e){ el.innerHTML=semProjeto(); return; }
@@ -32741,7 +32898,7 @@ const num=v=>{ let s=String(v==null?"":v).trim();
   const n=parseFloat(s.replace(/[^\d.\-]/g,"")); return isNaN(n)?0:n; };
 const dec=v=>{ const n=parseFloat(String(v==null?"":v).replace(",",".")); return isNaN(n)?0:n; };
 
-function tudo(){ hero(); aba(ABA); atualizarHome(); }
+function tudo(){ hero(); aba("projetos"); atualizarHome(); simAbertos(); }
 function atualizarHome(){
   const v=document.getElementById("home-sim-val"), s=document.getElementById("home-sim-x-val");
   if(!v) return;
@@ -32753,12 +32910,386 @@ function atualizarHome(){
   }
 }
 
+
+/* ══ 16b. PLANILHA DO PROJETO (v11.34) ═════════════════════════════════
+   O projeto é o próprio fluxo de caixa, como os de avaliação: linhas na
+   vertical, períodos na horizontal, da receita bruta até o VPL. Tocar
+   numa linha do fluxo abre a folha para criar uma sublinha naquela
+   natureza, projetada pelas premissas dadas; tocar numa sublinha edita.
+
+   PAISAGEM. O Safari do iPhone não deixa a página girar sozinha. Com o
+   celular em retrato, a planilha é desenhada girada 90°: quem vira o
+   aparelho lê em paisagem, mesmo com a trava de rotação ligada. Girado,
+   o arrasto do dedo é convertido para os eixos da planilha à mão — a
+   rolagem nativa não acompanha a rotação. Com o aparelho já em
+   paisagem, nada gira e a rolagem é a do sistema. */
+const GR={aberto:false,ver:null,pid:null,raf:0,rot:true};
+try{ GR.rot=localStorage.getItem(KEY+"_rot")!=="0"; }catch(e){}
+const $i=id=>document.getElementById(id);
+const OCU=()=>typeof VALORES_OCULTOS!=="undefined"&&VALORES_OCULTOS;
+/* número de planilha: milhar sem centavos, saída entre parênteses */
+const GV=v=>{ if(OCU()) return "•••"; const n=Math.round(+v||0); if(n===0) return "–";
+  const t=NUM(Math.abs(n),0); return n<0?"("+t+")":t; };
+const SIMB=()=>{ try{ return ((fmt(1)||"").match(/^[^\d\s•\-−]+/)||["R$"])[0].trim()||"R$"; }catch(e){ return "R$"; } };
+
+function grAjustar(){
+  const de=document.documentElement;
+  const W=window.innerWidth, H=window.innerHeight;
+  const port=H>W*1.05;
+  de.classList.toggle("sim-on",GR.aberto);
+  de.classList.toggle("sim-rot",GR.aberto&&port&&GR.rot);
+  de.style.setProperty("--rot-w",H+"px");
+  de.style.setProperty("--rot-h",W+"px");
+  de.style.setProperty("--rot-x",W+"px");
+  const b=$i("sg-rot"); if(b) b.style.display=port?"":"none";
+}
+window.addEventListener("resize",()=>{ if(GR.aberto) grAjustar(); });
+window.addEventListener("orientationchange",()=>setTimeout(()=>{ if(GR.aberto) grAjustar(); },150));
+
+function grAgendar(){
+  if(!GR.aberto) return;
+  try{ cancelAnimationFrame(GR.raf); }catch(e){}
+  GR.raf=requestAnimationFrame(()=>{ try{ grRender(); }catch(e){ try{ console.error(e); }catch(_){} } });
+}
+function simAbertos(){
+  grAgendar();
+  if($i("sim-prem-body")) renderPremissas();
+  if($i("sim-res-body")) renderResult();
+}
+
+function grAbrir(){
+  const p=proj(); if(!p) return;
+  if(GR.pid!==p.id) GR.ver=null;
+  GR.aberto=true; GR.pid=p.id;
+  let el=$i("sim-grid");
+  if(!el){ el=document.createElement("div"); el.id="sim-grid"; document.body.appendChild(el); }
+  grAjustar();
+  grRender(true);
+}
+function grFechar(){
+  GR.aberto=false;
+  ["sim-grid","sim-prem-ov","sim-res-ov","modal-sim-line"].forEach(id=>{ const o=$i(id); if(o) o.remove(); });
+  grAjustar();
+  tudo();
+}
+
+/* Colunas: cada período, ou t0 e um bloco por ano */
+function grCols(p,r){
+  const N=r.N, cols=[];
+  if(p.freq==="m"&&GR.ver==="ano"){
+    const m=new Map();
+    for(let i=0;i<=N;i++){
+      const k=(i===0)?"t0":anoDe(p,i);
+      if(!m.has(k)) m.set(k,{lbl:(i===0?P("s_t0"):k),idx:[]});
+      m.get(k).idx.push(i);
+    }
+    m.forEach(v=>cols.push(v));
+  }else{
+    for(let i=0;i<=N;i++) cols.push({lbl:labelPer(p,i,true),idx:[i]});
+  }
+  return cols;
+}
+function grDet(l,p){
+  const N=NN(p);
+  if(l.tipo==="deducao") return PCT(+l.pct||0,2)+" "+P("gr_da_rb");
+  if(l.modo==="manual") return P("s_modo_manual");
+  let d="";
+  try{ d=resumo(l,p,N).l1; }catch(e){ d=""; }
+  d=String(d||"").replace(/<[^>]*>/g,"");
+  d+=" · "+labelPer(p,Math.max(0,Math.min(N,INT(l.ini,1))),true);
+  if((parseInt(l.parc,10)||1)>1) d+=" · "+parseInt(l.parc,10)+"×";
+  if((l.reaj||{}).idx) d+=" · "+idxLbl(l.reaj.idx);
+  if(+l.cresc||0) d+=" · +"+NUM(+l.cresc,1)+"%";
+  return d;
+}
+const NAT_ARR={receita:"rec",deducao:"ded",custo:"cus",desp_adm:"adm",desp_com:"com",capex:"cap",outras:"out"};
+function grLinhas(p,r){
+  const N=r.N, z=new Array(N+1).fill(0);
+  const neg=a=>a.map(v=>-v);
+  const rows=[];
+  const grupo=nat=>{
+    const sinal=(nat==="receita")?1:-1;
+    const ls=(p.linhas||[]).filter(l=>l.tipo===nat);
+    const a=r[NAT_ARR[nat]]||z;
+    rows.push({k:"g",nat,lbl:P("gr_"+nat),arr:sinal<0?neg(a):a,vazio:!ls.length});
+    ls.forEach(l=>{
+      const sv=l.off?z:((r.porSerie||{})[l.id]||z);
+      rows.push({k:"s",id:l.id,off:!!l.off,lbl:l.desc||P("s_n_"+l.tipo),
+        det:(l.off?P("gr_off")+" · ":"")+grDet(l,p),arr:sinal<0?neg(sv):sv});
+    });
+  };
+  grupo("receita");
+  grupo("deducao");
+  rows.push({k:"r",lbl:P("gr_rl"),arr:r.rl});
+  grupo("custo");
+  rows.push({k:"r",lbl:P("gr_mb"),arr:r.mb});
+  grupo("desp_adm");
+  grupo("desp_com");
+  rows.push({k:"r",lbl:P("gr_eb"),arr:r.eb});
+  grupo("capex");
+  rows.push({k:"x",lbl:P("gr_giro"),det:PV("gr_giro_d",{x:NUM(+p.ncg||0,1)}),arr:neg(r.dncg),acao:"SIM.grPrem()"});
+  grupo("outras");
+  rows.push({k:"f",lbl:P("gr_fcl"),arr:r.fcl});
+  const per=!(p.freq==="m"&&GR.ver==="ano");
+  if(p.tv&&p.tv.on){
+    const tv=z.slice(); tv[N]=r.tv;
+    rows.push({k:"x",lbl:P("gr_tv"),det:((p.tv.metodo||"gordon")==="gordon"?P("s_tv_gordon")+" · g "+NUM(+p.tv.g||0,1)+"%":P("s_tv_mult")+" "+NUM(+p.tv.mult||0,1)+"×"),arr:tv,acao:"SIM.grPrem()"});
+  }
+  if(per){
+    const ip=r.tx.per, fd=[];
+    for(let i=0;i<=N;i++){ const e=(i===0)?0:(p.meio?i-0.5:i); fd[i]=Math.pow(1+ip,-e); }
+    rows.push({k:"m",lbl:P("gr_fd"),arr:fd,fator:true});
+  }
+  const fcd=r.fcd.slice();
+  if(p.tv&&p.tv.on) fcd[N]+=r.vpTV;
+  rows.push({k:"r",lbl:P("gr_fcd"),arr:fcd});
+  rows.push({k:"a",lbl:P("gr_acum"),arr:fcd,acum:true});
+  return rows;
+}
+function grRender(reset){
+  if(!GR.aberto) return;
+  const el=$i("sim-grid"); if(!el) return;
+  const p=proj(); if(!p){ grFechar(); return; }
+  Object.keys(SEM_CURVA).forEach(k=>delete SEM_CURVA[k]);
+  let r; try{ r=calc(p); }catch(e){ return; }
+  if(p.freq!=="m") GR.ver="per";
+  else if(!GR.ver) GR.ver=(NN(p)>24)?"ano":"per";
+  const N=r.N, cols=grCols(p,r), rows=grLinhas(p,r);
+  const sc0=el.querySelector(".sg-scroll");
+  const sx=(!reset&&sc0)?sc0.scrollLeft:0, sy=(!reset&&sc0)?sc0.scrollTop:0;
+  const soma=(a,c)=>c.idx.reduce((t,i)=>t+(+a[i]||0),0);
+  const head=`<tr><th class="sg-c0">${E(SIMB())} <span>${E(P(GR.ver==="ano"?"s_ver_ano":"s_ver_per"))}</span></th><th class="sg-tot">${E(P("gr_total"))}</th>${
+    cols.map(c=>`<th>${E(c.lbl)}</th>`).join("")}</tr>`;
+  const corpo=rows.map(w=>{
+    let acao="";
+    if(w.k==="g") acao=`SIM.linha(null,'${w.nat}')`;
+    else if(w.k==="s") acao=`SIM.linha('${E(w.id)}')`;
+    else if(w.acao) acao=w.acao;
+    let tot, cel;
+    if(w.fator){
+      tot="";
+      cel=cols.map(c=>`<td>${c.idx.length===1?NUM(w.arr[c.idx[0]],4):""}</td>`).join("");
+    }else if(w.acum){
+      let ac=0;
+      cel=cols.map(c=>{ ac+=soma(w.arr,c); return `<td class="${ac<0?"neg":"pos"}">${GV(ac)}</td>`; }).join("");
+      tot=GV(ac);
+    }else{
+      const t=w.arr.reduce((x,v)=>x+(+v||0),0);
+      tot=GV(t);
+      cel=cols.map(c=>{ const v=soma(w.arr,c); return `<td${(w.k==="f"&&v<0)?` class="neg"`:""}>${GV(v)}</td>`; }).join("");
+    }
+    const add=(w.k==="g")?`<span class="sg-add">+</span>`:"";
+    const det=w.det?`<small>${E(w.det)}</small>`:(w.k==="g"&&w.vazio?`<small>${E(P("gr_add_h"))}</small>`:"");
+    return `<tr class="sg-${w.k}${w.off?" off":""}"${acao?` onclick="${acao}"`:""}>
+      <td class="sg-c0"><div class="sg-l">${add}<div class="sg-lx"><span class="sg-lt">${E(w.lbl)}</span>${det}</div></div></td>
+      <td class="sg-tot">${tot}</td>${cel}</tr>`;
+  }).join("");
+  const vplRow=`<tr class="sg-v"><td class="sg-c0"><div class="sg-l"><div class="sg-lx"><span class="sg-lt">${E(PV("gr_vpl",{t:PCT(r.tx.ef*100,2)}))}</span>${
+      (p.tv&&p.tv.on)?`<small>${E(P("gr_vptv"))} ${E(M(r.vpTV))}</small>`:""}</div></div></td>
+    <td class="sg-tot ${r.vpl<0?"neg":"pos"}">${GV(r.vpl)}</td>${cols.map(()=>"<td></td>").join("")}</tr>`;
+  const sub=`${labelPer(p,1,true)} – ${labelPer(p,N,true)} · ${N} ${p.freq==="m"?P("s_meses"):P("s_anos")} · ${p.tipo==="real"?P("s_real"):P("s_nominal")} · ${P("s_taxa_ef")} ${PCT(r.tx.ef*100,2)} ${P("s_aa")}`;
+  const kpi=(lbl,val,cls)=>`<div class="sg-kpi${cls?" "+cls:""}"><small>${E(lbl)}</small><b>${val}</b></div>`;
+  const vazio=!(p.linhas||[]).length;
+  el.innerHTML=`
+    <div class="sg-top">
+      <button class="sg-ic" onclick="SIM.grFechar()" aria-label="${E(P("s_cancel"))}">‹</button>
+      <div class="sg-tt" onclick="SIM.grPrem()"><b>${E(p.nome||P("s_new_name"))}</b><small>${E(sub)}</small></div>
+      ${p.freq==="m"?`<div class="sg-seg">
+        <button class="${GR.ver==="per"?"on":""}" onclick="SIM.grVer('per')">${E(P("s_ver_per"))}</button>
+        <button class="${GR.ver==="ano"?"on":""}" onclick="SIM.grVer('ano')">${E(P("s_ver_ano"))}</button></div>`:""}
+      <button class="sg-b" onclick="SIM.grPrem()">⚙ ${E(P("gr_prem"))}</button>
+      <button class="sg-b" onclick="SIM.exportar()">↓ CSV</button>
+      <button class="sg-ic" id="sg-rot" onclick="SIM.grRot()" title="${E(P("gr_rot"))}" aria-label="${E(P("gr_rot"))}">⟲</button>
+    </div>
+    ${vazio?`<div class="sg-hint">${E(P("gr_hint"))}</div>`:""}
+    <div class="sg-scroll"><table class="sg-t"><thead>${head}</thead><tbody>${corpo}${vplRow}</tbody></table></div>
+    <div class="sg-foot" onclick="SIM.grRes()">
+      ${kpi(P("s_vpl"),E(M(r.vpl)),"v")}
+      ${kpi(P("s_tir"),r.tirAA===null?"—":PCT(r.tirAA*100,2))}
+      ${kpi(P("s_tirm"),r.mtirAA===null?"—":PCT(r.mtirAA*100,2))}
+      ${kpi(P("s_pbd"),E(perTxt(p,r.pbd)))}
+      ${kpi(P("s_pi"),r.pi===null?"—":NUM(r.pi,2))}
+      <span class="sg-more">${E(P("gr_res"))} ›</span>
+    </div>`;
+  const sc=el.querySelector(".sg-scroll");
+  if(sc){ sc.scrollLeft=sx; sc.scrollTop=sy; }
+  grAjustar();
+}
+
+/* folhas da planilha: premissas e resultado */
+function simFolha(id,titulo,corpoId){
+  let ov=$i(id); if(ov) ov.remove();
+  ov=document.createElement("div");
+  ov.className="overlay open"; ov.id=id; ov.style.zIndex="212";
+  ov.innerHTML=`<div class="sheet" style="max-height:92dvh;overflow-y:auto">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="closeOverlay(this)">✕</button>
+    <div class="form-title">${E(titulo)}</div>
+    <div id="${corpoId}"></div></div>`;
+  document.body.appendChild(ov);
+  ov.onclick=e=>{ if(e.target===ov) closeOverlay(ov); };
+  return ov;
+}
+
+/* ── novo projeto: uma folha antes de criar ── */
+let NV=null;
+function nvAbrir(){
+  NV={nome:"",inicio:YM_NOW(),n:60,freq:"m",taxa:12,taxaAuto:false,tipo:"nominal"};
+  simFolha("sim-novo-ov",P("s_new"),"sim-novo-body");
+  nvCorpo();
+  setTimeout(()=>{ const i=$i("sim-nv-nome"); if(i) try{ i.focus(); }catch(e){} },380);
+}
+function nvHz(){
+  const p={inicio:NV.inicio,freq:NV.freq,n:NV.n};
+  const N=Math.max(1,Math.min(600,parseInt(NV.n,10)||1));
+  return PV("nv_hz",{a:labelPer(p,1,true),b:labelPer(p,N,true),
+    n:(NV.freq==="m"?(N>=12?NUM(N/12,1).replace(/[.,]0$/,"")+" "+P("s_anos"):N+" "+P("s_meses")):N+" "+P("s_anos"))});
+}
+function nvCorpo(){
+  const el=$i("sim-novo-body"); if(!el||!NV) return;
+  const ms=selMes("sim-nv-ini",NV.inicio,"SIM.nvIni()");
+  el.innerHTML=`<div class="pro-note" style="margin:0 0 12px">${E(P("nv_intro"))}</div>
+    ${campo(P("s_name"),`<input id="sim-nv-nome" type="text" maxlength="60" placeholder="${E(P("nv_ph"))}" value="${E(NV.nome)}" oninput="SIM.nv('nome',this.value)"/>`)}
+    ${bloco(P("s_h_horiz"))}
+    <div class="pro-grid">${campo(P("s_mes"),ms.m)}${campo(P("s_ano"),ms.y)}</div>
+    <div class="pro-grid" style="margin-top:9px">
+      ${campo(P("s_n"),`<input type="number" min="1" max="600" step="1" value="${NV.n}" oninput="SIM.nv('n',this.value)"/>`)}
+      ${campo(P("s_freq"),`<select onchange="SIM.nv('freq',this.value)">
+        <option value="m"${NV.freq==="m"?" selected":""}>${E(P("s_freq_m"))}</option>
+        <option value="a"${NV.freq!=="m"?" selected":""}>${E(P("s_freq_a"))}</option></select>`)}
+    </div>
+    <div class="sim-strip" id="sim-nv-hz">${E(nvHz())}</div>
+    ${bloco(P("s_h_taxa"))}
+    <div class="pro-grid">
+      ${campo(P("s_taxa"),`<input type="number" step="0.01" value="${NUMin(NV.taxa)}" ${NV.taxaAuto?"disabled":""} oninput="SIM.nv('taxa',this.value)"/>`)}
+      <div></div>
+    </div>
+    <div class="pro-chips">
+      <button class="pro-pill${NV.taxaAuto?" on":""}" onclick="SIM.nv('taxaAuto')">${E(P("s_auto_cdi"))}</button>
+    </div>
+    ${bloco(P("s_tipo"))}
+    <div class="pro-chips" style="margin-top:0">
+      <button class="pro-pill${NV.tipo!=="real"?" on":""}" onclick="SIM.nv('tipo','nominal')">${E(P("s_nominal"))} · ${E(P("s_pretax"))}</button>
+      <button class="pro-pill${NV.tipo==="real"?" on":""}" onclick="SIM.nv('tipo','real')">${E(P("s_real"))} · ${E(P("s_pretax"))}</button>
+    </div>
+    <div class="pro-note">${E(P("nv_depois"))}</div>
+    <div class="f-actions" style="margin-top:16px">
+      <button class="btn-cancel-f" onclick="closeOverlay('sim-novo-ov')">${E(P("s_cancel"))}</button>
+      <button class="btn-primary" style="background:#6E4523" onclick="SIM.nvCriar()">${E(P("nv_criar"))}</button>
+    </div>`;
+  compactar(el);
+}
+
+/* ── arrasto na planilha girada ──
+   Girada 90° no sentido horário, a direita da tela é o "para cima" da
+   planilha e a parte de baixo da tela é a "direita" dela. O dedo que vai
+   para a direita na tela sobe a planilha; o que desce, anda para a
+   direita. A inércia é refeita no soltar. */
+(function(){
+  const RAIZ="#sim-grid,#modal-sim-line,#sim-prem-ov,#sim-res-ov";
+  let S=null, mom=0, sup=0;
+  const ligado=()=>document.documentElement.classList.contains("sim-rot");
+  function rolavel(el,eixo,raiz){
+    for(let n=el;n&&n.nodeType===1;n=n.parentElement){
+      const cs=getComputedStyle(n);
+      if(eixo==="y"){ if(/(auto|scroll)/.test(cs.overflowY)&&n.scrollHeight>n.clientHeight+1) return n; }
+      else if(/(auto|scroll)/.test(cs.overflowX)&&n.scrollWidth>n.clientWidth+1) return n;
+      if(n===raiz) break;
+    }
+    return null;
+  }
+  document.addEventListener("touchstart",e=>{
+    S=null;
+    if(!ligado()||e.touches.length!==1) return;
+    const raiz=e.target.closest&&e.target.closest(RAIZ); if(!raiz) return;
+    try{ cancelAnimationFrame(mom); }catch(_){}
+    const t=e.touches[0];
+    S={raiz,alvo:e.target,x:t.clientX,y:t.clientY,t:performance.now(),movido:false,vx:0,vy:0,sy:null,sx:null};
+  },{passive:true,capture:true});
+  document.addEventListener("touchmove",e=>{
+    if(!S) return;
+    const t=e.touches[0];
+    const dx=t.clientX-S.x, dy=t.clientY-S.y;
+    if(!S.movido){
+      if(Math.abs(dx)+Math.abs(dy)<6) return;
+      S.movido=true;
+      S.sy=rolavel(S.alvo,"y",S.raiz); S.sx=rolavel(S.alvo,"x",S.raiz);
+    }
+    if(e.cancelable) e.preventDefault();
+    const agora=performance.now(), dt=Math.max(1,agora-S.t);
+    if(S.sy) S.sy.scrollTop+=dx;
+    if(S.sx) S.sx.scrollLeft-=dy;
+    S.vx=dx/dt; S.vy=dy/dt; S.x=t.clientX; S.y=t.clientY; S.t=agora;
+  },{passive:false,capture:true});
+  const fim=()=>{
+    if(!S) return; const s=S; S=null;
+    if(!s.movido) return;
+    sup=performance.now();
+    if(performance.now()-s.t>90) return;
+    let vx=s.vx*16, vy=s.vy*16;
+    const passo=()=>{
+      vx*=0.94; vy*=0.94;
+      if(Math.abs(vx)<0.4&&Math.abs(vy)<0.4) return;
+      if(s.sy) s.sy.scrollTop+=vx;
+      if(s.sx) s.sx.scrollLeft-=vy;
+      mom=requestAnimationFrame(passo);
+    };
+    mom=requestAnimationFrame(passo);
+  };
+  document.addEventListener("touchend",fim,{capture:true});
+  document.addEventListener("touchcancel",fim,{capture:true});
+  /* soltar depois de arrastar não é toque: não abre a linha embaixo */
+  document.addEventListener("click",e=>{
+    if(performance.now()-sup<320&&e.target.closest&&e.target.closest(RAIZ)){ e.stopPropagation(); e.preventDefault(); }
+  },true);
+})();
+
 window.SIM={
   render(){ carregar(); if(SEL&&!proj()) SEL=null; if(!SEL&&L.length===1) SEL=L[0].id; tudo(); },
   aba(v){ ABA=v; hero(); aba(v); },
   ver(v){ VIEW=v; renderResult(); },
-  criar(){ const p=novo(); L.push(p); SEL=p.id; VIEW=null; gravar(); ABA="premissas"; tudo(); },
-  abrir(id){ SEL=id; VIEW=null; gravar(); ABA="premissas"; tudo(); },
+  _gr:()=>GR,
+  /* v11.34 — criar pergunta antes; abrir vai direto para a planilha */
+  criar(){ nvAbrir(); },
+  abrir(id){ SEL=id; VIEW=null; gravar(); grAbrir(); },
+  nv(k,v){
+    if(!NV) return;
+    if(k==="nome") NV.nome=String(v||"").slice(0,60);
+    else if(k==="n"){ NV.n=Math.max(1,Math.min(600,parseInt(v,10)||1)); const h=$i("sim-nv-hz"); if(h) h.textContent=nvHz(); }
+    else if(k==="taxa") NV.taxa=dec(v);
+    else if(k==="freq"){ const ant=NV.freq; NV.freq=(v==="a")?"a":"m";
+      if(ant!==NV.freq) NV.n=(NV.freq==="a")?Math.max(1,Math.round(NV.n/12)):Math.min(600,NV.n*12); nvCorpo(); }
+    else if(k==="taxaAuto"){ NV.taxaAuto=!NV.taxaAuto; nvCorpo(); }
+    else if(k==="tipo"){ NV.tipo=(v==="real")?"real":"nominal"; nvCorpo(); }
+  },
+  nvIni(){
+    if(!NV) return;
+    const m=$i("sim-nv-ini-m"), a=$i("sim-nv-ini-a"); if(!m||!a) return;
+    NV.inicio=a.value+"-"+String(parseInt(m.value,10)).padStart(2,"0");
+    const h=$i("sim-nv-hz"); if(h) h.textContent=nvHz();
+  },
+  nvCriar(){
+    if(!NV) return;
+    const p=novo();
+    p.nome=(NV.nome||"").trim()||P("s_new_name");
+    p.inicio=NV.inicio; p.n=NV.n; p.freq=NV.freq; p.tipo=NV.tipo;
+    if(p.tipo==="real") p.inflar=false;
+    p.taxaAuto=!!NV.taxaAuto; p.taxa=+NV.taxa||0;
+    p.ipca=ipcaCurva(p);
+    if(p.taxaAuto){ const v=idxMedioAA("cdi",p); if(v!==null) p.taxa=v; }
+    L.push(p); SEL=p.id; VIEW=null; NV=null; gravar();
+    try{ closeOverlay("sim-novo-ov"); }catch(e){}
+    tudo();
+    setTimeout(()=>grAbrir(),240);
+  },
+  grFechar(){ grFechar(); },
+  grVer(v){ GR.ver=(v==="ano")?"ano":"per"; grRender(true); },
+  grRot(){ GR.rot=!GR.rot; try{ localStorage.setItem(KEY+"_rot",GR.rot?"1":"0"); }catch(e){} grAjustar(); },
+  grPrem(){ simFolha("sim-prem-ov",P("s_prem"),"sim-prem-body"); renderPremissas(); },
+  grRes(){ VIEW=null; simFolha("sim-res-ov",P("s_res"),"sim-res-body"); renderResult(); },
+  dupId(id){ SEL=id; this.duplicar(); },
+  delId(id){ SEL=id; this.excluir(); },
+  csvId(id){ SEL=id; gravar(); csv(); },
   set(k,v){
     const p=proj(); if(!p) return;
     if(k==="nome") p.nome=String(v||"").slice(0,60);
@@ -32771,7 +33302,7 @@ window.SIM={
     else if(k.indexOf("tv.")===0){ p.tv=p.tv||{}; const kk=k.slice(3); p.tv[kk]=(kk==="metodo")?v:dec(v); }
     if(p.ipcaAuto) p.ipca=ipcaCurva(p);
     p.ts=Date.now(); VIEW=null; gravar();
-    if(k==="nome"||k==="taxa"||k==="ipca"||k==="ncg"){ hero(); if(ABA==="result") renderResult(); }
+    if(k==="nome"||k==="taxa"||k==="ipca"||k==="ncg"){ hero(); if($i("sim-res-body")) renderResult(); }
     else tudo();
   },
   setIni(){
@@ -35098,22 +35629,10 @@ const ROT={
    x:["Comece pelo que quer avaliar: um imóvel para alugar, uma loja, um equipamento, uma sociedade.",
       "Start with what you want to assess: a rental property, a shop, equipment, a partnership.",
       "Beginnen Sie mit dem Vorhaben: Mietobjekt, Laden, Gerät, Beteiligung."]},
-  {sel:"#nav-simulacoes",t:["Siga as abas em ordem","Follow the tabs in order","Reiter der Reihe nach"],
-   x:["<b>Projetos → Premissas → Fluxo → Resultado.</b> Um projeto por vez; duplique para comparar cenários.",
-      "<b>Projects → Assumptions → Flow → Result.</b> One project at a time; duplicate it to compare scenarios.",
-      "<b>Projekte → Annahmen → Fluss → Ergebnis.</b> Ein Projekt zur Zeit; duplizieren, um Szenarien zu vergleichen."]},
-  {sel:"#sim-view-premissas",antes:SIMA("premissas"),t:["Premissas","Assumptions","Annahmen"],
-   x:["Nome, início e horizonte, periodicidade, fluxo nominal ou real e a <b>taxa de desconto</b> — que pode seguir o CDI dos Parâmetros.",
-      "Name, start and horizon, periodicity, nominal or real flow and the <b>discount rate</b> — which can follow the CDI from Parameters.",
-      "Name, Start und Horizont, Periodizität, nominaler oder realer Fluss und der <b>Diskontsatz</b> — optional CDI aus den Parametern."]},
-  {sel:"#sim-view-fluxo",antes:SIMA("fluxo"),t:["Fluxo, linha a linha","Flow, line by line","Fluss, Zeile für Zeile"],
-   x:["Receitas, deduções, custos, despesas, capex e outras saídas. Digite só o valor: <b>o sinal vem da natureza da linha</b>.",
-      "Revenue, deductions, costs, expenses, capex and other outflows. Type only the amount: <b>the sign comes from the line's nature</b>.",
-      "Erlöse, Abzüge, Kosten, Aufwände, Capex und sonstige Abflüsse. Nur den Betrag eingeben: <b>das Vorzeichen ergibt sich aus der Zeilenart</b>."]},
-  {sel:"#sim-view-result",antes:SIMA("result"),t:["Resultado","Result","Ergebnis"],
-   x:["<b>VPL &gt; 0</b>: o projeto rende mais que a taxa. <b>TIR</b> compara direto com a taxa. <b>Payback descontado</b>: quando o dinheiro volta, já corrigido. Abaixo, a DRE do projeto até o fluxo de caixa livre.",
-      "<b>NPV &gt; 0</b>: the project beats the rate. <b>IRR</b> compares directly with the rate. <b>Discounted payback</b>: when the money comes back, adjusted. Below, the project's P&amp;L down to free cash flow.",
-      "<b>Kapitalwert &gt; 0</b>: das Projekt schlägt den Satz. <b>IRR</b> direkt mit dem Satz vergleichen. <b>Diskontierte Amortisation</b>: wann das Geld zurück ist. Darunter die Erfolgsrechnung bis zum freien Cashflow."]},
+  {sel:"#sim-view-projetos",t:["A planilha do projeto","The project spreadsheet","Die Projekttabelle"],
+   x:["Toque num projeto: o fluxo abre <b>em paisagem</b>, com os períodos nas colunas. Toque numa linha — Receitas, Custos, Capex — para criar <b>sublinhas</b> com as premissas de cada uma. O fluxo desce até o <b>VPL</b>, e o rodapé mostra TIR e payback.",
+      "Tap a project: the flow opens <b>in landscape</b>, with periods as columns. Tap a line — Revenue, Costs, Capex — to create <b>sub-lines</b> with their assumptions. The flow rolls down to the <b>NPV</b>, and the footer shows IRR and payback.",
+      "Projekt antippen: der Fluss öffnet sich <b>im Querformat</b>, mit Perioden als Spalten. Eine Zeile antippen — Erlöse, Kosten, Capex —, um <b>Unterzeilen</b> mit ihren Annahmen anzulegen. Der Fluss läuft bis zum <b>Kapitalwert</b>; die Fußzeile zeigt IRR und Amortisation."]},
   {sel:"#btn-sim-csv",t:["Exportar","Export","Exportieren"],
    x:["Leve o fluxo para uma planilha em CSV.","Take the flow to a spreadsheet as CSV.","Den Fluss als CSV in eine Tabelle übernehmen."]}
  ]
