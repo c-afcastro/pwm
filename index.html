@@ -10389,7 +10389,7 @@ function renderIncHistPanel(){
   if(!el) return;
   const hzEl=document.getElementById("inc-hist-horiz");
   if(hzEl) hzEl.innerHTML=[6,12,24].map(n=>
-    `<button type="button" onclick="incHistHoriz(${n})" style="background:${INC_HIST_N===n?"rgba(26,58,92,.14)":"transparent"};border:1px solid ${INC_HIST_N===n?"rgba(26,58,92,.32)":"var(--line)"};color:${INC_HIST_N===n?"#1A3A5C":"var(--ink-3)"};border-radius:8px;padding:4px 10px;font-size:10.5px;font-weight:${INC_HIST_N===n?600:500};cursor:pointer">${n}m</button>`).join("");
+    `<button type="button" onclick="incHistHoriz(${n})" aria-pressed="${INC_HIST_N===n}" style="background:${INC_HIST_N===n?"var(--accent)":"transparent"};border:1px solid ${INC_HIST_N===n?"var(--accent)":"var(--line)"};color:${INC_HIST_N===n?"var(--accent-ink)":"var(--ink-3)"};border-radius:8px;padding:4px 10px;font-size:10.5px;font-weight:600;cursor:pointer">${n}m</button>`).join("");
 
   /* janela: os N meses que terminam no mês em foco */
   const win=[];
@@ -17853,7 +17853,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.34";
+const APP_VERSION="11.35";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -22736,7 +22736,7 @@ function projetar(n){
 }
 
 /* ═══ 7. UI — FORMULÁRIO DE RENDA (auto-configurado pelo tipo) ═══ */
-const chip=(on,txt,onclick,color)=>`<button type="button" class="pro-pill" onclick="${onclick}" style="padding:6px 11px;border-radius:20px;border:1.5px solid ${on?(color||"#1A3A5C"):"var(--line)"};background:${on?(color||"#1A3A5C")+"14":"none"};color:${on?(color||"#1A3A5C"):"var(--ink-2)"};font-size:11.5px;font-weight:${on?"600":"500"};cursor:pointer;white-space:nowrap">${txt}</button>`;
+const chip=(on,txt,onclick,color)=>`<button type="button" class="pro-pill${on?" on":""}" aria-pressed="${on?"true":"false"}" onclick="${onclick}" style="--sel:${color||"var(--accent)"};padding:6px 11px;border-radius:20px;border:1.5px solid ${on?(color||"#1A3A5C"):"var(--line)"};background:${on?(color||"#1A3A5C")+"14":"none"};color:${on?(color||"#1A3A5C"):"var(--ink-2)"};font-size:11.5px;font-weight:${on?"600":"500"};cursor:pointer;white-space:nowrap">${txt}</button>`;
 const fieldNum=(id,lbl,val,step,suf)=>`<div class="pro-f"><label>${lbl}${suf?" ("+suf+")":""}</label><input id="${id}" type="text" inputmode="decimal" class="dec" oninput="PRO.maskDec(this)" value="${(val??"")===""?"":String(val).replace(".",",")}"/></div>`;
 const F =(id,lbl)=>`<div class="pro-f"><label>${lbl}</label><input id="${id}" type="text" inputmode="decimal" class="dec" oninput="PRO.maskDec(this)"/></div>`;
 const FT=(id,lbl,type)=>`<div class="pro-f"><label>${lbl}</label><input id="${id}" type="${type}"/></div>`;
@@ -28924,9 +28924,9 @@ function renderParams(){
       ${THEMES.map(t=>{const on=(THEME===t.id);
         return `<button type="button" onclick="PRO.temaEscolher('${t.id}')"
           style="display:flex;align-items:center;gap:9px;text-align:left;cursor:pointer;
-            background:var(--paper);border:1.5px solid ${on?"var(--accent)":"var(--line)"};
+            background:${on?"var(--accent-soft)":"var(--paper)"};border:1.5px solid ${on?"var(--accent)":"var(--line)"};
             border-radius:13px;padding:10px 11px;min-height:54px;
-            box-shadow:${on?"inset 0 0 0 1px var(--accent-line)":"none"}">
+            box-shadow:${on?"inset 0 0 0 1px var(--accent)":"none"}">
           <span style="display:flex;flex-shrink:0;border-radius:8px;overflow:hidden;
             border:1px solid var(--line)">
             <span style="width:14px;height:28px;background:${t.bg}"></span>
@@ -28934,7 +28934,7 @@ function renderParams(){
             <span style="width:11px;height:28px;background:${t.ac}"></span>
           </span>
           <span style="min-width:0;flex:1">
-            <span style="display:block;font-size:12px;font-weight:${on?"700":"600"};
+            <span style="display:block;font-size:12px;font-weight:700;
               color:${on?"var(--accent)":"var(--body)"};line-height:1.25">${PL(t.k)}</span>
             ${on?`<span style="display:block;font-size:9px;letter-spacing:1px;
               text-transform:uppercase;color:var(--accent);margin-top:2px">${PL("p_th_on")}</span>`:""}
@@ -35962,6 +35962,63 @@ window.GUIA={iniciar,fechar,ROT};
 .inst-wrap.inst-in-box>.inst-chev{ right:0; }
 .inst-op-livre{ border-top:1px solid var(--line,#E1DED7); border-radius:0 0 10px 10px; color:var(--ink-2,#67635C); }
 .inst-vazio{ padding:12px; font-size:13px; color:var(--ink-2,#67635C); }
+</style>
+
+<style id="toque-selecao-css">
+/* ══ v11.35 — TOQUE DISCRETO E SELEÇÃO INEQUÍVOCA ═══════════════════════
+
+   TOQUE. O app encolhia todo alvo tocável (scale .97). Num botão pequeno
+   isso passa despercebido; numa linha de planilha de 5.000 px ou num
+   botão da largura da folha, encolher pelo centro arrasta o conteúdo
+   vários pixels — e quando o alvo está dentro de outro alvo, os dois
+   encolhem e o de dentro é puxado para o centro do de fora. Era o
+   "desloca para a direita / para baixo". Agora nada muda de tamanho nem
+   de lugar: o alvo esmaece de leve enquanto o dedo está nele, como no
+   iOS, e só o alvo mais interno responde. */
+:is(button,[onclick],[role=button],.cat-btn,.pro-pill,.rate-type-btn,.recur-btn,.type-btn,.stat,
+    .cat-row,.filter-btn,.liq-card,.wz-b,.wz-pill,.wz-ic,.simp-card,.auth-btn,.fab-home,.fab-adv,
+    .flag-cycle,.ap-help,.nav-btn):active{ transform:none!important; }
+:is(button,[onclick],[role=button],.cat-btn,.pro-pill,.stat,.cat-row,.filter-btn,.liq-card,.simp-card):not(tr):not(:disabled):active{
+  opacity:.7!important; transition:opacity 0s!important;
+}
+/* o contêiner de um alvo tocado não esmaece junto */
+:is(button,[onclick],[role=button],.cat-btn,.pro-pill,.stat,.cat-row,.filter-btn,.liq-card,.simp-card):active:has(:is(button,[onclick],[role=button],.cat-btn,.pro-pill):active){
+  opacity:1!important;
+}
+/* soltar: volta em um instante, sem tranco */
+:is(button,[onclick],[role=button],.cat-btn,.pro-pill,.stat,.cat-row,.filter-btn,.liq-card,.simp-card):not(:active){
+  transition-property:opacity,background-color,border-color,color,box-shadow!important;
+  transition-duration:.16s!important; transition-timing-function:ease!important;
+}
+/* linhas de tabela clicáveis: o fundo responde, a linha fica no lugar */
+tr[onclick]:active > td{ background-image:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.05)); }
+
+/* SELEÇÃO. As flags selecionadas levavam só um véu de 8–10% da cor e uma
+   borda um tom mais escura — sobre o fundo cinza, quase igual às demais.
+   Selecionada agora é preenchida na cor do grupo, com texto claro; a não
+   selecionada fica em superfície neutra. O peso da letra é o mesmo nos
+   dois estados, para a largura não mudar e a linha não pular. */
+.pro-pill, .recur-btn, .pro-chips button{ font-weight:600!important; }
+.pro-pill.on, .pro-pill[aria-pressed="true"], .recur-btn.active, .pro-chips button.on,
+.rate-type-btn.active{
+  background:var(--sel,var(--accent))!important; border-color:var(--sel,var(--accent))!important;
+  color:var(--accent-ink,#fff)!important; box-shadow:none!important;
+}
+.rate-type-btn{ --sel:#6E2B3A; }
+:is(#screen-simulacoes,#sim-prem-ov,#sim-res-ov,#sim-novo-ov,#modal-sim-line,#sim-grid){ --sel:#6E4523; }
+/* fixo × variável: a escolha também preenche */
+.type-btn.t-var{ background:var(--wood)!important; border-color:var(--wood)!important; color:#fff!important; }
+.type-btn.t-fix{ background:var(--green)!important; border-color:var(--green)!important; color:#fff!important; }
+/* filtro aplicado nas listas: pílula preenchida, seta clara */
+:is(#app,body) select.ap-fsel.ap-fsel.ap-fsel.ativo{
+  background-color:var(--accent)!important; border-color:var(--accent)!important;
+  color:var(--accent-ink,#fff)!important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23FFFFFF' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")!important;
+}
+:is(#app,body) select.ap-fsel.ap-fsel.ap-fsel.ativo option{ background:var(--paper,#fff); color:var(--body); }
+@media (prefers-reduced-motion: reduce){
+  :is(button,[onclick],[role=button],.pro-pill,.cat-btn):not(:active){ transition-duration:.01ms!important; }
+}
 </style>
 </body>
 </html>
