@@ -6,6 +6,12 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <meta name="theme-color" content="#F2F2F0"/>
+  <!-- v11.38 — ícone da tela inicial: a vinheta parada no quadro final.
+       Quadrado cheio, sem cantos: o iOS aplica a própria máscara. O iPhone
+       lê o ícone na hora de "Adicionar à Tela de Início" e guarda; para
+       trocar um atalho já criado, apague-o e adicione de novo. -->
+  <link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,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"/>
+  <link rel="icon" type="image/png" sizes="64x64" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAADtElEQVR4nOyae0hTURzH792925xuczpf4SvMHmgyw9J/NKwws0DU/qkMSsrA/CtCkLL+EIwgCMWSCgo0gwqJsNQwykegRolp9lIEUcznTN3jTvfqR6sx5phnbnoSzuev3XN+53C+9/e7v/M7h7HqBSW1kWGpDQ4RgBsiADdEAG6IANwQAbghAnBDBOCGCMANEeA2S3qDSstxOj2PprxFQomPiOHx0Ie7YLoWwOonZuaEfD6PpgUCFpY+NjlrNpvRZ8DsAQ236OcrrqhprH7exuPRJQVHM/bugkaxtxfiDJg9oNUtmU1UXXMX/DaZzE+bOsUioVa3iD4DZg8wPJrPQvD/JSo8SG8wsgyDPgP+jzjvcpVMKk7dE+Mnk5zMTFFrOZnEB324xwTMzqsb23v8JN5HUhMQh8z8Wsi/eo/PMg+uFQT5S41GE0QUtHsJBRQytJs3cxqt7nVnX/3b7s5PAzFbQkd/KqPCg0sKcnZui3A+cHB4HN69YnvkzeJTkHXgw2UYWuQlFPJde6erFADpr+3D1xct3a3vvwTKpVkHEnPSEkOD/RfUXHlNw+OGjsz9CUVnMuUyicPhH/uHzl65ezglvuzCcZqmKTdwTQAkiq7egZct3c0dfQaj6VCyIudgUmJctJ3Z0OhE6e263h8jBcfSTmenCgV8296G1u6iG48Kc9MLT6RTbuOagNKqutr6d7BiWHdGigI87sT4TVd/2Z1nsCsV52elJyssjZW1ryprm65fzAWPUZ7ANQGj40rYbiBUEO0hJz6sb79V2xS7NeLSuWz4Dd6rKMnblxhrtZlUzs3MqkywHUBWZZiQQJm/VEwhQ6/D9bpyTlVe3fikqUPi43W/7Hz8jkhrl5Zb7Pk2bGvMsszu2CiGQd1hPSMA4kSl0Zn+1DBQz8BCl9t8HhiBQm1zaKBt47yK6x8csbNMUkSj72We2Qd6vg9z3JL1USb1jo0Ot7OJWymxrg4P1EKQOm1XD8wtaBeX9NS64AEPOEzkbmZ3dFAFQGqfnJm3FOqWRBSxKYD6D0AKIQiSiel56zEDtjPIp7r1ChLnIHnAcZBQqNh6DwqesGB5WIic8hBrfqCBTG/rPaPRPDbl2qHROWsuAEom+xaDaXnjqiHXKrghAnCD9BFDceYrEVkfIakG+EmsxxSHvYJ/J0OpWLS8F87Blkfosr0Cgt4gudSlW4mVq9HpqUmNRk1hIiwsguXznRjQ5O82mCECcEME4IYIwA0RgBsiADdEAG6IANxseAG/AQAA//9yEAHdAAAABklEQVQDAJUMYG+NFpTyAAAAAElFTkSuQmCC"/>
   <title>Gestão Financeira</title>
   <style>
     :root {
@@ -17872,7 +17878,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.37";
+const APP_VERSION="11.38";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -36101,6 +36107,44 @@ tr[onclick]:active > td{ background-image:linear-gradient(rgba(0,0,0,.05),rgba(0
       p.folha.scrollTop=alvoSt;
     });
   },true);
+})();
+</script>
+
+<style id="ios-borda-css">
+/* ══ v11.38 — FAIXA DE DESFOQUE DO iOS NO APP DA TELA INICIAL ══════════
+   Desde o iOS 26 o sistema desenha, por cima da página, um desfoque de
+   "vidro" que desce ~35–40 pt a partir do topo do app aberto pela tela
+   inicial; no iOS 27 ele ficou mais forte. Nenhuma meta tag nem CSS o
+   desliga — é o sistema que pinta, não a página. O que dá para fazer é
+   não deixar nada legível nessa faixa: desfoque sobre cor lisa não
+   aparece. Só no app instalado do iPhone (html.ios-app); no Safari e no
+   computador nada muda. */
+html.ios-app :is(#screen-home,#screen-despesas,#screen-entradas,#screen-patrimonio,#screen-simulacoes,
+    #screen-dividas,#screen-vidafinanceira,#screen-manual) .header{
+  padding-top:calc(46px + env(safe-area-inset-top,0px))!important;
+  background-color:var(--bg);
+}
+/* cadastros em tela cheia: a folha começa abaixo da faixa */
+html.ios-app :is(#modal-add,#modal-income,#modal-asset,#modal-debt) > .sheet{
+  height:calc(100dvh - 48px - env(safe-area-inset-top,0px))!important;
+}
+html.ios-app .sheet{ max-height:calc(100dvh - 52px - env(safe-area-inset-top,0px))!important; }
+/* planilha do simulador: em retrato girada, o topo do aparelho é a borda
+   esquerda da planilha */
+html.ios-app.sim-rot #sim-grid{ padding-left:calc(44px + env(safe-area-inset-top,0px))!important; }
+html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-area-inset-top,0px))!important; }
+@media (orientation: landscape){
+  /* em paisagem o iPhone não tem barra de status nem a faixa */
+  html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:0!important; }
+}
+</style>
+<script id="ios-app-detecta">
+(function(){
+  try{
+    var ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+    var inst=(window.navigator.standalone===true)||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
+    if(ios&&inst) document.documentElement.classList.add("ios-app");
+  }catch(e){}
 })();
 </script>
 </body>
