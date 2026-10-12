@@ -8048,14 +8048,41 @@ function closeOverlay(ref){
   ov.classList.remove("open");
   ov.classList.add("closing");
   const folha=ov.querySelector(".sheet");
-  let feito=false;
-  const fim=()=>{
-    if(feito) return; feito=true;
+  let feito=false, tm=0, mo=null;
+  /* v11.36 — REABRIR DURANTE A SAÍDA. A folha leva ~0,4 s esmaecendo
+     antes de sair do DOM. Quem reabria nesse intervalo (Parâmetros,
+     Impactos, Lotes… reaproveitam a mesma folha) via a folha aparecer e
+     sumir em seguida: a remoção agendada chegava depois. Agora, se a
+     folha volta a abrir antes do fim, a saída é cancelada. */
+  const cancela=()=>{
+    feito=true; clearTimeout(tm);
+    if(mo){ try{ mo.disconnect(); }catch(e){} }
+    delete ov.dataset.fechando; ov.classList.remove("closing");
+  };
+  const fim=e=>{
+    if(feito) return;
+    /* transição de um botão lá dentro não é o fim da folha */
+    if(e&&e.target!==folha) return;
+    if(ov.classList.contains("open")){ cancela(); return; }
+    feito=true; clearTimeout(tm);
+    if(mo){ try{ mo.disconnect(); }catch(_){} }
+    /* folha que já estava no HTML só se esconde: removê-la quebraria a
+       próxima abertura */
+    if(ov.dataset.fixa==="1"){ delete ov.dataset.fechando; ov.classList.remove("closing"); return; }
     if(ov.parentNode) ov.remove();
   };
-  if(folha) folha.addEventListener("transitionend",fim,{once:true});
-  setTimeout(fim,420);
+  try{
+    mo=new MutationObserver(()=>{ if(!feito&&ov.classList.contains("open")) cancela(); });
+    mo.observe(ov,{attributes:true,attributeFilter:["class"]});
+  }catch(e){}
+  if(folha) folha.addEventListener("transitionend",fim);
+  tm=setTimeout(()=>fim(),420);
 }
+/* folhas que nascem no HTML ficam marcadas como fixas */
+(function(){
+  const marca=()=>document.querySelectorAll(".overlay").forEach(o=>{ if(!o.dataset.fixa) o.dataset.fixa="1"; });
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",marca,{once:true}); else marca();
+})();
 window.closeOverlay=closeOverlay;
 
 function toast(msg,avisoKey){
@@ -17853,7 +17880,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.35";
+const APP_VERSION="11.36";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -27365,7 +27392,7 @@ function renderCfPainel(){
   const GRN2="#5A8A4A", RED2="#B85A6A";
   const tag=p=>`<span class="cfp-tag" style="background:${p?"rgba(110,43,58,.12)":"rgba(90,138,74,.14)"};color:${p?"#6E2B3A":"#3F6B33"}">${p?"PROJ":"REAL"}</span>`;
   const V=v=>fmt(v||0);
-  let cabec="", corpo="", cf=null;
+  let cabec="", corpo="", cf=null, nota="";
 
   if(CFP.escala==="mes"){
     const m=serie.find(x=>x.ym===CFP.ym)||cfMes(CFP.ym,0,null);
@@ -27398,8 +27425,10 @@ function renderCfPainel(){
       <button onclick="PRO.cfNav(-1)">‹</button>
       <div class="lbl">${CFP.ano} ${ms.length?tag(ms.some(x=>x.proj)):""}</div>
       <button onclick="PRO.cfNav(1)">›</button>
-    </div>
-    ${ms.length<12?`<div class="pro-note" style="margin:-4px 0 10px">A série cobre ${CFP.atras} meses para trás e ${CFP.frente} para frente: ${CFP.ano} aparece com ${ms.length} ${ms.length===1?"mês":"meses"}.</div>`:""}`;
+    </div>`;
+    /* v11.36 — a nota vai abaixo da escala: acima dela empurrava os
+       botões Mensal/Anual para baixo ao trocar de escala */
+    nota=`${ms.length<12?`<div class="pro-note" style="margin:-4px 0 10px">A série cobre ${CFP.atras} meses para trás e ${CFP.frente} para frente: ${CFP.ano} aparece com ${ms.length} ${ms.length===1?"mês":"meses"}.</div>`:""}`;
     const anos={};
     serie.forEach(x=>{const a=x.ym.slice(0,4);
       (anos[a]||(anos[a]={ano:a,ent:0,sai:0,res:0,proj:false}));
@@ -27487,6 +27516,7 @@ function renderCfPainel(){
       <button type="button" class="pro-pill" onclick="PRO.cfHoje()"
         style="border:1.5px solid var(--line);background:none;color:var(--ink-2)">hoje</button>
     </div>
+    ${raw(nota)}
     ${cf?`<div class="sec-label">Demonstrativo${CFP.escala==="ano"?" consolidado do ano":" do período"}</div>
     ${cfDemonstrativo(cf,"c")}`:""}
     ${corpo}
@@ -28552,8 +28582,10 @@ function renderParams(){
      que governa a tela inicial, o fluxo de caixa e a dívida não pode ficar
      escondida dentro de uma aba: ela pertence à ficha de Parâmetros, ao
      lado das curvas que ela consome. */
+  /* largura fixa: "Ligado" e "Desligado" ocupam o mesmo espaço, e a
+     pílula não anda para o lado ao trocar (v11.36) */
   const swP=(k,on,fn)=>`<span class="pro-pill ${on?"on":""}" style="cursor:pointer;flex-shrink:0;
-    white-space:nowrap" onclick="PRO.${fn||("projToggle('"+k+"')")}">${
+    white-space:nowrap;min-width:124px;justify-content:center" onclick="PRO.${fn||("projToggle('"+k+"')")}">${
     on?"● "+PX("p_on"):"○ "+PX("p_off")}</span>`;
   const rowP=(lbl,hint,on,k,fn)=>`<div style="display:flex;align-items:center;gap:11px;
     padding:10px 0;border-bottom:1px solid var(--line)">
@@ -36020,5 +36052,65 @@ tr[onclick]:active > td{ background-image:linear-gradient(rgba(0,0,0,.05),rgba(0
   :is(button,[onclick],[role=button],.pro-pill,.cat-btn):not(:active){ transition-duration:.01ms!important; }
 }
 </style>
+
+<style id="aba-sem-salto-css">
+/* ══ v11.36 — TROCA DE ABA SEM SALTO ═════════════════════════════════
+   A entrada de aba fazia o bloco inteiro subir 6 px. Em Parâmetros, no
+   painel de fluxo de caixa e em outras folhas, esse bloco contém os
+   próprios botões tocados — cada toque afundava o botão e o trazia de
+   volta. A entrada passa a ser só um esmaecer curto do conteúdo, e as
+   linhas de controle (abas, escala, navegação) não se animam. */
+@keyframes tabFadeIn{ from{ opacity:0; } to{ opacity:1; } }
+.tab-enter{ animation:tabFadeIn .2s ease both!important; }
+#par-body.tab-enter, #cfp-body.tab-enter{ animation:none!important; }
+#par-body.tab-enter > .pro-scale ~ *, #cfp-body.tab-enter > :nth-child(n+3){
+  animation:tabFadeIn .2s ease both;
+}
+</style>
+
+<script id="toque-sem-salto">
+/* ══ v11.36 — O BOTÃO TOCADO FICA ONDE ESTAVA ════════════════════════
+   Muitas folhas se redesenham inteiras a cada toque (Parâmetros, fluxo
+   de caixa, fichas). Quando o conteúdo novo é mais curto, a rolagem é
+   encurtada pelo navegador e o botão que acabou de ser tocado desce na
+   tela — às vezes centenas de pixels. Aqui, antes do próximo quadro, o
+   app procura o mesmo botão na folha redesenhada e devolve a rolagem
+   para que ele fique exatamente sob o dedo. Se faltar conteúdo para
+   isso, um respiro invisível ao pé da folha completa a altura.
+   Não interfere quando o próprio toque decide rolar a folha. */
+(function(){
+  let pend=null;
+  document.addEventListener("click",function(e){
+    const alvo=e.target&&e.target.closest&&e.target.closest("[onclick]");
+    if(!alvo) return;
+    const folha=alvo.closest(".overlay .sheet");
+    if(!folha||folha.scrollHeight<=folha.clientHeight+1) return;
+    pend={chave:alvo.getAttribute("onclick"),txt:(alvo.textContent||"").trim().slice(0,40),
+      y:alvo.getBoundingClientRect().top,folha,st:folha.scrollTop,alvo};
+    requestAnimationFrame(()=>{
+      const p=pend; pend=null; if(!p||!p.folha.isConnected) return;
+      p.folha.querySelectorAll(".anc-pad").forEach(x=>x.remove());
+      const max0=p.folha.scrollHeight-p.folha.clientHeight;
+      /* o toque rolou a folha de propósito (não foi o navegador encurtando) */
+      if(p.folha.scrollTop!==p.st&&p.folha.scrollTop<max0-1) return;
+      const cands=[...p.folha.querySelectorAll("[onclick]")].filter(x=>x.getAttribute("onclick")===p.chave);
+      if(!cands.length) return;
+      const novo=cands.find(x=>(x.textContent||"").trim().slice(0,40)===p.txt)||cands[0];
+      const d=novo.getBoundingClientRect().top-p.y;
+      if(Math.abs(d)<0.5) return;
+      const alvoSt=p.folha.scrollTop+d;
+      if(alvoSt<0) return;
+      const max=p.folha.scrollHeight-p.folha.clientHeight;
+      if(alvoSt>max){
+        const pad=document.createElement("div");
+        pad.className="anc-pad"; pad.setAttribute("aria-hidden","true");
+        pad.style.cssText="height:"+Math.ceil(alvoSt-max)+"px;flex-shrink:0;pointer-events:none";
+        p.folha.appendChild(pad);
+      }
+      p.folha.scrollTop=alvoSt;
+    });
+  },true);
+})();
+</script>
 </body>
 </html>
