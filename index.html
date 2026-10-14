@@ -15809,7 +15809,8 @@ function debtPagtosDoMes(d,ymStr){
 function debtChaveCron(d){
   return [d.id,debtBalance(d),d.term,d.rate,d.amortSystem,d.indexador||"",d.seguro||0,d.taxaAdm||0,
     d.lastPaymentYM||"",(d.payments||[]).length,todayYM(),JSON.stringify(d.fgts||null),
-    d.bancoEm||"",d.bancoLinhas?Object.keys(d.bancoLinhas).join(","):"",d.fgtsBanco?Object.keys(d.fgtsBanco).length:0].join("|");
+    d.bancoEm||"",d.bancoLinhas?Object.keys(d.bancoLinhas).join(","):"",d.fgtsBanco?Object.keys(d.fgtsBanco).length:0,
+    d.encBanco?Object.keys(d.encBanco).length:0,d.fgtsBancoPrest?1:0,d.dueDay||"",(window.TR_DIA_TS||0)].join("|");
 }
 function debtCron(d){
   try{ return (window.PRO&&PRO.cronogramaDivida)?PRO.cronogramaDivida(d):null; }catch(e){ return null; }
@@ -17878,7 +17879,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.39";
+const APP_VERSION="11.40";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -20167,9 +20168,51 @@ function sgs(code,n){
   return fetch(`https://api.bcb.gov.br/dados/serie/bcdata.sgs.${code}/dados/ultimos/${n}?formato=json`)
     .then(r=>{if(!r.ok)throw new Error(r.status);return r.json();});
 }
+/* ═══ TR JÁ DIVULGADA ═══════════════════════════════════════════════
+   v11.40 — A TR de um período é publicada pelo Banco Central NO INÍCIO
+   dele: a taxa que corrige a parcela de 27/10 é a do período 27/09–27/10,
+   conhecida desde o fim de setembro. Para a parcela que ainda não venceu,
+   isso não é projeção, é fato — e é o que o banco usa no boleto. A série
+   226 do SGS traz a TR de cada data de início; o app guarda os últimos
+   meses e, para o vencimento de cada mês, procura a taxa que começou no
+   mesmo dia do mês anterior. Sem ela, vale a curva dos Parâmetros. */
+const TRD_KEY="gastos_v2_trdia";
+let TR_DIA=(()=>{try{return Object.assign({ts:0,v:{}},JSON.parse(localStorage.getItem(TRD_KEY)||"{}"));}catch(e){return{ts:0,v:{}};}})();
+try{ window.TR_DIA_TS=TR_DIA.ts||0; }catch(e){}
+function saveTrDia(){
+  const ks=Object.keys(TR_DIA.v).sort();
+  ks.slice(0,Math.max(0,ks.length-500)).forEach(k=>delete TR_DIA.v[k]);
+  try{ localStorage.setItem(TRD_KEY,JSON.stringify(TR_DIA)); }catch(e){}
+  try{ window.TR_DIA_TS=TR_DIA.ts||0; }catch(e){}
+}
+/* TR do período que termina no vencimento do mês ym (dia = vencimento) */
+function trConhecida(ym,dia){
+  const dd0=parseInt(dia)||0; if(!dd0||!ym) return null;
+  const ant=ymAdd(ym,-1); const [y,m]=ant.split("-").map(Number);
+  const dd=Math.min(dd0,new Date(y,m,0).getDate());
+  const v=TR_DIA.v[ant+"-"+String(dd).padStart(2,"0")];
+  return (typeof v==="number"&&isFinite(v))?v:null;
+}
+async function fetchTrDia(){
+  const fim=new Date(), ini=new Date(fim.getTime()-80*864e5);
+  const br=x=>String(x.getDate()).padStart(2,"0")+"/"+String(x.getMonth()+1).padStart(2,"0")+"/"+x.getFullYear();
+  const r=await fetch(`https://api.bcb.gov.br/dados/serie/bcdata.sgs.226/dados?formato=json&dataInicial=${br(ini)}&dataFinal=${br(fim)}`);
+  if(!r.ok) throw new Error(r.status);
+  const arr=await r.json(); let n=0;
+  (arr||[]).forEach(x=>{
+    const pp=String(x.data||"").split("/"); if(pp.length!==3) return;
+    const v=parseFloat(String(x.valor).replace(",","."));
+    if(isFinite(v)&&v>=0){ TR_DIA.v[pp[2]+"-"+pp[1]+"-"+pp[0]]=v; n++; }
+  });
+  if(n){ TR_DIA.ts=Date.now(); saveTrDia();
+    try{ cfLimparCache(); }catch(e){}
+    try{ Object.keys(FGTS_SCH_CACHE).forEach(k=>delete FGTS_SCH_CACHE[k]); }catch(e){} }
+  return n;
+}
 async function fetchMarket(silent){
   if(!silent) toast(TR("⏳ Buscando taxas no Banco Central…"));
   let ok=0;
+  try{ if(await fetchTrDia()) ok++; }catch(e){}
   try{const d=await sgs(4389,1); const v=parseFloat(d[0].valor); if(v>0){MARKET.cdi=v;ok++;}}catch(e){}
   try{const d=await sgs(432,1);  const v=parseFloat(d[0].valor); if(v>0){MARKET.selic=v;ok++;}}catch(e){}
   try{const d=await sgs(433,12); const acc=d.reduce((a,x)=>a*(1+parseFloat(x.valor)/100),1);
@@ -21980,7 +22023,7 @@ const DEBT_INDEX=[
 function debtIndexAM(d,ym){
   const M=ym||ymNow();          /* o presente também obedece à ficha */
   switch(d&&d.indexador){
-    case "tr":       return trAM(M);
+    case "tr":       {const k=trConhecida(M,d&&d.dueDay); return k!==null?k:trAM(M);}
     case "ipca":     {const p=paramMensal("ipca",M); return p!==null?p:aaToMm(MARKET.ipca);}
     case "poupanca": {const p=paramMensal("poupanca",M); return p!==null?p:poupancaAM();}
     case "pre":      return 0;
@@ -22064,6 +22107,20 @@ function debtScheduleFGTS(d,plano,opt){
      Com amortização extra simulada, as linhas fixas deixam de valer: o
      saldo muda e o banco refaria a conta. */
   const FIXAS=(!EXTRA&&d&&d.bancoLinhas)?d.bancoLinhas:null;
+  /* v11.40 — linha "Projetada" do banco não é boleto: o banco a calcula
+     com TR zero. Tabelas importadas antes desta versão não marcavam quais
+     linhas eram emitidas; num contrato corrigido, linha sem correção é
+     projeção e o app refaz a conta com a TR do mês. */
+  const IDX_CORRIGE=/^(tr|ipca|poupanca)$/.test((d&&d.indexador)||"");
+  /* seguros que o banco projetou mês a mês (MIP cai com o saldo e sobe com
+     a idade; DFI acompanha o imóvel) — projetados com TR zero, recebem a
+     correção acumulada que o app aplica desde a última linha real */
+  const ENCB=(!EXTRA&&d&&d.encBanco)?d.encBanco:null;
+  /* FGTS da operação contratada: o banco cobre uma FRAÇÃO da prestação.
+     Guardada a prestação que o banco projetou, a fração vale sobre a
+     prestação recalculada com a TR — como no boleto. */
+  const FGBP=(d&&d.fgtsBancoPrest)?d.fgtsBancoPrest:null;
+  let cumF=1;
   const FGB=(liga&&modo==="abater"&&d&&d.fgtsBanco&&Object.keys(d.fgtsBanco).length)?d.fgtsBanco:null;
   const FGB_FIM=FGB?Object.keys(FGB).sort().pop():null;
   let prox=1e9;
@@ -22129,7 +22186,8 @@ function debtScheduleFGTS(d,plano,opt){
 
     let usoMes=0, evento="", corrMes=0;
     const ymI=ymAdd(ymNow(),i-1);
-    const FX=FIXAS?FIXAS[ymI]:null;
+    let FX=FIXAS?FIXAS[ymI]:null;
+    if(FX&&FX.emit===undefined&&IDX_CORRIGE&&!(FX.corr>0)) FX=null;
 
     /* ── correção monetária: incide sobre o saldo antes de tudo ──
        a taxa é a do mês, colhida da curva parametrizada */
@@ -22148,6 +22206,7 @@ function debtScheduleFGTS(d,plano,opt){
         if(sys==="price") pmt=pmt*(1+ci);
       }
     }
+    if(!FX) cumF*=(1+ci);
 
     /* ── amortização extraordinária: abate o saldo devedor ── */
     if(liga&&modo!=="abater"&&i===prox){
@@ -22183,8 +22242,10 @@ function debtScheduleFGTS(d,plano,opt){
     let amortMes=FX?Math.min(FX.amort,bal):((sys==="sac")?Math.min(amortSac,bal):Math.min(Math.max(0,pmt-jurosMes),bal));
     /* resíduo de centavos não vira uma parcela a mais: fecha no último mês */
     if(bal-amortMes<1) amortMes=bal;
-    const parcela=amortMes+jurosMes;
-    const encI=FX?R2(FX.enc||0):enc;
+    /* o boleto soma juros e amortização JÁ arredondados ao centavo */
+    const parcela=R2(R2(amortMes)+R2(jurosMes));
+    const encI=FX?R2(FX.enc||0)
+      :((ENCB&&ENCB[ymI])?R2(R2((+ENCB[ymI].seg||0)*cumF)+(+ENCB[ymI].tx||0)):enc);
     /* depois de uma linha do banco, o contrato segue dela */
     if(FX){ if(sys==="sac") amortSac=FX.amort; else pmt=FX.juros+FX.amort; }
 
@@ -22196,7 +22257,13 @@ function debtScheduleFGTS(d,plano,opt){
       evento="Abatimento"; parcelasCobertas++; aplicado=R2(aplicado+cob);
     }else if(FGB&&ymI<=FGB_FIM){
       /* dentro do calendário que o banco programou: o valor dele, mês a mês */
-      const v=+FGB[ymI]||0;
+      let v=+FGB[ymI]||0;
+      /* o FGTS cobre um PERCENTUAL FIXO do encargo total do mês —
+         prestação, seguros e tarifa. No contrato do titular, 37%:
+         27/10/26 → 37% × (4.494,55 + 103,58 + 25,00) = 1.710,56. O valor
+         que o banco projetou com TR zero vira percentual, e o percentual
+         incide sobre o encargo recalculado com a TR. */
+      if(v>0&&FGBP&&FGBP[ymI]>0) v=R2(R2(R2(jurosMes)+R2(amortMes)+encI)*v/FGBP[ymI]);
       if(v>0){
         cob=R2(Math.min(v,parcela));
         if(usaPat) saldoPat=R2(Math.max(0,saldoPat-cob));
@@ -26461,6 +26528,7 @@ function init(){
   /* o histórico mensal muda pouco: busca em segundo plano quando vence */
   if(!histAtualizado()) setTimeout(()=>fetchHistorico(true).catch(()=>{}),1500);
   if(!MARKET.ts||Date.now()-MARKET.ts>12*3600e3) fetchMarket(true);
+  else if(!TR_DIA.ts||Date.now()-TR_DIA.ts>12*3600e3){ fetchTrDia().then(n=>{ if(n) refreshPro(); }).catch(()=>{}); }
 }
 document.addEventListener("DOMContentLoaded",()=>setTimeout(init,50));
 setTimeout(init,3350);   // após o splash do app
@@ -34543,15 +34611,22 @@ function aplicar(){
   }
   /* o que o banco já fixou para a frente: boletos emitidos e o débito de
      FGTS de cada mês da operação contratada */
-  const linhas={}, fgb={};
+  const linhas={}, fgb={}, fgbP={}, encB={};
   A.futuras.forEach(o=>{
-    const emitida=/emitid|gerad|aguard|issued/.test(o.sit||"")||(o.ym<=todayYM());
+    /* v11.40 — só o boleto EMITIDO é fato. Uma linha "Projetada" do mês
+       corrente foi calculada pelo banco com TR zero: tratá-la como fixa
+       gravava a parcela errada. A data só decide quando a tabela não traz
+       situação nenhuma. */
+    const emitida=/emitid|gerad|aguard|issued/.test(o.sit||"")||(!o.sit&&o.ym<=todayYM());
     if(emitida&&o.juros!=null&&o.amort!=null)
-      linhas[o.ym]={juros:R2(o.juros),amort:R2(o.amort),corr:R2(o.corr||0),enc:R2(o.enc||0),fgts:R2(o.fgts||0),saldo:o.saldo,total:o.total};
-    if(o.fgts>0) fgb[o.ym]=R2(o.fgts);
+      linhas[o.ym]={juros:R2(o.juros),amort:R2(o.amort),corr:R2(o.corr||0),enc:R2(o.enc||0),fgts:R2(o.fgts||0),saldo:o.saldo,total:o.total,emit:1};
+    else if((o.seg||0)+(o.tx||0)>0) encB[o.ym]={seg:R2(o.seg||0),tx:R2(o.tx||0)};
+    if(o.fgts>0){ fgb[o.ym]=R2(o.fgts); if(o.juros!=null&&o.amort!=null) fgbP[o.ym]=R2(o.juros+o.amort+(o.seg||0)+(o.tx||0)); }
   });
   d.bancoLinhas=Object.keys(linhas).length?linhas:null;
+  d.encBanco=Object.keys(encB).length?encB:null;
   d.fgtsBanco=(S.aplicarFgts&&Object.keys(fgb).length)?fgb:null;
+  d.fgtsBancoPrest=(d.fgtsBanco&&Object.keys(fgbP).length)?fgbP:null;
   d.bancoEm=hojeISO();
   if(!alvo) DEBTS.push(d);
   debtSincronizar(d);
