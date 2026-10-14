@@ -3440,7 +3440,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <div style="display:flex;gap:8px" data-wz="juros">
       <div id="df-rate" style="flex:1">
         <label class="f-label" data-i18n="debt_rate">Juros</label>
-        <input id="debt-rate" class="f-input" type="text" inputmode="decimal" placeholder="0,0" style="margin-bottom:6px" oninput="maskDecimalInput(this);updateDebtEstimate()"/>
+        <input id="debt-rate" class="f-input" type="text" inputmode="decimal" placeholder="0,0" data-dec="6" style="margin-bottom:6px" oninput="maskDecimalInput(this);updateDebtEstimate()"/>
         <div style="display:flex;gap:4px">
           <button type="button" id="rate-type-month" onclick="selRateType('month')" class="rate-type-btn active" data-i18n="rate_monthly">% ao mês</button>
           <button type="button" id="rate-type-year" onclick="selRateType('year')" class="rate-type-btn" data-i18n="rate_yearly">% ao ano</button>
@@ -7965,7 +7965,10 @@ function maskDecimalInput(el){
   if(firstComma>=0){
     v=v.slice(0,firstComma+1)+v.slice(firstComma+1).replace(/,/g,"");
     const parts=v.split(",");
-    v=parts[0]+","+(parts[1]||"").slice(0,2);
+    /* a taxa de um contrato tem até seis casas (0,705319% a.m.): o limite
+       de duas valia para percentuais de exibição, não para contrato */
+    const dec=Math.max(0,parseInt(el.dataset&&el.dataset.dec)||2);
+    v=parts[0]+","+(parts[1]||"").slice(0,dec);
   }
   el.value=v;
 }
@@ -16838,9 +16841,17 @@ function openDebt(id){
   setCurrencyInput(document.getElementById("debt-principal"), d&&d.principal?parseFloat(d.principal):"");
   setCurrencyInput(document.getElementById("debt-entrada"), d&&debtEntrada(d)>0?debtEntrada(d):"");
   // convert stored monthly rate to displayed unit
+  /* v11.41 — a ficha mostrava a taxa em duas casas (0,705319% virava 0,71)
+     e o salvar gravava o número arredondado: bastava abrir uma dívida
+     importada para informar a entrada e os juros do mês subiam de
+     3.061,85 para 3.082,17. A taxa aparece com a precisão do contrato e,
+     se o campo não for tocado, a gravada é preservada exatamente. */
   let shownRate="";
-  if(d&&d.rate){ shownRate=DEBT_RATE_TYPE==="year"?monthlyToAnnual(d.rate):d.rate; shownRate=Math.round(shownRate*100)/100; }
-  document.getElementById("debt-rate").value=shownRate===""?"":String(shownRate).replace(".",",");
+  if(d&&d.rate){ shownRate=DEBT_RATE_TYPE==="year"?monthlyToAnnual(+d.rate):+d.rate; }
+  /* ao ano basta quatro casas na tela (8,8% e não 8,800005%): intocado, o
+     campo não é relido, e vale a taxa mensal gravada */
+  document.getElementById("debt-rate").value=shownRate===""?"":taxaTxt(shownRate,DEBT_RATE_TYPE==="year");
+  DEBT_RATE_ORIG=d&&d.rate?{txt:document.getElementById("debt-rate").value,tipo:DEBT_RATE_TYPE,rate:+d.rate}:null;
   document.getElementById("debt-term").value=d?(d.term||""):"";
   document.getElementById("debt-dueday").value=d?(d.dueDay||""):"";
   document.getElementById("debt-save").textContent=d?t("save"):t("add");
@@ -16861,6 +16872,9 @@ function openDebt(id){
 }
 
 let DEBT_RATE_TYPE="month";
+let DEBT_RATE_ORIG=null;
+/* taxa em texto, com até seis casas e sem zeros à direita */
+function taxaTxt(v,ano){ const k=ano?1e4:1e6; return String(Math.round((+v||0)*k)/k).replace(".",","); }
 /* Convert between monthly and annual compounded rates */
 function monthlyToAnnual(m){ return (Math.pow(1+m/100,12)-1)*100; }
 function annualToMonthly(a){ return (Math.pow(1+a/100,1/12)-1)*100; }
@@ -16875,8 +16889,12 @@ function selRateType(type){
   const v=unmaskDecimal(inp);
   // convert the currently typed value to the new unit so the displayed rate stays equivalent
   if(!isNaN(v)&&v>0){
-    const conv=Math.round((type==="year"?monthlyToAnnual(v):annualToMonthly(v))*100)/100;
-    inp.value=String(conv).replace(".",",");
+    /* sem tocar no número, a conversão parte da taxa gravada, não da exibida,
+       e a taxa gravada continua valendo na nova unidade */
+    const intacta=!!(DEBT_RATE_ORIG&&inp.value===DEBT_RATE_ORIG.txt&&DEBT_RATE_ORIG.tipo===DEBT_RATE_TYPE);
+    const base=intacta?(DEBT_RATE_TYPE==="year"?monthlyToAnnual(DEBT_RATE_ORIG.rate):DEBT_RATE_ORIG.rate):v;
+    inp.value=taxaTxt(type==="year"?monthlyToAnnual(base):annualToMonthly(base),type==="year");
+    DEBT_RATE_ORIG=intacta?{txt:inp.value,tipo:type,rate:DEBT_RATE_ORIG.rate}:null;
   }
   DEBT_RATE_TYPE=type;
   updateRateTypeButtons();
@@ -17075,7 +17093,7 @@ let DEBT_INDEXADOR="tr";
 function selDebtIndex(id){ DEBT_INDEXADOR=id; renderDebtIndex(); updateDebtEstimate&&updateDebtEstimate(); }
 function renderDebtIndex(){
   const row=document.getElementById("debt-index-row"); if(!row) return;
-  const fin=DEBT_TYPE_SEL==="mortgage"||DEBT_TYPE_SEL==="vehicle";
+  const fin=DEBT_TYPE_SEL==="mortgage"||DEBT_TYPE_SEL==="auto"||DEBT_TYPE_SEL==="vehicle";
   row.style.display=fin?"":"none";
   const enc=document.getElementById("debt-encargos-row");
   if(enc) enc.style.display=fin?"":"none";
@@ -17110,7 +17128,11 @@ function saveDebt(){
     balance,
     principal:unmaskCurrency(document.getElementById("debt-principal"))||null,
     entrada:debtTypeFields(DEBT_TYPE_SEL).includes("entrada")?(unmaskCurrency(document.getElementById("debt-entrada"))||0):0,
-    rate:(()=>{ const v=unmaskDecimal(document.getElementById("debt-rate"))||0; return DEBT_RATE_TYPE==="year"?Math.round(annualToMonthly(v)*10000)/10000:v; })(),
+    rate:(()=>{
+      const el=document.getElementById("debt-rate");
+      if(DEBT_EID&&DEBT_RATE_ORIG&&el.value===DEBT_RATE_ORIG.txt&&DEBT_RATE_TYPE===DEBT_RATE_ORIG.tipo) return DEBT_RATE_ORIG.rate;
+      const v=unmaskDecimal(el)||0;
+      return DEBT_RATE_TYPE==="year"?Math.round(annualToMonthly(v)*1e6)/1e6:v; })(),
     rateType:DEBT_RATE_TYPE,
     amortSystem:DEBT_AMORT_SYS,
     monthlyPayment:(()=>{
@@ -17123,7 +17145,7 @@ function saveDebt(){
     })(),
     term:parseInt(document.getElementById("debt-term").value)||null,
     dueDay:parseInt(document.getElementById("debt-dueday").value)||null,
-    indexador:(DEBT_TYPE_SEL==="mortgage"||DEBT_TYPE_SEL==="vehicle")?DEBT_INDEXADOR:null,
+    indexador:(DEBT_TYPE_SEL==="mortgage"||DEBT_TYPE_SEL==="auto"||DEBT_TYPE_SEL==="vehicle")?DEBT_INDEXADOR:null,
     seguro:unmaskCurrency(document.getElementById("debt-seguro"))||0,
     taxaAdm:unmaskCurrency(document.getElementById("debt-taxaadm"))||0,
   };
@@ -17879,7 +17901,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.40";
+const APP_VERSION="11.41";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
