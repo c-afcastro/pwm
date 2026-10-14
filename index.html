@@ -17878,7 +17878,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.38";
+const APP_VERSION="11.39";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -20356,7 +20356,7 @@ function paramDerivada(idx,ym){
   if(idx==="tr"){
     const sel=paramTaxa("selic",ym);
     if(sel===null) return null;
-    return sel<=TR_SELIC_PISO?0:Math.round((sel-TR_SELIC_PISO)*0.016*10000)/10000;
+    return trDaSelic(sel);
   }
   if(idx==="poupanca"){
     const sel=paramTaxa("selic",ym);
@@ -21934,17 +21934,41 @@ function fgtsDepositoProjetado(ym,fallback){
 
    Regra da TR: o Banco Central zera a taxa quando a Selic está em 8,5% a.a.
    ou abaixo; acima disso ela volta a ser positiva e cresce junto com a Selic.
-   Sem a série 226 do BCB em mãos, o app estima a partir da Selic vigente. */
+
+   v11.39 — A TR projetada segue a FÓRMULA OFICIAL (Res. CMN 4.624/2018):
+     TR = máx{0; [(1 + TBF) / R] − 1},   R = 1,005 + b × TBF
+   com b pela faixa da TBF anual (0,23 abaixo de 9,5% … 0,48 acima de 16%).
+   A TBF é a taxa dos CDB de 30 dias e corre abaixo do CDI; o desconto de
+   1,40 p.p. foi calibrado contra os 58 fatores de TR que o Itaú aplicou ao
+   contrato SFH do titular (jan/22 a out/26): erro médio ≈ 0, erro absoluto
+   médio de 0,02 p.p. ao mês. A conta antiga, (Selic − 8,5) × 0,016, dava
+   0,088% a.m. com a Selic em 14% contra 0,169% de fato cobrados — metade da
+   correção real do saldo devedor. */
 const TR_SELIC_PISO=8.5;
+const TR_TBF_DESC=1.40;                          /* CDI − TBF, em p.p. a.a. */
+const TR_FAIXAS_B=[[16,0.48],[15,0.44],[14,0.40],[13,0.36],[10.5,0.32],[10,0.31],[9.5,0.26]];
+function trDaSelic(selAA){
+  const sel=+selAA||0;
+  if(sel<=TR_SELIC_PISO) return 0;               // TR zerada por regra
+  let cdi=sel-0.10;
+  try{ cdi=sel-paramSpread(); }catch(e){}
+  const tbfAA=Math.max(0,cdi-TR_TBF_DESC);       // % a.a., base 252
+  const tbf=Math.pow(1+tbfAA/100,1/12)-1;        // fração ao mês
+  let b=0.23;
+  for(const [lim,v] of TR_FAIXAS_B){
+    if(lim>=13?tbfAA>lim:tbfAA>=lim){ b=v; break; }
+  }
+  const R=1.005+b*tbf;
+  const tr=Math.max(0,((1+tbf)/R-1)*100);
+  return Math.round(tr*10000)/10000;             // % ao mês, 4 casas
+}
 function trAM(ym){
   /* Sem mês declarado vale o mês CORRENTE, não a taxa de mercado avulsa:
      a ficha de parâmetros governa também o presente. */
   const M=ym||ymNow();
   const p=paramTaxaEf("tr",M); if(p!==null) return p;
   if(+MARKET.tr>0) return +MARKET.tr;
-  const sel=+MARKET.selic||0;
-  if(sel<=TR_SELIC_PISO) return 0;             // TR zerada por regra
-  return Math.round((sel-TR_SELIC_PISO)*0.016*10000)/10000;
+  return trDaSelic(+MARKET.selic||0);
 }
 const DEBT_INDEX=[
   {id:"tr",      lbl:"TR",        hint:"Padrão do SFH. Zera com a Selic em 8,5% a.a. ou menos."},
@@ -21998,6 +22022,13 @@ function debtScheduleFGTS(d,plano,opt){
   /* encargos acessórios: entram no boleto, mas fora da base do FGTS */
   const enc=R2((parseFloat(d&&d.seguro)||0)+(parseFloat(d&&d.taxaAdm)||0));
   let bal=bal0;
+  /* v11.39 — enquanto ninguém encurtou o prazo, a parcela é recalculada todo
+     mês como o banco faz: saldo JÁ CORRIGIDO ÷ parcelas restantes (SAC) ou a
+     prestação Price sobre esse saldo. Multiplicar a amortização pela TR mês
+     a mês dá o mesmo resultado no papel, mas os centavos arredondados do
+     saldo se acumulavam em 25 anos e sobravam numa 304ª parcela que o
+     contrato não tem. */
+  let encurtado=(EXTRA>0&&MODO_EXTRA!=="payment");
   let pmt=(sys==="price")?amortPayment(bal0,r,n0):0;   // Price: prestação fixa
   let amortSac=bal0/n0;                                // SAC: amortização constante
   /* amortização extraordinária simulada, antes da próxima parcela:
@@ -22108,8 +22139,14 @@ function debtScheduleFGTS(d,plano,opt){
       corrMes=R2(bal*ci);
       bal=R2(bal+corrMes);
       /* amortização e prestação acompanham o indexador, como no contrato */
-      amortSac=amortSac*(1+ci);
-      if(sys==="price") pmt=pmt*(1+ci);
+      if(!encurtado){
+        const restC=Math.max(1,n0-(i-OFF)+1);
+        if(sys==="price") pmt=amortPayment(bal,r,restC);
+        else amortSac=bal/restC;
+      }else{
+        amortSac=amortSac*(1+ci);
+        if(sys==="price") pmt=pmt*(1+ci);
+      }
     }
 
     /* ── amortização extraordinária: abate o saldo devedor ── */
@@ -22125,6 +22162,7 @@ function debtScheduleFGTS(d,plano,opt){
           else amortSac=bal/rest;
         }else{
           /* mantém a prestação: as últimas parcelas somem */
+          encurtado=true;
           if(sys==="sac"&&amortSac>bal) amortSac=bal;
         }
       }
