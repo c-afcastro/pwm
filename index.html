@@ -11075,7 +11075,7 @@ function renderAssetList(){
             </div>
             <div style="font-size:11px;color:var(--ink-2);display:flex;align-items:center;gap:5px;min-width:0">
               ${a.virtual?`<span style="flex-shrink:0;font-size:8.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#1A3A5C;background:rgba(26,58,92,.12);border-radius:5px;padding:1px 5px">${t("ast_simulated")}</span>`:(a.instituicao&&window.instBadge?instBadge(a.instituicao,16):"")}
-              <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">${a.virtual?String((a.perfil&&a.perfil.pct)||100).replace(".",",")+"% CDI"+(a.instituicao?" · "+a.instituicao:""):(a.instituicao?a.instituicao+" · ":"")+catLabel(c)+(a.lastUpdate?" · "+a.lastUpdate:"")}</span>
+              <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">${a.virtual?String((a.perfil&&a.perfil.pct)||100).replace(".",",")+"% CDI"+(a.instituicao?" · "+a.instituicao:""):(a.instituicao?a.instituicao+" · ":"")+((PRO.astQtdTxt&&PRO.astQtdTxt(a))||catLabel(c))+(a.lastUpdate?" · "+a.lastUpdate:"")}</span>
             </div>
           </div>
         </div>
@@ -17901,7 +17901,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.41";
+const APP_VERSION="11.42";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -19152,6 +19152,31 @@ const PDIC={
   ap_of:["do","of","des"],
   ap_pre:["Prefixado","Fixed rate","Festzins"],
   ap_manual:["Taxa manual","Manual rate","Manueller Satz"],
+  /* v11.42 — ações: ticker, quantidade e rendimento esperado */
+  ac_ticker:["Ticker","Ticker","Ticker"],
+  ac_ticker_ph:["Ex.: PETR4, ITUB4, BOVA11","e.g. PETR4, ITUB4, BOVA11","z. B. PETR4, ITUB4, BOVA11"],
+  ac_ticker_hint:["É o nome com que a ação aparece no Patrimônio.","This is the name the stock shows under Net worth.","So erscheint die Aktie im Vermögen."],
+  ac_ticker_fmt:["Formato da B3: quatro letras e o número da classe (ex.: PETR4, BOVA11).","B3 format: four letters and the class number (e.g. PETR4, BOVA11).","B3-Format: vier Buchstaben und die Klassennummer (z. B. PETR4, BOVA11)."],
+  ac_err_ticker:["Informe o ticker da ação","Enter the stock ticker","Ticker der Aktie angeben"],
+  ac_qtd:["Quantidade de ações","Number of shares","Anzahl Aktien"],
+  ac_cot:["Cotação (R$)","Price (R$)","Kurs (R$)"],
+  ac_pm:["Preço médio (R$)","Average price (R$)","Ø-Kaufpreis (R$)"],
+  ac_pos_note:["Saldo = quantidade × cotação na data da posição. O preço médio define o valor aplicado — informe a data da primeira compra em Prazos.","Balance = shares × price on the position date. The average price sets the invested amount — enter the first purchase date under Terms.","Saldo = Anzahl × Kurs am Positionsdatum. Der Durchschnittspreis bestimmt den Anlagebetrag — Datum des ersten Kaufs unter Fristen angeben."],
+  ac_rend:["Rendimento esperado","Expected return","Erwartete Rendite"],
+  ac_rend_note:["Premissa sua para a rentabilidade da ação. Os indicadores seguem a curva dos Parâmetros; a taxa fixa vale para todo o período.","Your assumption for the stock's return. Indicators follow the Parameters curve; a fixed rate holds for the whole period.","Ihre Annahme für die Rendite der Aktie. Indikatoren folgen der Parameterkurve; ein Festsatz gilt für den ganzen Zeitraum."],
+  ac_r_cdi:["% do CDI","% of CDI","% des CDI"],
+  ac_r_cdis:["CDI +","CDI +","CDI +"],
+  ac_r_ipca:["IPCA +","IPCA +","IPCA +"],
+  ac_r_aa:["Taxa fixa a.a.","Fixed rate p.a.","Festsatz p. a."],
+  ac_r_am:["Taxa fixa a.m.","Fixed rate p.m.","Festsatz p. M."],
+  ac_f_aa:["Taxa fixa (% a.a.)","Fixed rate (% p.a.)","Festsatz (% p. a.)"],
+  ac_f_am:["Taxa fixa (% a.m.)","Fixed rate (% p.m.)","Festsatz (% p. M.)"],
+  ac_fixa:["Taxa fixa","Fixed rate","Festsatz"],
+  ac_shares:["{n} ações","{n} shares","{n} Aktien"],
+  ac_share1:["1 ação","1 share","1 Aktie"],
+  ap_qtd:["Quantidade","Quantity","Anzahl"],
+  ap_pm:["Preço médio","Average price","Durchschnittspreis"],
+  ap_cot:["Cotação na posição","Price at position","Kurs zur Position"],
   ap_idx:["Indexador","Index","Indexierung"],
   ap_trib:["Tributação","Taxation","Besteuerung"],
   ap_liq:["Liquidez","Liquidity","Liquidität"],
@@ -23491,17 +23516,26 @@ const idxFieldLabel=id=>({cdi_pct:"% do CDI",cdi_spread:"CDI + (% a.a.)",ipca_sp
 
 function assetProHTML(){
   return H`<div id="ast-pro"><div data-wz="det">
+    <div id="ast-acao-rend" style="display:none">
+      <div class="pro-h" style="margin-top:0"><b>${raw(PX("ac_rend"))}</b><i></i></div>
+      <div class="pro-chips" id="ast-acao-idx" style="margin-top:0"></div>
+      <div class="pro-note">${raw(PX("ac_rend_note"))}</div>
+    </div>
+    <div id="ast-escolha">
     <div class="pro-h" style="margin-top:0"><b>Escolha rápida</b><i></i></div>
     <div class="pro-chips" id="ast-produtos" style="margin-top:0;margin-bottom:4px">
       ${PRODUTOS.map(p=>`<span class="pro-pill" data-prod="${p.id}" onclick="PRO.aplicarProduto('${p.id}')">${p.lbl}</span>`).join("")}
     </div>
     <div class="pro-note">Define classe, indexador, tributação e liquidez de uma vez. Você pode ajustar tudo depois.</div>
+    </div>
 
     <div class="pro-h"><b>Produto</b><i></i><u id="ast-opt-toggle" onclick="PRO.toggleAstPick()">ajustar</u></div>
     <div class="pro-pick" id="ast-sum-card"></div>
     <div id="ast-opt" style="display:none">
+      <div id="ast-idx-blk">
       <div class="pro-h"><b>Indexador</b><i></i></div>
       <div id="ast-idx-row" class="pro-chips" style="margin-top:0"></div>
+      </div>
       <div class="pro-h"><b>Tributação</b><i></i></div>
       <div id="ast-trib-row" class="pro-chips" style="margin-top:0"></div>
       <div class="pro-h"><b>Liquidez</b><i></i></div>
@@ -23560,12 +23594,20 @@ function ensureAssetPro(){
   if($("ast-pro")){
     if(PRO_FORM_LANG===lg) return;
     $("ast-pro").remove();
+    ["ast-acao-id","ast-acao-pos"].forEach(id=>$(id)&&$(id).remove());
   }
   PRO_FORM_LANG=lg;
   ensureStyles();
   const acts=document.querySelector("#modal-asset .f-actions");
   if(!acts) return;
   acts.insertAdjacentHTML("beforebegin",assetProHTML());
+  /* ações: o ticker toma o lugar da descrição, e quantidade, cotação e
+     preço médio entram junto do saldo — cada um na etapa a que pertence */
+  const gNome=document.querySelector('#modal-asset [data-wz="nome"]');
+  if(gNome) gNome.insertAdjacentHTML("afterbegin",acaoIdHTML());
+  const gSaldo=document.querySelector('#modal-asset [data-wz="saldo"]');
+  if(gSaldo) gSaldo.insertAdjacentHTML("afterbegin",acaoPosHTML());
+  $("ast-balance")&&$("ast-balance").addEventListener("input",acCotDeSaldo);
   ["ast-idxval","ast-adm","ast-perf","ast-aporte"].forEach(id=>$(id)&&$(id).addEventListener("input",astRecalc));
   ["ast-aplic","ast-venc","ast-bench"].forEach(id=>$(id)&&$(id).addEventListener("change",astRecalc));
   $("ast-balance")&&$("ast-balance").addEventListener("input",astRecalc);
@@ -23574,6 +23616,122 @@ function ensureAssetPro(){
   if(y&&y.parentElement){ y.parentElement.style.display="none";
     const l=y.parentElement.previousElementSibling; if(l&&l.classList.contains("f-label")) l.style.display="none"; }
 }
+/* ═══ v11.42 — AÇÕES ═══════════════════════════════════════════════════
+   Uma ação se identifica pelo TICKER, e é ele que aparece como nome no
+   Patrimônio. A posição vem de quantidade × cotação; o preço médio de
+   compra fixa o valor aplicado — para renda variável, deduzir o custo por
+   regressão a partir de uma taxa suposta não tem sentido. O rendimento
+   esperado é premissa do titular: um indicador (que segue a curva dos
+   Parâmetros) ou uma taxa fixa ao ano ou ao mês. Tudo corre pelos mesmos
+   indexadores do motor — nenhuma conta nova de rentabilidade. */
+const AC_RE=/^[A-Z]{4}\d{1,2}F?$/;
+const AC_IDX=[["cdi_pct","ac_r_cdi"],["cdi_spread","ac_r_cdis"],["ipca_spread","ac_r_ipca"],["pre","ac_r_aa"],["variavel","ac_r_am"]];
+const ehAcaoForm=()=>AST_CLASS_CUR()==="stocks";
+function acaoIdHTML(){
+  return `<div id="ast-acao-id" style="display:none">
+    <label class="f-label">${PX("ac_ticker")}</label>
+    <input id="ast-ticker" class="f-input" type="text" autocapitalize="characters" autocomplete="off"
+      autocorrect="off" spellcheck="false" maxlength="8" placeholder="${PX("ac_ticker_ph")}"
+      oninput="PRO.acTicker(this)" style="text-transform:uppercase;letter-spacing:.6px;font-weight:600"/>
+    <div id="ast-ticker-hint" class="pro-note" style="margin:-6px 0 12px"></div>
+  </div>`;
+}
+function acaoPosHTML(){
+  /* mesmo desenho dos campos do núcleo logo abaixo (rótulo e altura do
+     saldo): na mesma etapa, dois estilos de campo pareciam dois formulários */
+  const C=(id,lbl,ph,mode,cb)=>`<div style="min-width:0"><label class="f-label" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lbl}</label>
+    <input id="${id}" class="f-input" type="text" inputmode="${mode}" placeholder="${ph}" oninput="${cb}"/></div>`;
+  return `<div id="ast-acao-pos" style="display:none">
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 10px">
+      ${C("ast-qtd",PX("ac_qtd"),"0","numeric","PRO.acQtd(this)")}
+      ${C("ast-cot",PX("ac_cot"),"0,00","decimal","maskCurrencyInput(this);PRO.acSaldoDeCot()")}
+      ${C("ast-pm",PX("ac_pm"),"0,00","decimal","maskCurrencyInput(this);PRO.acCustoDePm()")}
+      <div></div>
+    </div>
+    <div class="pro-note" style="margin:-4px 0 14px">${PX("ac_pos_note")}</div>
+  </div>`;
+}
+function acQtdVal(){ return Math.max(0,parseInt(String($("ast-qtd")?.value||"").replace(/\D/g,""),10)||0); }
+function acTicker(el){
+  const v=String(el.value||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,8);
+  if(el.value!==v) el.value=v;
+  if($("ast-name")) $("ast-name").value=v;      /* o ticker É o nome */
+  acHint();
+}
+function acHint(){
+  const h=$("ast-ticker-hint"); if(!h) return;
+  const v=$("ast-ticker")?.value||"";
+  const ok=!v||AC_RE.test(v);
+  h.textContent=PX(ok?"ac_ticker_hint":"ac_ticker_fmt");
+  h.style.color=ok?"":"#B85A6A";
+}
+function acQtd(el){
+  const v=String(el.value||"").replace(/\D/g,"").slice(0,9);
+  if(el.value!==v) el.value=v;
+  acSaldoDeCot(); acCustoDePm();
+}
+/* quantidade × cotação → saldo */
+function acSaldoDeCot(){
+  const q=acQtdVal(), c=unmaskCurrency($("ast-cot"))||0;
+  if(q>0&&c>0){ setCurrencyInput($("ast-balance"),R2(q*c)); astRecalc(); }
+}
+/* saldo digitado à mão → cotação implícita */
+function acCotDeSaldo(){
+  if(!ehAcaoForm()) return;
+  const q=acQtdVal(), sd=unmaskCurrency($("ast-balance"))||0;
+  if(q>0&&sd>0) setCurrencyInput($("ast-cot"),R2(sd/q));
+}
+/* quantidade × preço médio → valor aplicado, fixo */
+function acCustoDePm(){
+  const q=acQtdVal(), pm=unmaskCurrency($("ast-pm"))||0;
+  if(q>0&&pm>0){
+    AST_CUSTO_AUTO=false;
+    setCurrencyInput($("ast-custo"),R2(q*pm));
+    renderCustoMode(); astPreview();
+  }
+}
+function setAcIdx(v){
+  AST_IDX=v;
+  const I=INDEXADORES.find(x=>x.id===v);
+  if(I&&$("ast-idxval")) $("ast-idxval").value=String(I.def).replace(".",",");
+  renderAstPro();
+}
+function renderAcao(){
+  const on=ehAcaoForm();
+  const sh=(id,v)=>{ const e=$(id); if(e) e.style.display=v?"":"none"; };
+  sh("ast-acao-id",on); sh("ast-acao-pos",on); sh("ast-acao-rend",on);
+  sh("ast-escolha",!on); sh("ast-idx-blk",!on);
+  const nm=$("ast-name");
+  if(nm){
+    nm.style.display=on?"none":"";
+    const l=nm.previousElementSibling;
+    if(l&&l.classList.contains("f-label")) l.style.display=on?"none":"";
+  }
+  if(!on) return;
+  const tk=$("ast-ticker");
+  if(tk&&!tk.value&&nm&&nm.value){
+    const g=nm.value.toUpperCase().replace(/[^A-Z0-9]/g,"");
+    if(AC_RE.test(g)) tk.value=g;
+  }
+  if($("ast-acao-idx")) $("ast-acao-idx").innerHTML=
+    AC_IDX.map(([id,k])=>chip(AST_IDX===id,PX(k),`PRO.setAcIdx('${id}')`,"#0F2440")).join("");
+  const ttc=$("ast-sum-card")&&$("ast-sum-card").querySelector(".tt");
+  const ix=AC_IDX.find(x=>x[0]===AST_IDX);
+  if(ttc&&ix) ttc.textContent=catLabel(gAssetClass("stocks"))+" · "+PX(ix[1]);
+  if(AST_IDX==="pre"&&$("ast-idxval-lbl")) $("ast-idxval-lbl").textContent=PX("ac_f_aa");
+  if(AST_IDX==="variavel"&&$("ast-idxval-lbl")) $("ast-idxval-lbl").textContent=PX("ac_f_am");
+  acHint();
+}
+/* "300 ações" para a lista e a ficha */
+function astQtdTxt(a){
+  if(!a||a.class!=="stocks") return "";
+  const q=parseInt(a.pro&&a.pro.qtd,10)||0;
+  if(!(q>0)) return "";
+  if(q===1) return PX("ac_share1");
+  const loc=LANG==="en"?"en-US":(LANG==="de"?"de-DE":"pt-BR");
+  return PX("ac_shares").replace("{n}",q.toLocaleString(loc));
+}
+
 /* Valor aplicado: por padrão o app deduz por regressão; o usuário pode fixar. */
 let AST_CUSTO_AUTO=true;
 function toggleCustoAuto(){ AST_CUSTO_AUTO=!AST_CUSTO_AUTO; astRecalc(); }
@@ -23652,6 +23810,7 @@ function renderAstPro(){
   $("ast-venc-lbl").textContent=TR(AST_LIQ==="car"?"Carência até":AST_LIQ==="venc"?"Vencimento":"Vencimento (opcional)");
   $("ast-f-fund").style.display=isFundo?"block":"none";
   $("ast-chip-cc").innerHTML=TR(chip(AST_CC,"🍽 Come-cotas (mai/nov)","PRO.toggleCC()","#0F2440"));
+  renderAcao();
   astPreview();
 }
 function collectAstPro(){
@@ -23664,7 +23823,12 @@ function collectAstPro(){
     benchPerf:$("ast-bench")?.value||"cdi",comeCotas:AST_CC,
     aplic:$("ast-aplic")?.value||today(), venc:AST_LIQ==="car"?"":venc, carencia:AST_LIQ==="car"?venc:"",
     aporte:valDec("ast-aporte"), custo:unmaskCurrency($("ast-custo"))||0,
-    custoAuto:AST_CUSTO_AUTO};
+    custoAuto:AST_CUSTO_AUTO,
+    /* ações: ticker e quantidade; fora da classe, os campos são limpos */
+    ticker:ehAcaoForm()?($("ast-ticker")?.value||""):"",
+    qtd:ehAcaoForm()?acQtdVal():0,
+    pm:ehAcaoForm()?(unmaskCurrency($("ast-pm"))||0):0,
+    cot:ehAcaoForm()?(unmaskCurrency($("ast-cot"))||0):0};
 }
 function fillAstPro(a){
   const p=a?astPro(a):astPro({class:AST_CLASS_CUR(),balance:0});
@@ -23679,6 +23843,10 @@ function fillAstPro(a){
   if($("ast-bench"))$("ast-bench").value=p.benchPerf||"cdi";
   AST_CUSTO_AUTO=a?(p.custoAuto!==false):true;
   setCurrencyInput($("ast-custo"),a?(p.custo||0):"");
+  if($("ast-ticker")) $("ast-ticker").value=(a&&p.ticker)||"";
+  if($("ast-qtd")) $("ast-qtd").value=(a&&+p.qtd>0)?String(parseInt(p.qtd,10)):"";
+  setCurrencyInput($("ast-pm"),(a&&+p.pm>0)?+p.pm:"");
+  setCurrencyInput($("ast-cot"),(a&&+p.cot>0)?+p.cot:"");
   renderAstPro();
   astRecalc();
 }
@@ -25431,9 +25599,9 @@ function renderRendimento(){
       case "cdi_pct":     return v+"% "+PX("ap_of")+" CDI";
       case "cdi_spread":  return "CDI + "+v+"% a.a.";
       case "ipca_spread": return "IPCA + "+v+"% a.a.";
-      case "pre":         return PX("ap_pre")+" "+v+"% a.a.";
+      case "pre":         return (a.class==="stocks"?PX("ac_fixa"):PX("ap_pre"))+" "+v+"% a.a.";
       case "poupanca":    return PX("p_savings");
-      default:            return PX("ap_manual");
+      default:            return (a.class==="stocks"?PX("ac_fixa"):PX("ap_manual"))+" "+v+"% a.m.";
     }
   })();
   const tribLbl={rf:"ap_t_rf",isento:"ap_t_isento",fundoLP:"ap_t_flp",
@@ -25442,6 +25610,9 @@ function renderRendimento(){
   const carac=[
     linhaC(PX("ap_prod"),astProdutoLbl(a)||catLabel(c)),
     linhaC(PX("ap_inst"),a.instituicao||""),
+    linhaC(PX("ap_qtd"),astQtdTxt(a)),
+    (a.class==="stocks"&&+p.pm>0)?linhaC(PX("ap_pm"),fmt(+p.pm)):"",
+    (a.class==="stocks"&&+p.cot>0)?linhaC(PX("ap_cot"),fmt(+p.cot)):"",
     linhaC(PX("ap_idx"),idxLbl),
     linhaC(PX("ap_trib"),tribLbl?PX(tribLbl):""),
     linhaC(PX("ap_liq"),astLiquidezLabel(a)),
@@ -26105,6 +26276,11 @@ const _openAsset=window.openAsset, _openAssetEdit=window.openAssetEdit, _saveAss
 window.openAsset=function(){_openAsset();ensureAssetPro();fillAstPro(null);};
 window.openAssetEdit=function(id){_openAssetEdit(id);ensureAssetPro();fillAstPro(ASSETS.find(a=>a.id===id));};
 window.saveAsset=function(){
+  if(ehAcaoForm()){
+    const tk=$("ast-ticker")?.value||"";
+    if(!tk){ toast(PX("ac_err_ticker")); return; }
+    if($("ast-name")) $("ast-name").value=tk;
+  }
   const pro=collectAstPro();
   const before=ASSETS.length, editing=AST_EID;
   _saveAsset();
@@ -29818,6 +29994,7 @@ window.PRO={
 
   openRendimento,renderRendimentos,setRendHoriz,exportRendimento,
   aplicarProduto,sincronizarFgtsPatrimonio,PRODUTOS,TR,
+  acTicker,acQtd,acSaldoDeCot,acCustoDePm,setAcIdx,astQtdTxt,
   diasUteis,duPeriodo,ehDiaUtil,astPro,serieFatores,
   /* leitura da regra de FGTS: dia do depósito e reconhecimento da conta
      vinculada. Exposto para diagnóstico e para os testes de projeção. */
@@ -30967,7 +31144,9 @@ html.wz-lock body{ touch-action:none; }
       ac:"#0F2440", save:()=>window.saveAsset(),
       steps:[
         {k:"cls",   ic:"layers",  g:["cls"]},
-        {k:"ident", ic:"pen",     g:["nome"], req:()=>gv("ast-name")?null:T("err_ast_name") },
+        {k:"ident", ic:"pen",     g:["nome"], req:()=>(typeof AST_CLASS!=="undefined"&&AST_CLASS==="stocks")
+            ?(gv("ast-ticker")?null:PRO.PX("ac_err_ticker"))
+            :(gv("ast-name")?null:T("err_ast_name")) },
         {k:"pos",   ic:"coins",   g:["saldo","dtpos","rend"]},
         {k:"det",    ic:"sliders", g:["det"]},
         {k:"prazos", ic:"clock",   g:["prazos"]},
@@ -30979,7 +31158,9 @@ html.wz-lock body{ touch-action:none; }
         [T("name_institution"), dash(gv("ast-name"))],
         [T("institution"), dash(gv("ast-inst"))],
         [T("balance_position"), dash(gv("ast-balance"))],
-        [T("position_date"), dash(gv("ast-date"))]
+        [T("position_date"), dash(gv("ast-date"))],
+        ...((typeof AST_CLASS!=="undefined"&&AST_CLASS==="stocks")
+          ?[[PRO.PX("ac_qtd"), dash(gv("ast-qtd"))]]:[])
       ] },
 
     debt:{ modal:"modal-debt", title:"debt-form-title", saveBtn:"debt-save", del:"debt-destroy",
