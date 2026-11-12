@@ -17901,7 +17901,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.43";
+const APP_VERSION="11.44";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -19177,7 +19177,7 @@ const PDIC={
   /* v11.43 — cotação ao vivo e preço-alvo */
   ac_live_t:["Cotação e preço-alvo","Price and target","Kurs und Kursziel"],
   ac_live_now:["Cotação atual","Current price","Aktueller Kurs"],
-  ac_live_live:["ao vivo","live","live"],
+  ac_live_live:["atualizada","updated","aktualisiert"],
   ac_live_at:["às","at","um"],
   ac_live_cache:["última obtida","last fetched","zuletzt abgerufen"],
   ac_live_pos:["cotação da posição","price at position","Kurs zur Position"],
@@ -19205,18 +19205,28 @@ const PDIC={
   ac_live_reg:["Saldo registrado em {d}","Balance recorded on {d}","Saldo erfasst am {d}"],
   ac_live_use:["Atualizar posição com esta cotação","Update position with this price","Position mit diesem Kurs aktualisieren"],
   ac_live_used:["Posição atualizada pela cotação","Position updated from price","Position anhand des Kurses aktualisiert"],
-  ac_live_src:["Fonte: brapi.dev","Source: brapi.dev","Quelle: brapi.dev"],
-  ac_live_tok_edit:["Token","Token","Token"],
-  ac_live_tok_t:["Token da brapi.dev","brapi.dev token","brapi.dev-Token"],
-  ac_live_tok_b:["Sem token, a brapi.dev só libera PETR4, VALE3, ITUB4 e MGLU3. Crie uma conta gratuita em brapi.dev/dashboard, copie o token e cole aqui. Ele fica guardado só neste aparelho.",
-    "Without a token, brapi.dev only serves PETR4, VALE3, ITUB4 and MGLU3. Create a free account at brapi.dev/dashboard, copy the token and paste it here. It is stored on this device only.",
-    "Ohne Token liefert brapi.dev nur PETR4, VALE3, ITUB4 und MGLU3. Erstellen Sie ein kostenloses Konto unter brapi.dev/dashboard, kopieren Sie den Token und fügen Sie ihn hier ein. Er bleibt nur auf diesem Gerät."],
-  ac_live_tok_bad:["A brapi.dev recusou o token. Confira se ele foi copiado inteiro.","brapi.dev rejected the token. Check that it was copied in full.","brapi.dev hat den Token abgelehnt. Prüfen Sie, ob er vollständig kopiert wurde."],
-  ac_live_tok_ph:["Cole o token aqui","Paste the token here","Token hier einfügen"],
-  ac_live_tok_save:["Salvar e buscar","Save and fetch","Speichern und abrufen"],
-  ac_live_tok_ok:["Token salvo","Token saved","Token gespeichert"],
+  ac_live_src:["Fonte: {s} · pela sua ponte Google · pode haver atraso","Source: {s} · via your Google bridge · may be delayed","Quelle: {s} · über Ihre Google-Brücke · ggf. verzögert"],
+  ac_live_src0:["Cotações pela sua ponte Google","Prices via your Google bridge","Kurse über Ihre Google-Brücke"],
+  ac_pt_edit:["Ponte","Bridge","Brücke"],
+  ac_pt_t:["Ponte de cotações","Price bridge","Kurs-Brücke"],
+  ac_pt_b:["As cotações vêm do Yahoo Finance, com o Google Finance como reserva, por uma pequena ponte que você cria uma única vez na sua conta Google. É grátis, não pede cadastro em nenhum serviço e recebe só o ticker. Faça de preferência num computador:",
+    "Prices come from Yahoo Finance, with Google Finance as backup, through a small bridge you set up once in your Google account. It's free, needs no sign-up anywhere and only receives the ticker. Preferably do it on a computer:",
+    "Die Kurse kommen von Yahoo Finance, mit Google Finance als Reserve, über eine kleine Brücke, die Sie einmalig in Ihrem Google-Konto anlegen. Kostenlos, ohne Anmeldung bei einem Dienst, sie erhält nur den Ticker. Am besten am Computer:"],
+  ac_pt_s1:["Abra script.google.com e crie um Novo projeto.","Open script.google.com and create a New project.","Öffnen Sie script.google.com und legen Sie ein Neues Projekt an."],
+  ac_pt_s2:["Apague o que estiver no editor e cole o código da ponte (botão abaixo).","Delete what's in the editor and paste the bridge code (button below).","Löschen Sie den Inhalt des Editors und fügen Sie den Brücken-Code ein (Schaltfläche unten)."],
+  ac_pt_s3:["Escolha a função teste e clique em Executar; autorize o acesso que o Google pedir.","Pick the teste function and click Run; grant the access Google asks for.","Wählen Sie die Funktion teste und klicken Sie auf Ausführen; erteilen Sie die angefragte Berechtigung."],
+  ac_pt_s4:["Implantar → Nova implantação → App da Web. Executar como: Eu. Quem pode acessar: Qualquer pessoa.","Deploy → New deployment → Web app. Execute as: Me. Who has access: Anyone.","Bereitstellen → Neue Bereitstellung → Web-App. Ausführen als: Ich. Zugriff: Jeder."],
+  ac_pt_s5:["Copie a URL do app da Web (termina em /exec) e cole aqui.","Copy the web app URL (ends in /exec) and paste it here.","Kopieren Sie die Web-App-URL (endet auf /exec) und fügen Sie sie hier ein."],
+  ac_pt_copy:["Copiar código da ponte","Copy bridge code","Brücken-Code kopieren"],
+  ac_pt_copied:["Código copiado","Code copied","Code kopiert"],
+  ac_pt_copyfail:["Não deu para copiar sozinho: selecione o código abaixo e copie.","Couldn't copy automatically: select the code below and copy it.","Automatisches Kopieren nicht möglich: Code unten markieren und kopieren."],
+  ac_pt_ph:["https://script.google.com/macros/s/…/exec","https://script.google.com/macros/s/…/exec","https://script.google.com/macros/s/…/exec"],
+  ac_pt_save:["Salvar e buscar","Save and fetch","Speichern und abrufen"],
+  ac_pt_ok:["Ponte salva","Bridge saved","Brücke gespeichert"],
+  ac_pt_badurl:["A URL precisa ser a do app da Web: começa com https://script.google.com/macros/s/ e termina em /exec.","The URL must be the web app one: it starts with https://script.google.com/macros/s/ and ends in /exec.","Die URL muss die der Web-App sein: beginnt mit https://script.google.com/macros/s/ und endet auf /exec."],
+  ac_pt_bad:["A ponte respondeu, mas não como esperado. Confira se a implantação está com acesso para Qualquer pessoa e se o código foi colado inteiro.","The bridge answered, but not as expected. Check that the deployment allows access to Anyone and that the full code was pasted.","Die Brücke antwortet, aber nicht wie erwartet. Prüfen Sie, ob die Bereitstellung Zugriff für Jeden erlaubt und der Code vollständig eingefügt wurde."],
   ac_live_err:["Não foi possível buscar a cotação agora.","Couldn't fetch the price right now.","Der Kurs konnte gerade nicht abgerufen werden."],
-  ac_live_nf:["A brapi.dev não encontrou {t}. Confira o ticker no cadastro.","brapi.dev couldn't find {t}. Check the ticker in the holding.","brapi.dev hat {t} nicht gefunden. Prüfen Sie den Ticker in der Anlage."],
+  ac_live_nf:["Nem o Yahoo nem o Google Finance encontraram {t}. Confira o ticker no cadastro.","Neither Yahoo nor Google Finance found {t}. Check the ticker in the holding.","Weder Yahoo noch Google Finance haben {t} gefunden. Prüfen Sie den Ticker in der Anlage."],
   ac_live_fallback:["Os números abaixo usam a cotação da posição ({d}).","Figures below use the price at position ({d}).","Die Werte unten nutzen den Kurs zur Position ({d})."],
   ac_live_noqtd:["Informe a quantidade e o preço médio no cadastro para comparar com o alvo.","Enter the quantity and average price in the holding to compare with the target.","Geben Sie Anzahl und Ø-Kaufpreis in der Anlage an, um mit dem Ziel zu vergleichen."],
   ac_live_refresh:["Atualizar cotação","Refresh price","Kurs aktualisieren"],
@@ -25595,21 +25605,27 @@ function renderRendimentos(){
       O rendimento é calculado sobre a data de aplicação, o montante aplicado e a taxa de cada papel. A provisão usa a tabela regressiva de IR pelo prazo decorrido, IOF nos 30 primeiros dias e come-cotas em maio e novembro nos fundos. Toque em uma aplicação para ver a evolução mês a mês.</div>`;
 }
 
-/* ═══ v11.43 — AÇÕES: COTAÇÃO AO VIVO E PREÇO-ALVO ═════════════════════
-   A ficha de uma ação busca a cotação na brapi.dev no momento em que abre.
+/* ═══ v11.43/44 — AÇÕES: COTAÇÃO AO VIVO E PREÇO-ALVO ══════════════════
+   A ficha de uma ação busca a cotação no momento em que abre. A fonte é a
+   PONTE do próprio titular: um Apps Script publicado na conta Google dele,
+   que consulta o Yahoo Finance pelo servidor do Google (o Safari bloqueia
+   a chamada direta) e, se o Yahoo falhar, o GOOGLEFINANCE de uma planilha.
+   Nenhum serviço de terceiros, nenhum token: o app guarda só a URL /exec.
+   GET simples, sem cabeçalho próprio — não há preflight de CORS.
    O preço-alvo NÃO é um número novo: é o preço médio (ou, sem ele, a
-   cotação da posição) capitalizado pelo rendimento esperado que o titular
-   cadastrou, pelo mesmo motor de fatores da projeção — fatorProduto, que
-   lê a curva dos Parâmetros. O alvo de 12 meses aplica a mesma premissa à
-   cotação de hoje. Sem rede, vale a última cotação obtida; sem ela, a
-   cotação da posição. O token fica só neste aparelho e vai na query
-   (?token=), o que dispensa o preflight de CORS no Safari. */
-const AC_TOKEN_KEY="gastos_v2_brapi_token";
-const AC_QUOTE_KEY="gastos_v2_ac_quotes";
-const AC_FREE=["PETR4","MGLU3","VALE3","ITUB4"];
+   cotação da posição) capitalizado pelo rendimento esperado cadastrado,
+   pelo mesmo motor de fatores da projeção — fatorProduto, que lê a curva
+   dos Parâmetros. Sem rede, vale a última cotação obtida; sem ela, a
+   cotação da posição. */
+const AC_PONTE_KEY="gastos_v2_ac_ponte";
+const AC_QUOTE_KEY="gastos_v2_ac_cotacoes";
+/* v11.44 — sobras da fonte anterior saem do aparelho */
+try{ localStorage.removeItem("gastos_v2_brapi_token"); localStorage.removeItem("gastos_v2_ac_quotes"); }catch(e){}
+const AC_PONTE_RE=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/;
+const AC_PONTE_GS="/* Ponte de cotações — App Finanças Pessoais\n   Devolve a cotação de uma ação da B3 para o app.\n   1º Yahoo Finance (pelo servidor do Google); se falhar, Google Finance.\n   Não guarda nada seu: recebe só o ticker e devolve o preço. */\nvar CACHE_SEG = 60;\n\nfunction doGet(e) {\n  var t = String((e && e.parameter && e.parameter.t) || \"\").toUpperCase().replace(/[^A-Z0-9]/g, \"\");\n  if (!/^[A-Z]{4}\\d{1,2}F?$/.test(t)) return saida_({ ok: false, erro: \"ticker\" });\n  var base = t.replace(/F$/, \"\");            /* fracionário tem o mesmo preço */\n  var cache = CacheService.getScriptCache();\n  var c = cache.get(base);\n  if (c) { var o = JSON.parse(c); o.symbol = t; return saida_(o); }\n  var r = yahoo_(base) || google_(base);\n  if (!r) return saida_({ ok: false, erro: \"nf\", symbol: t });\n  r.ok = true; r.symbol = t;\n  cache.put(base, JSON.stringify(r), CACHE_SEG);\n  return saida_(r);\n}\n\nfunction yahoo_(t) {\n  try {\n    var resp = UrlFetchApp.fetch(\n      \"https://query1.finance.yahoo.com/v8/finance/chart/\" + t + \".SA?interval=1d&range=1d\",\n      { muteHttpExceptions: true, headers: { \"User-Agent\": \"Mozilla/5.0\" } });\n    if (resp.getResponseCode() !== 200) return null;\n    var res = JSON.parse(resp.getContentText()).chart.result;\n    if (!res || !res.length) return null;\n    var m = res[0].meta, px = +m.regularMarketPrice;\n    if (!(px > 0)) return null;\n    var ant = +(m.previousClose || m.chartPreviousClose || 0);\n    return {\n      price: px, prev: ant,\n      change: ant ? px - ant : 0, changePct: ant ? (px / ant - 1) * 100 : 0,\n      time: m.regularMarketTime ? new Date(m.regularMarketTime * 1000).toISOString() : new Date().toISOString(),\n      name: m.shortName || m.longName || \"\", src: \"yahoo\"\n    };\n  } catch (err) { return null; }\n}\n\nfunction google_(t) {\n  var lock = LockService.getScriptLock();\n  try {\n    lock.waitLock(10000);\n    var sh = planilha_();\n    var campos = [\"price\", \"closeyest\", \"tradetime\", \"name\"];\n    sh.getRange(1, 1, 1, 4).setFormulas([campos.map(function (k) {\n      return '=GOOGLEFINANCE(\"BVMF:' + t + '\",\"' + k + '\")';\n    })]);\n    SpreadsheetApp.flush();\n    var v = sh.getRange(1, 1, 1, 4).getValues()[0];\n    var px = +v[0];\n    if (!(px > 0)) return null;\n    var ant = +v[1] || 0;\n    var tm = (v[2] instanceof Date) ? v[2] : new Date();\n    return {\n      price: px, prev: ant,\n      change: ant ? px - ant : 0, changePct: ant ? (px / ant - 1) * 100 : 0,\n      time: tm.toISOString(), name: String(v[3] || \"\"), src: \"google\"\n    };\n  } catch (err) { return null; }\n  finally { try { lock.releaseLock(); } catch (x) {} }\n}\n\nfunction planilha_() {\n  var props = PropertiesService.getScriptProperties();\n  var id = props.getProperty(\"PLANILHA\");\n  var ss = null;\n  if (id) { try { ss = SpreadsheetApp.openById(id); } catch (e) { ss = null; } }\n  if (!ss) {\n    ss = SpreadsheetApp.create(\"Ponte de cotações (não apagar)\");\n    props.setProperty(\"PLANILHA\", ss.getId());\n  }\n  return ss.getSheets()[0];\n}\n\nfunction saida_(o) {\n  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);\n}\n\n/* Rode esta função uma vez no editor: ela pede a autorização e testa. */\nfunction teste() {\n  Logger.log(doGet({ parameter: { t: \"PETR4\" } }).getContent());\n}\n";
 let AC_Q=(()=>{try{return JSON.parse(localStorage.getItem(AC_QUOTE_KEY)||"{}")||{};}catch(e){return {};}})();
-const AC_ST={};                 /* ticker → load | ok | err | token | badtoken | nf */
-let AC_TOK_OPEN=false;
+const AC_ST={};                 /* ticker → load | ok | err | ponte | bad | nf */
+let AC_PT_OPEN=false, AC_PT_ERRURL=false, AC_PT_SHOW=false;
 function aplIdxLbl(a,p){
   p=p||astPro(a);
   const v=String(p.idxVal||0).replace(".",",");
@@ -25623,34 +25639,32 @@ function aplIdxLbl(a,p){
   }
 }
 function acTk(a){ const p=astPro(a); return String(p.ticker||a.name||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
-function acToken(){ try{ return localStorage.getItem(AC_TOKEN_KEY)||""; }catch(e){ return ""; } }
+function acPonte(){ try{ return localStorage.getItem(AC_PONTE_KEY)||""; }catch(e){ return ""; } }
+/* resposta da ponte: {ok,symbol,price,prev,change,changePct,time,name,src} */
 function acQuoteParse(j,tk){
-  const L=(j&&Array.isArray(j.results))?j.results:[];
-  const r=L.find(x=>String(x.symbol||x.requestedSymbol||"").toUpperCase()===tk)||L[0];
-  if(!r) return null;
-  const d=(r.data&&typeof r.data==="object")?Object.assign({},r,r.data):r;   /* v1 e v2 */
-  const px=+d.regularMarketPrice;
+  if(!j||j.ok!==true) return null;
+  const px=+j.price;
   if(!(px>0)) return null;
-  return {px, chg:+d.regularMarketChange||0, chgPct:+d.regularMarketChangePercent||0,
-    t:d.regularMarketTime||"", nome:d.shortName||d.longName||"", em:Date.now()};
+  return {px, chg:+j.change||0, chgPct:+j.changePct||0, t:j.time||"",
+    nome:j.name||"", src:j.src==="google"?"google":"yahoo", em:Date.now()};
 }
 async function acBuscarCotacao(tk,forcar){
   tk=String(tk||"").toUpperCase();
   if(!AC_RE.test(tk)) return;
-  const tok=acToken();
-  if(!tok&&AC_FREE.indexOf(tk)<0){ AC_ST[tk]="token"; acLiveRender(); return; }
+  const pt=acPonte();
+  if(!pt){ AC_ST[tk]="ponte"; acLiveRender(); return; }
   if(AC_ST[tk]==="load") return;
   const q=AC_Q[tk];
   if(!forcar&&q&&Date.now()-q.em<60000){ AC_ST[tk]="ok"; acLiveRender(); return; }
   AC_ST[tk]="load"; acLiveRender();
   try{
-    const url="https://brapi.dev/api/quote/"+encodeURIComponent(tk)+(tok?"?token="+encodeURIComponent(tok):"");
-    const r=await fetchWithTimeout(url,9000);
-    if(r.status===401||r.status===403){ AC_ST[tk]=tok?"badtoken":"token"; acLiveRender(); return; }
-    if(r.status===404){ AC_ST[tk]="nf"; acLiveRender(); return; }
+    const r=await fetchWithTimeout(pt+"?t="+encodeURIComponent(tk),15000);
     if(!r.ok) throw new Error("HTTP "+r.status);
-    const nq=acQuoteParse(await r.json(),tk);
-    if(!nq){ AC_ST[tk]="nf"; acLiveRender(); return; }
+    let j=null;
+    try{ j=await r.json(); }catch(e){ AC_ST[tk]="bad"; acLiveRender(); return; }
+    if(j&&j.ok===false){ AC_ST[tk]=(j.erro==="nf"||j.erro==="ticker")?"nf":"bad"; acLiveRender(); return; }
+    const nq=acQuoteParse(j,tk);
+    if(!nq){ AC_ST[tk]="bad"; acLiveRender(); return; }
     AC_Q[tk]=nq; AC_ST[tk]="ok";
     try{ localStorage.setItem(AC_QUOTE_KEY,JSON.stringify(AC_Q)); }catch(e){}
   }catch(e){
@@ -25663,16 +25677,33 @@ function acLiveRender(){
   const el=document.getElementById("ac-live"); if(!el) return;
   const a=ASSETS.find(x=>x.id===REND_ID); if(!a||a.class!=="stocks") return;
   el.innerHTML=acLiveHTML(a);
+  const ta=el.querySelector("textarea"); if(ta) ta.value=AC_PONTE_GS;
 }
 function acRefresh(){ const a=ASSETS.find(x=>x.id===REND_ID); if(a) acBuscarCotacao(acTk(a),true); }
-function acTokAbrir(){ AC_TOK_OPEN=!AC_TOK_OPEN; acLiveRender(); }
-function acTokSalvar(){
-  const v=String(document.getElementById("ac-tok-in")?.value||"").trim();
-  try{ if(v) localStorage.setItem(AC_TOKEN_KEY,v); else localStorage.removeItem(AC_TOKEN_KEY); }catch(e){}
-  AC_TOK_OPEN=false;
-  if(v) toast("✓ "+PX("ac_live_tok_ok"));
+function acPtAbrir(){ AC_PT_OPEN=!AC_PT_OPEN; AC_PT_ERRURL=false; acLiveRender(); }
+function acPtSalvar(){
+  const v=String(document.getElementById("ac-pt-in")?.value||"").trim().replace(/\?.*$/,"");
+  if(v&&!AC_PONTE_RE.test(v)){ AC_PT_ERRURL=true; acLiveRender(); return; }
+  try{ if(v) localStorage.setItem(AC_PONTE_KEY,v); else localStorage.removeItem(AC_PONTE_KEY); }catch(e){}
+  AC_PT_OPEN=false; AC_PT_ERRURL=false; AC_PT_SHOW=false;
+  if(v) toast("✓ "+PX("ac_pt_ok"));
   const a=ASSETS.find(x=>x.id===REND_ID);
   if(a){ const tk=acTk(a); delete AC_ST[tk]; acBuscarCotacao(tk,true); }
+}
+async function acPtCopiar(){
+  let ok=false;
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(AC_PONTE_GS); ok=true; } }catch(e){}
+  if(!ok){
+    try{
+      const ta=document.createElement("textarea");
+      ta.value=AC_PONTE_GS; ta.setAttribute("readonly","");
+      ta.style.cssText="position:fixed;top:0;left:0;opacity:0;font-size:16px";
+      document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,ta.value.length);
+      ok=document.execCommand("copy"); ta.remove();
+    }catch(e){}
+  }
+  if(ok) toast("✓ "+PX("ac_pt_copied"));
+  else{ AC_PT_SHOW=true; acLiveRender(); }
 }
 /* quantidade × cotação viram a nova posição — o custo fica onde estava */
 function acUsarCotacao(){
@@ -25741,15 +25772,25 @@ function acLiveHTML(a){
     </div>`;
   /* avisos de estado */
   let aviso="";
-  if(st==="token"||st==="badtoken"||AC_TOK_OPEN){
+  if(st==="ponte"||st==="bad"||AC_PT_OPEN){
+    const passo=(n,k)=>`<div style="display:grid;grid-template-columns:20px minmax(0,1fr);gap:6px;font-size:11px;color:var(--ink-2);line-height:1.5;margin-top:5px">
+        <span style="width:18px;height:18px;border-radius:50%;background:${NAV};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">${n}</span><span>${PX(k)}</span></div>`;
+    const err=st==="bad"?`<div style="font-size:11px;color:${RED};line-height:1.5;margin-bottom:8px">${PX("ac_pt_bad")}</div>`:"";
+    const errUrl=AC_PT_ERRURL?`<div style="font-size:10.5px;color:${RED};line-height:1.5;margin-top:6px">${PX("ac_pt_badurl")}</div>`:"";
+    const cod=AC_PT_SHOW?`<div class="pro-note" style="color:${RED}">${PX("ac_pt_copyfail")}</div>
+        <textarea readonly onfocus="this.select()" style="width:100%;height:150px;margin-top:6px;box-sizing:border-box;border:1.5px solid var(--line);border-radius:10px;padding:8px;font:11px/1.4 ui-monospace,Menlo,monospace;color:var(--body);background:var(--paper);resize:vertical"></textarea>`:"";
     aviso=`<div style="background:rgba(15,36,64,.06);border-radius:12px;padding:11px 12px;margin-top:12px">
-      <div style="font-size:12px;font-weight:700;color:${NAV};margin-bottom:4px">${PX("ac_live_tok_t")}</div>
-      <div style="font-size:11px;color:var(--ink-2);line-height:1.5;margin-bottom:9px">${PX(st==="badtoken"?"ac_live_tok_bad":"ac_live_tok_b")}</div>
-      <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center">
-        <input id="ac-tok-in" class="f-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-          placeholder="${PX("ac_live_tok_ph")}" value="${acToken().replace(/"/g,"&quot;")}" style="margin:0;min-width:0;height:40px;min-height:0;padding:0 12px;box-sizing:border-box"/>
-        <button type="button" class="pro-pill on" onclick="PRO.acTokSalvar()" style="height:40px;box-sizing:border-box">${PX("ac_live_tok_save")}</button>
-      </div></div>`;
+      <div style="font-size:12px;font-weight:700;color:${NAV};margin-bottom:4px">${PX("ac_pt_t")}</div>
+      ${err}
+      <div style="font-size:11px;color:var(--ink-2);line-height:1.5">${PX("ac_pt_b")}</div>
+      ${passo(1,"ac_pt_s1")}${passo(2,"ac_pt_s2")}${passo(3,"ac_pt_s3")}${passo(4,"ac_pt_s4")}${passo(5,"ac_pt_s5")}
+      <button type="button" class="pro-pill" onclick="PRO.acPtCopiar()" style="width:100%;height:40px;box-sizing:border-box;margin-top:10px;border-color:rgba(15,36,64,.25);color:${NAV};font-weight:600">${PX("ac_pt_copy")}</button>
+      ${cod}
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin-top:8px">
+        <input id="ac-pt-in" class="f-input" type="url" inputmode="url" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          placeholder="${PX("ac_pt_ph")}" value="${acPonte().replace(/"/g,"&quot;")}" style="margin:0;min-width:0;height:40px;min-height:0;padding:0 12px;box-sizing:border-box"/>
+        <button type="button" class="pro-pill on" onclick="PRO.acPtSalvar()" style="height:40px;box-sizing:border-box">${PX("ac_pt_save")}</button>
+      </div>${errUrl}</div>`;
   }else if(st==="err"){
     aviso=`<div class="pro-note" style="color:${RED}">${PX("ac_live_err")}${!q&&cotPos>0?" "+PXV("ac_live_fallback",{d:brDate(a.lastUpdate||hoje)}):""}</div>`;
   }else if(st==="nf"){
@@ -25803,8 +25844,8 @@ function acLiveHTML(a){
   const nota=alvo>0?`<div class="pro-note">${PXV("ac_live_note",{b:PX(baseEhPm?"ac_live_b_pm":"ac_live_b_cot"),
       v:fmt(basePx),d:brDate(baseData),r:aplIdxLbl(a,p),f:pc((fB-1)*100,1)})}</div>`:"";
   const rod=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:9px">
-      <span style="font-size:9.5px;color:var(--ink-3)">${PX("ac_live_src")}</span>
-      <button type="button" onclick="PRO.acTokAbrir()" style="background:none;border:none;padding:4px 0;font-size:10.5px;color:var(--ink-3);text-decoration:underline;cursor:pointer">${PX("ac_live_tok_edit")}</button>
+      <span style="font-size:9.5px;color:var(--ink-3);min-width:0">${q?PXV("ac_live_src",{s:q.src==="google"?"Google Finance":"Yahoo Finance"}):PX("ac_live_src0")}</span>
+      <button type="button" onclick="PRO.acPtAbrir()" style="background:none;border:none;padding:4px 0;font-size:10.5px;color:var(--ink-3);text-decoration:underline;cursor:pointer;flex-shrink:0">${PX("ac_pt_edit")}</button>
     </div>`;
   return `<div style="background:var(--surface);border-radius:14px;padding:13px 15px 10px;margin-bottom:12px">
     ${head}${aviso}${grid}${barras}${veredito}${linhas}${usar}${semBase}${nota}${rod}</div>`;
@@ -30257,7 +30298,7 @@ window.PRO={
   openRendimento,renderRendimentos,setRendHoriz,exportRendimento,
   aplicarProduto,sincronizarFgtsPatrimonio,PRODUTOS,TR,
   acTicker,acQtd,acSaldoDeCot,acCustoDePm,setAcIdx,astQtdTxt,
-  acBuscarCotacao,acRefresh,acTokAbrir,acTokSalvar,acUsarCotacao,acLiveHTML,acQuoteParse,
+  acBuscarCotacao,acRefresh,acPtAbrir,acPtSalvar,acPtCopiar,acUsarCotacao,acLiveHTML,acQuoteParse,
   diasUteis,duPeriodo,ehDiaUtil,astPro,serieFatores,
   /* leitura da regra de FGTS: dia do depósito e reconhecimento da conta
      vinculada. Exposto para diagnóstico e para os testes de projeção. */
