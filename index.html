@@ -17901,7 +17901,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.42";
+const APP_VERSION="11.43";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -19174,6 +19174,52 @@ const PDIC={
   ac_fixa:["Taxa fixa","Fixed rate","Festsatz"],
   ac_shares:["{n} ações","{n} shares","{n} Aktien"],
   ac_share1:["1 ação","1 share","1 Aktie"],
+  /* v11.43 — cotação ao vivo e preço-alvo */
+  ac_live_t:["Cotação e preço-alvo","Price and target","Kurs und Kursziel"],
+  ac_live_now:["Cotação atual","Current price","Aktueller Kurs"],
+  ac_live_live:["ao vivo","live","live"],
+  ac_live_at:["às","at","um"],
+  ac_live_cache:["última obtida","last fetched","zuletzt abgerufen"],
+  ac_live_pos:["cotação da posição","price at position","Kurs zur Position"],
+  ac_live_load:["Buscando cotação…","Fetching price…","Kurs wird abgerufen…"],
+  ac_live_today:["hoje","today","heute"],
+  ac_live_pm:["Preço médio","Avg. price","Ø-Preis"],
+  ac_live_tgt:["Alvo hoje","Target today","Ziel heute"],
+  ac_live_tgt12:["Alvo 12 meses","12-month target","Ziel 12 Monate"],
+  ac_live_cur:["Atual","Current","Aktuell"],
+  ac_live_tg:["Alvo","Target","Ziel"],
+  ac_live_below:["{p}% abaixo do alvo","{p}% below target","{p}% unter dem Ziel"],
+  ac_live_above:["{p}% acima do alvo","{p}% above target","{p}% über dem Ziel"],
+  ac_live_on:["No alvo","On target","Im Ziel"],
+  ac_live_up:["Para chegar ao alvo: +{p}%","To reach target: +{p}%","Bis zum Ziel: +{p}%"],
+  ac_live_note:["Alvo = {b} de {v} em {d}, corrigido pelo rendimento esperado ({r}): {f}% no período. O alvo de 12 meses segue a mesma premissa por mais um ano, pela curva dos Parâmetros.",
+    "Target = {b} of {v} on {d}, grown at the expected return ({r}): {f}% over the period. The 12-month target follows the same assumption for one more year, along the Parameters curve.",
+    "Ziel = {b} von {v} am {d}, mit der erwarteten Rendite ({r}) fortgeschrieben: {f}% im Zeitraum. Das 12-Monats-Ziel schreibt dieselbe Annahme ein weiteres Jahr fort, entlang der Parameter-Kurve."],
+  ac_live_b_pm:["o preço médio","the average price","der Ø-Kaufpreis"],
+  ac_live_b_cot:["a cotação da posição","the price at position","der Kurs zur Position"],
+  ac_live_exp:["Rendimento esperado","Expected return","Erwartete Rendite"],
+  ac_live_next12:["Nos próximos 12 meses","Over the next 12 months","In den nächsten 12 Monaten"],
+  ac_live_real:["Realizado desde a compra","Realized since purchase","Seit Kauf realisiert"],
+  ac_live_espp:["Esperado no período","Expected over the period","Erwartet im Zeitraum"],
+  ac_live_mkt:["Posição a mercado","Market value","Marktwert"],
+  ac_live_reg:["Saldo registrado em {d}","Balance recorded on {d}","Saldo erfasst am {d}"],
+  ac_live_use:["Atualizar posição com esta cotação","Update position with this price","Position mit diesem Kurs aktualisieren"],
+  ac_live_used:["Posição atualizada pela cotação","Position updated from price","Position anhand des Kurses aktualisiert"],
+  ac_live_src:["Fonte: brapi.dev","Source: brapi.dev","Quelle: brapi.dev"],
+  ac_live_tok_edit:["Token","Token","Token"],
+  ac_live_tok_t:["Token da brapi.dev","brapi.dev token","brapi.dev-Token"],
+  ac_live_tok_b:["Sem token, a brapi.dev só libera PETR4, VALE3, ITUB4 e MGLU3. Crie uma conta gratuita em brapi.dev/dashboard, copie o token e cole aqui. Ele fica guardado só neste aparelho.",
+    "Without a token, brapi.dev only serves PETR4, VALE3, ITUB4 and MGLU3. Create a free account at brapi.dev/dashboard, copy the token and paste it here. It is stored on this device only.",
+    "Ohne Token liefert brapi.dev nur PETR4, VALE3, ITUB4 und MGLU3. Erstellen Sie ein kostenloses Konto unter brapi.dev/dashboard, kopieren Sie den Token und fügen Sie ihn hier ein. Er bleibt nur auf diesem Gerät."],
+  ac_live_tok_bad:["A brapi.dev recusou o token. Confira se ele foi copiado inteiro.","brapi.dev rejected the token. Check that it was copied in full.","brapi.dev hat den Token abgelehnt. Prüfen Sie, ob er vollständig kopiert wurde."],
+  ac_live_tok_ph:["Cole o token aqui","Paste the token here","Token hier einfügen"],
+  ac_live_tok_save:["Salvar e buscar","Save and fetch","Speichern und abrufen"],
+  ac_live_tok_ok:["Token salvo","Token saved","Token gespeichert"],
+  ac_live_err:["Não foi possível buscar a cotação agora.","Couldn't fetch the price right now.","Der Kurs konnte gerade nicht abgerufen werden."],
+  ac_live_nf:["A brapi.dev não encontrou {t}. Confira o ticker no cadastro.","brapi.dev couldn't find {t}. Check the ticker in the holding.","brapi.dev hat {t} nicht gefunden. Prüfen Sie den Ticker in der Anlage."],
+  ac_live_fallback:["Os números abaixo usam a cotação da posição ({d}).","Figures below use the price at position ({d}).","Die Werte unten nutzen den Kurs zur Position ({d})."],
+  ac_live_noqtd:["Informe a quantidade e o preço médio no cadastro para comparar com o alvo.","Enter the quantity and average price in the holding to compare with the target.","Geben Sie Anzahl und Ø-Kaufpreis in der Anlage an, um mit dem Ziel zu vergleichen."],
+  ac_live_refresh:["Atualizar cotação","Refresh price","Kurs aktualisieren"],
   ap_qtd:["Quantidade","Quantity","Anzahl"],
   ap_pm:["Preço médio","Average price","Durchschnittspreis"],
   ap_cot:["Cotação na posição","Price at position","Kurs zur Position"],
@@ -22951,6 +22997,13 @@ function ensureStyles(){
   .pro-pill.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);
     font-weight:700;box-shadow:inset 0 0 0 1px var(--accent-line)}
   .pro-note{font-size:10.5px;color:var(--ink-3);line-height:1.5;margin-top:8px}
+  .ac-rf{width:36px;height:36px;flex-shrink:0;border-radius:50%;border:1.5px solid var(--line);
+    background:var(--paper);color:#0F2440;font-size:17px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;padding:0;transition:border-color .15s,box-shadow .15s}
+  .ac-rf:active{border-color:#0F2440;box-shadow:0 0 0 3px rgba(15,36,64,.12)}
+  .ac-rf span{display:inline-block}
+  .ac-spin{animation:acSpin .9s linear infinite}
+  @keyframes acSpin{to{transform:rotate(360deg)}}
   /* DICA — orientação, não legenda. Toda vez que o app opina sobre o que
      fazer, o glifo da lâmpada entra à esquerda e o bloco ganha fundo
      próprio, para não se confundir com texto explicativo neutro. */
@@ -25542,6 +25595,221 @@ function renderRendimentos(){
       O rendimento é calculado sobre a data de aplicação, o montante aplicado e a taxa de cada papel. A provisão usa a tabela regressiva de IR pelo prazo decorrido, IOF nos 30 primeiros dias e come-cotas em maio e novembro nos fundos. Toque em uma aplicação para ver a evolução mês a mês.</div>`;
 }
 
+/* ═══ v11.43 — AÇÕES: COTAÇÃO AO VIVO E PREÇO-ALVO ═════════════════════
+   A ficha de uma ação busca a cotação na brapi.dev no momento em que abre.
+   O preço-alvo NÃO é um número novo: é o preço médio (ou, sem ele, a
+   cotação da posição) capitalizado pelo rendimento esperado que o titular
+   cadastrou, pelo mesmo motor de fatores da projeção — fatorProduto, que
+   lê a curva dos Parâmetros. O alvo de 12 meses aplica a mesma premissa à
+   cotação de hoje. Sem rede, vale a última cotação obtida; sem ela, a
+   cotação da posição. O token fica só neste aparelho e vai na query
+   (?token=), o que dispensa o preflight de CORS no Safari. */
+const AC_TOKEN_KEY="gastos_v2_brapi_token";
+const AC_QUOTE_KEY="gastos_v2_ac_quotes";
+const AC_FREE=["PETR4","MGLU3","VALE3","ITUB4"];
+let AC_Q=(()=>{try{return JSON.parse(localStorage.getItem(AC_QUOTE_KEY)||"{}")||{};}catch(e){return {};}})();
+const AC_ST={};                 /* ticker → load | ok | err | token | badtoken | nf */
+let AC_TOK_OPEN=false;
+function aplIdxLbl(a,p){
+  p=p||astPro(a);
+  const v=String(p.idxVal||0).replace(".",",");
+  switch(astIdxNorm(p.idx)){
+    case "cdi_pct":     return v+"% "+PX("ap_of")+" CDI";
+    case "cdi_spread":  return "CDI + "+v+"% a.a.";
+    case "ipca_spread": return "IPCA + "+v+"% a.a.";
+    case "pre":         return (a.class==="stocks"?PX("ac_fixa"):PX("ap_pre"))+" "+v+"% a.a.";
+    case "poupanca":    return PX("p_savings");
+    default:            return (a.class==="stocks"?PX("ac_fixa"):PX("ap_manual"))+" "+v+"% a.m.";
+  }
+}
+function acTk(a){ const p=astPro(a); return String(p.ticker||a.name||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
+function acToken(){ try{ return localStorage.getItem(AC_TOKEN_KEY)||""; }catch(e){ return ""; } }
+function acQuoteParse(j,tk){
+  const L=(j&&Array.isArray(j.results))?j.results:[];
+  const r=L.find(x=>String(x.symbol||x.requestedSymbol||"").toUpperCase()===tk)||L[0];
+  if(!r) return null;
+  const d=(r.data&&typeof r.data==="object")?Object.assign({},r,r.data):r;   /* v1 e v2 */
+  const px=+d.regularMarketPrice;
+  if(!(px>0)) return null;
+  return {px, chg:+d.regularMarketChange||0, chgPct:+d.regularMarketChangePercent||0,
+    t:d.regularMarketTime||"", nome:d.shortName||d.longName||"", em:Date.now()};
+}
+async function acBuscarCotacao(tk,forcar){
+  tk=String(tk||"").toUpperCase();
+  if(!AC_RE.test(tk)) return;
+  const tok=acToken();
+  if(!tok&&AC_FREE.indexOf(tk)<0){ AC_ST[tk]="token"; acLiveRender(); return; }
+  if(AC_ST[tk]==="load") return;
+  const q=AC_Q[tk];
+  if(!forcar&&q&&Date.now()-q.em<60000){ AC_ST[tk]="ok"; acLiveRender(); return; }
+  AC_ST[tk]="load"; acLiveRender();
+  try{
+    const url="https://brapi.dev/api/quote/"+encodeURIComponent(tk)+(tok?"?token="+encodeURIComponent(tok):"");
+    const r=await fetchWithTimeout(url,9000);
+    if(r.status===401||r.status===403){ AC_ST[tk]=tok?"badtoken":"token"; acLiveRender(); return; }
+    if(r.status===404){ AC_ST[tk]="nf"; acLiveRender(); return; }
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const nq=acQuoteParse(await r.json(),tk);
+    if(!nq){ AC_ST[tk]="nf"; acLiveRender(); return; }
+    AC_Q[tk]=nq; AC_ST[tk]="ok";
+    try{ localStorage.setItem(AC_QUOTE_KEY,JSON.stringify(AC_Q)); }catch(e){}
+  }catch(e){
+    AC_ST[tk]="err";
+    try{ logErro("acBuscarCotacao",e); }catch(x){}
+  }
+  acLiveRender();
+}
+function acLiveRender(){
+  const el=document.getElementById("ac-live"); if(!el) return;
+  const a=ASSETS.find(x=>x.id===REND_ID); if(!a||a.class!=="stocks") return;
+  el.innerHTML=acLiveHTML(a);
+}
+function acRefresh(){ const a=ASSETS.find(x=>x.id===REND_ID); if(a) acBuscarCotacao(acTk(a),true); }
+function acTokAbrir(){ AC_TOK_OPEN=!AC_TOK_OPEN; acLiveRender(); }
+function acTokSalvar(){
+  const v=String(document.getElementById("ac-tok-in")?.value||"").trim();
+  try{ if(v) localStorage.setItem(AC_TOKEN_KEY,v); else localStorage.removeItem(AC_TOKEN_KEY); }catch(e){}
+  AC_TOK_OPEN=false;
+  if(v) toast("✓ "+PX("ac_live_tok_ok"));
+  const a=ASSETS.find(x=>x.id===REND_ID);
+  if(a){ const tk=acTk(a); delete AC_ST[tk]; acBuscarCotacao(tk,true); }
+}
+/* quantidade × cotação viram a nova posição — o custo fica onde estava */
+function acUsarCotacao(){
+  const a=ASSETS.find(x=>x.id===REND_ID); if(!a) return;
+  const p=astPro(a), q=AC_Q[acTk(a)], qtd=+p.qtd||0;
+  if(!q||!(qtd>0)) return;
+  const custo=R2(+p.custo||0);
+  a.balance=R2(qtd*q.px); a.lastUpdate=today();
+  a.pro=Object.assign({},a.pro||{},{cot:q.px,custo:custo,custoAuto:false});
+  persist();
+  try{ Object.keys(AST_CACHE).forEach(k=>delete AST_CACHE[k]); }catch(e){}
+  try{ Object.keys(AST_VAL_CACHE).forEach(k=>delete AST_VAL_CACHE[k]); }catch(e){}
+  try{ refreshPro(); }catch(e){}
+  try{ if(typeof renderAssets==="function") renderAssets(); }catch(e){}
+  renderRendimento();
+  toast("✓ "+PX("ac_live_used")+" · "+fmt(a.balance));
+}
+function acLiveHTML(a){
+  const p=astPro(a), tk=acTk(a), q=AC_Q[tk], st=AC_ST[tk]||"";
+  const NAV="#0F2440", GRN="#5A8A4A", RED="#B85A6A", IDX="#7A93AE";
+  const loc=LANG==="en"?"en-US":(LANG==="de"?"de-DE":"pt-BR");
+  const pc=(v,d)=>(v>=0?"+":"−")+Math.abs(v).toFixed(d===undefined?2:d).replace(".",LANG==="en"?".":",");
+  const hoje=today();
+  const qtd=+p.qtd||0, pm=+p.pm||0, cotPos=+p.cot||0;
+  const atual=q?q.px:cotPos;
+  /* hora da cotação no fuso do aparelho, sem toISOString */
+  let quando="";
+  if(q){
+    const d=new Date(q.t||q.em);
+    const ok=!isNaN(d.getTime());
+    const hh=ok?d.toLocaleTimeString(loc,{hour:"2-digit",minute:"2-digit"}):"";
+    const ds=ok?(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")):"";
+    const fresco=st==="ok"||st==="load";
+    quando=(fresco?PX("ac_live_live"):PX("ac_live_cache"))+" · "+(ds&&ds!==hoje?brDate(ds)+" ":"")+(hh?PX("ac_live_at")+" "+hh:"");
+  }else if(cotPos>0){
+    quando=PX("ac_live_pos")+" · "+brDate(a.lastUpdate||hoje);
+  }
+  const dot=(st==="ok")?GRN:(st==="load"?"#BF8C2A":"var(--ink-4)");
+  const spin=st==="load";
+  /* alvo: base × fator do rendimento esperado, pelo motor da projeção */
+  const baseEhPm=pm>0;
+  const baseData=baseEhPm?(p.aplic||a.lastUpdate||hoje):(a.lastUpdate||p.aplic||hoje);
+  const basePx=baseEhPm?pm:cotPos;
+  let fB=1, f12=1;
+  try{ if(baseData<hoje) fB=fatorProduto(a,baseData,hoje,p).fator||1; }catch(e){}
+  try{ f12=fatorProduto(a,hoje,addMonths(hoje,12),p).fator||1; }catch(e){}
+  const alvo=basePx>0?basePx*fB:0;
+  const alvo12=alvo>0?alvo*f12:(atual>0?atual*f12:0);
+  const gap=(alvo>0&&atual>0)?(atual/alvo-1)*100:null;
+  const real=(pm>0&&atual>0)?(atual/pm-1)*100:null;
+  const mkt=qtd>0&&atual>0?R2(qtd*atual):0;
+  const bal=parseFloat(a.balance)||0;
+  /* cabeçalho: preço grande, variação do dia, botão de atualizar */
+  const chgTxt=(q&&isFinite(q.chgPct)&&(q.chg||q.chgPct))
+    ?`<div style="font-size:11.5px;font-weight:600;color:${q.chgPct>=0?GRN:RED};margin-top:4px">${q.chgPct>=0?"▲":"▼"} ${pc(q.chgPct)}% <span style="font-weight:500;color:var(--ink-3)">${PX("ac_live_today")}</span></div>`:"";
+  const head=`<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+      <div style="min-width:0;flex:1">
+        <div style="display:flex;align-items:center;gap:6px;font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink-3);font-weight:700;white-space:nowrap;overflow:hidden">
+          <span style="width:7px;height:7px;border-radius:50%;background:${dot};flex-shrink:0"></span>
+          <span style="overflow:hidden;text-overflow:ellipsis">${PX("ac_live_now")}${quando?" · "+quando:""}</span></div>
+        <div style="font-family:var(--serif);font-style:italic;font-size:28px;line-height:1.1;color:${NAV};margin-top:5px;font-variant-numeric:tabular-nums">${atual>0?fmt(atual):"—"}</div>
+        ${spin&&!q?`<div style="font-size:11px;color:var(--ink-3);margin-top:4px">${PX("ac_live_load")}</div>`:chgTxt}
+      </div>
+      <button type="button" class="ac-rf" onclick="PRO.acRefresh()" aria-label="${PX("ac_live_refresh")}" title="${PX("ac_live_refresh")}">
+        <span class="${spin?"ac-spin":""}">↻</span></button>
+    </div>`;
+  /* avisos de estado */
+  let aviso="";
+  if(st==="token"||st==="badtoken"||AC_TOK_OPEN){
+    aviso=`<div style="background:rgba(15,36,64,.06);border-radius:12px;padding:11px 12px;margin-top:12px">
+      <div style="font-size:12px;font-weight:700;color:${NAV};margin-bottom:4px">${PX("ac_live_tok_t")}</div>
+      <div style="font-size:11px;color:var(--ink-2);line-height:1.5;margin-bottom:9px">${PX(st==="badtoken"?"ac_live_tok_bad":"ac_live_tok_b")}</div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center">
+        <input id="ac-tok-in" class="f-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          placeholder="${PX("ac_live_tok_ph")}" value="${acToken().replace(/"/g,"&quot;")}" style="margin:0;min-width:0;height:40px;min-height:0;padding:0 12px;box-sizing:border-box"/>
+        <button type="button" class="pro-pill on" onclick="PRO.acTokSalvar()" style="height:40px;box-sizing:border-box">${PX("ac_live_tok_save")}</button>
+      </div></div>`;
+  }else if(st==="err"){
+    aviso=`<div class="pro-note" style="color:${RED}">${PX("ac_live_err")}${!q&&cotPos>0?" "+PXV("ac_live_fallback",{d:brDate(a.lastUpdate||hoje)}):""}</div>`;
+  }else if(st==="nf"){
+    aviso=`<div class="pro-note" style="color:${RED}">${PXV("ac_live_nf",{t:tk||"—"})}</div>`;
+  }
+  if(!(atual>0)) return head+aviso;
+  /* três números: preço médio, alvo hoje, alvo em 12 meses */
+  const cel=(lbl,v,cor,al)=>`<div style="min-width:0;text-align:${al}">
+      <div style="font-size:8.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--ink-3);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lbl}</div>
+      <div style="font-size:14px;font-weight:600;color:${cor};margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums">${v}</div></div>`;
+  const grid=`<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+      ${cel(PX("ac_live_pm"),pm>0?fmt(pm):"—","var(--body)","left")}
+      ${cel(PX("ac_live_tgt"),alvo>0?fmt(alvo):"—",IDX,"center")}
+      ${cel(PX("ac_live_tgt12"),alvo12>0?fmt(alvo12):"—",IDX,"right")}
+    </div>`;
+  /* barras atual × alvo, mesma escala */
+  let barras="", veredito="";
+  if(alvo>0){
+    const mx=Math.max(atual,alvo);
+    const bar=(lbl,v,cor,dash)=>`<div style="display:grid;grid-template-columns:46px minmax(0,1fr) 92px;gap:8px;align-items:center;margin-top:7px">
+        <span style="font-size:10.5px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lbl}</span>
+        <div style="height:8px;border-radius:4px;background:rgba(0,0,0,.05);overflow:hidden">
+          <div style="height:100%;width:${Math.max(2,v/mx*100).toFixed(1)}%;border-radius:4px;background:${dash?`repeating-linear-gradient(90deg,${cor} 0 6px,${cor}66 6px 9px)`:cor}"></div></div>
+        <span style="font-size:11.5px;font-weight:600;color:var(--body);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap">${fmt(v)}</span>
+      </div>`;
+    barras=`<div style="margin-top:12px">${bar(PX("ac_live_cur"),atual,NAV,false)}${bar(PX("ac_live_tg"),alvo,IDX,true)}</div>`;
+    const g=gap;
+    const neutro=Math.abs(g)<0.5;
+    const cor=neutro?NAV:(g>=0?GRN:RED);
+    const bg=neutro?"rgba(15,36,64,.07)":(g>=0?"rgba(90,138,74,.12)":"rgba(184,90,106,.1)");
+    const txt=neutro?PX("ac_live_on"):PXV(g>=0?"ac_live_above":"ac_live_below",{p:Math.abs(g).toFixed(1).replace(".",LANG==="en"?".":",")});
+    const falta=(!neutro&&g<0)?`<span style="font-size:10.5px;color:var(--ink-3)">${PXV("ac_live_up",{p:((alvo/atual-1)*100).toFixed(1).replace(".",LANG==="en"?".":",")})}</span>`:"";
+    veredito=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:11px">
+      <span style="background:${bg};color:${cor};border-radius:8px;padding:4px 10px;font-size:11.5px;font-weight:700">${txt}</span>${falta}</div>`;
+  }
+  /* linhas de apoio */
+  const L=(k,v,cor)=>v?`<div class="pro-cf"><span>${k}</span><span style="color:${cor||"var(--body)"}">${v}</span></div>`:"";
+  const exp12=(f12-1)*100;
+  const linhas=`<div style="margin-top:12px;padding-top:8px;border-top:1px solid var(--line)">
+      ${L(PX("ac_live_exp"),aplIdxLbl(a,p))}
+      <div class="pro-cf sub"><span>${PX("ac_live_next12")}</span><span>${pc(exp12,1)}%</span></div>
+      ${real!==null?L(PX("ac_live_real"),pc(real,1)+"%",real>=0?GRN:RED):""}
+      ${alvo>0&&baseData<hoje?L(PX("ac_live_espp"),pc((fB-1)*100,1)+"%",IDX):""}
+      ${mkt>0?L(PX("ac_live_mkt"),fmt(mkt),NAV):""}
+      ${bal>0?`<div class="pro-cf sub"><span>${PXV("ac_live_reg",{d:brDate(a.lastUpdate||hoje)})}</span><span>${fmt(bal)}</span></div>`:""}
+    </div>`;
+  const podeUsar=q&&qtd>0&&(Math.abs(mkt-bal)>0.005||a.lastUpdate!==hoje);
+  const usar=podeUsar?`<button type="button" class="pro-pill" onclick="PRO.acUsarCotacao()"
+      style="width:100%;margin-top:12px;border-color:rgba(15,36,64,.25);color:${NAV};font-weight:600">${PX("ac_live_use")}</button>`:"";
+  const semBase=!(pm>0)?`<div class="pro-note">${PX("ac_live_noqtd")}</div>`:"";
+  const nota=alvo>0?`<div class="pro-note">${PXV("ac_live_note",{b:PX(baseEhPm?"ac_live_b_pm":"ac_live_b_cot"),
+      v:fmt(basePx),d:brDate(baseData),r:aplIdxLbl(a,p),f:pc((fB-1)*100,1)})}</div>`:"";
+  const rod=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:9px">
+      <span style="font-size:9.5px;color:var(--ink-3)">${PX("ac_live_src")}</span>
+      <button type="button" onclick="PRO.acTokAbrir()" style="background:none;border:none;padding:4px 0;font-size:10.5px;color:var(--ink-3);text-decoration:underline;cursor:pointer">${PX("ac_live_tok_edit")}</button>
+    </div>`;
+  return `<div style="background:var(--surface);border-radius:14px;padding:13px 15px 10px;margin-bottom:12px">
+    ${head}${aviso}${grid}${barras}${veredito}${linhas}${usar}${semBase}${nota}${rod}</div>`;
+}
+
 /* ── Ficha individual: evolução mês a mês ── */
 /* A ficha sai da frente antes de abrir edição ou resgate: duas folhas
    empilhadas deixam a de baixo inacessível. */
@@ -25572,6 +25840,8 @@ function openRendimento(id,forcar){
   document.body.appendChild(ov);
   ov.onclick=e=>{if(e.target===ov)closeOverlay(ov);};
   renderRendimento();
+  /* v11.43 — ação: a cotação é buscada na hora em que a ficha abre */
+  if(a.class==="stocks"){ try{ acBuscarCotacao(acTk(a)); }catch(x){} }
 }
 function renderRendimento(){
   const a=ASSETS.find(x=>x.id===REND_ID); if(!a||!$("rend-body")) return;
@@ -25593,17 +25863,7 @@ function renderRendimento(){
   const bz=k=>`<button type="button" class="${APL_BENCH===k?"on":""}" onclick="PRO.setAplBench('${k}')">${aplBenchLabel(k)}</button>`;
 
   /* ── características: o que a aplicação É, antes do que ela rendeu ── */
-  const idxLbl=(()=>{
-    const v=String(p.idxVal||0).replace(".",",");
-    switch(astIdxNorm(p.idx)){
-      case "cdi_pct":     return v+"% "+PX("ap_of")+" CDI";
-      case "cdi_spread":  return "CDI + "+v+"% a.a.";
-      case "ipca_spread": return "IPCA + "+v+"% a.a.";
-      case "pre":         return (a.class==="stocks"?PX("ac_fixa"):PX("ap_pre"))+" "+v+"% a.a.";
-      case "poupanca":    return PX("p_savings");
-      default:            return (a.class==="stocks"?PX("ac_fixa"):PX("ap_manual"))+" "+v+"% a.m.";
-    }
-  })();
+  const idxLbl=aplIdxLbl(a,p);
   const tribLbl={rf:"ap_t_rf",isento:"ap_t_isento",fundoLP:"ap_t_flp",
                  fundoCP:"ap_t_fcp",fii:"ap_t_fii",acoes:"ap_t_acoes"}[p.trib];
   const linhaC=(k,v)=>v?`<div class="pro-cf"><span>${k}</span><span>${v}</span></div>`:"";
@@ -25678,8 +25938,10 @@ function renderRendimento(){
     <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px">
       <div style="width:42px;height:42px;border-radius:12px;background:${c.color}18;display:flex;align-items:center;justify-content:center;font-size:20px">${c.emoji}</div>
       <div style="min-width:0"><div style="font-family:var(--serif);font-size:19px;color:var(--body)">${raw(a.name)}</div>
-      <div style="font-size:11px;color:var(--ink-2)">${catLabel(c)} · aplicado em ${brDate(e.inicio)} · ${e.diasCorridos} dias</div></div>
+      <div style="font-size:11px;color:var(--ink-2)">${a.class==="stocks"&&astQtdTxt(a)?raw(astQtdTxt(a))+" · ":""}${catLabel(c)} · aplicado em ${brDate(e.inicio)} · ${e.diasCorridos} dias</div></div>
     </div>
+
+    ${a.class==="stocks"?raw(`<div class="sec-label">${PX("ac_live_t")}</div><div id="ac-live">${acLiveHTML(a)}</div>`):""}
 
     <div class="sec-label">${PL("ap_charac")}</div>
     <div style="background:var(--surface);border-radius:14px;padding:10px 15px;margin-bottom:12px">
@@ -29995,6 +30257,7 @@ window.PRO={
   openRendimento,renderRendimentos,setRendHoriz,exportRendimento,
   aplicarProduto,sincronizarFgtsPatrimonio,PRODUTOS,TR,
   acTicker,acQtd,acSaldoDeCot,acCustoDePm,setAcIdx,astQtdTxt,
+  acBuscarCotacao,acRefresh,acTokAbrir,acTokSalvar,acUsarCotacao,acLiveHTML,acQuoteParse,
   diasUteis,duPeriodo,ehDiaUtil,astPro,serieFatores,
   /* leitura da regra de FGTS: dia do depósito e reconhecimento da conta
      vinculada. Exposto para diagnóstico e para os testes de projeção. */
