@@ -17904,7 +17904,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.47";
+const APP_VERSION="11.48";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -29233,7 +29233,6 @@ function renderParams(){
     padding:10px 0;border-bottom:1px solid var(--line)">
     <div style="flex:1;min-width:0">
       <div style="font-size:12.5px;font-weight:600;color:var(--body);line-height:1.3">${lbl}</div>
-      <div style="font-size:10.5px;color:var(--ink-3);line-height:1.5;margin-top:3px">${hint}</div>
     </div>${swP(k,on,fn)}</div>`;
   const savOn=(PROJ.sobraModo||"saving")==="saving";
   /* ═══ PERFIL DA APLICAÇÃO DE SOBRA ═══
@@ -29687,7 +29686,7 @@ function renderParams(){
       <span class="oi oi-ring oi-checklist" style="width:46px;height:46px" aria-hidden="true"></span>
       <div style="min-width:0">
         <div style="font-family:var(--serif);font-size:19px;color:var(--body);line-height:1.15">${PL("p_title")}</div>
-        <div style="font-size:10.5px;color:var(--ink-3);margin-top:3px;line-height:1.4">${PL("p_sub")}</div>
+
       </div>
     </div>
 
@@ -36646,12 +36645,34 @@ window.GUIA={iniciar,fechar,ROT};
     inp.addEventListener("input",()=>{ pintar(); abrir(); });
     inp.addEventListener("blur",()=>setTimeout(fechar,180));
     inp.addEventListener("keydown",e=>{ if(e.key==="Escape"||e.key==="Enter"){ fechar(); if(e.key==="Enter") inp.blur(); } });
-    /* pointerdown evita que o blur feche a lista antes do toque valer */
-    dd.addEventListener("pointerdown",e=>e.preventDefault());
-    dd.addEventListener("click",e=>{
-      const b=e.target.closest(".inst-op"); if(!b) return;
-      inp.value=b.dataset.v; pintar(); fechar(); inp.blur();
+    /* v11.48 — no iPhone o campo perde o foco antes do clique; campos que
+       gravam no blur (Parâmetros) redesenhavam a tela e o toque se perdia.
+       A escolha vale no fim do toque, antes do blur; arrastar só rola a lista. */
+    const escolher=b=>{
+      if(!b) return;
+      inp.value=b.dataset.v; inp._instUlt=null; pintar(); fechar();
+      inp.dispatchEvent(new Event("input",{bubbles:true}));
       inp.dispatchEvent(new Event("change",{bubbles:true}));
+      inp.blur();
+    };
+    let p0=null;
+    dd.addEventListener("pointerdown",e=>{ e.preventDefault(); p0={x:e.clientX,y:e.clientY,t:Date.now()}; });
+    dd.addEventListener("pointerup",e=>{
+      const b=e.target.closest(".inst-op");
+      if(!b||!p0) return;
+      const mov=Math.abs(e.clientX-p0.x)+Math.abs(e.clientY-p0.y); p0=null;
+      if(mov>10) return;
+      dd._tapAt=Date.now();
+      /* o redesenho pode pôr outro botão sob o dedo: o clique fantasma morre aqui */
+      const engole=ev=>{ ev.stopPropagation(); ev.preventDefault(); };
+      document.addEventListener("click",engole,true);
+      setTimeout(()=>document.removeEventListener("click",engole,true),450);
+      escolher(b);
+    });
+    dd.addEventListener("touchend",e=>{ if(e.target.closest(".inst-op")&&dd._tapAt&&Date.now()-dd._tapAt<400) e.preventDefault(); },{passive:false});
+    dd.addEventListener("click",e=>{
+      if(dd._tapAt&&Date.now()-dd._tapAt<600) return;
+      escolher(e.target.closest(".inst-op"));
     });
     inp._instPintar=pintar; pintar();
     if(inp.classList.contains("f-input")&&!box) grade(inp,wrap,dd);
@@ -36911,6 +36932,12 @@ html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-ar
 })();
 </script>
 <style id="v1145-clean">
+/* v11.48 — explicações saem do corpo do app: o lugar delas é o guia (?) e o Manual.
+   Avisos (notas coloridas, alertas) continuam. */
+.pro-note:not([style*="color"]),.wz-nota,.par-lock,.exp-block-desc,.sg-hint,
+[data-i18n="amount_neg_hint"],[data-i18n="cats_help"],[data-i18n="debt_archive_help"],[data-i18n="goals_ast_hint"],
+[data-i18n="goals_hint"],[data-i18n="people_help"],[data-i18n="rc_help"],[data-i18n="rules_help"],
+[data-i18n="exp_cols_desc"],[data-i18n="exp_excel_desc"],[data-i18n="debt_charges_hint"],.dica.sm:not(.amb){display:none!important}
 /* notas explicativas: duas linhas; toque abre o resto */
 .pro-note:not([style*="color"]):not(.open){display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pro-note.clamp{cursor:pointer}
