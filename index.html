@@ -17904,7 +17904,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.45";
+const APP_VERSION="11.47";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -31347,6 +31347,10 @@ html.wz-lock body{ touch-action:none; }
   background:var(--wz-ac,var(--accent)); border-color:var(--wz-ac,var(--accent));
   box-shadow:0 4px 14px -6px var(--wz-ac,var(--accent)); }
 .wz-b.wz-hold{ opacity:.45; box-shadow:none; }
+.wz-b.wz-save{ flex:1.5; font-weight:600; color:#fff;
+  background:var(--wz-ac,var(--accent)); border-color:var(--wz-ac,var(--accent));
+  box-shadow:0 4px 14px -6px var(--wz-ac,var(--accent)); }
+.wz-edit .wz-b.wz-next{ flex:1; color:var(--wz-ac,var(--accent)); background:none; box-shadow:none; }
 .wz-b[disabled]{ opacity:.3; pointer-events:none; box-shadow:none; }
 .wz-b.wz-shake{ animation:wzShake .4s cubic-bezier(.36,.07,.19,.97); }
 @keyframes wzShake{ 20%{ transform:translateX(-4px);} 45%{ transform:translateX(4px);}
@@ -31556,10 +31560,11 @@ html.wz-lock body{ touch-action:none; }
       foot=document.createElement("div"); foot.className="wz-foot";
       foot.innerHTML='<div class="wz-nota"></div>'+
         '<div class="wz-btns"><button type="button" class="wz-b wz-back"></button>'+
-        '<button type="button" class="wz-b wz-next"></button></div>'+
+        '<button type="button" class="wz-b wz-next"></button><button type="button" class="wz-b wz-save wz-off"></button></div>'+
         '<button type="button" class="wz-alt"></button>';
       foot.querySelector(".wz-back").addEventListener("click",()=>go(-1));
       foot.querySelector(".wz-next").addEventListener("click",next);
+      foot.querySelector(".wz-save").addEventListener("click",salvarJa);
       foot.querySelector(".wz-alt").addEventListener("click",toggleFull);
       /* o estado do botão acompanha o preenchimento, sem esperar o toque */
       sheet.addEventListener("input",vivo,true);
@@ -31679,6 +31684,10 @@ html.wz-lock body{ touch-action:none; }
     const back=c.foot.querySelector(".wz-back"), nx=c.foot.querySelector(".wz-next");
     back.textContent=T("wz_back"); back.disabled=WZ.idx===0;
     nx.textContent=st.rev?($(f.saveBtn)?$(f.saveBtn).textContent:T("wz_save")):T("wz_next");
+    /* v11.46 — editando: grava de qualquer etapa */
+    const sv=c.foot.querySelector(".wz-save"), ed=editando(f)&&!st.rev;
+    if(sv){ sv.classList.toggle("wz-off",!ed); sv.textContent=$(f.saveBtn)?$(f.saveBtn).textContent:T("wz_save"); }
+    c.foot.classList.toggle("wz-edit",ed);
     c.foot.querySelector(".wz-alt").textContent=T("wz_full");
 
     /* resumo — etapa final, com rótulo próprio separando do que vem acima */
@@ -31716,6 +31725,25 @@ html.wz-lock body{ touch-action:none; }
     WZ.dir=d; WZ.idx=i; render();
   }
 
+  function editando(f){ const d=$(f.del); return !!d&&d.style.display==="block"; }
+  function salvarJa(){
+    const f=FLOWS[WZ.flow]; if(!f) return;
+    for(let i=0;i<f.steps.length;i++){
+      if(f.steps[i].rev) continue;
+      const e=erroDe(f,i);
+      if(e){ if(i!==WZ.idx){ WZ.dir=i>WZ.idx?1:-1; WZ.idx=i; render(); } aviso(e); return; }
+    }
+    gravar(f);
+  }
+  function gravar(f){
+      try{ f.save(); }catch(e){ try{ console.error(e); }catch(_){} return; }
+      const m=$(f.modal);
+      if(m&&m.classList.contains("open")){
+        const b=$(f.saveBtn), nx=m.querySelector(".wz-next");
+        if(b&&nx) nx.textContent=b.textContent;
+        render();
+      }
+  }
   function next(){
     const f=FLOWS[WZ.flow]; if(!f) return;
     const st=f.steps[WZ.idx];
@@ -36503,6 +36531,41 @@ window.GUIA={iniciar,fechar,ROT};
     ["Banco Pine","PI",["pine"]],["BNB","BNB",["banco do nordeste","bnb"]],["Banco BRB","BRB",["brb"]]
   ];
   const PAL=["#1A3A5C","#B5543C","#B08528","#3F6B33","#5E5A53","#6E2B3A","#2E5E6B","#7A5A3A"];
+  /* v11.46 — o logo é o ícone oficial publicado no site de cada instituição,
+     carregado na hora. Sem internet, ou sem ícone, fica a sigla. */
+  const DOM={"Banco do Brasil":"bb.com.br","Caixa Econômica Federal":"caixa.gov.br","Itaú Unibanco":"itau.com.br",
+    "Bradesco":"bradesco.com.br","Santander":"santander.com.br","Nubank":"nubank.com.br","Banco Inter":"inter.co",
+    "BTG Pactual":"btgpactual.com","XP Investimentos":"xpi.com.br","Rico":"rico.com.vc","Clear":"clear.com.br",
+    "Banco Safra":"safra.com.br","Sicoob":"sicoob.com.br","Sicredi":"sicredi.com.br","Banrisul":"banrisul.com.br",
+    "Banco Original":"original.com.br","C6 Bank":"c6bank.com.br","PicPay":"picpay.com","Mercado Pago":"mercadopago.com.br",
+    "PagBank":"pagbank.com.br","Neon":"neon.com.br","Will Bank":"willbank.com.br","Banco Pan":"bancopan.com.br",
+    "BV":"bv.com.br","Modalmais":"modalmais.com.br","Genial Investimentos":"genialinvestimentos.com.br",
+    "Avenue":"avenue.us","Nomad":"nomadglobal.com","Warren":"warren.com.br","Órama":"orama.com.br",
+    "Easynvest":"nuinvest.com.br","Tesouro Direto":"tesourodireto.com.br","Banco Daycoval":"daycoval.com.br",
+    "Banco ABC Brasil":"abcbrasil.com.br","Banco Master":"bancomaster.com.br","Sofisa Direto":"sofisadireto.com.br",
+    "Banco Agibank":"agibank.com.br","Banco BMG":"bancobmg.com.br","Banco Digio":"digio.com.br",
+    "Ágora Investimentos":"agorainvestimentos.com.br","Toro Investimentos":"toroinvestimentos.com.br",
+    "Banco Mercantil":"mercantildobrasil.com.br","Banco Pine":"pine.com","BNB":"bnb.gov.br","Banco BRB":"brb.com.br"};
+  const TOPO=["Nubank","Itaú Unibanco","Bradesco","Santander","Banco do Brasil","Caixa Econômica Federal",
+    "Banco Inter","XP Investimentos","BTG Pactual","C6 Bank","Mercado Pago","PicPay"];
+  const CURTO={"Caixa Econômica Federal":"Caixa","Itaú Unibanco":"Itaú","XP Investimentos":"XP","BTG Pactual":"BTG",
+    "Genial Investimentos":"Genial","Ágora Investimentos":"Ágora","Toro Investimentos":"Toro","Tesouro Direto":"Tesouro",
+    "Banco ABC Brasil":"ABC Brasil","Sofisa Direto":"Sofisa","Banco do Brasil":"Banco do Brasil"};
+  const curto=n=>CURTO[n]||String(n).replace(/^Banco /,"");
+  function logoUrls(nome){
+    const h=achar(nome), d=h&&DOM[h[0]];
+    return d?["https://www.google.com/s2/favicons?domain="+d+"&sz=128","https://icons.duckduckgo.com/ip3/"+d+".ico"]:[];
+  }
+  /* ícone de verdade só se vier com resolução; o globo genérico tem 16 px */
+  window.instLogoOk=function(img){
+    if((img.naturalWidth||0)>=32){ img.parentNode&&img.parentNode.classList.add("tem-logo"); return; }
+    window.instLogoErr(img);
+  };
+  window.instLogoErr=function(img){
+    const alt=img.getAttribute("data-alt");
+    if(alt){ img.removeAttribute("data-alt"); img.src=alt; return; }
+    img.remove();
+  };
   const norm=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\s+/g," ").trim();
   function achar(nome){
     const n=norm(nome); if(!n) return null;
@@ -36524,8 +36587,11 @@ window.GUIA={iniciar,fechar,ROT};
   function instBadge(nome,px){
     if(!String(nome||"").trim()) return "";
     const s=sigla(nome), z=px||28, fs=Math.round(z*(s.length>2?.34:.42));
+    const u=logoUrls(nome);
+    const img=u.length?'<img class="inst-logo" alt="" decoding="async" referrerpolicy="no-referrer" src="'+u[0]+'" data-alt="'+u[1]
+      +'" onload="instLogoOk(this)" onerror="instLogoErr(this)">':"";
     return '<span class="inst-badge" aria-hidden="true" style="width:'+z+'px;height:'+z+'px;border-radius:'+Math.round(z*.3)+'px;background:'+cor(nome)
-      +';font-size:'+fs+'px">'+s+'</span>';
+      +';font-size:'+fs+'px">'+s+img+'</span>';
   }
   window.instBadge=instBadge; window.instNomeOficial=n=>{const h=achar(n);return h?h[0]:n;};
 
@@ -36588,6 +36654,49 @@ window.GUIA={iniciar,fechar,ROT};
       inp.dispatchEvent(new Event("change",{bubbles:true}));
     });
     inp._instPintar=pintar; pintar();
+    if(inp.classList.contains("f-input")&&!box) grade(inp,wrap,dd);
+  }
+  /* v11.46 — formulários: escolha por quadradinhos, como as categorias.
+     O campo de texto só aparece em "Outra". */
+  function grade(inp,wrap,dd){
+    const g=document.createElement("div"); g.className="cat-grid inst-grid";
+    dd.parentNode.insertBefore(g,dd);
+    let todas=false, livre=false;
+    const ehLista=v=>!!v&&!!achar(v);
+    const tile=(nome,on)=>'<button type="button" class="cat-btn inst-tile'+(on?' on':'')+'" data-v="'+esc(nome)+'">'
+      +'<span class="ico">'+instBadge(nome,34)+'</span><span class="lbl">'+esc(curto(nome))+'</span></button>';
+    const desenhar=()=>{
+      const v=inp.value.trim(), oficial=ehLista(v)?(achar(v)||[v])[0]:"";
+      if(v&&!oficial) livre=true;
+      let nomes=todas?L.map(x=>x[0]):TOPO.slice();
+      if(oficial&&nomes.indexOf(oficial)<0) nomes.unshift(oficial);
+      let h=nomes.map(n=>tile(n,n===oficial)).join("");
+      h+='<button type="button" class="cat-btn inst-tile inst-mais" data-acao="mais"><span class="ico"><span class="inst-sym">'
+        +(todas?"−":"⋯")+'</span></span><span class="lbl">'+(todas?TX("Menos","Less","Weniger"):TX("Todas","All","Alle"))+'</span></button>';
+      h+='<button type="button" class="cat-btn inst-tile inst-mais'+(livre?' on':'')+'" data-acao="outra"><span class="ico"><span class="inst-sym">+</span></span><span class="lbl">'
+        +TX("Outra","Other","Andere")+'</span></button>';
+      if(g._ult!==h){ g.innerHTML=h; g._ult=h; }
+      wrap.style.display=livre?"":"none";
+      if(!livre) dd.style.display="none";
+    };
+    g.addEventListener("click",e=>{
+      const b=e.target.closest(".inst-tile"); if(!b) return;
+      const ac=b.dataset.acao;
+      if(ac==="mais"){ todas=!todas; desenhar(); return; }
+      if(ac==="outra"){
+        livre=!livre;
+        if(livre){ if(ehLista(inp.value)) inp.value=""; desenhar(); inp._instUlt=null; pintar2(); setTimeout(()=>inp.focus(),30); }
+        else { desenhar(); }
+        return;
+      }
+      livre=false; inp.value=b.dataset.v; pintar2(); desenhar();
+      inp.dispatchEvent(new Event("input",{bubbles:true}));
+      inp.dispatchEvent(new Event("change",{bubbles:true}));
+    });
+    const pintar2=()=>{ try{ inp._instPintarBase(); }catch(e){} };
+    inp._instPintarBase=inp._instPintar;
+    inp._instPintar=()=>{ inp._instPintarBase(); const v=inp.value.trim(); if(v) livre=!ehLista(v); else if(document.activeElement!==inp) livre=false; desenhar(); };
+    desenhar();
   }
   function repintar(){ document.querySelectorAll("input[data-inst]").forEach(e=>{ if(e._instPintar) e._instPintar(); }); }
   window.instRepintar=repintar; window.instMontar=montar;
@@ -36633,6 +36742,18 @@ window.GUIA={iniciar,fechar,ROT};
 .inst-wrap.inst-in-box>.inst-chev{ right:0; }
 .inst-op-livre{ border-top:1px solid var(--line,#E1DED7); border-radius:0 0 10px 10px; color:var(--ink-2,#67635C); }
 .inst-vazio{ padding:12px; font-size:13px; color:var(--ink-2,#67635C); }
+.inst-badge{ position:relative; overflow:hidden; }
+.inst-badge>.inst-logo{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#fff; opacity:0; }
+.inst-badge.tem-logo{ box-shadow:inset 0 0 0 1px var(--line,#E1DED7); }
+.inst-badge.tem-logo>.inst-logo{ opacity:1; }
+.inst-grid{ grid-template-columns:repeat(4,minmax(0,1fr))!important; border-color:var(--line)!important; padding:10px!important; gap:6px!important; margin-bottom:12px!important; }
+.inst-grid .inst-tile{ padding:9px 2px!important; gap:6px!important; border-color:var(--line); min-width:0; }
+.inst-grid .inst-tile .ico{ display:flex; font-size:0!important; }
+.inst-grid .inst-tile .lbl{ font-size:10px!important; color:var(--ink-2); max-width:100%; line-height:1.15!important; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:normal!important; }
+.inst-grid .inst-tile.on{ border-color:#0F2440; box-shadow:inset 0 0 0 1px #0F2440; background:rgba(15,36,64,.05); }
+.inst-grid .inst-tile.on .lbl{ color:#0F2440; font-weight:600; }
+.inst-sym{ width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  border:1.5px dashed var(--line,#E1DED7); color:var(--ink-2,#67635C); font-size:17px; font-weight:600; box-sizing:border-box; }
 </style>
 
 <style id="toque-selecao-css">
@@ -36806,7 +36927,7 @@ html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-ar
 /* v11.45 — atalhos ×2 ×3 ÷2 ÷3 nos campos numéricos */
 (function(){
   var bar=null, alvo=null, t=0;
-  var FORA=/cnpj|cpf|cep|phone|tel|ticker|senha|pass|pin|ano|year/i;
+  var FORA=/(^|[-_ ])(cnpj|cpf|cep|phone|tel|fone|ticker|senha|pass|pin|ano|year|search|busca|cnpj\w*)($|[-_ ])/i;
   function ehNum(el){
     if(!el||el.tagName!=="INPUT"||el.readOnly||el.disabled) return false;
     if(el.closest&&el.closest("[data-nocalc],.overlay:not(.open)")) return false;
@@ -36814,8 +36935,14 @@ html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-ar
     if(el.type==="number") return true;
     if(el.type!=="text"&&el.type!=="tel") return false;
     var im=(el.getAttribute("inputmode")||"").toLowerCase();
-    return im==="decimal"||im==="numeric";
+    if(im==="decimal"||im==="numeric") return true;
+    /* campo de valor sem inputmode: máscara de moeda/número ou cara de valor */
+    if(el.classList.contains("f-amount")) return true;
+    if(/mask(Currency|Dec|Decimal|Num|Money|Pct|Valor)|PRO\.mask/i.test(el.getAttribute("oninput")||"")) return true;
+    var ph=String(el.getAttribute("placeholder")||"");
+    return /^\s*(R\$\s*)?-?0([.,]0+)?\s*%?\s*$/.test(ph);
   }
+  window.__calcEhNum=ehNum;
   function moeda(el){
     return /maskCurrency/.test(el.getAttribute("oninput")||"")||el.classList.contains("f-amount")||
       /^-?\d{1,3}(\.\d{3})*,\d{2}$/.test(String(el.value||"").trim());
