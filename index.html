@@ -2409,8 +2409,8 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
         </select>
         <select id="type-filter-sel" class="sel-sm" onchange="setTypeFilter(this.value)" style="flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);color:var(--body);border-radius:8px;padding:3px 5px;font-size:9.5px;cursor:pointer">
           <option value="all" data-i18n="all_types">Todos</option>
-          <option value="fixed" data-i18n="type_fixed_opt">📌 Fixos</option>
-          <option value="variable" data-i18n="type_variable_opt">⚡ Variáveis</option>
+          <option value="fixed" data-i18n="type_fixed_opt">Fixos</option>
+          <option value="variable" data-i18n="type_variable_opt">Variáveis</option>
         </select>
         <select id="list-sort" class="sel-sm" onchange="renderList()" style="flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);color:var(--body);border-radius:8px;padding:3px 5px;font-size:9.5px;cursor:pointer">
           <option value="date-desc" data-i18n="sort_recent">📅 Rec.</option>
@@ -2428,8 +2428,8 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
           <select id="batch-cat-sel" class="sel-sm" style="background:var(--paper);border:1px solid var(--line);color:var(--body);border-radius:8px;padding:4px 8px;font-size:11px;flex:1;min-width:0"></select>
           <select id="batch-type-sel" class="sel-sm" style="background:var(--paper);border:1px solid var(--line);color:var(--body);border-radius:8px;padding:4px 8px;font-size:11px">
             <option value="" data-i18n="type_label_opt">Tipo...</option>
-            <option value="variable" data-i18n="type_variable_opt">⚡ Variável</option>
-            <option value="fixed" data-i18n="type_fixed_opt">📌 Fixo</option>
+            <option value="variable" data-i18n="type_variable_opt">Variável</option>
+            <option value="fixed" data-i18n="type_fixed_opt">Fixo</option>
           </select>
           <button onclick="applyBatch()" style="background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer" data-i18n="apply_btn">✓ Aplicar</button>
           <button onclick="clearBatch()" style="background:none;border:none;color:var(--ink-3);font-size:18px;cursor:pointer;line-height:1">×</button>
@@ -2617,8 +2617,8 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
         </select>
         <select id="inc-recur-filter" class="sel-sm" onchange="renderIncomeList()" style="flex:1;min-width:0;background:rgba(26,58,92,.08);border:1px solid rgba(26,58,92,.2);color:var(--body);border-radius:10px;padding:5px 8px;font-size:11px;cursor:pointer">
           <option value="all" data-i18n="all_types">Todos</option>
-          <option value="recurring" data-i18n="stat_fixed">🔁 Fixas</option>
-          <option value="once" data-i18n="stat_var">✨ Variáveis</option>
+          <option value="recurring" data-i18n="stat_fixed">Fixas</option>
+          <option value="once" data-i18n="stat_var">Variáveis</option>
         </select>
         <select id="inc-sort" class="sel-sm" onchange="renderIncomeList()" style="flex:1;min-width:0;background:rgba(26,58,92,.08);border:1px solid rgba(26,58,92,.2);color:var(--body);border-radius:10px;padding:5px 8px;font-size:11px;cursor:pointer">
           <option value="date-desc" data-i18n="sort_recent">📅 Rec.</option>
@@ -2718,7 +2718,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
           <div style="font-size:12px;font-weight:600;color:var(--body)" id="ast-snapshot-label">Posição de —</div>
           <div style="font-size:11px;color:var(--ink-2);margin-top:2px" data-i18n="save_pos">Salvar total atual como snapshot</div>
         </div>
-        <button onclick="saveAssetSnapshot()" style="background:#0F2440;color:#fff;border:none;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer" data-i18n="save_snapshot">💾 Salvar</button>
+        <button onclick="saveAssetSnapshot()" style="background:#0F2440;color:#fff;border:none;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer" data-i18n="save_snapshot">Salvar</button>
       </div>
 
       <div class="sec-label" data-i18n="by_class">Alocação por classe</div>
@@ -2747,7 +2747,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
         <select id="ast-sort" class="sel-sm" onchange="renderAssetList()" style="flex:1;min-width:0;background:rgba(15,36,64,.08);border:1px solid rgba(15,36,64,.2);color:var(--body);border-radius:10px;padding:5px 8px;font-size:11px;cursor:pointer">
           <option value="bal-desc" data-i18n="sort_higher">💰 Maior</option>
           <option value="bal-asc" data-i18n="sort_lower">💰 Menor</option>
-          <option value="yield-desc" data-i18n="sort_yield">📈 Rend.</option>
+          <option value="yield-desc" data-i18n="sort_yield">Rend.</option>
           <option value="az" data-i18n="sort_az_short">🔤 A→Z</option>
         </select>
       </div>
@@ -2870,7 +2870,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
         <select id="debt-sort" class="sel-sm" onchange="renderDebtList()" style="flex:1;min-width:0;background:rgba(110,43,58,.08);border:1px solid rgba(110,43,58,.2);color:var(--body);border-radius:10px;padding:5px 8px;font-size:11px;cursor:pointer">
           <option value="bal-desc" data-i18n="sort_higher">💰 Maior</option>
           <option value="bal-asc" data-i18n="sort_lower">💰 Menor</option>
-          <option value="rate-desc" data-i18n="sort_rate">📈 Juros</option>
+          <option value="rate-desc" data-i18n="sort_rate">Juros</option>
           <option value="due" data-i18n="sort_due">📅 Vencimento</option>
         </select>
       </div>
@@ -3115,8 +3115,8 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <div data-wz="type">
     <label class="f-label" data-i18n="type">Tipo</label>
     <div class="type-row">
-      <button class="type-btn t-var" id="type-variable" onclick="selectType('variable')" data-i18n="type_variable">⚡ Variável</button>
-      <button class="type-btn" id="type-fixed" onclick="selectType('fixed')" data-i18n="type_fixed">📌 Fixo</button>
+      <button class="type-btn t-var" id="type-variable" onclick="selectType('variable')" data-i18n="type_variable">Variável</button>
+      <button class="type-btn" id="type-fixed" onclick="selectType('fixed')" data-i18n="type_fixed">Fixo</button>
     </div>
 
     </div>
@@ -3715,8 +3715,8 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
       <select id="rule-cat" class="f-input" style="margin-bottom:10px"></select>
       <label class="f-label" data-i18n="type">Tipo</label>
       <div style="display:flex;gap:6px;margin-bottom:14px">
-        <button id="rule-type-var" class="type-btn t-var" onclick="ruleTypeToggle('variable')" style="flex:1" data-i18n="type_variable">⚡ Variável</button>
-        <button id="rule-type-fix" class="type-btn" onclick="ruleTypeToggle('fixed')" style="flex:1" data-i18n="type_fixed">📌 Fixo</button>
+        <button id="rule-type-var" class="type-btn t-var" onclick="ruleTypeToggle('variable')" style="flex:1" data-i18n="type_variable">Variável</button>
+        <button id="rule-type-fix" class="type-btn" onclick="ruleTypeToggle('fixed')" style="flex:1" data-i18n="type_fixed">Fixo</button>
       </div>
       <button onclick="addRule()" style="width:100%;padding:11px;border-radius:12px;background:var(--accent);color:var(--accent-ink);border:none;font-size:13px;font-weight:600;cursor:pointer" data-i18n="add_rule">+ Adicionar regra</button>
     </div>
@@ -3756,7 +3756,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
     <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
       <button onclick="reviewSelectAll(true)"  class="review-qbtn" data-i18n="select_all">✓ Selecionar todos</button>
       <button onclick="reviewSelectAll(false)" class="review-qbtn" data-i18n="deselect_all">✕ Desmarcar todos</button>
-      <button onclick="reviewSkipNeutral()"    class="review-qbtn" style="border-color:var(--accent-lt);color:var(--accent)" data-i18n="deselect_neutral">⚡ Desmarcar neutros</button>
+      <button onclick="reviewSkipNeutral()"    class="review-qbtn" style="border-color:var(--accent-lt);color:var(--accent)" data-i18n="deselect_neutral">Desmarcar neutros</button>
     </div>
 
     <!-- sort bar -->
@@ -4026,7 +4026,7 @@ const I18N={
     by_type:"Por tipo de receita",
     by_class:"Alocação por classe",
     top_positions:"Maiores posições",
-    save_snapshot:"💾 Salvar",
+    save_snapshot:"Salvar",
     no_expenses:"Nenhum gasto neste mês.",
     no_income:"Nenhuma entrada registrada.",
     no_assets:"Nenhuma aplicação cadastrada.",
@@ -4093,8 +4093,8 @@ const I18N={
     import_file:"📥 Importar este arquivo",
     remaining:"restante",
     to_goal:"para a meta",
-    stat_fixed:"🔁 Fixas",
-    stat_var:"✨ Variáveis",
+    stat_fixed:"Fixas",
+    stat_var:"Variáveis",
     income_total:"Total de entradas",
     portfolio_total:"Patrimônio total",
     portfolio_total_lc:"patrimônio total",
@@ -4130,7 +4130,7 @@ const I18N={
     review_title:"Revisar lançamentos",
     select_all:"✓ Selecionar todos",
     deselect_all:"✕ Desmarcar todos",
-    deselect_neutral:"⚡ Desmarcar neutros",
+    deselect_neutral:"Desmarcar neutros",
     sort_label:"Ordenar:",
     sort_date_new:"📅 Data (recente)",
     sort_date_old:"📅 Data (antiga)",
@@ -4144,17 +4144,17 @@ const I18N={
     sort_lower:"💰 Menor",
     sort_az_short:"🔤 A→Z",
     sort_za_short:"🔤 Z→A",
-    sort_yield:"📈 Rend.",
+    sort_yield:"Rend.",
     currency_amount:"Moeda & Valor",
     desc_placeholder:"Ex: Almoço, Conta de luz…",
     split_pct:"Por %",
     split_value:"Por valor",
     add_new_plus:"+ Novo",
     start_date:"Data inicial",
-    type_variable:"⚡ Variável",
-    type_fixed:"📌 Fixo",
-    type_variable_opt:"⚡ Variáveis",
-    type_fixed_opt:"📌 Fixos",
+    type_variable:"Variável",
+    type_fixed:"Fixo",
+    type_variable_opt:"Variáveis",
+    type_fixed_opt:"Fixos",
     type_label_opt:"Tipo...",
     repeat_until:"Repetir até",
     repeat_until_opt:"Repetir até (opcional)",
@@ -4602,7 +4602,7 @@ const I18N={
     sim_enter_extra:"Digite um valor de pagamento extra acima para simular.",
     sim_no_debts:"Nenhuma dívida com parcela cadastrada.",
     sim_payment_low:"A parcela atual não cobre os juros desta dívida.",
-    sort_rate:"📈 Juros",
+    sort_rate:"Juros",
     sort_due:"📅 Vencimento",
     err_debt_fill:"Preencha nome e saldo devedor",
     err_pay_amount:"Informe um valor de pagamento válido",
@@ -5149,7 +5149,7 @@ const I18N={
     by_type:"By income type",
     by_class:"Allocation by class",
     top_positions:"Top positions",
-    save_snapshot:"💾 Save",
+    save_snapshot:"Save",
     no_expenses:"No expenses this month.",
     no_income:"No income recorded.",
     no_assets:"No holdings added.",
@@ -5216,8 +5216,8 @@ const I18N={
     import_file:"📥 Import this file",
     remaining:"remaining",
     to_goal:"to goal",
-    stat_fixed:"🔁 Recurring",
-    stat_var:"✨ One-off",
+    stat_fixed:"Recurring",
+    stat_var:"One-off",
     income_total:"Total income",
     portfolio_total:"Total portfolio",
     portfolio_total_lc:"total portfolio",
@@ -5252,7 +5252,7 @@ const I18N={
     review_title:"Review transactions",
     select_all:"✓ Select all",
     deselect_all:"✕ Deselect all",
-    deselect_neutral:"⚡ Deselect neutral",
+    deselect_neutral:"Deselect neutral",
     sort_label:"Sort:",
     sort_date_new:"📅 Date (newest)",
     sort_date_old:"📅 Date (oldest)",
@@ -5266,17 +5266,17 @@ const I18N={
     sort_lower:"💰 Lower",
     sort_az_short:"🔤 A→Z",
     sort_za_short:"🔤 Z→A",
-    sort_yield:"📈 Yield",
+    sort_yield:"Yield",
     currency_amount:"Currency & Amount",
     desc_placeholder:"E.g.: Lunch, Electricity…",
     split_pct:"By %",
     split_value:"By value",
     add_new_plus:"+ New",
     start_date:"Start date",
-    type_variable:"⚡ Variable",
-    type_fixed:"📌 Fixed",
-    type_variable_opt:"⚡ Variable",
-    type_fixed_opt:"📌 Fixed",
+    type_variable:"Variable",
+    type_fixed:"Fixed",
+    type_variable_opt:"Variable",
+    type_fixed_opt:"Fixed",
     type_label_opt:"Type...",
     repeat_until:"Repeat until",
     repeat_until_opt:"Repeat until (optional)",
@@ -5724,7 +5724,7 @@ const I18N={
     sim_enter_extra:"Enter an extra payment amount above to simulate.",
     sim_no_debts:"No debts with a payment set.",
     sim_payment_low:"The current payment doesn't cover this debt's interest.",
-    sort_rate:"📈 Interest",
+    sort_rate:"Interest",
     sort_due:"📅 Due date",
     err_debt_fill:"Fill in name and balance",
     err_pay_amount:"Enter a valid payment amount",
@@ -6271,7 +6271,7 @@ const I18N={
     by_type:"Nach Einnahmentyp",
     by_class:"Aufteilung nach Klasse",
     top_positions:"Top Positionen",
-    save_snapshot:"💾 Speichern",
+    save_snapshot:"Speichern",
     no_expenses:"Keine Ausgaben diesen Monat.",
     no_income:"Keine Einnahmen erfasst.",
     no_assets:"Keine Anlagen hinzugefügt.",
@@ -6338,8 +6338,8 @@ const I18N={
     import_file:"📥 Diese Datei importieren",
     remaining:"verbleibend",
     to_goal:"zum Ziel",
-    stat_fixed:"🔁 Wiederkehrend",
-    stat_var:"✨ Einmalig",
+    stat_fixed:"Wiederkehrend",
+    stat_var:"Einmalig",
     income_total:"Gesamteinnahmen",
     portfolio_total:"Gesamtvermögen",
     portfolio_total_lc:"Gesamtvermögen",
@@ -6374,7 +6374,7 @@ const I18N={
     review_title:"Buchungen prüfen",
     select_all:"✓ Alle auswählen",
     deselect_all:"✕ Alle abwählen",
-    deselect_neutral:"⚡ Neutrale abwählen",
+    deselect_neutral:"Neutrale abwählen",
     sort_label:"Sortieren:",
     sort_date_new:"📅 Datum (neueste)",
     sort_date_old:"📅 Datum (älteste)",
@@ -6388,17 +6388,17 @@ const I18N={
     sort_lower:"💰 Niedriger",
     sort_az_short:"🔤 A→Z",
     sort_za_short:"🔤 Z→A",
-    sort_yield:"📈 Rendite",
+    sort_yield:"Rendite",
     currency_amount:"Währung & Betrag",
     desc_placeholder:"Z.B.: Mittagessen, Strom…",
     split_pct:"Nach %",
     split_value:"Nach Wert",
     add_new_plus:"+ Neu",
     start_date:"Startdatum",
-    type_variable:"⚡ Variabel",
-    type_fixed:"📌 Fest",
-    type_variable_opt:"⚡ Variabel",
-    type_fixed_opt:"📌 Fest",
+    type_variable:"Variabel",
+    type_fixed:"Fest",
+    type_variable_opt:"Variabel",
+    type_fixed_opt:"Fest",
     type_label_opt:"Typ...",
     repeat_until:"Wiederholen bis",
     repeat_until_opt:"Wiederholen bis (optional)",
@@ -6846,7 +6846,7 @@ const I18N={
     sim_enter_extra:"Oben einen Sonderzahlungsbetrag eingeben zum Simulieren.",
     sim_no_debts:"Keine Schulden mit festgelegter Rate.",
     sim_payment_low:"Die aktuelle Rate deckt die Zinsen dieser Schuld nicht.",
-    sort_rate:"📈 Zinsen",
+    sort_rate:"Zinsen",
     sort_due:"📅 Fälligkeit",
     err_debt_fill:"Name und Saldo ausfüllen",
     err_pay_amount:"Gültigen Zahlungsbetrag eingeben",
@@ -9016,7 +9016,7 @@ function renderList(){
      Limpar ao lado: a faixa "Mostrando…" era redundante e ocupava a tela */
   const typeTag=false
     ?`<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;padding:6px 10px;background:rgba(255,255,255,.12);border-radius:8px">
-        <span style="font-size:11px;color:rgba(255,255,255,.85)">${listCurrentType==="fixed"?"📌 "+t("w_showing")+": "+t("fixed"):"⚡ "+t("w_showing")+": "+t("variable")}</span>
+        <span style="font-size:11px;color:rgba(255,255,255,.85)">${listCurrentType==="fixed"?""+t("w_showing")+": "+t("fixed"):""+t("w_showing")+": "+t("variable")}</span>
         <button onclick="listCurrentType='all';renderList();" style="margin-left:auto;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;cursor:pointer">✕ ${t("w_clear")}</button>
       </div>`:"";
 
@@ -10240,8 +10240,6 @@ function renderIncome(){
     
     <div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,38px);line-height:1;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" data-total="${fmt(total)}">${fmt(total)}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">${t("stat_fixed")} ${fmt(recurringTotal)}</div>
-      <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">${t("stat_var")} ${fmt(total-recurringTotal-anuais)}</div>
       ${anuais>0?`<div style="background:rgba(212,160,90,.22);border-radius:20px;padding:3px 10px;font-size:11px;color:#F3DFC0">🎯 ${t("inc_annual")} ${fmt(anuais)}</div>`:""}
     </div>`;
   if(INC_V==="dashboard") renderIncomeDash();
@@ -10779,6 +10777,12 @@ function astAplicacoesDoMes(ymStr){
     let p; try{ p=(window.PRO&&PRO.astPro)?PRO.astPro(a):(a.pro||{}); }catch(e){ p=a.pro||{}; }
     const dt=String(p.aplic||a.lastUpdate||"");
     const ymA=dt.slice(0,7);
+    const cps=(a.class==="stocks"&&Array.isArray(p.compras))?p.compras.filter(c=>c&&+c.q>0&&+c.p>0&&c.d):[];
+    if(cps.length){
+      cps.forEach((c,i)=>{ if(String(c.d).slice(0,7)===ymStr)
+        novas.push({a,dt:c.d,valor:R2c(c.q*c.p),reap:i===0&&!!a.reaplic,reapV:null}); });
+      return;
+    }
     if(ymA===ymStr){
       novas.push({a,dt,valor:R2c(+p.custo>0?+p.custo:(parseFloat(a.balance)||0)),reap:!!a.reaplic,
         reapV:(a.reaplic&&+a.reaplicValor>0)?R2c(Math.min(+a.reaplicValor,+p.custo||+a.balance||0)):null});
@@ -10823,11 +10827,11 @@ function renderAstValidador(){
     const dif=R2c(novo-sobra), tol=Math.max(1,Math.abs(sobra)*0.02);
     if(Math.abs(dif)<=tol) veredito=`<div class="ap-chk ok"><i>✓</i><span>${TXd("O dinheiro novo bate com a sobra de caixa do mês.","New money matches the month's cash surplus.","Neues Geld entspricht dem Überschuss.")}</span></div>`;
     else if(dif>0) veredito=`<div class="ap-chk warn"><i>!</i><span>${TXd("Aplicou "+fmt(dif)+" a mais do que sobrou no mês. Se parte veio de um resgate, marque como reaplicação; senão, confira entradas e despesas do mês.","Invested "+fmt(dif)+" more than the surplus. Mark reinvestments or check income and expenses.","Mehr angelegt als übrig. Wiederanlagen markieren oder Monat prüfen.")}</span></div>`;
-    else veredito=`<div class="ap-chk"><i>·</i><span>${TXd("Sobraram "+fmt(-dif)+" sem aplicação registrada neste mês.",fmt(-dif)+" of surplus has no recorded investment.",fmt(-dif)+" Überschuss ohne Anlage.")}</span></div>`;
+    else veredito=`<div class="ap-chk"><i>·</i><span>${TXd(fmt(-dif)+" da sobra ainda sem aplicação.",fmt(-dif)+" of surplus not yet invested.",fmt(-dif)+" Überschuss noch nicht angelegt.")}</span></div>`;
   }
   el.innerHTML=`<div class="ap-group" style="margin-bottom:14px">
     <div class="ap-group-h">${TXd("Aplicações do mês","This month's investments","Anlagen des Monats")} · ${ymRotulo(ymS)}
-      <small>${TXd("Marque o que foi reaplicação de um resgate — não é dinheiro novo","Mark what was reinvested from a redemption — it isn't new money","Wiederanlagen markieren — kein neues Geld")}</small></div>
+      ${novas.length?`<small>${TXd("Marque reaplicações de resgates","Mark reinvested redemptions","Wiederanlagen markieren")}</small>`:""}</div>
     ${novas.length?novas.map(x=>`<div class="ap-vrow">
         <div style="flex:1;min-width:0">
           <div class="ap-vn">${x.a.name||"—"}</div>
@@ -10838,7 +10842,7 @@ function renderAstValidador(){
           <button type="button" class="ap-pill${x.reap?" on":""}" onclick="astMarcarReaplic('${x.a.id}')" oncontextmenu="event.preventDefault();astReaplicParcial('${x.a.id}')">${x.reap?"↺ "+TXd("Reaplicação","Reinvested","Wiederanlage"):TXd("Dinheiro novo","New money","Neues Geld")}</button>
           ${x.reap?`<button type="button" class="ap-link" style="font-size:11px;color:var(--ink-3);display:block;margin-left:auto" onclick="astReaplicParcial('${x.a.id}')">${TXd("valor parcial","partial","Teilbetrag")}</button>`:""}
         </div></div>`).join("")
-      :`<div class="ap-vs" style="padding:8px 0 4px">${TXd("Nenhuma aplicação com data neste mês.","No investment dated this month.","Keine Anlage in diesem Monat.")}</div>`}
+      :`<div class="ap-vs" style="padding:6px 0 2px">${TXd("Nenhuma aplicação neste mês.","No investments this month.","Keine Anlagen in diesem Monat.")}</div>`}
     <div class="ap-vt">
       ${linha(TXd("Aplicado no mês","Invested this month","Angelegt"),fmt(totNovas))}
       ${totReap>0?linha("(−) "+TXd("Reaplicações","Reinvestments","Wiederanlagen"),"−"+fmt(totReap)):""}
@@ -10885,11 +10889,10 @@ function renderAssets(){
   if(heroEl) heroEl.innerHTML=`
         <div style="font-family:var(--serif);font-style:italic;font-size:clamp(26px,8vw,38px);line-height:1;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" data-total="${fmt(total)}">${fmt(total)}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">📈 ${t("monthly_yield")} ${fmt(monthYield)}</div>
       ${(Math.abs(RZM.realizado)>=0.01||Math.abs(RZM.antes)>=0.01)?`<div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">✓ ${SGP("+")}${fmt(RZM.realizado)} ${PRO.PX("enc_rz_chip")}${RZM.antes>=0.01?` · ${SGP("−")}${fmt(RZM.antes)} ${PRO.PX("enc_rz_chip2")}`:""}</div>`:""}
       ${astChipMesAst()}
       ${aporteProj>0?`<div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">💰 ${t("ast_contrib")} ${fmt(aporteProj)}</div>`:""}
-      ${(noMes&&rendAcum>0)?`<button class="ast-rend-chip" onclick="event.stopPropagation();openAstRendPopup()" style="background:rgba(127,228,160,.18);border-radius:20px;padding:3px 10px;font-size:11px;color:#CFF3DA">⏱ ${SGP("+")}${fmt(rendAcum)} ${t("ar_chip")} ⓘ</button>`:""}
+      ${(noMes&&rendAcum>0)?`<button class="ast-rend-chip" onclick="event.stopPropagation();openAstRendPopup()" style="background:rgba(127,228,160,.18);border-radius:20px;padding:3px 10px;font-size:11px;color:#CFF3DA">${SGP("+")}${fmt(rendAcum)} ${t("ar_chip")} ⓘ</button>`:""}
       ${(FA.length<astBaseLista().filter(a=>!astVencidaFora(a)).length)?`<div style="background:rgba(255,255,255,.18);border-radius:20px;padding:3px 10px;font-size:11px">🔍 ${t("w_filtered")}</div>`:""}
       <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:3px 10px;font-size:11px">${FA.length} ${t("w_holdings")}</div>
     </div>`;
@@ -16023,7 +16026,7 @@ function nextDueDate(dueDay){
 
 function populateDebtTypeFilter(){
   const sel=document.getElementById("debt-type-filter");
-  if(sel) sel.innerHTML=`<option value="all">📌 ${t("all_types")}</option>`+DEBT_TYPES.map(d=>`<option value="${d.id}">${d.emoji} ${catLabel(d)}</option>`).join("");
+  if(sel) sel.innerHTML=`<option value="all">${t("all_types")}</option>`+DEBT_TYPES.map(d=>`<option value="${d.id}">${d.emoji} ${catLabel(d)}</option>`).join("");
 }
 
 function renderDebtList(){
@@ -17901,7 +17904,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.44";
+const APP_VERSION="11.45";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -18143,7 +18146,7 @@ const TXD={
 "A lei permite uma utilização por vez: escolher uma modalidade substitui a anterior.":["The law allows one use at a time: picking an option replaces the previous one.","Das Gesetz erlaubt eine Nutzung zugleich: Eine neue Option ersetzt die vorherige."],
 "1ª parcela abatida em":["1st covered instalment in","1. gedeckte Rate im"],
 "Teto por parcela (máx. 80%)":["Cap per instalment (max. 80%)","Obergrenze je Rate (max. 80%)"],
-"🔁 Renovar a cada 12 meses":["🔁 Renew every 12 months","🔁 Alle 12 Monate erneuern"],
+"Renovar a cada 12 meses":["Renew every 12 months","Alle 12 Monate erneuern"],
 "Alívio por parcela":["Relief per instalment","Entlastung je Rate"],
 " de 12 parcelas · ":[" of 12 instalments · "," von 12 Raten · "],
 "% de cada":["% of each","% je Rate"],
@@ -18271,7 +18274,7 @@ const TXD={
 "Informe saldo devedor, taxa e prazo para simular.":["Enter outstanding balance, rate and term to simulate.","Restsaldo, Zinssatz und Laufzeit für die Simulation eingeben."],
 "As três modalidades com o mesmo saldo":["The three options with the same balance","Die drei Varianten mit demselben Guthaben"],
 "Menor prestação do período":["Lowest instalment in the period","Niedrigste Rate im Zeitraum"],
-"🔁 Repetir a cada 24 meses":["🔁 Repeat every 24 months","🔁 Alle 24 Monate wiederholen"],
+"Repetir a cada 24 meses":["Repeat every 24 months","Alle 24 Monate wiederholen"],
 "Aplicar ao financiamento":["Apply to the financing","Auf die Finanzierung anwenden"],
 "Primeiras parcelas com FGTS":["First instalments with FGTS","Erste Raten mit FGTS"],
 "FGTS aplicado ao financiamento":["FGTS applied to the financing","FGTS auf die Finanzierung angewendet"],
@@ -18302,7 +18305,7 @@ const TXD={
 "Abatimento":["Instalment cover","Ratendeckung"],
 "Amortização":["Amortisation","Tilgung"],
 "Liquidação":["Pay-off","Ablösung"],
-"⏱ O prazo":["⏱ The term","⏱ Laufzeit"],
+"O prazo":["The term","Laufzeit"],
 "💵 A prestação":["💵 The instalment","💵 Rate"],
 "Quita em ":["Paid off in ","Abgelöst in "],
 "Prestação":["Instalment","Rate"],
@@ -18585,7 +18588,7 @@ const TXD={
 "Vencimento / carência":["Maturity / lock-up","Fälligkeit / Sperrfrist"],
 "Performance sobre o CDI":["Performance fee over CDI","Performancegebühr über CDI"],
 "Performance sobre o IPCA":["Performance fee over inflation","Performancegebühr über Inflation"],
-"🍽 Come-cotas (mai/nov)":["🍽 Semi-annual tax (May/Nov)","🍽 Halbjahressteuer (Mai/Nov)"],
+"Come-cotas (mai/nov)":["🍽 Semi-annual tax (May/Nov)","🍽 Halbjahressteuer (Mai/Nov)"],
 "Liquidez e prazos":["Liquidity and terms","Liquidität und Fristen"],
 "Data da aplicação":["Investment date","Anlagedatum"],
 "Taxa de administração":["Management fee","Verwaltungsgebühr"],
@@ -18722,12 +18725,8 @@ const PDIC={
   p_tab_inv:["Aplicações","Holdings","Anlagen"],
   p_tab_enc:["Encargos","Fees","Gebühren"],
   p_tab_hist:["Histórico","History","Historie"],
-  p_h_note:["A série mensal realizada de cada índice, como divulgada pelo Banco Central. É ela que corrige uma aplicação feita no passado até o saldo de hoje.",
-    "The realized monthly series of each index, as published by the Central Bank. It is what carries a past investment forward to today's balance.",
-    "Die realisierte Monatsreihe jedes Index, wie von der Zentralbank veröffentlicht. Sie schreibt eine frühere Anlage bis zum heutigen Saldo fort."],
-  p_h_lock:["Estes números não são editáveis: vêm do SGS do Banco Central. O que você declara na aba Macro vale do mês corrente em diante — o passado é fato.",
-    "These figures are not editable: they come from the Central Bank's SGS. What you declare on the Macro tab applies from the current month onward — the past is fact.",
-    "Diese Werte sind nicht editierbar: Sie stammen aus dem SGS der Zentralbank. Ihre Angaben im Reiter Makro gelten ab dem laufenden Monat — die Vergangenheit ist Fakt."],
+  p_h_note:["Série mensal realizada de cada índice (Banco Central). Corrige aplicações antigas até hoje.", "Monthly realized series of each index (Central Bank). Grows past investments to today.", "Monatliche Ist-Reihe je Index (Zentralbank). Schreibt alte Anlagen bis heute fort."],
+  p_h_lock:["Dados do Banco Central, não editáveis. O que você declara em Macro vale do mês atual em diante.", "Central Bank data, not editable. What you set in Macro applies from this month on.", "Zentralbankdaten, nicht editierbar. Angaben unter Makro gelten ab diesem Monat."],
   p_h_idx:["Índice","Index","Index"],
   p_h_source:["Origem dos dados","Data source","Datenquelle"],
   p_h_origin:["Fonte","Source","Quelle"],
@@ -18742,9 +18741,7 @@ const PDIC={
   p_h_empty:["Nenhuma série baixada ainda. Toque no botão acima para buscar no Banco Central.",
     "No series downloaded yet. Tap the button above to fetch from the Central Bank.",
     "Noch keine Reihe geladen. Tippen Sie oben, um sie von der Zentralbank zu holen."],
-  p_h_use:["Onde isto é usado: dedução do montante aplicado a partir do saldo informado, curva de evolução de cada aplicação, correção de dívidas indexadas e acumulado de doze meses dos reajustes por índice.",
-    "Where this is used: deriving the amount invested from the reported balance, each holding's evolution curve, indexed debt correction and the twelve-month accumulation behind index-linked raises.",
-    "Verwendung: Ableitung des Anlagebetrags aus dem gemeldeten Saldo, Verlaufskurve jeder Anlage, Korrektur indexierter Schulden und die Zwölfmonatssumme für indexgebundene Erhöhungen."],
+  p_h_use:["Usado na dedução do valor aplicado, na evolução das aplicações e na correção de dívidas e reajustes.", "Used to derive invested amounts, grow investments and adjust indexed debts and rents.", "Genutzt für Anlagebeträge, Anlageentwicklung sowie indexierte Schulden und Anpassungen."],
   p_save:["Salvar parâmetros","Save parameters","Parameter speichern"],
   p_saved:["Parâmetros salvos","Parameters saved","Parameter gespeichert"],
   p_reset:["Restaurar padrão legal","Restore legal defaults","Gesetzliche Werte"],
@@ -18770,9 +18767,7 @@ const PDIC={
   p_in12:["em 12 meses","over 12 months","in 12 Monaten"],
   p_in_h:["no horizonte","over the horizon","im Horizont"],
   p_equiv_m:["equivale ao mês","monthly equivalent","monatlich entspricht"],
-  p_note_macro:["A curva é uma escada: a taxa declarada num mês vale dele em diante, até que outro mês receba um número diferente. Só é preciso marcar as viradas. Além do horizonte manda a taxa de longo prazo, e meses já fechados usam sempre o dado do Banco Central.",
-    "The curve is a step function: a rate declared in one month holds from there on, until another month gets a different number. Only the turning points need marking. Past the horizon the long-term rate takes over, and closed months always use Central Bank data.",
-    "Die Kurve ist eine Treppenfunktion: ein in einem Monat erklärter Satz gilt ab da, bis ein anderer Monat eine abweichende Zahl erhält. Nur die Wendepunkte müssen gesetzt werden. Jenseits des Horizonts gilt der Langfristsatz, und abgeschlossene Monate nutzen stets Zentralbankdaten."],
+  p_note_macro:["Cada taxa vale do mês marcado em diante, até a próxima mudança. Meses fechados usam o dado do Banco Central.", "Each rate applies from its month on until the next change. Closed months use Central Bank data.", "Jeder Satz gilt ab seinem Monat bis zur nächsten Änderung. Abgeschlossene Monate nutzen Zentralbankdaten."],
   p_leg_anchor:["taxa declarada","declared rate","erklärter Satz"],
   p_leg_inherit:["herda a anterior","inherits the previous","übernimmt den vorigen"],
   p_leg_real:["fechado pelo BCB","closed by the central bank","von der Zentralbank"],
@@ -18786,12 +18781,8 @@ const PDIC={
     "The curve applies as you type; Save only confirms.",
     "Die Kurve gilt sofort beim Tippen; Speichern bestätigt nur."],
   p_spread:["Spread Selic−CDI","Selic−CDI spread","Selic−CDI-Spread"],
-  p_note_link:["CDI, TR e poupança saem da Selic do mesmo mês: o CDI pelo spread ao lado, a TR e a poupança pela regra do Banco Central. Digitar um número em qualquer um deles desliga a derivação daquele mês em diante.",
-    "CDI, TR and savings come from the same month's Selic: CDI through the spread beside it, TR and savings through the central bank rule. Typing a number into any of them switches the derivation off from that month on.",
-    "CDI, TR und Sparbuch stammen aus der Selic desselben Monats: CDI über den nebenstehenden Spread, TR und Sparbuch über die Zentralbankregel. Eine eingegebene Zahl schaltet die Ableitung ab diesem Monat ab."],
-  p_note_year:["O valor anual entra como uma única declaração, no primeiro mês aberto do ano, e vale daí em diante — inclusive nos anos seguintes que ficarem em branco. Anos já fechados ficam bloqueados nos dados do Banco Central.",
-    "The annual figure is stored as a single declaration, in the first open month of the year, and holds from there on — including any later years left blank. Closed years stay locked to Central Bank data.",
-    "Der Jahreswert wird als einzelne Erklärung im ersten offenen Monat des Jahres gespeichert und gilt ab da — auch für spätere leere Jahre. Abgeschlossene Jahre bleiben auf Zentralbankdaten festgelegt."],
+  p_note_link:["CDI, TR e poupança derivam da Selic. Digitar um valor desliga a derivação dali em diante.", "CDI, TR and savings derive from Selic. Typing a value turns that off from then on.", "CDI, TR und Sparbuch leiten sich vom Selic ab. Eine Eingabe hebt das ab dann auf."],
+  p_note_year:["O valor anual vale a partir do primeiro mês aberto do ano. Anos fechados usam o Banco Central.", "The yearly value applies from the year's first open month. Closed years use Central Bank data.", "Der Jahreswert gilt ab dem ersten offenen Monat. Abgeschlossene Jahre nutzen Zentralbankdaten."],
 
   /* — renda — */
   p_inss:["INSS · faixas progressivas","Social security · progressive bands","Sozialabgaben · progressive Stufen"],
@@ -18807,9 +18798,7 @@ const PDIC={
   /* — temas — */
   p_tab_tema:["Tema","Theme","Thema"],
   p_theme:["Aparência","Appearance","Erscheinungsbild"],
-  p_theme_note:["O tema troca fundo, superfície, fio, rótulos e o acento dos controles e das ações de confirmação. As cores dos módulos ficam como estão: Despesas segue verde, Entradas azul, Patrimônio marinho e Dívidas vinho — é por elas que se reconhece a tela antes de ler o título.",
-    "The theme changes background, surface, rules, labels and the accent of controls and confirm actions. Module colours stay put: Expenses remains green, Income blue, Holdings navy and Debts wine — they are how you recognise a screen before reading its title.",
-    "Das Thema ändert Hintergrund, Fläche, Linien, Beschriftungen und den Akzent von Bedienelementen und Bestätigungen. Die Modulfarben bleiben: Ausgaben grün, Einnahmen blau, Vermögen marineblau, Schulden weinrot — an ihnen erkennt man den Bildschirm, bevor man den Titel liest."],
+  p_theme_note:["O tema muda fundo, superfícies e destaques. As cores de cada módulo permanecem.", "The theme changes background, surfaces and accents. Module colors stay.", "Das Thema ändert Hintergrund, Flächen und Akzente. Modulfarben bleiben."],
   p_th_on:["Em uso","In use","Aktiv"],
   p_th_areia:["Areia","Sand","Sand"],
   p_th_papel:["Papel","Paper","Papier"],
@@ -18830,37 +18819,27 @@ const PDIC={
   p_th_prev_off:["Neutro","Neutral","Neutral"],
   p_th_use:["Usar este tema","Use this theme","Thema übernehmen"],
   p_th_reset:["Voltar ao padrão","Back to default","Auf Standard zurück"],
-  p_th_own_note:["A base define fundo, superfície e tinta — todas já calibradas para contraste. O acento é livre: a cor do texto sobre ele, o tom claro, o véu e o fio são derivados da sua escolha, para que nenhum botão fique ilegível. As cores dos módulos seguem intocadas.",
-    "The base sets background, surface and ink — all already calibrated for contrast. The accent is yours: the text colour on top of it, the lighter tone, the veil and the hairline are derived from your pick so no button ends up unreadable. Module colours stay untouched.",
-    "Die Basis bestimmt Hintergrund, Fläche und Schrift — alle auf Kontrast abgestimmt. Der Akzent ist frei: Schriftfarbe darauf, heller Ton, Schleier und Haarlinie werden daraus abgeleitet, damit keine Schaltfläche unlesbar wird. Die Modulfarben bleiben unberührt."],
+  p_th_own_note:["Escolha a base e o acento; os demais tons são ajustados para manter o contraste.", "Pick a base and an accent; other tones adjust to keep contrast.", "Basis und Akzent wählen; die übrigen Töne passen sich für Kontrast an."],
 
   p_on:["Ligado","On","An"],
   p_off:["Desligado","Off","Aus"],
 
   /* — premissas de projeção — */
   p_proj:["Premissas de projeção","Projection assumptions","Projektionsannahmen"],
-  p_proj_note:["Estas chaves regem toda a projeção do app — tela inicial, patrimônio, dívidas e fluxo de caixa. Não existe um segundo lugar para dizer a mesma coisa: mudou aqui, muda em tudo.",
-    "These switches govern every projection in the app — home, holdings, debts and cash flow. There is no second place to say the same thing: change it here and it changes everywhere.",
-    "Diese Schalter steuern jede Projektion der App — Start, Vermögen, Schulden und Cashflow. Es gibt keinen zweiten Ort dafür: hier ändern heißt überall ändern."],
+  p_proj_note:["Estas opções valem para todas as projeções do app.", "These settings drive every projection in the app.", "Diese Einstellungen gelten für alle Prognosen der App."],
   p_proj_inv:["Investir a sobra","Invest the surplus","Überschuss anlegen"],
   p_proj_inv_h:["A sobra de caixa do mês vira aplicação em vez de evaporar da projeção.",
     "The month's leftover cash becomes a holding instead of vanishing from the projection.",
     "Der Monatsüberschuss wird angelegt, statt aus der Projektion zu verschwinden."],
   p_proj_sv:["Concentrar no CDB Saving","Concentrate in the savings CD","Im Spar-Festgeld bündeln"],
-  p_proj_sv_h:["Toda a sobra vai para uma aplicação única, no perfil que você definir abaixo, aportada no 1º dia útil do mês seguinte. Desligado, a sobra é rateada pela carteira que já existe.",
-    "All surplus goes into a single holding, under the profile you set below, deposited on the first business day of the following month. Off, the surplus is spread across the existing portfolio.",
-    "Der gesamte Überschuss fließt in eine einzige Anlage nach dem unten gesetzten Profil, eingezahlt am ersten Werktag des Folgemonats. Aus: Der Überschuss wird auf das bestehende Portfolio verteilt."],
+  p_proj_sv_h:["A sobra vai para uma única aplicação, no 1º dia útil do mês seguinte. Desligado: rateia pela carteira.", "Surplus goes to a single investment on the next month's 1st business day. Off: split across the portfolio.", "Überschuss geht am 1. Werktag des Folgemonats in eine Anlage. Aus: Verteilung aufs Portfolio."],
   p_proj_rt:["Ratear proporcional ao saldo","Spread in proportion to balance","Anteilig zum Bestand verteilen"],
-  p_proj_rt_h:["Preserva a composição da carteira. Desligado, toda a sobra vai para a aplicação de maior taxa e uma classe sozinha incha.",
-    "Keeps the portfolio mix intact. Off, all surplus goes to the highest-yielding holding and one class swells alone.",
-    "Erhält die Portfoliostruktur. Aus: Der gesamte Überschuss geht in die renditestärkste Anlage, und eine Klasse wächst allein."],
+  p_proj_rt_h:["Mantém a composição da carteira. Desligado: tudo vai para a de maior taxa.", "Keeps the portfolio mix. Off: everything goes to the highest rate.", "Hält die Portfoliostruktur. Aus: alles in die höchste Rendite."],
   p_proj_mv:["Projeção automática de despesas","Automatic expense projection","Automatische Ausgabenprojektion"],
   cf_sel_on:["PROJEÇÃO AUTOMÁTICA","AUTO PROJECTION","AUTO-PROJEKTION"],
   cf_sel_est:["INCLUI ESTIMATIVA","INCLUDES ESTIMATE","MIT SCHÄTZUNG"],
   cf_sel_off:["SÓ LANÇADAS","BOOKED ONLY","NUR ERFASSTE"],
-  p_proj_mv_h:["Nos meses futuros, o que você já lançou vale sempre. Ligado, o app completa o que ainda não foi lançado com a média dos três últimos meses de gasto variável. Desligado, fluxo de caixa, indicadores e análises mostram apenas as despesas cadastradas.",
-    "In future months, whatever you have already recorded always counts. On, the app tops up what has not been recorded yet with the average of the last three months of variable spending. Off, cash flow, indicators and analyses show only the recorded expenses.",
-    "In künftigen Monaten zählt stets, was Sie bereits erfasst haben. Eingeschaltet ergänzt die App das noch nicht Erfasste um den Durchschnitt der variablen Ausgaben der letzten drei Monate. Ausgeschaltet zeigen Cashflow, Kennzahlen und Analysen nur die erfassten Ausgaben."],
+  p_proj_mv_h:["Ligado: meses futuros usam a média dos 3 últimos meses de gasto variável. Desligado: só o lançado.", "On: future months use the last 3 months' average variable spend. Off: only what's entered.", "An: künftige Monate mit 3-Monats-Schnitt variabler Ausgaben. Aus: nur Erfasstes."],
   p_proj_ci:["Corrigir despesas pela inflação","Index expenses to inflation","Ausgaben inflationsindexieren"],
   p_proj_ci_h:["A média de variáveis é corrigida mês a mês pela curva de IPCA declarada abaixo.",
     "The variable average is indexed month by month by the inflation curve set below.",
@@ -18868,9 +18847,7 @@ const PDIC={
   p_poup_pct:["Guardar da renda líquida","Save from net income","Sparquote vom Nettoeinkommen"],
   p_poup_un:["a.m.","p.m.","p.M."],
   p_poup_res:["Reserva de emergência","Emergency fund","Notgroschen"],
-  p_poup_note:["A meta é o percentual da renda líquida que você pretende guardar todo mês, e a reserva é quantos meses de custo ela precisa cobrir. Enquanto a reserva não fecha, ela tem prioridade sobre a meta.",
-    "The target is the share of net income you intend to save every month; the fund is how many months of cost it must cover. Until the fund is complete it takes priority over the target.",
-    "Das Ziel ist der Anteil des Nettoeinkommens, den Sie monatlich sparen wollen; der Notgroschen ist die Zahl der abzudeckenden Kostenmonate. Bis er voll ist, hat er Vorrang vor dem Ziel."],
+  p_poup_note:["Meta: % da renda líquida a guardar. Reserva: meses de custo a cobrir — tem prioridade até fechar.", "Goal: % of net income to save. Reserve: months of costs to cover — takes priority until full.", "Ziel: % des Nettoeinkommens sparen. Reserve: Monatskosten — Vorrang bis erreicht."],
   p_proj_hz:["Horizonte da projeção","Projection horizon","Projektionshorizont"],
   p_proj_open:["Ajustar nos Parâmetros","Adjust in Parameters","In Parametern anpassen"],
   p_proj_locked:["Premissas definidas nos Parâmetros","Assumptions set in Parameters","Annahmen in den Parametern"],
@@ -18883,9 +18860,7 @@ const PDIC={
   p_pj:["Pessoa jurídica e retenção exclusiva","Company income and exclusive withholding","Unternehmen und Abgeltungsteuer"],
   p_das:["Alíquota do Simples (DAS)","Simples rate (DAS)","Simples-Satz (DAS)"],
   p_excl:["Retenção exclusiva na fonte","Exclusive withholding","Abgeltende Quellensteuer"],
-  p_pj_note:["Imposto é regra, não atributo de um lançamento. Estas alíquotas valem para todas as entradas do regime correspondente, e nenhuma delas é mais editável na ficha da entrada.",
-    "Tax is a rule, not a property of one entry. These rates apply to every income under the matching regime, and none of them can still be edited on the income form.",
-    "Steuer ist eine Regel, keine Eigenschaft eines Eintrags. Diese Sätze gelten für alle Einnahmen der jeweiligen Art und sind im Einnahmeformular nicht mehr editierbar."],
+  p_pj_note:["Alíquotas aplicadas a todas as entradas deste regime.", "Rates applied to all income under this regime.", "Sätze gelten für alle Einkünfte dieses Regimes."],
 
   /* — extrato do CDB Saving — */
   p_sav_open:["Extrato","Statement","Auszug"],
@@ -18905,12 +18880,8 @@ const PDIC={
   p_sav_un_pos:["% CDI","% CDI","% CDI"],
   p_sav_un_pre:["% a.a.","% p.a.","% p. a."],
   p_sav_use:["Usar a da carteira:","Use the portfolio's:","Aus dem Portfolio:"],
-  p_sav_warn:["Enquanto a taxa não for preenchida, a projeção trabalha com 100% do CDI. Informe o produto onde a sobra vai realmente cair: pós-fixado, em percentual do CDI, ou prefixado, em percentual ao ano.",
-    "Until the rate is filled in, the projection runs at 100% of the CDI. Enter the product the surplus will actually go into: floating, as a percentage of the CDI, or fixed, as a percentage per year.",
-    "Solange kein Satz eingetragen ist, rechnet die Projektion mit 100% des CDI. Geben Sie das Produkt an, in das der Überschuss tatsächlich fließt: variabel als Prozentsatz des CDI oder fest als Prozentsatz pro Jahr."],
-  p_sav_ok:["A sobra de cada mês é aplicada neste perfil no 1º dia útil do mês seguinte, e o IR é provisionado lote a lote pela tabela regressiva.",
-    "Each month's surplus is invested under this profile on the first business day of the following month, and tax is provisioned lot by lot under the regressive table.",
-    "Der Überschuss jedes Monats wird nach diesem Profil am ersten Werktag des Folgemonats angelegt; die Steuer wird los für los nach der degressiven Tabelle zurückgestellt."],
+  p_sav_warn:["Sem taxa, a projeção usa 100% do CDI. Informe o produto onde a sobra será aplicada.", "Without a rate, the projection uses 100% of CDI. Enter where the surplus will be invested.", "Ohne Satz rechnet die Prognose mit 100% CDI. Geben Sie die Zielanlage an."],
+  p_sav_ok:["A sobra é aplicada aqui no 1º dia útil do mês seguinte, com IR por lote.", "Surplus is invested here on the next month's 1st business day, taxed per lot.", "Überschuss wird am 1. Werktag des Folgemonats angelegt, Steuer je Tranche."],
   p_sav_note:["Toque em um mês para ver de onde veio o aporte e como se formou o rendimento.",
     "Tap a month to see where the deposit came from and how the yield was formed.",
     "Auf einen Monat tippen, um Herkunft der Einzahlung und Bildung der Rendite zu sehen."],
@@ -18939,12 +18910,8 @@ const PDIC={
   p_sav_d0:["Primeiro mês da projeção: a sobra ainda está sendo apurada e só entra na aplicação no mês seguinte.",
     "First projected month: the surplus is still being computed and only enters the holding next month.",
     "Erster Projektionsmonat: Der Überschuss wird noch ermittelt und fließt erst im Folgemonat ein."],
-  p_sav_d1:["A sobra fica retida em caixa até o 1º dia útil deste mês, e é aí que ela entra na aplicação. É o cenário conservador: o dinheiro perde um mês de rendimento.",
-    "The surplus stays in cash until the first business day of this month, which is when it enters the holding. That is the conservative case: the money loses one month of yield.",
-    "Der Überschuss bleibt bis zum ersten Werktag dieses Monats in bar und fließt erst dann in die Anlage. Das ist der konservative Fall: Das Geld verliert einen Monat Rendite."],
-  p_sav_d2:["Cada aporte mensal é um lote com prazo próprio, e o IR é provisionado lote a lote pela tabela regressiva. A alíquota exibida é a efetiva do mês sobre o rendimento inteiro.",
-    "Each monthly deposit is a lot with its own term, and tax is provisioned lot by lot under the regressive table. The rate shown is the effective one for the month over the whole yield.",
-    "Jede Monatseinzahlung ist ein Los mit eigener Laufzeit; die Steuer wird los für los nach der degressiven Tabelle zurückgestellt. Der gezeigte Satz ist der effektive Monatssatz auf die gesamte Rendite."],
+  p_sav_d1:["A sobra fica em caixa até o 1º dia útil e só então é aplicada (cenário conservador).", "Surplus stays in cash until the 1st business day, then is invested (conservative).", "Überschuss bleibt bis zum 1. Werktag auf dem Konto (konservativ)."],
+  p_sav_d2:["Cada aporte é um lote com prazo próprio; o IR é provisionado por lote.", "Each contribution is a lot with its own term; tax is provisioned per lot.", "Jede Einzahlung ist eine Tranche mit eigener Laufzeit; Steuer je Tranche."],
 
   p_exempt_on:["Ativa","On","An"],
   p_exempt_off:["Desligada","Off","Aus"],
@@ -18963,16 +18930,12 @@ const PDIC={
   p_13:["Adiantamento do 13º","13th salary advance","Vorschuss 13. Gehalt"],
   p_13_pct:["% do bruto na 1ª","% of gross in 1st","% brutto in 1. Rate"],
   p_13_mes:["Mês da 1ª parcela","Month of 1st instalment","Monat der 1. Rate"],
-  p_13_hint:["A 1ª parcela é adiantamento sobre o bruto, sem INSS nem IRRF. Na 2ª parcela incidem INSS e IRRF sobre o 13º inteiro, e o adiantamento é descontado.",
-             "The 1st instalment is an advance on gross pay, free of social security and withholding tax. The 2nd instalment carries both charges on the whole bonus, less the advance already paid.",
-             "Die 1. Rate ist ein Vorschuss auf das Bruttogehalt, ohne Sozialabgaben und Lohnsteuer. Die 2. Rate trägt beide Abgaben auf das gesamte 13. Gehalt, abzüglich des Vorschusses."],
+  p_13_hint:["1ª parcela: adiantamento sem descontos. 2ª parcela: INSS e IRRF sobre o 13º inteiro.", "1st installment: advance, no deductions. 2nd: INSS and income tax on the full 13th.", "1. Rate: Vorschuss ohne Abzüge. 2. Rate: INSS und Steuer aufs ganze 13."],
   p_inss_ai:["INSS autônomo","Self-employed rate","Selbstständigensatz"],
   p_inss_si:["INSS simplificado","Simplified rate","Vereinfachter Satz"],
   p_inss_pat:["INSS patronal","Employer rate","Arbeitgebersatz"],
   p_fgts_dia:["Dia do depósito do FGTS","FGTS deposit day","FGTS-Einzahlungstag"],
-  p_fgts_dia_hint:["Dia do mês em que o FGTS do salário cai na conta vinculada. Ao chegar o dia, o saldo da conta recebe o depósito, e toda a projeção passa a contar com ele a partir dessa data.",
-    "Day of the month when the salary's FGTS lands in the linked account. Once that day arrives the account balance receives the deposit, and every projection counts it from that date on.",
-    "Tag im Monat, an dem der FGTS des Gehalts auf dem Sperrkonto eingeht. Ab diesem Tag enthält der Kontostand die Einzahlung, und jede Projektion rechnet ab diesem Datum mit ihr."],
+  p_fgts_dia_hint:["Dia do mês em que o FGTS cai na conta vinculada.", "Day of the month FGTS is deposited.", "Tag, an dem der FGTS eingezahlt wird."],
   p_rent:["Aluguel e dividendos","Rent and dividends","Miete und Dividenden"],
   p_adm_imob:["Administração imobiliária","Property management fee","Immobilienverwaltung"],
   p_div_on:["Retenção sobre dividendos","Withholding on dividends","Quellensteuer auf Dividenden"],
@@ -18990,13 +18953,9 @@ const PDIC={
   p_days:["Dias","Days","Tage"],
   p_months:["Meses","Months","Monate"],
   p_iof:["IOF regressivo até 30 dias","Regressive IOF up to 30 days","Degressive IOF bis 30 Tage"],
-  p_iof_note:["De 96% do rendimento no primeiro dia a 0% no trigésimo. LCI, LCA, CRI, CRA, debêntures incentivadas e poupança não sofrem IOF nem IR.",
-    "From 96% of the gain on day one to 0% on day thirty. Tax-exempt notes and savings pay neither IOF nor income tax.",
-    "Von 96 % des Ertrags am ersten Tag auf 0 % am dreißigsten. Steuerbefreite Papiere und Sparbuch zahlen weder IOF noch Steuer."],
+  p_iof_note:["IOF cai de 96% a 0% do rendimento em 30 dias. LCI, LCA, CRI, CRA e poupança são isentos.", "IOF falls from 96% to 0% of yield over 30 days. LCI, LCA, CRI, CRA and savings are exempt.", "IOF sinkt in 30 Tagen von 96% auf 0% des Ertrags. LCI, LCA, CRI, CRA, Sparbuch befreit."],
   p_cc:["Come-cotas","Semi-annual fund tax","Halbjährliche Fondssteuer"],
-  p_cc_note:["Antecipação semestral do IR nos fundos abertos, à alíquota mínima da classe. Reduz o imposto devido no resgate.",
-    "Semi-annual prepayment of tax in open funds at the class minimum rate. It reduces the tax due on redemption.",
-    "Halbjährliche Steuervorauszahlung in offenen Fonds zum Mindestsatz der Klasse. Sie mindert die Steuer bei Rückgabe."],
+  p_cc_note:["Antecipação semestral do IR nos fundos abertos; abate do imposto no resgate.", "Semiannual tax prepayment on open funds; deducted at redemption.", "Halbjährliche Steuervorauszahlung bei offenen Fonds; wird bei Rücknahme angerechnet."],
   p_var:["Renda variável","Equities and alternatives","Variable Erträge"],
   p_ir_acoes:["IR ações","Equities","Aktien"],
   p_ir_dt:["IR day trade","Day trade","Day-Trading"],
@@ -19040,9 +18999,7 @@ const PDIC={
   i_one:["lote registrado","batch on record","erfasster Stapel"],
   i_many:["lotes registrados","batches on record","erfasste Stapel"],
   i_none:["nenhuma importação ainda","no imports yet","noch keine Importe"],
-  i_sub:["Cada importação vira um lote. Reveja, desfaça por inteiro ou reimporte uma fatura atualizada sem caçar lançamento a lançamento.",
-    "Every import becomes a batch. Review it, undo the whole thing, or re-import an updated statement without hunting entry by entry.",
-    "Jeder Import wird zu einem Stapel. Prüfen, komplett rückgängig machen oder eine aktualisierte Abrechnung neu importieren, ohne Posten für Posten zu suchen."],
+  i_sub:["Cada importação vira um lote: reveja, desfaça ou reimporte de uma vez.", "Each import is a batch: review, undo or re-import at once.", "Jeder Import ist ein Stapel: prüfen, rückgängig machen oder neu importieren."],
   i_empty:["Nenhuma importação registrada. Os lotes aparecem aqui a partir da próxima que você fizer.",
     "No imports on record. Batches show up here from your next one onward.",
     "Keine Importe erfasst. Stapel erscheinen ab dem nächsten Import hier."],
@@ -19061,12 +19018,8 @@ const PDIC={
   i_redo:["Reimportar","Re-import","Neu importieren"],
   i_del:["Excluir lote","Delete batch","Stapel löschen"],
   i_del_q:["Excluir este lote?","Delete this batch?","Diesen Stapel löschen?"],
-  i_del_d:["Os lançamentos que vieram desta importação saem do app, inclusive os que você editou depois. A ação não pode ser desfeita.",
-    "The entries that came from this import leave the app, including any you edited afterwards. This cannot be undone.",
-    "Die aus diesem Import stammenden Posten werden entfernt, auch nachträglich bearbeitete. Das lässt sich nicht rückgängig machen."],
-  i_redo_d:["Os lançamentos deste lote ficam como estão, com as suas classificações, rateios e edições. Na revisão, o que já está no app aparece identificado e só o que for novo entra, neste mesmo lote.",
-    "The entries in this batch stay as they are, with your classifications, splits and edits. In the review, what is already in the app is flagged and only what is new comes in, into this same batch.",
-    "Die Posten dieses Stapels bleiben, wie sie sind — mit Ihren Einordnungen, Aufteilungen und Änderungen. In der Prüfung ist Vorhandenes markiert, und nur Neues kommt hinzu, in denselben Stapel."],
+  i_del_d:["Todos os lançamentos deste lote serão removidos, inclusive os editados. Não dá para desfazer.", "All entries in this batch will be removed, including edited ones. Can't be undone.", "Alle Buchungen dieses Stapels werden entfernt, auch bearbeitete. Nicht umkehrbar."],
+  i_redo_d:["O que já está no app é mantido; só os lançamentos novos entram neste lote.", "What's already in the app is kept; only new entries join this batch.", "Vorhandenes bleibt; nur neue Buchungen kommen in diesen Stapel."],
   i_deleted:["lançamentos removidos","entries removed","Posten entfernt"],
   i_cancel:["Cancelar","Cancel","Abbrechen"],
 
@@ -19076,13 +19029,9 @@ const PDIC={
   lq_net_today:["(=) Líquido hoje","(=) Net today","(=) Netto heute"],
   lq_net_on:["(=) Líquido na liberação","(=) Net at release","(=) Netto bei Freigabe"],
   lq_wait_t:["Ainda não resgatável","Not redeemable yet","Noch nicht auszahlbar"],
-  lq_wait_b:["Liquidez {l}: o valor aplicado em {a} só cai na conta em {d}. Um pedido feito hoje é liquidado nessa data — resgate no próprio dia da aplicação não existe.",
-             "Liquidity {l}: the amount invested on {a} only reaches the account on {d}. A request made today settles on that date — same-day redemption is not available.",
-             "Liquidität {l}: der am {a} angelegte Betrag geht erst am {d} auf dem Konto ein. Ein heute gestellter Antrag wird zu diesem Datum abgerechnet — eine Auszahlung am Anlagetag gibt es nicht."],
+  lq_wait_b:["Liquidez {l}: o valor aplicado em {a} só cai na conta em {d}.", "Liquidity {l}: the amount invested on {a} is available on {d}.", "Liquidität {l}: der am {a} angelegte Betrag ist am {d} verfügbar."],
   lq_iof_t:["Janela de IOF: {p}% do rendimento","IOF window: {p}% of the yield","IOF-Fenster: {p}% des Ertrags"],
-  lq_iof_b:["Resgates com menos de 30 dias pagam IOF regressivo sobre o rendimento, antes do IR. Hoje a alíquota é de {p}% e ela zera em {d}, aos 30 dias de aplicação.",
-            "Redemptions inside 30 days pay regressive IOF on the yield, before income tax. Today the rate is {p}% and it reaches zero on {d}, at 30 days invested.",
-            "Auszahlungen innerhalb von 30 Tagen zahlen degressive IOF auf den Ertrag, vor der Einkommensteuer. Heute beträgt der Satz {p}% und entfällt am {d}, nach 30 Anlagetagen."],
+  lq_iof_b:["Resgate antes de 30 dias paga IOF: hoje {p}%, zera em {d}.", "Redeeming within 30 days incurs IOF: {p}% today, zero on {d}.", "Rücknahme unter 30 Tagen kostet IOF: heute {p}%, ab {d} null."],
   lq_iof_g:[" Sobre {g} de rendimento acumulado, um resgate hoje deixaria {v} de IOF.",
             " On {g} of accrued yield, redeeming today would cost {v} in IOF.",
             " Auf {g} aufgelaufenen Ertrag kostete eine Auszahlung heute {v} IOF."],
@@ -19119,9 +19068,7 @@ const PDIC={
   l_grace:["Com carência","With lock-up","Mit Sperrfrist"],
   l_grace_until:["Carência até","Locked until","Gesperrt bis"],
   l_saves:["economiza","saves","spart"],
-  l_note:["O bruto é a posição corrigida pela curva de parâmetros até a data de liberação. A alíquota de IR é a da faixa do prazo total até lá; o IOF só incide abaixo de 30 dias; o come-cotas já pago é abatido do imposto do resgate.",
-    "Gross is the position carried forward on the parameter curve to the release date. The tax rate follows the band for the total term; IOF applies only under 30 days; fund tax already prepaid is credited against the redemption tax.",
-    "Brutto ist der bis zur Freigabe auf der Parameterkurve fortgeschriebene Bestand. Der Steuersatz folgt der Stufe der Gesamtlaufzeit; IOF fällt nur unter 30 Tagen an; bereits gezahlte Fondssteuer wird angerechnet."],
+  l_note:["Valor corrigido até a liberação, já com IR, IOF e come-cotas.", "Value grown to release date, net of income tax, IOF and come-cotas.", "Wert bis Freigabe fortgeschrieben, nach Steuer, IOF und Come-cotas."],
   l_f0:["Imediata · D+0 e D+1","Immediate · D+0 and D+1","Sofort · D+0 und D+1"],
   l_f1:["Até 30 dias","Up to 30 days","Bis 30 Tage"],
   l_f2:["31 a 180 dias","31 to 180 days","31 bis 180 Tage"],
@@ -19139,9 +19086,7 @@ const PDIC={
   vc_gross:["Montante bruto","Gross amount","Bruttobetrag"],
   vc_net:["Líquido a receber","Net proceeds","Nettoerlös"],
   vc_charges:["Encargos","Charges","Abgaben"],
-  vc_frozen:["Já liquidada: saiu do patrimônio e não rende mais. Cadastre a nova aplicação com o montante que voltou para a conta.",
-    "Already settled: out of net worth and no longer earning. Register the new holding with the amount returned to your account.",
-    "Bereits abgerechnet: nicht mehr im Vermögen und ohne Verzinsung. Legen Sie die neue Anlage mit dem zurückgeflossenen Betrag an."],
+  vc_frozen:["Liquidada: não rende mais. Cadastre a nova aplicação com o valor que voltou.", "Settled: no longer yields. Add the new investment with the returned amount.", "Abgewickelt: kein Ertrag mehr. Neue Anlage mit dem Rückfluss erfassen."],
   ap_charac:["Características","Details","Merkmale"],
   ap_horiz:["Horizonte exibido","Horizon shown","Angezeigter Zeitraum"],
   ap_all:["Tudo","All","Alles"],
@@ -19161,9 +19106,9 @@ const PDIC={
   ac_qtd:["Quantidade de ações","Number of shares","Anzahl Aktien"],
   ac_cot:["Cotação (R$)","Price (R$)","Kurs (R$)"],
   ac_pm:["Preço médio (R$)","Average price (R$)","Ø-Kaufpreis (R$)"],
-  ac_pos_note:["Saldo = quantidade × cotação na data da posição. O preço médio define o valor aplicado — informe a data da primeira compra em Prazos.","Balance = shares × price on the position date. The average price sets the invested amount — enter the first purchase date under Terms.","Saldo = Anzahl × Kurs am Positionsdatum. Der Durchschnittspreis bestimmt den Anlagebetrag — Datum des ersten Kaufs unter Fristen angeben."],
+  ac_pos_note:["Saldo = quantidade × cotação. O preço médio define o valor investido.", "Balance = shares × price. The average price sets the amount invested.", "Saldo = Anzahl × Kurs. Der Ø-Preis bestimmt den investierten Betrag."],
   ac_rend:["Rendimento esperado","Expected return","Erwartete Rendite"],
-  ac_rend_note:["Premissa sua para a rentabilidade da ação. Os indicadores seguem a curva dos Parâmetros; a taxa fixa vale para todo o período.","Your assumption for the stock's return. Indicators follow the Parameters curve; a fixed rate holds for the whole period.","Ihre Annahme für die Rendite der Aktie. Indikatoren folgen der Parameterkurve; ein Festsatz gilt für den ganzen Zeitraum."],
+  ac_rend_note:["Sua premissa de rentabilidade. Indicadores seguem os Parâmetros.", "Your return assumption. Indices follow the Parameters.", "Ihre Renditeannahme. Indizes folgen den Parametern."],
   ac_r_cdi:["% do CDI","% of CDI","% des CDI"],
   ac_r_cdis:["CDI +","CDI +","CDI +"],
   ac_r_ipca:["IPCA +","IPCA +","IPCA +"],
@@ -19174,6 +19119,16 @@ const PDIC={
   ac_fixa:["Taxa fixa","Fixed rate","Festsatz"],
   ac_shares:["{n} ações","{n} shares","{n} Aktien"],
   ac_share1:["1 ação","1 share","1 Aktie"],
+  ac_cp_t:["Compras","Purchases","Käufe"],
+  ac_cp_d:["Data","Date","Datum"],
+  ac_cp_q:["Qtd.","Qty","Anz."],
+  ac_cp_p:["Preço (R$)","Price (R$)","Preis (R$)"],
+  ac_cp_add:["Adicionar compra","Add purchase","Kauf hinzufügen"],
+  ac_cp_n1:["1 compra","1 purchase","1 Kauf"],
+  ac_cp_n:["{n} compras","{n} purchases","{n} Käufe"],
+  ac_cp_pm:["PM","Avg.","Ø"],
+  ac_cp_tot:["Total investido","Total invested","Investiert gesamt"],
+  ac_cp_del:["Remover compra","Remove purchase","Kauf entfernen"],
   /* v11.43 — cotação ao vivo e preço-alvo */
   ac_live_t:["Cotação e preço-alvo","Price and target","Kurs und Kursziel"],
   ac_live_now:["Cotação atual","Current price","Aktueller Kurs"],
@@ -19192,9 +19147,7 @@ const PDIC={
   ac_live_above:["{p}% acima do alvo","{p}% above target","{p}% über dem Ziel"],
   ac_live_on:["No alvo","On target","Im Ziel"],
   ac_live_up:["Para chegar ao alvo: +{p}%","To reach target: +{p}%","Bis zum Ziel: +{p}%"],
-  ac_live_note:["Alvo = {b} de {v} em {d}, corrigido pelo rendimento esperado ({r}): {f}% no período. O alvo de 12 meses segue a mesma premissa por mais um ano, pela curva dos Parâmetros.",
-    "Target = {b} of {v} on {d}, grown at the expected return ({r}): {f}% over the period. The 12-month target follows the same assumption for one more year, along the Parameters curve.",
-    "Ziel = {b} von {v} am {d}, mit der erwarteten Rendite ({r}) fortgeschrieben: {f}% im Zeitraum. Das 12-Monats-Ziel schreibt dieselbe Annahme ein weiteres Jahr fort, entlang der Parameter-Kurve."],
+  ac_live_note:["Alvo = custo das compras corrigido por {r} ({f}% no período).", "Target = purchase cost grown at {r} ({f}% over the period).", "Ziel = Kaufkosten fortgeschrieben mit {r} ({f}% im Zeitraum)."],
   ac_live_b_pm:["o preço médio","the average price","der Ø-Kaufpreis"],
   ac_live_b_cot:["a cotação da posição","the price at position","der Kurs zur Position"],
   ac_live_exp:["Rendimento esperado","Expected return","Erwartete Rendite"],
@@ -19208,10 +19161,10 @@ const PDIC={
   ac_live_src:["Fonte: {s} · pela sua ponte Google · pode haver atraso","Source: {s} · via your Google bridge · may be delayed","Quelle: {s} · über Ihre Google-Brücke · ggf. verzögert"],
   ac_live_src0:["Cotações pela sua ponte Google","Prices via your Google bridge","Kurse über Ihre Google-Brücke"],
   ac_pt_edit:["Ponte","Bridge","Brücke"],
+  ac_pt_cta:["Configure a ponte de cotações para ver o preço atual.","Set up the price bridge to see the current price.","Kurs-Brücke einrichten, um den aktuellen Kurs zu sehen."],
+  ac_pt_cfg:["Configurar","Set up","Einrichten"],
   ac_pt_t:["Ponte de cotações","Price bridge","Kurs-Brücke"],
-  ac_pt_b:["As cotações vêm do Yahoo Finance, com o Google Finance como reserva, por uma pequena ponte que você cria uma única vez na sua conta Google. É grátis, não pede cadastro em nenhum serviço e recebe só o ticker. Faça de preferência num computador:",
-    "Prices come from Yahoo Finance, with Google Finance as backup, through a small bridge you set up once in your Google account. It's free, needs no sign-up anywhere and only receives the ticker. Preferably do it on a computer:",
-    "Die Kurse kommen von Yahoo Finance, mit Google Finance als Reserve, über eine kleine Brücke, die Sie einmalig in Ihrem Google-Konto anlegen. Kostenlos, ohne Anmeldung bei einem Dienst, sie erhält nur den Ticker. Am besten am Computer:"],
+  ac_pt_b:["Cotações do Yahoo Finance (reserva: Google Finance) por uma ponte criada uma vez na sua conta Google. Grátis, sem cadastro. Melhor num computador:", "Prices from Yahoo Finance (backup: Google Finance) via a bridge set up once in your Google account. Free, no sign-up. Best on a computer:", "Kurse von Yahoo Finance (Reserve: Google Finance) über eine einmalig im Google-Konto angelegte Brücke. Kostenlos, ohne Anmeldung. Am besten am Computer:"],
   ac_pt_s1:["Abra script.google.com e crie um Novo projeto.","Open script.google.com and create a New project.","Öffnen Sie script.google.com und legen Sie ein Neues Projekt an."],
   ac_pt_s2:["Apague o que estiver no editor e cole o código da ponte (botão abaixo).","Delete what's in the editor and paste the bridge code (button below).","Löschen Sie den Inhalt des Editors und fügen Sie den Brücken-Code ein (Schaltfläche unten)."],
   ac_pt_s3:["Escolha a função teste e clique em Executar; autorize o acesso que o Google pedir.","Pick the teste function and click Run; grant the access Google asks for.","Wählen Sie die Funktion teste und klicken Sie auf Ausführen; erteilen Sie die angefragte Berechtigung."],
@@ -19224,7 +19177,7 @@ const PDIC={
   ac_pt_save:["Salvar e buscar","Save and fetch","Speichern und abrufen"],
   ac_pt_ok:["Ponte salva","Bridge saved","Brücke gespeichert"],
   ac_pt_badurl:["A URL precisa ser a do app da Web: começa com https://script.google.com/macros/s/ e termina em /exec.","The URL must be the web app one: it starts with https://script.google.com/macros/s/ and ends in /exec.","Die URL muss die der Web-App sein: beginnt mit https://script.google.com/macros/s/ und endet auf /exec."],
-  ac_pt_bad:["A ponte respondeu, mas não como esperado. Confira se a implantação está com acesso para Qualquer pessoa e se o código foi colado inteiro.","The bridge answered, but not as expected. Check that the deployment allows access to Anyone and that the full code was pasted.","Die Brücke antwortet, aber nicht wie erwartet. Prüfen Sie, ob die Bereitstellung Zugriff für Jeden erlaubt und der Code vollständig eingefügt wurde."],
+  ac_pt_bad:["Resposta inesperada. Confira o acesso \"Qualquer pessoa\" e se o código foi colado inteiro.", "Unexpected response. Check \"Anyone\" access and that the full code was pasted.", "Unerwartete Antwort. Zugriff \"Jeder\" und vollständigen Code prüfen."],
   ac_live_err:["Não foi possível buscar a cotação agora.","Couldn't fetch the price right now.","Der Kurs konnte gerade nicht abgerufen werden."],
   ac_live_nf:["Nem o Yahoo nem o Google Finance encontraram {t}. Confira o ticker no cadastro.","Neither Yahoo nor Google Finance found {t}. Check the ticker in the holding.","Weder Yahoo noch Google Finance haben {t} gefunden. Prüfen Sie den Ticker in der Anlage."],
   ac_live_fallback:["Os números abaixo usam a cotação da posição ({d}).","Figures below use the price at position ({d}).","Die Werte unten nutzen den Kurs zur Position ({d})."],
@@ -19256,17 +19209,13 @@ const PDIC={
   ap_hist_res:["Histórico de resgates","Redemption history","Auszahlungshistorie"],
   ap_no_res:["Nenhum resgate registrado nesta aplicação.","No redemption recorded for this holding.","Für diese Anlage wurde keine Auszahlung gebucht."],
   ap_res_tot:["Total resgatado","Total redeemed","Insgesamt ausgezahlt"],
-  ap_resg_note:["O IR de hoje incide só sobre o ganho que ainda está na aplicação; o ganho que saiu no resgate já foi tributado na data dele. Os dois somados são o rendimento acumulado do card do topo.",
-    "Today's tax applies only to the gain still held; the gain taken out on redemption was taxed on that date. Together they make up the accumulated return shown at the top.",
-    "Die heutige Steuer trifft nur den noch angelegten Gewinn; der bei der Auszahlung entnommene Gewinn wurde an jenem Tag versteuert. Zusammen ergeben sie den kumulierten Ertrag oben."],
+  ap_resg_note:["IR de hoje só sobre o ganho que ficou; o ganho resgatado já foi tributado.", "Today's tax only on the remaining gain; redeemed gain was already taxed.", "Heutige Steuer nur auf den verbliebenen Gewinn; Entnommenes ist versteuert."],
   ap_edit:["Editar","Edit","Bearbeiten"],
   ap_redeem:["Registrar resgate","Record redemption","Auszahlung buchen"],
   ap_venc_note:["Aplicação vencida: a curva e a tabela terminam no vencimento, em",
     "Matured holding: the curve and the table end at maturity, on",
     "Fällige Anlage: Kurve und Tabelle enden mit der Fälligkeit am"],
-  ap_bench_note:["O retorno da aplicação é ponderado no tempo: em cada passo o aporte do período sai do saldo antes da divisão, de modo que dinheiro novo não seja lido como rentabilidade. O índice acumula pelo mesmo intervalo de datas da aplicação — meses fechados pelo dado do Banco Central, o restante pela curva dos parâmetros —, com as pontas proporcionais em dias úteis. A faixa sombreada é projeção.",
-    "The holding's return is time-weighted: at each step the period's contribution is removed from the balance before dividing, so new money is not read as performance. The index compounds over the same date range as the holding — closed months from Central Bank data, the rest from the parameter curve — with partial months prorated by business days. The shaded band is projection.",
-    "Die Rendite der Anlage ist zeitgewichtet: In jedem Schritt wird die Einzahlung der Periode vor der Division vom Bestand abgezogen, damit neues Geld nicht als Wertentwicklung gelesen wird. Der Index verzinst sich über denselben Zeitraum wie die Anlage — abgeschlossene Monate nach den Daten der Zentralbank, der Rest nach der Parameterkurve —, Teilmonate anteilig nach Bankarbeitstagen. Der schattierte Bereich ist Projektion."],
+  ap_bench_note:["Retorno ponderado no tempo (aportes não contam como rendimento). Faixa sombreada = projeção.", "Time-weighted return (contributions aren't counted as yield). Shaded band = projection.", "Zeitgewichtete Rendite (Einzahlungen zählen nicht als Ertrag). Schattiert = Prognose."],
 
   vc_alert_t:["Você tem aplicações vencendo","You have holdings maturing","Sie haben fällige Anlagen"],
   vc_see:["Ver","See","Ansehen"],
@@ -19286,9 +19235,7 @@ const PDIC={
   vc_open:["Abrir","Open","Öffnen"],
   vc_redeem:["Resgatar","Redeem","Auszahlen"],
   vc_reapply:["Reaplicar","Reinvest","Wiederanlegen"],
-  vc_note:["O bruto é a posição corrigida até a data de vencimento; o líquido já desconta IR e IOF do prazo total. Do dia do vencimento em diante o montante para de render e fica parado até você reaplicá-lo — reaplicar é decisão sua, o app não escolhe um produto no seu lugar. Vencimentos futuros não entram nessa conta: na projeção eles seguem rendendo, na premissa de que serão reaplicados no mesmo produto.",
-    "Gross is the position carried to the maturity date; net already deducts income tax and IOF for the full term. From the maturity day onward the amount stops earning and sits idle until you reinvest it — that call is yours, the app does not pick a product for you. Future maturities are not part of this: in the projection they keep earning, on the assumption they will be rolled into the same product.",
-    "Brutto ist der bis zur Fälligkeit fortgeschriebene Bestand; netto ist bereits um Steuer und IOF der Gesamtlaufzeit gemindert. Ab dem Fälligkeitstag verzinst sich der Betrag nicht mehr und ruht, bis Sie ihn wieder anlegen — das entscheiden Sie, die App wählt kein Produkt für Sie. Künftige Fälligkeiten zählen hier nicht: in der Projektion verzinsen sie sich weiter, unter der Annahme einer Wiederanlage im selben Produkt."],
+  vc_note:["Valor no vencimento, líquido de IR e IOF. Depois disso fica parado até você reaplicar.", "Value at maturity, net of tax and IOF. It then sits idle until you reinvest.", "Wert bei Fälligkeit, nach Steuer und IOF. Danach ruht er bis zur Wiederanlage."],
 
   rg_when:["Data do resgate","Redemption date","Datum der Auszahlung"],
   rg_how:["Quanto deseja resgatar","How much to redeem","Wie viel auszahlen"],
@@ -19300,23 +19247,17 @@ const PDIC={
   rg_band_next:["Em","In","In"],
   rg_band_to:["a alíquota cai para","the rate drops to","sinkt der Satz auf"],
   rg_sim_fut:["Data futura — simulação","Future date — simulation","Zukünftiges Datum — Simulation"],
-  rg_fut_note:["Data à frente de hoje: serve para simular a mudança de faixa do IR, mas não pode ser registrada. Para gravar o resgate, escolha uma data até hoje.",
-    "A date ahead of today: useful to simulate the change of tax band, but it cannot be recorded. To record the redemption, pick a date up to today.",
-    "Ein Datum nach heute: nützlich, um den Wechsel der Steuerstufe zu simulieren, aber nicht buchbar. Für die Buchung ein Datum bis heute wählen."],
+  rg_fut_note:["Data futura: serve só para simular. Para registrar, use uma data até hoje.", "Future date: simulation only. To record, use a date up to today.", "Zukünftiges Datum: nur Simulation. Zum Erfassen ein Datum bis heute wählen."],
   rg_enc:["Encargo de resgate antecipado","Early redemption charge","Vorfälligkeitsentgelt"],
   rg_enc_s:["Encargo","Charge","Entgelt"],
-  rg_enc_note:["Deságio, multa ou taxa de saída cobrada por resgatar antes do vencimento. Não é imposto: é cláusula do contrato, então o valor vem do extrato ou da lâmina do produto. Deixe zerado se não houver.",
-    "Discount, penalty or exit fee charged for redeeming before maturity. It is not a tax but a contract clause, so the amount comes from your statement or the product sheet. Leave it at zero if there is none.",
-    "Abschlag, Strafe oder Ausstiegsgebühr für eine Auszahlung vor Fälligkeit. Keine Steuer, sondern eine Vertragsklausel — der Betrag stammt aus dem Auszug oder dem Produktblatt. Bei Nichtvorhandensein auf null lassen."],
+  rg_enc_note:["Deságio, multa ou taxa de saída antecipada (veja o extrato). Deixe zero se não houver.", "Discount, penalty or early-exit fee (see statement). Leave zero if none.", "Abschlag, Strafe oder Ausstiegsgebühr (siehe Auszug). Sonst null lassen."],
   rg_pos:["Posição na data","Position on that date","Bestand am Stichtag"],
   rg_val:["Valor resgatado","Amount redeemed","Ausgezahlter Betrag"],
   rg_gain:["Rendimento no período","Yield in the period","Ertrag im Zeitraum"],
   rg_net:["Você recebe","You receive","Sie erhalten"],
   rg_rest:["Saldo remanescente","Remaining balance","Verbleibender Bestand"],
   rg_reg:["Registrar resgate","Record redemption","Auszahlung buchen"],
-  rg_note:["Registrar baixa o montante da aplicação na data informada, guarda os encargos apurados e reduz o custo na mesma proporção. Daí em diante o patrimônio e o rendimento seguem pelo saldo remanescente.",
-    "Recording removes the amount from the holding on the given date, stores the charges and reduces the cost basis in the same proportion. From there wealth and yield follow the remaining balance.",
-    "Das Buchen entnimmt den Betrag zum angegebenen Datum, speichert die Abgaben und mindert die Anschaffungskosten anteilig. Danach folgen Vermögen und Ertrag dem verbleibenden Bestand."],
+  rg_note:["Baixa o valor na data, registra os encargos e reduz o custo na mesma proporção.", "Deducts the amount on the date, records charges and reduces cost proportionally.", "Bucht den Betrag zum Datum aus, erfasst Kosten und senkt die Basis anteilig."],
   rg_list:["Resgates registrados","Recorded redemptions","Gebuchte Auszahlungen"],
   rg_novalue:["Informe o valor do resgate","Enter the amount to redeem","Bitte den Auszahlungsbetrag angeben"],
   rg_future:["A data do resgate não pode ser futura","The redemption date cannot be in the future","Das Datum darf nicht in der Zukunft liegen"],
@@ -19325,9 +19266,7 @@ const PDIC={
   rg_saved:["Resgate registrado","Redemption recorded","Auszahlung gebucht"],
   rg_removed:["Resgate excluído","Redemption removed","Auszahlung entfernt"],
   rg_del_q:["Excluir este resgate?","Remove this redemption?","Diese Auszahlung entfernen?"],
-  rg_after:["A posição informada é posterior a esta data. O app registrou os encargos e ajustou o custo, sem mexer no saldo — ele já não continha esse dinheiro.",
-    "The reported position is later than this date. The app recorded the charges and adjusted the cost basis without touching the balance — it no longer held that money.",
-    "Der gemeldete Bestand ist jünger als dieses Datum. Die App buchte die Abgaben und passte die Kosten an, ohne den Saldo zu ändern — er enthielt dieses Geld bereits nicht mehr."],
+  rg_after:["A posição informada é posterior a esta data: só encargos e custo foram ajustados.", "The recorded position is later than this date: only charges and cost were adjusted.", "Die Position liegt nach diesem Datum: nur Kosten und Basis angepasst."],
   rg_sim:["Simulação — nada registrado ainda","Simulation — nothing recorded yet","Simulation — noch nichts gebucht"],
 
   /* — bruto x líquido: o que o número digitado significa — */
@@ -19339,18 +19278,14 @@ const PDIC={
   rg_md_bn:["O valor acima é o que SAI da aplicação. O IR é descontado dele, então você recebe menos do que digitou.",
     "The amount above is what LEAVES the holding. Tax comes out of it, so you receive less than you typed.",
     "Der Betrag oben verlässt die ANLAGE. Die Steuer wird davon abgezogen, Sie erhalten also weniger."],
-  rg_md_ln:["O valor acima é o que CAI NA CONTA. O app calcula quanto precisa sair da aplicação para sobrar isso depois do IR — é a convenção do app do banco, onde o imposto é debitado por cima do resgate pedido.",
-    "The amount above is what LANDS IN THE ACCOUNT. The app works out how much must leave the holding so that this is left after tax — the convention used by bank apps, where tax is debited on top of the requested redemption.",
-    "Der Betrag oben landet AUF DEM KONTO. Die App ermittelt, wie viel der Anlage entnommen werden muss, damit dies nach Steuern übrig bleibt — die Konvention der Bank-Apps, bei der die Steuer zusätzlich belastet wird."],
+  rg_md_ln:["Valor que cai na conta. O app calcula quanto resgatar para sobrar isso após o IR.", "Amount credited. The app works out how much to redeem to net this after tax.", "Gutgeschriebener Betrag. Die App ermittelt die nötige Rücknahme nach Steuer."],
   rg_md_cap:["O saldo não cobre esse valor líquido: o resgate foi limitado ao saldo inteiro.",
     "The balance cannot cover that net amount: the redemption was capped at the whole balance.",
     "Der Bestand deckt diesen Nettobetrag nicht: Die Auszahlung wurde auf den vollen Bestand begrenzt."],
 
   /* — v11.31: resgate pela posição real — */
   rg_pos_in:["Posição na data do resgate","Position on the redemption date","Bestand am Auszahlungstag"],
-  rg_pos_note:["Saldo bruto de IR que o extrato mostra nesse dia, antes do resgate. É ele — e não a projeção pela taxa cadastrada — que define o rendimento, os impostos e as taxas; o que sobrar vira a nova posição.",
-    "Pre-tax balance shown on your statement that day, before the redemption. It — not the projection from the registered rate — sets the yield, taxes and fees; whatever is left becomes the new position.",
-    "Bestand vor Steuern laut Auszug an diesem Tag, vor der Auszahlung. Er — nicht die Projektion aus dem erfassten Satz — bestimmt Ertrag, Steuern und Gebühren; der Rest wird der neue Bestand."],
+  rg_pos_note:["Saldo bruto do extrato no dia, antes do resgate. Ele define rendimento, impostos e taxas.", "Gross statement balance on the day, before redemption. It sets yield, taxes and fees.", "Bruttosaldo laut Auszug am Tag vor der Rücknahme. Bestimmt Ertrag, Steuern, Gebühren."],
   rg_proj:["Projeção do app:","App projection:","App-Projektion:"],
   rg_use_proj:["Usar projeção","Use projection","Projektion übernehmen"],
   rg_tx_q:["Essa posição já desconta as taxas do fundo?","Does this position already net out the fund fees?","Ist dieser Bestand bereits nach Fondsgebühren?"],
@@ -19358,12 +19293,8 @@ const PDIC={
   rg_tx_liq_s:["cota líquida","net unit price","Netto-Anteilswert"],
   rg_tx_bru:["Antes das taxas","Before fees","Vor Gebühren"],
   rg_tx_bru_s:["o app desconta","the app deducts","die App zieht ab"],
-  rg_tx_liq_n:["É o padrão dos fundos: administração e performance são provisionadas na cota todo dia, então o extrato já vem sem elas. O app mostra quanto cada uma levou do valor resgatado, sem descontar de novo.",
-    "This is how funds work: management and performance fees are accrued in the unit price every day, so the statement already comes without them. The app shows how much each took from the amount redeemed, without deducting it again.",
-    "So funktionieren Fonds: Verwaltungs- und Erfolgsgebühr werden täglich im Anteilswert abgegrenzt, der Auszug enthält sie also nicht mehr. Die App zeigt, wie viel jede vom ausgezahlten Betrag genommen hat, ohne erneut abzuziehen."],
-  rg_tx_bru_n:["A posição informada é antes das taxas: o app desconta administração e performance do valor resgatado, pelo prazo desde a aplicação, e o saldo que sobra fica líquido delas.",
-    "The position entered is before fees: the app deducts management and performance fees from the amount redeemed, over the period since the investment, and the remaining balance is kept net of them.",
-    "Der eingegebene Bestand ist vor Gebühren: Die App zieht Verwaltungs- und Erfolgsgebühr vom ausgezahlten Betrag ab, für den Zeitraum seit der Anlage, und der Restbestand bleibt netto."],
+  rg_tx_liq_n:["Padrão dos fundos: taxas já descontadas na cota. O app só mostra quanto cada uma levou.", "Fund standard: fees already in the unit price. The app only shows each share.", "Fondsstandard: Gebühren sind im Anteilswert. Die App zeigt nur den Anteil."],
+  rg_tx_bru_n:["Posição antes das taxas: o app desconta administração e performance do resgate.", "Position before fees: the app deducts management and performance from the redemption.", "Position vor Gebühren: die App zieht Verwaltung und Performance ab."],
   rg_adm_l:["Taxa de administração","Management fee","Verwaltungsgebühr"],
   rg_perf_l:["Taxa de performance","Performance fee","Erfolgsgebühr"],
   rg_perf_over:["do que excede o","of the excess over","des Ertrags über"],
@@ -19373,9 +19304,7 @@ const PDIC={
   rg_cc_abat:["(+) Come-cotas já antecipado","(+) Semi-annual tax already prepaid","(+) Bereits vorausgezahlte Halbjahressteuer"],
   rg_pct_pos:["da posição","of the position","des Bestands"],
   rg_pos_s:["Posição","Position","Bestand"],
-  rg_anc_note:["Ao registrar, o saldo que sobra ({v}) passa a ser a posição da aplicação em {d}; dali em diante ela segue pela taxa cadastrada e pelos Parâmetros.",
-    "When recorded, the remaining balance ({v}) becomes the holding's position on {d}; from there it follows the registered rate and the Parameters.",
-    "Beim Buchen wird der Restbestand ({v}) zum Bestand der Anlage am {d}; ab dann folgt sie dem erfassten Satz und den Parametern."],
+  rg_anc_note:["Ao registrar, {v} passa a ser a posição em {d}.", "Once recorded, {v} becomes the position on {d}.", "Nach dem Erfassen ist {v} die Position am {d}."],
 
   /* — v11.32: aplicação resgatada por inteiro — */
   enc_sec:["Resgatadas","Redeemed","Ausgezahlt"],
@@ -19407,9 +19336,7 @@ const PDIC={
   enc_h_meses:["Rendimento nos meses","Yield by month","Ertrag nach Monaten"],
   enc_m_antes:["Apropriado pela curva do app","Accrued along the app curve","Über die App-Kurve abgegrenzt"],
   enc_m_resg:["no mês do resgate","in the redemption month","im Auszahlungsmonat"],
-  enc_m_note:["Enquanto aplicado, o dinheiro rende no app pela taxa cadastrada, mês a mês. No mês do resgate entra o realizado no resgate menos o que já tinha sido apropriado nos meses anteriores: o rendimento do mês até a data do resgate, mais o acerto entre a taxa cadastrada e o que o extrato mostrou — negativo quando a aplicação rendeu menos do que o previsto. Somados, os meses dão exatamente o rendimento realizado, sem contar nada duas vezes. Toque no mês para abrir o fluxo.",
-    "While invested, the money earns in the app at the registered rate, month by month. The redemption month takes the gain realized on redemption minus what had already been accrued in earlier months: the month's yield up to the redemption date, plus the true-up between the registered rate and what the statement showed — negative when the holding earned less than projected. Added up, the months equal exactly the realized yield, with nothing counted twice. Tap the month to open its cash flow.",
-    "Solange angelegt, verzinst sich das Geld in der App Monat für Monat zum erfassten Satz. Im Auszahlungsmonat zählt der bei der Auszahlung realisierte Ertrag abzüglich dessen, was in Vormonaten bereits abgegrenzt war: der Monatsertrag bis zum Auszahlungstag plus die Angleichung zwischen erfasstem Satz und Auszug — negativ, wenn die Anlage weniger als projiziert erzielte. Zusammen ergeben die Monate genau den realisierten Ertrag, nichts zählt doppelt. Monat antippen, um den Cashflow zu öffnen."],
+  enc_m_note:["Rendimento mês a mês pela taxa cadastrada; no mês do resgate entra o acerto com o realizado. Toque num mês para abrir o fluxo.", "Monthly yield at the registered rate; the redemption month adjusts to the realized amount. Tap a month to open the flow.", "Monatlicher Ertrag zum erfassten Satz; im Rücknahmemonat Abgleich mit dem Realisierten. Monat antippen für den Fluss."],
   enc_h_carac:["Características","Characteristics","Merkmale"],
   enc_idx:["Rentabilidade cadastrada","Registered return","Erfasste Rendite"],
   enc_poup:["Poupança","Savings account","Sparbuch"],
@@ -19435,18 +19362,14 @@ const PDIC={
   im_em:["daqui a {n} meses","in {n} months","in {n} Monaten"],
   im_ha:["há {n} meses","{n} months ago","vor {n} Monaten"],
   im_voltar:["voltar ao mês atual","back to current month","zurück zum aktuellen Monat"],
-  im_so_futuro:["Aplicações e dívidas são projetadas a partir do mês atual: o saldo de início do mês escolhido é o fim do mês anterior na mesma projeção.",
-    "Investments and debts are projected from the current month: the opening balance of the chosen month is the previous month's close in the same projection.",
-    "Anlagen und Schulden werden ab dem aktuellen Monat projiziert: der Anfangsbestand des gewählten Monats ist der Schlussbestand des Vormonats derselben Projektion."],
+  im_so_futuro:["Aplicações e dívidas são projetadas a partir do mês atual.", "Investments and debts are projected from the current month.", "Anlagen und Schulden werden ab dem aktuellen Monat prognostiziert."],
   im_sec_fluxo:["Impacto no fluxo de caixa","Cash-flow impact","Auswirkung auf den Cashflow"],
   im_sec_patr:["Impacto no patrimônio","Impact on net worth","Auswirkung auf das Vermögen"],
   im_sec_div:["Impacto nas dívidas","Impact on debts","Auswirkung auf die Schulden"],
   im_sec_tab:["Projeção mês a mês","Month-by-month projection","Projektion Monat für Monat"],
   im_sec_tab1:["Detalhe do mês","Month detail","Monatsdetail"],
   im_tab_drag:["Arraste a tabela para o lado para ver todas as colunas.","Swipe the table sideways to see every column.","Tabelle seitlich wischen, um alle Spalten zu sehen."],
-  im_rodape:["Os números vêm da mesma projeção do painel de fluxo de caixa: recorrências se repetem, variáveis entram pela média dos últimos três meses, dívidas seguem o cronograma com indexador e FGTS, e as aplicações rendem pelo indexador de cada uma, conforme os Parâmetros.",
-    "The figures come from the same projection as the cash-flow panel: recurring items repeat, variable ones use the three-month average, debts follow their schedule with index and FGTS, and investments earn their own index, as set in Parameters.",
-    "Die Zahlen stammen aus derselben Projektion wie das Cashflow-Panel: Wiederkehrendes wiederholt sich, Variables geht mit dem Dreimonatsschnitt ein, Schulden folgen ihrem Plan mit Index und FGTS, Anlagen verzinsen sich mit ihrem Index laut Parametern."],
+  im_rodape:["Mesma projeção do fluxo de caixa, conforme os Parâmetros.", "Same projection as the cash flow, per the Parameters.", "Gleiche Prognose wie der Cashflow, gemäß Parametern."],
   im_th_mes:["Mês","Month","Monat"],
   im_th_bruto:["Bruto","Gross","Brutto"],
   im_th_ir:["IR","Tax","Steuer"],
@@ -22660,7 +22583,8 @@ function astValorEm(a,dataAlvo){
   const ck=[a.id,bal,de,dataAlvo,p.idx,p.idxVal,p.aporte,fgtsDiaParam(),
             fgtsAssinaturaRenda(p),p.taxaAdm,p.taxaPerf,
             astVencData(a,p)||"",astResgAssin(a,p),
-            p.trib,HIST.ts,PARAMS.ts,MARKET.ts,(FISCAL.ts||0)].join("|");
+            p.trib,HIST.ts,PARAMS.ts,MARKET.ts,(FISCAL.ts||0),
+            (Array.isArray(p.compras)?p.compras.map(c=>c.d+":"+c.q).join(","):"")].join("|");
   if(AST_YM_CACHE[ck]!==undefined) return AST_YM_CACHE[ck];
   let v=R2(bal);
   try{
@@ -22680,6 +22604,11 @@ function astValorEm(a,dataAlvo){
         try{ const x=fatorProduto(a,dataAlvo,r.data,p).fator; if(isFinite(x)&&x>0) fr=x; }catch(e){}
         v=R2(v+(+r.valor||0)/fr);
       });
+      /* v11.45 — ação com várias compras: só conta o que já tinha sido comprado */
+      if(a.class==="stocks"&&Array.isArray(p.compras)&&p.compras.length>1){
+        const qD=acQtdNaData(p.compras,de), qA=acQtdNaData(p.compras,dataAlvo);
+        if(qD>0&&qA<qD) v=R2(v*qA/qD);
+      }
     }
   }catch(e){ v=R2(bal); }
   AST_YM_CACHE[ck]=v;
@@ -23012,6 +22941,20 @@ function ensureStyles(){
     display:flex;align-items:center;justify-content:center;padding:0;transition:border-color .15s,box-shadow .15s}
   .ac-rf:active{border-color:#0F2440;box-shadow:0 0 0 3px rgba(15,36,64,.12)}
   .ac-rf span{display:inline-block}
+  .ac-cp{margin:2px 0 4px}
+  .ac-cp-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+  .ac-cp-h span:first-child{font-size:12px;font-weight:600;color:var(--ink-2)}
+  .ac-cp-h span:last-child{font-size:11px;color:var(--ink-3);text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ac-cp-row{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.8fr) minmax(0,1fr) 36px;gap:6px;align-items:center;margin-bottom:6px}
+  .ac-cp-row .f-input{margin:0!important;min-width:0;height:42px;min-height:0;padding:0 10px;box-sizing:border-box}
+  .ac-cp-row input[type=date]{padding:0 6px;-webkit-appearance:none;appearance:none}
+  .ac-cp-lbl{margin-bottom:3px}
+  .ac-cp-lbl span{font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+  .ac-cp-del{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--line);background:transparent;color:var(--ink-3);font-size:18px;line-height:1;cursor:pointer;padding:0}
+  .ac-cp-del:active{border-color:#B85A6A;color:#B85A6A}
+  .ac-cp-add{width:100%;height:40px;border-radius:12px;border:1.5px dashed var(--line);background:transparent;color:#0F2440;font-size:13px;font-weight:600;cursor:pointer;margin-top:2px}
+  .ac-cp-add:active{border-style:solid;border-color:#0F2440}
+  input.ac-lock{background:transparent!important;color:var(--ink-2)!important;border-style:dashed!important}
   .ac-spin{animation:acSpin .9s linear infinite}
   @keyframes acSpin{to{transform:rotate(360deg)}}
   /* DICA — orientação, não legenda. Toda vez que o app opina sobre o que
@@ -23711,7 +23654,12 @@ function acaoPosHTML(){
       ${C("ast-pm",PX("ac_pm"),"0,00","decimal","maskCurrencyInput(this);PRO.acCustoDePm()")}
       <div></div>
     </div>
-    <div class="pro-note" style="margin:-4px 0 14px">${PX("ac_pos_note")}</div>
+    <div class="ac-cp">
+      <div class="ac-cp-h"><span>${PX("ac_cp_t")}</span><span id="ast-compras-sum"></span></div>
+      <div id="ast-compras"></div>
+      <button type="button" class="ac-cp-add" onclick="PRO.acCompraAdd()">+ ${PX("ac_cp_add")}</button>
+    </div>
+    <div class="pro-note" style="margin:6px 0 14px">${PX("ac_pos_note")}</div>
   </div>`;
 }
 function acQtdVal(){ return Math.max(0,parseInt(String($("ast-qtd")?.value||"").replace(/\D/g,""),10)||0); }
@@ -23785,6 +23733,81 @@ function renderAcao(){
   if(AST_IDX==="variavel"&&$("ast-idxval-lbl")) $("ast-idxval-lbl").textContent=PX("ac_f_am");
   acHint();
 }
+/* ── v11.45 — compras: cada lote com data, quantidade e preço.
+   PM = Σ(qtd × preço) / Σ qtd; total investido = Σ(qtd × preço). ── */
+let AC_COMPRAS=[];
+function acComprasValidas(L){ return (Array.isArray(L)?L:[]).filter(c=>c&&/^\d{4}-\d{2}-\d{2}$/.test(c.d||"")&&+c.q>0&&+c.p>0); }
+function acComprasResumo(L){
+  const V=acComprasValidas(L);
+  const q=V.reduce((s,c)=>s+(+c.q),0);
+  const tot=R2(V.reduce((s,c)=>s+(+c.q)*(+c.p),0));
+  return {n:V.length,q,tot,pm:q>0?tot/q:0,d:V.map(c=>c.d).sort()[0]||""};
+}
+function acQtdNaData(L,data){ return acComprasValidas(L).filter(c=>c.d<=data).reduce((s,c)=>s+(+c.q),0); }
+function acComprasRender(semSaldo){
+  const el=$("ast-compras"); if(!el) return;
+  const fmtP=v=>(+v>0)?new Intl.NumberFormat("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}).format(+v):"";
+  el.innerHTML=(AC_COMPRAS.length?`<div class="ac-cp-row ac-cp-lbl"><span>${PX("ac_cp_d")}</span><span>${PX("ac_cp_q")}</span><span>${PX("ac_cp_p")}</span><span></span></div>`:"")+
+    AC_COMPRAS.map((c,i)=>`<div class="ac-cp-row">
+      <input type="date" class="f-input" value="${c.d||""}" onchange="PRO.acCompraSet(${i},'d',this)" oninput="PRO.acCompraSet(${i},'d',this)"/>
+      <input type="text" class="f-input" inputmode="numeric" placeholder="0" value="${+c.q>0?parseInt(c.q,10):""}" oninput="PRO.acCompraSet(${i},'q',this)"/>
+      <input type="text" class="f-input" inputmode="decimal" placeholder="0,00" value="${fmtP(c.p)}" oninput="PRO.acCompraSet(${i},'p',this)"/>
+      <button type="button" class="ac-cp-del" onclick="PRO.acCompraDel(${i})" aria-label="${PX("ac_cp_del")}">×</button>
+    </div>`).join("");
+  acComprasAplicar(semSaldo);
+}
+function acCompraAdd(){
+  /* a posição que já existia vira a primeira compra */
+  if(!AC_COMPRAS.length){
+    const q=acQtdVal(), pm=unmaskCurrency($("ast-pm"))||0;
+    if(q>0&&pm>0) AC_COMPRAS.push({d:$("ast-aplic")?.value||today(),q,p:pm});
+  }
+  AC_COMPRAS.push({d:today(),q:0,p:0});
+  acComprasRender();
+  const rows=document.querySelectorAll("#ast-compras .ac-cp-row:not(.ac-cp-lbl)");
+  const last=rows[rows.length-1];
+  if(last){ const i=last.querySelectorAll("input")[1]; if(i) i.focus(); }
+}
+function acCompraDel(i){ AC_COMPRAS.splice(i,1); acComprasRender(); }
+function acCompraSet(i,campo,el){
+  const c=AC_COMPRAS[i]; if(!c) return;
+  if(campo==="q"){
+    const v=String(el.value||"").replace(/\D/g,"").slice(0,9);
+    if(el.value!==v) el.value=v;
+    c.q=parseInt(v,10)||0;
+  }else if(campo==="p"){
+    maskCurrencyInput(el); c.p=unmaskCurrency(el)||0;
+  }else c.d=el.value||"";
+  acComprasAplicar();
+}
+function acComprasAplicar(semSaldo){
+  const r=acComprasResumo(AC_COMPRAS), on=r.n>0;
+  const qEl=$("ast-qtd"), pEl=$("ast-pm"), sum=$("ast-compras-sum");
+  [qEl,pEl].forEach(e=>{ if(e){ e.readOnly=on; e.classList.toggle("ac-lock",on); } });
+  if(sum) sum.textContent=on?(r.n===1?PX("ac_cp_n1"):PXV("ac_cp_n",{n:r.n}))+" · "+PX("ac_cp_pm")+" "+fmt(r.pm)+" · "+fmt(r.tot):"";
+  if(!on) return;
+  if(qEl) qEl.value=String(r.q);
+  setCurrencyInput(pEl,R2(r.pm));
+  if($("ast-aplic")&&r.d) $("ast-aplic").value=r.d;
+  AST_CUSTO_AUTO=false;
+  setCurrencyInput($("ast-custo"),r.tot);
+  if(!semSaldo){ const c=unmaskCurrency($("ast-cot"))||0; if(c>0) setCurrencyInput($("ast-balance"),R2(r.q*c)); }
+  renderCustoMode(); astPreview();
+}
+/* ficha: lista das compras */
+function acComprasFichaHTML(a){
+  const p=astPro(a), V=acComprasValidas(p.compras).slice().sort((x,y)=>x.d<y.d?-1:1);
+  if(!V.length) return "";
+  const r=acComprasResumo(V);
+  const loc=LANG==="en"?"en-US":(LANG==="de"?"de-DE":"pt-BR");
+  const linhas=V.map(c=>`<div class="pro-cf"><span>${brDate(c.d)} · ${(+c.q).toLocaleString(loc)} × ${fmt(+c.p)}</span><span>${fmt(R2(c.q*c.p))}</span></div>`).join("");
+  return `<div class="sec-label">${PX("ac_cp_t")}</div>
+    <div style="background:var(--surface);border-radius:14px;padding:8px 15px 10px;margin-bottom:12px">
+      ${linhas}
+      <div class="pro-cf" style="border-top:1px solid var(--line);margin-top:4px;padding-top:9px;font-weight:600"><span>${PX("ac_cp_tot")}</span><span>${fmt(r.tot)}</span></div>
+      <div class="pro-cf sub"><span>${PX("ac_live_pm")}</span><span>${fmt(r.pm)}</span></div>
+    </div>`;
+}
 /* "300 ações" para a lista e a ficha */
 function astQtdTxt(a){
   if(!a||a.class!=="stocks") return "";
@@ -23797,7 +23820,7 @@ function astQtdTxt(a){
 
 /* Valor aplicado: por padrão o app deduz por regressão; o usuário pode fixar. */
 let AST_CUSTO_AUTO=true;
-function toggleCustoAuto(){ AST_CUSTO_AUTO=!AST_CUSTO_AUTO; astRecalc(); }
+function toggleCustoAuto(){ if(ehAcaoForm()&&acComprasResumo(AC_COMPRAS).n) return; AST_CUSTO_AUTO=!AST_CUSTO_AUTO; astRecalc(); }
 function custoManual(){ AST_CUSTO_AUTO=false; renderCustoMode(); astPreview(); }
 function renderCustoMode(){
   const u=$("ast-custo-mode"), inp=$("ast-custo");
@@ -23872,7 +23895,7 @@ function renderAstPro(){
     : `CDI ${MARKET.cdi.toFixed(2)}% a.a. · IPCA ${MARKET.ipca.toFixed(2)}% em 12 meses.`);
   $("ast-venc-lbl").textContent=TR(AST_LIQ==="car"?"Carência até":AST_LIQ==="venc"?"Vencimento":"Vencimento (opcional)");
   $("ast-f-fund").style.display=isFundo?"block":"none";
-  $("ast-chip-cc").innerHTML=TR(chip(AST_CC,"🍽 Come-cotas (mai/nov)","PRO.toggleCC()","#0F2440"));
+  $("ast-chip-cc").innerHTML=TR(chip(AST_CC,"Come-cotas (mai/nov)","PRO.toggleCC()","#0F2440"));
   renderAcao();
   astPreview();
 }
@@ -23890,8 +23913,9 @@ function collectAstPro(){
     /* ações: ticker e quantidade; fora da classe, os campos são limpos */
     ticker:ehAcaoForm()?($("ast-ticker")?.value||""):"",
     qtd:ehAcaoForm()?acQtdVal():0,
-    pm:ehAcaoForm()?(unmaskCurrency($("ast-pm"))||0):0,
-    cot:ehAcaoForm()?(unmaskCurrency($("ast-cot"))||0):0};
+    pm:ehAcaoForm()?(acComprasResumo(AC_COMPRAS).n?acComprasResumo(AC_COMPRAS).pm:(unmaskCurrency($("ast-pm"))||0)):0,
+    cot:ehAcaoForm()?(unmaskCurrency($("ast-cot"))||0):0,
+    compras:ehAcaoForm()?acComprasValidas(AC_COMPRAS).map(c=>({d:c.d,q:+c.q,p:+c.p})).sort((x,y)=>x.d<y.d?-1:1):[]};
 }
 function fillAstPro(a){
   const p=a?astPro(a):astPro({class:AST_CLASS_CUR(),balance:0});
@@ -23910,6 +23934,8 @@ function fillAstPro(a){
   if($("ast-qtd")) $("ast-qtd").value=(a&&+p.qtd>0)?String(parseInt(p.qtd,10)):"";
   setCurrencyInput($("ast-pm"),(a&&+p.pm>0)?+p.pm:"");
   setCurrencyInput($("ast-cot"),(a&&+p.cot>0)?+p.cot:"");
+  AC_COMPRAS=(a&&Array.isArray(p.compras))?p.compras.map(c=>({d:c.d,q:+c.q,p:+c.p})):[];
+  acComprasRender(true);
   renderAstPro();
   astRecalc();
 }
@@ -25033,7 +25059,7 @@ function renderEncerrada(){
     ${HD(PX("enc_h_meses"))}${meses}
     ${HD(PX("enc_h_carac"))}${carac}
     <div style="display:flex;gap:8px;margin-top:16px">
-      <button class="pro-btn enc-btn" onclick="PRO.encEvolucao(${a.id})">📈 ${PX("enc_evol")}</button>
+      <button class="pro-btn enc-btn" onclick="PRO.encEvolucao(${a.id})">${PX("enc_evol")}</button>
       <button class="pro-btn enc-btn" onclick="PRO.encDesfazer(${a.id})">↺ ${PX("enc_undo")}</button>
     </div>
     <div class="pro-note" style="margin-top:8px">${PX("enc_undo_note")}</div>`;
@@ -25750,7 +25776,14 @@ function acLiveHTML(a){
   let fB=1, f12=1;
   try{ if(baseData<hoje) fB=fatorProduto(a,baseData,hoje,p).fator||1; }catch(e){}
   try{ f12=fatorProduto(a,hoje,addMonths(hoje,12),p).fator||1; }catch(e){}
-  const alvo=basePx>0?basePx*fB:0;
+  let alvo=basePx>0?basePx*fB:0;
+  /* com compras: cada lote corrigido desde a sua data */
+  const cpsV=acComprasValidas(p.compras);
+  if(cpsV.length&&pm>0){
+    let sv=0, sq=0;
+    cpsV.forEach(c=>{ let f=1; try{ if(c.d<hoje) f=fatorProduto(a,c.d,hoje,p).fator||1; }catch(e){} sv+=c.q*c.p*f; sq+=+c.q; });
+    if(sq>0){ alvo=sv/sq; fB=alvo/pm; }
+  }
   const alvo12=alvo>0?alvo*f12:(atual>0?atual*f12:0);
   const gap=(alvo>0&&atual>0)?(atual/alvo-1)*100:null;
   const real=(pm>0&&atual>0)?(atual/pm-1)*100:null;
@@ -25772,7 +25805,11 @@ function acLiveHTML(a){
     </div>`;
   /* avisos de estado */
   let aviso="";
-  if(st==="ponte"||st==="bad"||AC_PT_OPEN){
+  if(st==="ponte"&&!AC_PT_OPEN){
+    aviso=`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(15,36,64,.05)">
+      <span style="font-size:11.5px;color:var(--ink-2);line-height:1.4;min-width:0">${PX("ac_pt_cta")}</span>
+      <button type="button" class="pro-pill" onclick="PRO.acPtAbrir()" style="flex-shrink:0;height:34px;box-sizing:border-box;color:${NAV};font-weight:600">${PX("ac_pt_cfg")}</button></div>`;
+  }else if(st==="ponte"||st==="bad"||AC_PT_OPEN){
     const passo=(n,k)=>`<div style="display:grid;grid-template-columns:20px minmax(0,1fr);gap:6px;font-size:11px;color:var(--ink-2);line-height:1.5;margin-top:5px">
         <span style="width:18px;height:18px;border-radius:50%;background:${NAV};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">${n}</span><span>${PX(k)}</span></div>`;
     const err=st==="bad"?`<div style="font-size:11px;color:${RED};line-height:1.5;margin-bottom:8px">${PX("ac_pt_bad")}</div>`:"";
@@ -25982,7 +26019,7 @@ function renderRendimento(){
       <div style="font-size:11px;color:var(--ink-2)">${a.class==="stocks"&&astQtdTxt(a)?raw(astQtdTxt(a))+" · ":""}${catLabel(c)} · aplicado em ${brDate(e.inicio)} · ${e.diasCorridos} dias</div></div>
     </div>
 
-    ${a.class==="stocks"?raw(`<div class="sec-label">${PX("ac_live_t")}</div><div id="ac-live">${acLiveHTML(a)}</div>`):""}
+    ${a.class==="stocks"?raw(`<div class="sec-label">${PX("ac_live_t")}</div><div id="ac-live">${acLiveHTML(a)}</div>${acComprasFichaHTML(a)}`):""}
 
     <div class="sec-label">${PL("ap_charac")}</div>
     <div style="background:var(--surface);border-radius:14px;padding:10px 15px;margin-bottom:12px">
@@ -26351,7 +26388,7 @@ function renderFgts(){
       <div></div>
     </div>`:""}
     <div class="pro-chips" style="margin-top:8px">
-      <span class="pro-pill ${FGTS_TMP.repetir?"on":""}" onclick="PRO.toggleFgtsRepetir()">🔁 ${ab?"Renovar a cada 12 meses":"Repetir a cada 24 meses"}</span>
+      <span class="pro-pill ${FGTS_TMP.repetir?"on":""}" onclick="PRO.toggleFgtsRepetir()">${ab?"Renovar a cada 12 meses":"Repetir a cada 24 meses"}</span>
     </div>
 
     <div id="fgts-out"></div>
@@ -26695,7 +26732,7 @@ window.renderAssetList=function(){
     </div>`;
     const foot=card.lastElementChild;
     if(foot) foot.insertAdjacentHTML("beforebegin",badges);
-    if(foot) foot.insertAdjacentHTML("afterbegin",H`<button onclick="PRO.openRendimento(${a.id})" style="background:none;border:none;color:#0F2440;font-size:11.5px;font-weight:600;cursor:pointer;margin-right:auto">📈 Rendimento</button><button onclick="PRO.openResgate(${a.id})" style="background:none;border:none;color:#0F2440;font-size:11.5px;font-weight:600;cursor:pointer;margin-right:8px">💰 Resgate</button>`);
+    if(foot) foot.insertAdjacentHTML("afterbegin",H`<button onclick="PRO.openRendimento(${a.id})" style="background:none;border:none;color:#0F2440;font-size:11.5px;font-weight:600;cursor:pointer;margin-right:auto">Rendimento</button><button onclick="PRO.openResgate(${a.id})" style="background:none;border:none;color:#0F2440;font-size:11.5px;font-weight:600;cursor:pointer;margin-right:8px">💰 Resgate</button>`);
   });
 };
 
@@ -28126,7 +28163,7 @@ function renderCfPainel(){
     ${cfDemonstrativo(cf,"c")}`:""}
     ${corpo}
     ${CFP.escala!=="hist"?`<button class="pro-btn-lg" onclick="PRO.cfSalvarPosicao()"
-      style="width:100%;background:#1A3A5C;color:#fff;border:none;font-weight:600;cursor:pointer;margin:4px 0 12px">💾 ${TR("Salvar posição no histórico")}</button>`:""}
+      style="width:100%;background:#1A3A5C;color:#fff;border:none;font-weight:600;cursor:pointer;margin:4px 0 12px">${TR("Salvar posição no histórico")}</button>`:""}
     <div style="font-size:10px;color:var(--ink-3);line-height:1.55;padding-bottom:6px">
       Meses até o corrente usam os lançamentos reais. A partir do próximo, as entradas e despesas recorrentes se repetem, as variáveis entram pela média, as dívidas seguem o cronograma (já com o FGTS, quando há plano) e as aplicações rendem com o indexador de cada uma.
     </div>`;
@@ -30299,6 +30336,7 @@ window.PRO={
   aplicarProduto,sincronizarFgtsPatrimonio,PRODUTOS,TR,
   acTicker,acQtd,acSaldoDeCot,acCustoDePm,setAcIdx,astQtdTxt,
   acBuscarCotacao,acRefresh,acPtAbrir,acPtSalvar,acPtCopiar,acUsarCotacao,acLiveHTML,acQuoteParse,
+  acCompraAdd,acCompraDel,acCompraSet,acComprasResumo,acComprasValidas,
   diasUteis,duPeriodo,ehDiaUtil,astPro,serieFatores,
   /* leitura da regra de FGTS: dia do depósito e reconhecimento da conta
      vinculada. Exposto para diagnóstico e para os testes de projeção. */
@@ -32130,9 +32168,7 @@ const DIC={
   s_sub:["Fluxo de caixa descontado — VPL, TIR, payback e ponto de equilíbrio",
          "Discounted cash flow — NPV, IRR, payback and break-even",
          "Discounted Cash Flow — Kapitalwert, IRR, Amortisation und Break-even"],
-  s_intro:["Um projeto por vez: monte o fluxo linha a linha, declare a taxa e leia o resultado. As saídas são sempre negativas e as entradas positivas — o sinal é dado pela natureza da linha, você digita só o valor.",
-    "One project at a time: build the flow line by line, declare the rate and read the result. Outflows are always negative and inflows positive — the sign comes from the line's nature, you type only the amount.",
-    "Ein Projekt nach dem anderen: Fluss Zeile für Zeile aufbauen, Satz erklären, Ergebnis lesen. Abflüsse sind negativ, Zuflüsse positiv — das Vorzeichen ergibt sich aus der Art der Zeile."],
+  s_intro:["Monte o fluxo linha a linha, defina a taxa e veja o resultado. Digite só valores; o sinal é automático.", "Build the flow line by line, set the rate and read the result. Type values only; signs are automatic.", "Fluss Zeile für Zeile aufbauen, Satz festlegen, Ergebnis lesen. Nur Beträge eingeben; Vorzeichen automatisch."],
   s_new:["Novo projeto","New project","Neues Projekt"],
   s_new_name:["Projeto sem nome","Untitled project","Projekt ohne Namen"],
   s_none:["Nenhum projeto ainda. Comece por um: um imóvel para alugar, uma loja, um equipamento, uma sociedade.",
@@ -32172,17 +32208,11 @@ const DIC={
   s_taxa_ef:["Taxa efetiva","Effective rate","Effektiver Satz"],
   s_defl:["deflacionada: (1+i)/(1+IPCA)−1","deflated: (1+i)/(1+inflation)−1","deflationiert: (1+i)/(1+Inflation)−1"],
   s_meio:["Meio de período","Mid-period","Periodenmitte"],
-  s_meio_h:["Desconta como se o caixa entrasse no meio do período, e não no último dia. É a prática de mercado em avaliação.",
-    "Discounts as if cash arrived mid-period rather than on the last day. Standard market practice in valuation.",
-    "Diskontiert, als flösse das Geld in der Periodenmitte statt am letzten Tag. Marktstandard in der Bewertung."],
+  s_meio_h:["Desconta o caixa no meio do período (prática de mercado).", "Discounts cash at mid-period (market practice).", "Diskontiert zur Periodenmitte (Marktpraxis)."],
   s_inflar:["Corrigir tudo pelo IPCA","Inflate everything","Alles inflationieren"],
-  s_inflar_h:["As linhas são digitadas a preços de hoje e corrigidas mês a mês pela curva de IPCA. Só vale para fluxo nominal, e não se acumula com o reajuste por índice da própria linha.",
-    "Lines are entered in today's money and inflated month by month by the inflation curve. Nominal flows only, and it does not stack with a line's own index escalation.",
-    "Zeilen werden zu heutigen Preisen erfasst und monatlich mit der Inflationskurve fortgeschrieben. Nur bei nominalem Fluss; nicht kumulativ mit der Indexierung der Zeile."],
+  s_inflar_h:["Valores a preços de hoje, corrigidos pelo IPCA mês a mês.", "Values at today's prices, grown monthly by IPCA.", "Werte zu heutigen Preisen, monatlich mit IPCA fortgeschrieben."],
   s_ncg:["Giro % da receita","Working cap. % rev.","Umlaufverm. % Umsatz"],
-  s_ncg_h:["O que fica preso em estoque e a receber. Só a VARIAÇÃO entra no fluxo: crescer consome caixa, encolher devolve.",
-    "What sits in inventory and receivables. Only the CHANGE hits cash: growing consumes it, shrinking gives it back.",
-    "Was in Vorräten und Forderungen gebunden ist. Nur die VERÄNDERUNG trifft den Cashflow."],
+  s_ncg_h:["Capital preso em estoque e recebíveis. Só a variação entra no fluxo.", "Cash tied in inventory and receivables. Only the change enters the flow.", "In Vorräten und Forderungen gebundenes Kapital. Nur die Veränderung zählt."],
   s_tv:["Valor terminal","Terminal value","Endwert"],
   s_tv_on:["Considerar valor terminal","Include terminal value","Endwert einbeziehen"],
   s_tv_met:["Método","Method","Methode"],
@@ -32286,9 +32316,7 @@ const DIC={
   s_mt_ok:["{n} valores aplicados","{n} values applied","{n} Werte übernommen"],
   s_reaj_ini2:["1º reajuste em","First one in","Erste in"],
   s_reaj:["Reajuste","Escalation","Anpassung"],
-  s_reaj_h:["O reajuste é o que faz o aluguel subir todo aniversário. Escolha o índice e de quantos em quantos períodos ele se aplica; o app acumula o índice do período anterior segundo a curva dos Parâmetros.",
-    "Escalation is what raises the rent on every anniversary. Pick the index and how many periods apart it applies; the app accumulates the index over the preceding span using the Parameters curve.",
-    "Die Anpassung lässt die Miete zu jedem Jahrestag steigen. Wählen Sie den Index und den Abstand in Perioden; die App kumuliert den Index der Vorperiode entlang der Parameterkurve."],
+  s_reaj_h:["Escolha o índice e a periodicidade do reajuste; o acumulado vem dos Parâmetros.", "Pick the index and adjustment frequency; the accrual comes from the Parameters.", "Index und Anpassungsintervall wählen; die Kumulation kommt aus den Parametern."],
   s_reaj_idx:["Índice","Index","Index"],
   s_reaj_no:["Sem reajuste","No escalation","Keine Anpassung"],
   s_reaj_fixo:["Percentual fixo","Fixed percentage","Fester Prozentsatz"],
@@ -32296,9 +32324,7 @@ const DIC={
   s_reaj_ini:["1º reajuste no per.","First one at period","Erste in Periode"],
   s_reaj_pct:["Reajuste %","Escalation %","Anpassung %"],
   s_cresc:["Crescimento %","Growth %","Wachstum %"],
-  s_cresc_h:["Crescimento real do negócio — mais clientes, mais volume. É outra coisa que o reajuste por índice, e os dois convivem.",
-    "Real growth of the business — more customers, more volume. Different from index escalation; the two coexist.",
-    "Reales Wachstum des Geschäfts — mehr Kunden, mehr Menge. Etwas anderes als die Indexierung; beides geht zusammen."],
+  s_cresc_h:["Crescimento real (volume), além do reajuste por índice.", "Real growth (volume), on top of index adjustment.", "Reales Wachstum (Volumen), zusätzlich zur Indexanpassung."],
 
   /* naturezas */
   s_n_receita:["Receita","Revenue","Umsatz"],
@@ -32393,9 +32419,7 @@ const DIC={
     "No CDI curve is declared in Parameters: the rate remains the one you typed.",
     "In den Parametern ist keine CDI-Kurve erklärt: der Satz bleibt der eingegebene."],
   /* — v11.34: planilha do projeto — */
-  gr_intro:["Cada projeto é um fluxo de caixa. Toque num projeto para abrir a planilha — em paisagem — e montar o fluxo linha a linha, da receita até o VPL.",
-    "Each project is a cash flow. Tap a project to open its spreadsheet — in landscape — and build the flow line by line, from revenue down to NPV.",
-    "Jedes Projekt ist ein Cashflow. Tippen Sie auf ein Projekt, um die Tabelle — im Querformat — zu öffnen und den Fluss Zeile für Zeile bis zum Kapitalwert aufzubauen."],
+  gr_intro:["Cada projeto é um fluxo de caixa. Toque para abrir a planilha.", "Each project is a cash flow. Tap to open the sheet.", "Jedes Projekt ist ein Cashflow. Antippen, um das Blatt zu öffnen."],
   gr_open:["Abrir fluxo","Open flow","Fluss öffnen"],
   gr_linhas:["{n} linhas","{n} lines","{n} Zeilen"],
   gr_receita:["Receitas","Revenue","Erlöse"],
@@ -32421,9 +32445,7 @@ const DIC={
   gr_add_h:["toque para adicionar","tap to add","zum Hinzufügen tippen"],
   gr_off:["fora do cálculo","out of the calculation","nicht gerechnet"],
   gr_da_rb:["da receita bruta","of gross revenue","vom Bruttoerlös"],
-  gr_hint:["Toque numa linha do fluxo — Receitas, Custos, Capex… — para criar uma sublinha com as premissas dela. Toque numa sublinha para editar. O fluxo desce sozinho até o VPL.",
-    "Tap a flow line — Revenue, Costs, Capex… — to create a sub-line with its assumptions. Tap a sub-line to edit it. The flow rolls down to the NPV by itself.",
-    "Tippen Sie auf eine Flusszeile — Erlöse, Kosten, Capex … —, um eine Unterzeile mit ihren Annahmen anzulegen. Unterzeile antippen zum Bearbeiten. Der Fluss läuft von selbst bis zum Kapitalwert."],
+  gr_hint:["Toque numa linha para criar uma sublinha; toque na sublinha para editar.", "Tap a line to add a sub-line; tap a sub-line to edit.", "Zeile antippen für eine Unterzeile; Unterzeile antippen zum Bearbeiten."],
   gr_prem:["Premissas","Assumptions","Annahmen"],
   gr_res:["Resultado","Result","Ergebnis"],
   gr_rot:["Girar a planilha","Rotate the sheet","Tabelle drehen"],
@@ -36765,6 +36787,107 @@ html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-ar
     var inst=(window.navigator.standalone===true)||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
     if(ios&&inst) document.documentElement.classList.add("ios-app");
   }catch(e){}
+})();
+</script>
+<style id="v1145-clean">
+/* notas explicativas: duas linhas; toque abre o resto */
+.pro-note:not([style*="color"]):not(.open){display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pro-note.clamp{cursor:pointer}
+#total-meta,#total-pills{display:none!important}
+#calc-bar{position:fixed;z-index:100000;display:none;gap:4px;padding:4px;border-radius:14px;
+  background:var(--paper,#fff);border:1px solid var(--line,rgba(0,0,0,.12));box-shadow:0 6px 18px rgba(15,36,64,.14)}
+#calc-bar.on{display:flex}
+#calc-bar button{min-width:42px;height:32px;border-radius:10px;border:1.5px solid transparent;background:rgba(15,36,64,.06);
+  color:#0F2440;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;cursor:pointer;padding:0 8px;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation}
+#calc-bar button:active{border-color:#0F2440;background:rgba(15,36,64,.06)}
+</style>
+<script>
+/* v11.45 — atalhos ×2 ×3 ÷2 ÷3 nos campos numéricos */
+(function(){
+  var bar=null, alvo=null, t=0;
+  var FORA=/cnpj|cpf|cep|phone|tel|ticker|senha|pass|pin|ano|year/i;
+  function ehNum(el){
+    if(!el||el.tagName!=="INPUT"||el.readOnly||el.disabled) return false;
+    if(el.closest&&el.closest("[data-nocalc],.overlay:not(.open)")) return false;
+    if(FORA.test((el.id||"")+" "+(el.name||""))) return false;
+    if(el.type==="number") return true;
+    if(el.type!=="text"&&el.type!=="tel") return false;
+    var im=(el.getAttribute("inputmode")||"").toLowerCase();
+    return im==="decimal"||im==="numeric";
+  }
+  function moeda(el){
+    return /maskCurrency/.test(el.getAttribute("oninput")||"")||el.classList.contains("f-amount")||
+      /^-?\d{1,3}(\.\d{3})*,\d{2}$/.test(String(el.value||"").trim());
+  }
+  function ler(el){
+    var s=String(el.value||"").trim(); if(!s) return NaN;
+    if(el.type==="number") return parseFloat(s);
+    if(s.indexOf(",")>=0) return parseFloat(s.replace(/\./g,"").replace(",","."));
+    if(/^-?\d{1,3}(\.\d{3})+$/.test(s)) return parseFloat(s.replace(/\./g,""));
+    return parseFloat(s.replace(/[^\d.\-]/g,""));
+  }
+  function escrever(el,v){
+    var im=(el.getAttribute("inputmode")||"").toLowerCase();
+    if(el.type==="number") el.value=String(+v.toFixed(6));
+    else if(moeda(el)) el.value=new Intl.NumberFormat("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}).format(Math.round(v*100)/100);
+    else if(im==="numeric") el.value=String(Math.round(v));
+    else el.value=String(+v.toFixed(4)).replace(".",",");
+    el.dispatchEvent(new Event("input",{bubbles:true}));
+    el.dispatchEvent(new Event("change",{bubbles:true}));
+  }
+  function aplicar(op){
+    if(!alvo) return;
+    var v=ler(alvo); if(!isFinite(v)) return;
+    var r=op==="×2"?v*2:op==="×3"?v*3:op==="÷2"?v/2:v/3;
+    escrever(alvo,r);
+    try{ alvo.focus({preventScroll:true}); }catch(e){}
+  }
+  function criar(){
+    bar=document.createElement("div"); bar.id="calc-bar";
+    ["×2","×3","÷2","÷3"].forEach(function(o){
+      var b=document.createElement("button"); b.type="button"; b.textContent=o; b.dataset.op=o; bar.appendChild(b);
+    });
+    /* age no toque, sem tirar o foco do campo (o teclado fica aberto) */
+    bar.addEventListener("pointerdown",function(e){
+      e.preventDefault();
+      var b=e.target.closest("button"); if(b) aplicar(b.dataset.op);
+    });
+    bar.addEventListener("mousedown",function(e){ e.preventDefault(); });
+    document.body.appendChild(bar);
+  }
+  function posicionar(){
+    if(!bar||!alvo||!bar.classList.contains("on")) return;
+    if(!document.contains(alvo)||document.activeElement!==alvo||!ehNum(alvo)){ esconder(); return; }
+    var r=alvo.getBoundingClientRect();
+    if(!r.width){ esconder(); return; }
+    var vv=window.visualViewport, vh=vv?vv.height+vv.offsetTop:window.innerHeight;
+    var bw=bar.offsetWidth||190, bh=bar.offsetHeight||40;
+    var top=r.bottom+6; if(top+bh>vh-4) top=r.top-bh-6;
+    var left=Math.min(Math.max(8,r.right-bw),window.innerWidth-bw-8);
+    bar.style.top=top+"px"; bar.style.left=left+"px";
+  }
+  function mostrar(el){ if(!bar) criar(); alvo=el; bar.classList.add("on"); posicionar(); }
+  function esconder(){ if(bar) bar.classList.remove("on"); alvo=null; }
+  document.addEventListener("focusin",function(e){ clearTimeout(t); if(ehNum(e.target)) mostrar(e.target); else esconder(); });
+  document.addEventListener("focusout",function(){ clearTimeout(t); t=setTimeout(function(){ if(!ehNum(document.activeElement)) esconder(); },150); });
+  window.addEventListener("scroll",posicionar,true);
+  window.addEventListener("resize",posicionar);
+  if(window.visualViewport){ visualViewport.addEventListener("resize",posicionar); visualViewport.addEventListener("scroll",posicionar); }
+  /* notas: marca as que foram cortadas; toque abre e fecha */
+  function marcar(){
+    document.querySelectorAll(".pro-note:not(.open)").forEach(function(n){
+      n.classList.toggle("clamp",n.scrollHeight>n.clientHeight+2);
+    });
+  }
+  document.addEventListener("click",function(e){
+    var n=e.target.closest&&e.target.closest(".pro-note");
+    if(!n||e.target.closest("a,button,input,select")) return;
+    if(n.classList.contains("open")){ n.classList.remove("open"); marcar(); }
+    else if(n.classList.contains("clamp")||n.scrollHeight>n.clientHeight+2){ n.classList.add("open"); n.classList.remove("clamp"); }
+  });
+  var mt=0;
+  new MutationObserver(function(){ clearTimeout(mt); mt=setTimeout(function(){ marcar(); if(alvo&&(!document.contains(alvo)||document.activeElement!==alvo||!alvo.offsetParent||!ehNum(alvo))) esconder(); },120); }).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});
 })();
 </script>
 </body>
