@@ -4718,6 +4718,8 @@ const I18N={
     wealth_composition:"Composição do patrimônio",
     proj_debt_interest:"Juros até quitar dívidas",
     amount_neg_hint:"Dica: digite um valor negativo (ex: -50) para registrar um estorno ou reembolso.",
+    est_badge:"Estimado", real_badge:"Real", est_value:"Estimativa", real_value:"Valor real do mês",
+    use_estimate:"Usar estimativa", real_saved:"Valor real lançado",
     balance_sheet:"Balanço patrimonial",
     bs_assets:"Ativo",
     bs_liabilities:"Passivo",
@@ -5840,6 +5842,8 @@ const I18N={
     wealth_composition:"Wealth composition",
     proj_debt_interest:"Interest until debt-free",
     amount_neg_hint:"Tip: enter a negative value (e.g. -50) to record a refund or chargeback.",
+    est_badge:"Estimated", real_badge:"Actual", est_value:"Estimate", real_value:"Actual amount this month",
+    use_estimate:"Use estimate", real_saved:"Actual amount saved",
     balance_sheet:"Balance sheet",
     bs_assets:"Assets",
     bs_liabilities:"Liabilities",
@@ -6962,6 +6966,8 @@ const I18N={
     wealth_composition:"Vermögenszusammensetzung",
     proj_debt_interest:"Zinsen bis schuldenfrei",
     amount_neg_hint:"Tipp: einen negativen Wert (z.B. -50) eingeben, um eine Erstattung zu erfassen.",
+    est_badge:"Geschätzt", real_badge:"Ist", est_value:"Schätzung", real_value:"Ist-Betrag des Monats",
+    use_estimate:"Schätzung verwenden", real_saved:"Ist-Betrag gespeichert",
     balance_sheet:"Bilanz",
     bs_assets:"Aktiva",
     bs_liabilities:"Passiva",
@@ -8428,9 +8434,9 @@ function splLedger(){
     const datas=recur?recurDates(e.date,e.recurrence,e.recurUntil):[e.date];
     datas.forEach((d,i)=>{
       const k7=ym(d); if(!d||k7>hz) return;
-      const inst=i>0?{...e,date:d,id:e.id+"_r"+i,_parentId:e.id,_recurInstance:true}:e;
+      const inst=recur?expInst(e,d,i):e;
       e.split.rows.forEach((row,idx)=>{
-        const amt=Math.round(personAmount(e,idx)*100)/100; if(!(amt>0)) return;
+        const amt=Math.round(personAmount(inst,idx)*100)/100; if(!(amt>0)) return;
         const key=splKey(inst.id,idx), reg=splReg(key);
         const rec=splRecebidoKey(key,amt);
         const saldo=Math.max(0,Math.round((amt-rec)*100)/100);
@@ -9062,6 +9068,7 @@ function renderList(){
           ${!isEstorno?`<span class="type-pill ${e.type==="fixed"?"pill-fixed":"pill-var"}">${e.type==="fixed"?t("fixed_one"):t("variable_one")}</span>`:""}
           ${cur!=="BRL"?`<span class="cur-badge">${cur}</span>`:""}
           ${rLabel?`<span class="recur-badge">${rLabel}</span>`:""}
+          ${(e.recurrence&&e.recurrence!=="none"&&!isEstorno)?`<button type="button" class="real-pill${e._real?" on":""}" onclick="openRealExp(${editId},'${e.date}')">${e._real?t("real_badge"):t("est_badge")}</button>`:""}
           ${sLabel?`<span class="split-badge">${sLabel}</span>`:""}
         </div>
         <div class="exp-actions">
@@ -9237,7 +9244,7 @@ function expInstancesByYM(ymList){
     } else {
       recurDates(e.date,e.recurrence,e.recurUntil).forEach((d,i)=>{
         const k=ym(d);
-        if(map[k]) map[k].push({...e,date:d,_recurInstance:i>0,_parentId:e.id,id:e.id+(i>0?"_r"+i:"")});
+        if(map[k]) map[k].push(expInst(e,d,i));
       });
     }
   });
@@ -10057,6 +10064,16 @@ function recurDates(startDate, recurrence, until){
   return dates;
 }
 
+/* v11.49 — VALOR REAL DO MÊS. Recorrente lançada como estimativa (luz, água…):
+   o valor real de cada ocorrência fica em e.reais["AAAA-MM-DD"]. Sem real,
+   vale a estimativa (e.amount). Toda instância de recorrência passa por aqui. */
+function expTemReal(e,d){ const r=e&&e.reais; return !!r&&Object.prototype.hasOwnProperty.call(r,d)&&isFinite(+r[d]); }
+function expValorEm(e,d){ return expTemReal(e,d)?+e.reais[d]:e.amount; }
+function expInst(e,d,i){
+  const real=expTemReal(e,d);
+  return {...e, date:d, amount:real?+e.reais[d]:e.amount, _estim:e.amount, _real:real,
+    _recurInstance:i>0, _parentId:e.id, id:e.id+(i>0?"_r"+i:"")};
+}
 /* Build a flat list of all expense instances for a given YM, including recurring ones */
 function getExpensesForYM(ymStr){
   const result=[];
@@ -10067,7 +10084,7 @@ function getExpensesForYM(ymStr){
       const dates=recurDates(e.date, e.recurrence, e.recurUntil);
       dates.forEach((d,i)=>{
         if(ym(d)===ymStr){
-          result.push({...e, date:d, _recurInstance:i>0, _parentId:e.id, id:e.id+(i>0?"_r"+i:"")});
+          result.push(expInst(e,d,i));
         }
       });
     }
@@ -12488,7 +12505,7 @@ function getAllCashFlowEntries(){
       entries.push({date:e.date, amount:myAmount(e), kind:"expense"});
     } else {
       recurDates(e.date,e.recurrence,e.recurUntil).forEach(d=>{
-        if(d<=horizon) entries.push({date:d, amount:myAmount(e), kind:"expense"});
+        if(d<=horizon) entries.push({date:d, amount:myAmount(expInst(e,d,0)), kind:"expense"});
       });
     }
   });
@@ -13360,6 +13377,44 @@ function handleSave(){
       setTimeout(()=>promptSaveRule(desc,SC,ST),350);
     }
   }
+}
+function openRealExp(id,d){
+  const e=EX.find(x=>x.id===id); if(!e) return;
+  const old=document.getElementById("modal-real"); if(old) old.remove();
+  const cur=e.currency||"BRL", tem=expTemReal(e,d);
+  const mes=(()=>{ try{ return new Date(d+"T12:00:00").toLocaleDateString(LANG==="en"?"en-US":(LANG==="de"?"de-DE":"pt-BR"),{month:"long",year:"numeric"}); }catch(x){ return d.slice(0,7); } })();
+  const ov=document.createElement("div");
+  ov.className="overlay"; ov.id="modal-real";
+  ov.innerHTML=`<div class="sheet" style="max-height:none">
+    <div class="sheet-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px">
+      <div style="min-width:0"><div style="font-size:20px;font-weight:600;color:var(--body);line-height:1.25">${escapeHtml(e.desc||"")}</div>
+        <div style="font-size:12px;color:var(--ink-3);margin-top:3px">${mes.charAt(0).toUpperCase()+mes.slice(1)}</div></div>
+      <button type="button" class="act-btn" onclick="closeOverlay('modal-real')" style="font-size:18px" aria-label="${t("close")||"×"}">✕</button>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:12px;background:var(--surface);margin-bottom:12px">
+      <span style="font-size:13px;color:var(--ink-2)">${t("est_value")}</span>
+      <span style="font-size:14px;font-weight:600;color:var(--body)">${fmtCur(e.amount,cur)}</span>
+    </div>
+    <label class="f-label" style="display:block;margin-bottom:6px">${t("real_value")}</label>
+    <input id="real-in" class="f-input" type="text" inputmode="decimal" placeholder="0,00"
+      oninput="maskCurrencyInput(this)" style="margin-bottom:58px"/>
+    <div style="display:flex;gap:8px">
+      ${tem?`<button type="button" class="real-sec" onclick="setRealExp(${id},'${d}',null)">${t("use_estimate")}</button>`:""}
+      <button type="button" class="btn-primary" style="flex:1.4;margin:0" onclick="setRealExp(${id},'${d}',unmaskCurrency(document.getElementById('real-in')))">${t("save")}</button>
+    </div></div>`;
+  document.body.appendChild(ov);
+  ov.onclick=x=>{ if(x.target===ov) closeOverlay(ov); };
+  if(tem) setCurrencyInput(document.getElementById("real-in"),+e.reais[d]);
+  requestAnimationFrame(()=>{ ov.classList.add("open"); setTimeout(()=>{ try{ document.getElementById("real-in").focus(); }catch(x){} },250); });
+}
+function setRealExp(id,d,v){
+  const e=EX.find(x=>x.id===id); if(!e) return;
+  if(v===null||v===undefined||v===""||!isFinite(+v)){ if(e.reais){ delete e.reais[d]; if(!Object.keys(e.reais).length) delete e.reais; } }
+  else { e.reais=Object.assign({},e.reais||{}); e.reais[d]=Math.round(+v*100)/100; }
+  persist(); updateHero(); renderDash(); if(V==="list") renderList();
+  closeOverlay("modal-real");
+  toast("✓ "+(v===null?t("use_estimate"):t("real_saved")));
 }
 function delExp(id){
   const realId = typeof id==="string"&&id.includes("_r") ? parseInt(id.split("_r")[0]) : id;
@@ -17904,7 +17959,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.48";
+const APP_VERSION="11.49";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -36942,6 +36997,13 @@ html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-ar
 .pro-note:not([style*="color"]):not(.open){display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pro-note.clamp{cursor:pointer}
 #total-meta,#total-pills{display:none!important}
+.real-pill{font-size:9px;padding:2px 7px;border-radius:8px;border:1px dashed var(--ink-4,#A8A39A);background:transparent;
+  color:var(--ink-3,#8A857C);font-weight:600;letter-spacing:.3px;cursor:pointer;line-height:1.4;-webkit-tap-highlight-color:transparent}
+.real-pill.on{border-style:solid;border-color:rgba(90,138,74,.5);color:#5A8A4A;background:rgba(90,138,74,.1)}
+.real-pill:active{border-color:currentColor}
+.real-sec{flex:1;margin:0;padding:clamp(10px,1.8dvh,14px);border-radius:14px;border:1.5px solid var(--line);background:none;
+  color:var(--ink-2);font-size:clamp(12px,1.8dvh,14px);font-weight:500;cursor:pointer}
+.real-sec:active{border-color:var(--accent)}
 #calc-bar{position:fixed;z-index:100000;display:none;gap:4px;padding:4px;border-radius:14px;
   background:var(--paper,#fff);border:1px solid var(--line,rgba(0,0,0,.12));box-shadow:0 6px 18px rgba(15,36,64,.14)}
 #calc-bar.on{display:flex}
