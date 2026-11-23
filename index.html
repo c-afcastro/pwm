@@ -3143,6 +3143,24 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
         </select>
       </div>
     </div>
+    <div id="recur-extra-wrap" style="display:none">
+      <label class="f-label" style="margin-top:14px" data-i18n="except_months">Exceto os meses</label>
+      <div id="f-exceto" class="mes-grid"></div>
+      <label class="f-label" style="margin-top:14px" data-i18n="adj">Reajuste</label>
+      <div class="recur-row" id="reaj-row">
+        <button type="button" class="recur-btn" data-reaj="nenhum" onclick="selReaj('nenhum')" data-i18n="adj_none">Sem reajuste</button>
+        <button type="button" class="recur-btn" data-reaj="pct" onclick="selReaj('pct')" data-i18n="adj_pct">% ao ano</button>
+        <button type="button" class="recur-btn" data-reaj="ipca" onclick="selReaj('ipca')">IPCA</button>
+        <button type="button" class="recur-btn" data-reaj="igpm" onclick="selReaj('igpm')">IGP-M</button>
+      </div>
+      <div id="reaj-det" class="reaj-det" style="display:none">
+        <div id="reaj-pct-w"><label class="f-label" data-i18n="adj_rate">Taxa (% a.a.)</label>
+          <input id="f-reaj-pct" class="f-input" type="text" inputmode="decimal" placeholder="0"/></div>
+        <div><label class="f-label" data-i18n="adj_month">Mês do reajuste</label>
+          <select id="f-reaj-mes" class="f-input"></select></div>
+      </div>
+      <div id="novos-wrap"></div>
+    </div>
 
     </div>
     <div data-wz="cat">
@@ -4157,6 +4175,10 @@ const I18N={
     type_fixed_opt:"Fixos",
     type_label_opt:"Tipo...",
     repeat_until:"Repetir até",
+    except_months:"Exceto os meses", adj:"Reajuste", adj_none:"Sem reajuste", adj_pct:"% ao ano",
+    adj_rate:"Taxa (% a.a.)", adj_month:"Mês do reajuste", new_values:"Novos valores", from_month:"A partir de",
+    only_month:"Só este mês", from_on:"A partir deste mês", new_value_from:"Novo valor a partir deste mês",
+    remove_new:"Remover novo valor", new_saved:"Novo valor aplicado",
     repeat_until_opt:"Repetir até (opcional)",
     repeat_until_ph:"Mês final (opcional)",
     repeat_every:"Repetir a cada",
@@ -5281,6 +5303,10 @@ const I18N={
     type_fixed_opt:"Fixed",
     type_label_opt:"Type...",
     repeat_until:"Repeat until",
+    except_months:"Except months", adj:"Adjustment", adj_none:"No adjustment", adj_pct:"% per year",
+    adj_rate:"Rate (% p.a.)", adj_month:"Adjustment month", new_values:"New amounts", from_month:"From",
+    only_month:"This month only", from_on:"From this month on", new_value_from:"New amount from this month",
+    remove_new:"Remove new amount", new_saved:"New amount applied",
     repeat_until_opt:"Repeat until (optional)",
     repeat_until_ph:"End month (optional)",
     repeat_every:"Repeat every",
@@ -6405,6 +6431,10 @@ const I18N={
     type_fixed_opt:"Fest",
     type_label_opt:"Typ...",
     repeat_until:"Wiederholen bis",
+    except_months:"Außer in den Monaten", adj:"Anpassung", adj_none:"Keine Anpassung", adj_pct:"% pro Jahr",
+    adj_rate:"Satz (% p.a.)", adj_month:"Anpassungsmonat", new_values:"Neue Beträge", from_month:"Ab",
+    only_month:"Nur diesen Monat", from_on:"Ab diesem Monat", new_value_from:"Neuer Betrag ab diesem Monat",
+    remove_new:"Neuen Betrag entfernen", new_saved:"Neuer Betrag übernommen",
     repeat_until_opt:"Wiederholen bis (optional)",
     repeat_until_ph:"Endmonat (optional)",
     repeat_every:"Wiederholen alle",
@@ -8434,6 +8464,7 @@ function splLedger(){
     const datas=recur?recurDates(e.date,e.recurrence,e.recurUntil):[e.date];
     datas.forEach((d,i)=>{
       const k7=ym(d); if(!d||k7>hz) return;
+      if(recur&&expExcluida(e,d)) return;
       const inst=recur?expInst(e,d,i):e;
       e.split.rows.forEach((row,idx)=>{
         const amt=Math.round(personAmount(inst,idx)*100)/100; if(!(amt>0)) return;
@@ -9244,7 +9275,7 @@ function expInstancesByYM(ymList){
     } else {
       recurDates(e.date,e.recurrence,e.recurUntil).forEach((d,i)=>{
         const k=ym(d);
-        if(map[k]) map[k].push(expInst(e,d,i));
+        if(map[k]&&!expExcluida(e,d)) map[k].push(expInst(e,d,i));
       });
     }
   });
@@ -10034,6 +10065,53 @@ function selRecur(r){
   document.querySelectorAll(".recur-btn").forEach(b=>b.classList.toggle("active",b.dataset.recur===r));
   document.getElementById("recur-until-wrap").style.display=(r==="monthly"||r==="custom")?"block":"none";
   document.getElementById("recur-custom-wrap").style.display=(r==="custom")?"block":"none";
+  const xw=document.getElementById("recur-extra-wrap");
+  if(xw){ xw.style.display=(r==="monthly"||r==="custom")?"block":"none"; renderRecurExtra(); }
+}
+/* v11.50 — recorrência: exceto meses, reajuste anual e novos valores */
+let SEXC=new Set(), SREAJ={tipo:"nenhum",pct:0,mes:0}, SNOVOS=[];
+function mesesCurtos(){
+  const loc=LANG==="en"?"en-US":(LANG==="de"?"de-DE":"pt-BR");
+  return Array.from({length:12},(_,i)=>{ const s=new Date(2026,i,15).toLocaleDateString(loc,{month:"short"}).replace(".","");
+    return s.charAt(0).toUpperCase()+s.slice(1,3); });
+}
+function renderRecurExtra(){
+  const M=mesesCurtos();
+  const g=document.getElementById("f-exceto");
+  if(g) g.innerHTML=M.map((m,i)=>`<button type="button" class="mes-chip${SEXC.has(i+1)?" on":""}" onclick="togExceto(${i+1})">${m}</button>`).join("");
+  document.querySelectorAll("#reaj-row .recur-btn").forEach(b=>b.classList.toggle("active",b.dataset.reaj===SREAJ.tipo));
+  const det=document.getElementById("reaj-det");
+  if(det) det.style.display=SREAJ.tipo==="nenhum"?"none":"grid";
+  const pw=document.getElementById("reaj-pct-w");
+  if(pw) pw.style.display=SREAJ.tipo==="pct"?"":"none";
+  if(det) det.style.gridTemplateColumns=SREAJ.tipo==="pct"?"minmax(0,1fr) minmax(0,1fr)":"minmax(0,1fr)";
+  const sel=document.getElementById("f-reaj-mes");
+  if(sel){
+    const mesPad=SREAJ.mes||(+(document.getElementById("f-date").value||today()).slice(5,7));
+    sel.innerHTML=M.map((m,i)=>`<option value="${i+1}"${i+1===mesPad?" selected":""}>${m}</option>`).join("");
+  }
+  const pi=document.getElementById("f-reaj-pct");
+  if(pi&&document.activeElement!==pi) pi.value=SREAJ.pct?String(SREAJ.pct).replace(".",","):"";
+  const nw=document.getElementById("novos-wrap");
+  if(nw){
+    nw.innerHTML=SNOVOS.length?`<label class="f-label" style="margin-top:14px">${t("new_values")}</label>`+
+      SNOVOS.map((n,i)=>`<div class="novo-row"><span>${t("from_month")} ${M[+n.ym.slice(5,7)-1]}/${n.ym.slice(2,4)}</span>
+        <b>${fmtCur(n.v,SCUR||"BRL")}</b><button type="button" class="ac-cp-del" onclick="delNovo(${i})" aria-label="${t("delete")}">×</button></div>`).join(""):"";
+  }
+}
+function togExceto(m){ if(SEXC.has(m)) SEXC.delete(m); else if(SEXC.size<11) SEXC.add(m); renderRecurExtra(); }
+function selReaj(tp){
+  SREAJ.tipo=tp;
+  if(!SREAJ.mes) SREAJ.mes=+(document.getElementById("f-date").value||today()).slice(5,7);
+  renderRecurExtra();
+}
+function delNovo(i){ SNOVOS.splice(i,1); renderRecurExtra(); }
+function lerReajForm(){
+  if(SREAJ.tipo==="nenhum") return null;
+  const pct=parseFloat(String(document.getElementById("f-reaj-pct")?.value||"").replace(/\./g,"").replace(",","."))||0;
+  const mes=+(document.getElementById("f-reaj-mes")?.value||0)||SREAJ.mes||1;
+  if(SREAJ.tipo==="pct"&&!(pct>0)) return null;
+  return {tipo:SREAJ.tipo,pct:SREAJ.tipo==="pct"?pct:0,mes};
 }
 
 /* ── RECURRENCE ENGINE ── */
@@ -10068,10 +10146,40 @@ function recurDates(startDate, recurrence, until){
    o valor real de cada ocorrência fica em e.reais["AAAA-MM-DD"]. Sem real,
    vale a estimativa (e.amount). Toda instância de recorrência passa por aqui. */
 function expTemReal(e,d){ const r=e&&e.reais; return !!r&&Object.prototype.hasOwnProperty.call(r,d)&&isFinite(+r[d]); }
-function expValorEm(e,d){ return expTemReal(e,d)?+e.reais[d]:e.amount; }
+/* estimativa da ocorrência: valor do cadastro → último "novo valor a partir de"
+   → reajustes anuais (% fixo, ou IPCA/IGP-M acumulado 12 meses pela curva dos
+   Parâmetros) a cada mês de reajuste posterior à base */
+const REAJ_CACHE={};
+const ymSomaE=(s,k)=>{let[y,m]=String(s).split("-").map(Number);m+=k;y+=Math.floor((m-1)/12);m=((m-1)%12+12)%12+1;return y+"-"+String(m).padStart(2,"0");};
+function reajFator(r,m){
+  if(r.tipo==="pct") return 1+(+r.pct||0)/100;
+  let ts="";
+  try{ const P=PRO.params&&PRO.params(), Hh=PRO.getHist&&PRO.getHist(); ts=(P&&P.ts||0)+"|"+(Hh&&Hh.ts||0); }catch(x){}
+  const k=r.tipo+"|"+m+"|"+ts;
+  if(REAJ_CACHE[k]) return REAJ_CACHE[k];
+  let f=1;
+  try{ for(let q=1;q<=12;q++) f*=1+(PRO.idxTaxaMes(r.tipo,ymSomaE(m,-q))||0)/100; }catch(x){ f=1; }
+  return REAJ_CACHE[k]=f;
+}
+function expEstimEm(e,d){
+  const ymD=String(d).slice(0,7);
+  let base=+e.amount||0, baseYm=String(e.date||"").slice(0,7);
+  if(Array.isArray(e.novos)) e.novos.slice().sort((a,b)=>a.ym<b.ym?-1:1).forEach(n=>{
+    if(n&&n.ym>=baseYm&&n.ym<=ymD&&isFinite(+n.v)){ base=+n.v; baseYm=n.ym; } });
+  const r=e.reaj;
+  if(r&&(r.tipo==="pct"||r.tipo==="ipca"||r.tipo==="igpm")&&baseYm){
+    const mes=String(+r.mes||+baseYm.slice(5,7)).padStart(2,"0");
+    let m=baseYm.slice(0,4)+"-"+mes;
+    if(m<=baseYm) m=ymSomaE(m,12);
+    for(let g=0;m<=ymD&&g<60;m=ymSomaE(m,12),g++) base*=reajFator(r,m);
+  }
+  return Math.round(base*100)/100;
+}
+function expExcluida(e,d){ return Array.isArray(e.exceto)&&e.exceto.length>0&&e.exceto.indexOf(+String(d).slice(5,7))>=0; }
+function expValorEm(e,d){ return expTemReal(e,d)?+e.reais[d]:expEstimEm(e,d); }
 function expInst(e,d,i){
-  const real=expTemReal(e,d);
-  return {...e, date:d, amount:real?+e.reais[d]:e.amount, _estim:e.amount, _real:real,
+  const real=expTemReal(e,d), est=expEstimEm(e,d);
+  return {...e, date:d, amount:real?+e.reais[d]:est, _estim:est, _real:real,
     _recurInstance:i>0, _parentId:e.id, id:e.id+(i>0?"_r"+i:"")};
 }
 /* Build a flat list of all expense instances for a given YM, including recurring ones */
@@ -10083,7 +10191,7 @@ function getExpensesForYM(ymStr){
     } else {
       const dates=recurDates(e.date, e.recurrence, e.recurUntil);
       dates.forEach((d,i)=>{
-        if(ym(d)===ymStr){
+        if(ym(d)===ymStr&&!expExcluida(e,d)){
           result.push(expInst(e,d,i));
         }
       });
@@ -12505,7 +12613,7 @@ function getAllCashFlowEntries(){
       entries.push({date:e.date, amount:myAmount(e), kind:"expense"});
     } else {
       recurDates(e.date,e.recurrence,e.recurUntil).forEach(d=>{
-        if(d<=horizon) entries.push({date:d, amount:myAmount(expInst(e,d,0)), kind:"expense"});
+        if(d<=horizon&&!expExcluida(e,d)) entries.push({date:d, amount:myAmount(expInst(e,d,0)), kind:"expense"});
       });
     }
   });
@@ -13302,6 +13410,7 @@ function openAdd(){
   document.getElementById("f-recur-until").value="";
   document.getElementById("f-recur-interval").value="1";
   document.getElementById("f-recur-unit").value="months";
+  SEXC=new Set(); SREAJ={tipo:"nenhum",pct:0,mes:0}; SNOVOS=[];
   selRecur("none");
   selectType("variable");
   selCur("BRL");
@@ -13331,6 +13440,9 @@ function openEdit(id){
     document.getElementById("f-recur-interval").value=e.recurrence.interval||1;
     document.getElementById("f-recur-unit").value=e.recurrence.unit||"months";
   }
+  SEXC=new Set(Array.isArray(e.exceto)?e.exceto.map(Number):[]);
+  SREAJ=e.reaj?{tipo:e.reaj.tipo||"nenhum",pct:+e.reaj.pct||0,mes:+e.reaj.mes||0}:{tipo:"nenhum",pct:0,mes:0};
+  SNOVOS=Array.isArray(e.novos)?e.novos.map(n=>({ym:n.ym,v:+n.v})):[];
   selRecur(SR);
   selectType(e.type||"variable");
   selCur(SCUR);
@@ -13354,7 +13466,10 @@ function handleSave(){
   const splitData = SSPLIT!=="none" && splitRows.some(r=>r.name||r.val)
     ? {mode:SSPLIT, rows:splitRows.filter(r=>r.name||r.val).map(r=>({name:r.name,val:parseFloat(r.val)||0}))}
     : null;
-  const entry={desc,amount,currency:SCUR,category:SC,date,type:ST,recurrence,recurUntil,split:splitData};
+  const mensal=!!recurrence&&(recurrence.type==="monthly"||recurrence.unit==="months");
+  const entry={desc,amount,currency:SCUR,category:SC,date,type:ST,recurrence,recurUntil,split:splitData,
+    exceto:mensal?[...SEXC].sort((a,b)=>a-b):[], reaj:recurrence?lerReajForm():null,
+    novos:recurrence?SNOVOS.slice().sort((a,b)=>a.ym<b.ym?-1:1):[]};
 
   let prevCategory=null;
   if(EID!==null){
@@ -13381,7 +13496,9 @@ function handleSave(){
 function openRealExp(id,d){
   const e=EX.find(x=>x.id===id); if(!e) return;
   const old=document.getElementById("modal-real"); if(old) old.remove();
-  const cur=e.currency||"BRL", tem=expTemReal(e,d);
+  const cur=e.currency||"BRL", tem=expTemReal(e,d), ymD=String(d).slice(0,7);
+  const temNovo=Array.isArray(e.novos)&&e.novos.some(n=>n.ym===ymD);
+  window.__realModo="mes";
   const mes=(()=>{ try{ return new Date(d+"T12:00:00").toLocaleDateString(LANG==="en"?"en-US":(LANG==="de"?"de-DE":"pt-BR"),{month:"long",year:"numeric"}); }catch(x){ return d.slice(0,7); } })();
   const ov=document.createElement("div");
   ov.className="overlay"; ov.id="modal-real";
@@ -13394,19 +13511,41 @@ function openRealExp(id,d){
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:12px;background:var(--surface);margin-bottom:12px">
       <span style="font-size:13px;color:var(--ink-2)">${t("est_value")}</span>
-      <span style="font-size:14px;font-weight:600;color:var(--body)">${fmtCur(e.amount,cur)}</span>
+      <span style="font-size:14px;font-weight:600;color:var(--body)">${fmtCur(expEstimEm(e,d),cur)}</span>
     </div>
-    <label class="f-label" style="display:block;margin-bottom:6px">${t("real_value")}</label>
+    <div class="recur-row" id="real-modo" style="margin-bottom:12px">
+      <button type="button" class="recur-btn active" data-m="mes" onclick="realModo('mes')">${t("only_month")}</button>
+      <button type="button" class="recur-btn" data-m="diante" onclick="realModo('diante')">${t("from_on")}</button>
+    </div>
+    <label class="f-label" id="real-lbl" style="display:block;margin-bottom:6px">${t("real_value")}</label>
     <input id="real-in" class="f-input" type="text" inputmode="decimal" placeholder="0,00"
       oninput="maskCurrencyInput(this)" style="margin-bottom:58px"/>
     <div style="display:flex;gap:8px">
       ${tem?`<button type="button" class="real-sec" onclick="setRealExp(${id},'${d}',null)">${t("use_estimate")}</button>`:""}
-      <button type="button" class="btn-primary" style="flex:1.4;margin:0" onclick="setRealExp(${id},'${d}',unmaskCurrency(document.getElementById('real-in')))">${t("save")}</button>
+      ${!tem&&temNovo?`<button type="button" class="real-sec" onclick="setNovoExp(${id},'${ymD}',null)">${t("remove_new")}</button>`:""}
+      <button type="button" class="btn-primary" style="flex:1.4;margin:0" onclick="(window.__realModo==='diante'?setNovoExp(${id},'${ymD}',unmaskCurrency(document.getElementById('real-in')),'${d}'):setRealExp(${id},'${d}',unmaskCurrency(document.getElementById('real-in'))))">${t("save")}</button>
     </div></div>`;
   document.body.appendChild(ov);
   ov.onclick=x=>{ if(x.target===ov) closeOverlay(ov); };
   if(tem) setCurrencyInput(document.getElementById("real-in"),+e.reais[d]);
   requestAnimationFrame(()=>{ ov.classList.add("open"); setTimeout(()=>{ try{ document.getElementById("real-in").focus(); }catch(x){} },250); });
+}
+function realModo(m){
+  window.__realModo=m;
+  document.querySelectorAll("#real-modo .recur-btn").forEach(b=>b.classList.toggle("active",b.dataset.m===m));
+  const l=document.getElementById("real-lbl"); if(l) l.textContent=m==="diante"?t("new_value_from"):t("real_value");
+}
+function setNovoExp(id,ymD,v,d){
+  const e=EX.find(x=>x.id===id); if(!e) return;
+  let L=Array.isArray(e.novos)?e.novos.filter(n=>n.ym!==ymD):[];
+  if(v!==null&&v!==undefined&&isFinite(+v)&&+v>0){
+    L.push({ym:ymD,v:Math.round(+v*100)/100});
+    if(d&&e.reais){ delete e.reais[d]; if(!Object.keys(e.reais).length) delete e.reais; }
+  }
+  e.novos=L.sort((a,b)=>a.ym<b.ym?-1:1);
+  persist(); updateHero(); renderDash(); if(V==="list") renderList();
+  closeOverlay("modal-real");
+  toast("✓ "+(v===null?t("remove_new"):t("new_saved")));
 }
 function setRealExp(id,d,v){
   const e=EX.find(x=>x.id===id); if(!e) return;
@@ -17959,7 +18098,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.49";
+const APP_VERSION="11.50";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -37001,6 +37140,13 @@ html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-ar
   color:var(--ink-3,#8A857C);font-weight:600;letter-spacing:.3px;cursor:pointer;line-height:1.4;-webkit-tap-highlight-color:transparent}
 .real-pill.on{border-style:solid;border-color:rgba(90,138,74,.5);color:#5A8A4A;background:rgba(90,138,74,.1)}
 .real-pill:active{border-color:currentColor}
+.mes-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-bottom:4px}
+.mes-chip{height:34px;border-radius:10px;border:1.5px solid var(--line);background:none;color:var(--ink-2);font-size:12px;font-weight:500;cursor:pointer;padding:0}
+.mes-chip.on{border-color:#B85A6A;color:#B85A6A;background:rgba(184,90,106,.08);text-decoration:line-through}
+.reaj-det{gap:8px;margin-top:10px}
+.reaj-det .f-input{margin-bottom:0!important;height:44px;min-height:0;box-sizing:border-box;padding-top:0!important;padding-bottom:0!important;line-height:44px}
+.novo-row{display:grid;grid-template-columns:minmax(0,1fr) auto 36px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-2)}
+.novo-row b{color:var(--body);font-weight:600}
 .real-sec{flex:1;margin:0;padding:clamp(10px,1.8dvh,14px);border-radius:14px;border:1.5px solid var(--line);background:none;
   color:var(--ink-2);font-size:clamp(12px,1.8dvh,14px);font-weight:500;cursor:pointer}
 .real-sec:active{border-color:var(--accent)}
