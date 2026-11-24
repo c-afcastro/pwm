@@ -18174,7 +18174,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.53";
+const APP_VERSION="11.54";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -31928,10 +31928,11 @@ html.wz-lock body{ touch-action:none; }
   background:var(--wz-ac,var(--accent)); border-color:var(--wz-ac,var(--accent));
   box-shadow:0 4px 14px -6px var(--wz-ac,var(--accent)); }
 .wz-b.wz-hold{ opacity:.45; box-shadow:none; }
-.wz-b.wz-save{ flex:1.5; font-weight:600; color:#fff;
-  background:var(--wz-ac,var(--accent)); border-color:var(--wz-ac,var(--accent));
-  box-shadow:0 4px 14px -6px var(--wz-ac,var(--accent)); }
-.wz-edit .wz-b.wz-next{ flex:1; color:var(--wz-ac,var(--accent)); background:none; box-shadow:none; }
+/* v11.54 — editando, Salvar grava sem fechar a edição: fica no meio, sem
+   destaque; o destaque segue com Continuar, à direita */
+.wz-b.wz-save{ flex:1.2; font-weight:600; color:var(--body);
+  background:none; border-color:var(--line); box-shadow:none; }
+.wz-edit .wz-b.wz-next{ flex:1.4; }
 .wz-b[disabled]{ opacity:.3; pointer-events:none; box-shadow:none; }
 .wz-b.wz-shake{ animation:wzShake .4s cubic-bezier(.36,.07,.19,.97); }
 @keyframes wzShake{ 20%{ transform:translateX(-4px);} 45%{ transform:translateX(4px);}
@@ -32141,7 +32142,7 @@ html.wz-lock body{ touch-action:none; }
       foot=document.createElement("div"); foot.className="wz-foot";
       foot.innerHTML='<div class="wz-nota"></div>'+
         '<div class="wz-btns"><button type="button" class="wz-b wz-back"></button>'+
-        '<button type="button" class="wz-b wz-next"></button><button type="button" class="wz-b wz-save wz-off"></button></div>'+
+        '<button type="button" class="wz-b wz-save wz-off"></button><button type="button" class="wz-b wz-next"></button></div>'+
         '<button type="button" class="wz-alt"></button>';
       foot.querySelector(".wz-back").addEventListener("click",()=>go(-1));
       foot.querySelector(".wz-next").addEventListener("click",next);
