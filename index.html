@@ -11425,7 +11425,12 @@ function confirmDelAsset(id){
   document.getElementById("clear-modal-desc").innerHTML=`<strong>${a.name}</strong><br><span style="font-size:12px;color:var(--ink-2)">${catLabel(c)} · ${fmt(astValorAtual(a))}</span>`;
   document.getElementById("modal-confirm-clear").classList.add("open");
   document.getElementById("btn-confirm-clear").onclick=()=>{
-    ASSETS=ASSETS.filter(x=>x.id!==id);persist();
+    ASSETS=ASSETS.filter(x=>x.id!==id);
+    /* conta de FGTS excluída: a renda que a gerava não a recria (v11.52) */
+    try{ if(a.class==="fgts"&&a.pro&&a.pro.fonteRenda){
+      const inc=INCOME.find(i=>String(i.id)===String(a.pro.fonteRenda));
+      if(inc) inc.fgtsSemConta=true; } }catch(e){}
+    persist();
     document.getElementById("modal-confirm-clear").classList.remove("open");
     document.getElementById("modal-asset")?.classList.remove("open");
     renderAssets();
@@ -18167,7 +18172,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.51";
+const APP_VERSION="11.52";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -20092,6 +20097,28 @@ function fgtsDepositoConta(p,ym,eventos){
   if(!(ap>0)) return 0;
   return R2(ap*fgtsFatorMes(ym,eventos));
 }
+/* v11.52 — DEPÓSITOS DA CONTA VINCULADA ENTRE DUAS DATAS.
+   Régua única de data: o depósito de um mês conta quando o dia dele (dos
+   Parâmetros) cai DEPOIS de d0 e ATÉ d1, inclusive. É a mesma regra do
+   motor de avaliação (astEvoluirAte) — a tela da aplicação, o histórico de
+   resgates e o patrimônio passam a contar os mesmos depósitos. */
+function fgtsDepLista(p,d0,d1){
+  const out=[];
+  if(!p||!d0||!d1||!(d1>d0)) return out;
+  let ym=String(d0).slice(0,7); const fim=String(d1).slice(0,7);
+  for(let g=0;ym<=fim&&g<1200;g++){
+    const dd=fgtsDataDeposito(ym);
+    if(dd&&dd>d0&&dd<=d1){
+      const v=fgtsDepositoConta(p,ym,null);
+      if(v>0) out.push({data:dd,ym,valor:R2(v)});
+    }
+    ym=ymAdd(ym,1);
+  }
+  return out;
+}
+function fgtsDepEntre(p,d0,d1){
+  return R2(fgtsDepLista(p,d0,d1).reduce((s,x)=>s+x.valor,0));
+}
 /* ── DEPÓSITO DE FGTS DE UM MÊS ───────────────────────────────────────
    O depósito não é o mesmo número todo mês. Em novembro entra o FGTS do
    adiantamento do 13º, em dezembro o da segunda parcela, e no mês de
@@ -21438,8 +21465,50 @@ function astParteRendeMes(a,ym){
 function astResgates(a,p){
   const P=p||(a&&a.pro)||{};
   const L=Array.isArray(P.resgates)?P.resgates:[];
-  return L.filter(r=>r&&r.data&&(+r.valor>0)).slice()
+  const out=L.filter(r=>r&&r.data&&(+r.valor>0)).slice()
           .sort((x,y)=>String(x.data).localeCompare(String(y.data)));
+  return fgtsResgNorm(a,out);
+}
+/* v11.52 — SAQUE DA CONTA VINCULADA.
+   O saque (aniversário, rescisão, moradia) sai de um saldo feito quase só
+   de depósitos. A baixa de custo era calculada sobre o montante da
+   abertura da conta, sem os depósitos: um saque de 24% da conta baixava
+   24% de R$ 1,7 mil e o resto do valor sacado virava "ganho realizado".
+   Aqui o capital é o da data do saque — montante da abertura mais os
+   depósitos até ali, menos as baixas anteriores — e a proporção é a do
+   valor sacado sobre a posição informada naquele dia. O registro gravado
+   não muda (custoBaixaReg guarda o original, que é o que reconstitui o
+   montante da abertura); a leitura sai correta para dados antigos e novos. */
+/* Capital da conta vinculada numa data: montante da abertura, mais os
+   depósitos até ali, menos as baixas dos saques anteriores. */
+function fgtsCapitalEm(a,dt){
+  const P=(a&&a.pro)||{};
+  const ini=String(P.aplic||a.lastUpdate||"").slice(0,10);
+  const L=astResgates(a);
+  const c0=R2((+P.custo||0)+L.reduce((s,r)=>s+(+(r.custoBaixaReg!==undefined?r.custoBaixaReg:r.custoBaixa)||0),0));
+  const bx=L.filter(r=>String(r.data).slice(0,10)<=dt).reduce((s,r)=>s+(+r.custoBaixa||0),0);
+  return R2(Math.max(0,c0+(ini&&dt>ini?fgtsDepEntre(P,ini,dt):0)-bx));
+}
+function fgtsResgNorm(a,L){
+  if(!L||!L.length) return L;
+  let fg=false; try{ fg=astEhFgtsAuto(a); }catch(e){ fg=false; }
+  if(!fg) return L;
+  const P=(a&&a.pro)||{};
+  const ini=String(P.aplic||a.lastUpdate||"").slice(0,10);
+  const c0=+P.custo||0;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(ini)) return L;
+  let cap=R2(c0+L.reduce((s,r)=>s+(+r.custoBaixa||0),0)), cur=ini;
+  return L.map(r=>{
+    const d=String(r.data).slice(0,10);
+    if(d>cur){ cap=R2(cap+fgtsDepEntre(P,cur,d)); cur=d; }
+    const v=+r.valor||0;
+    let prop=(+r.posInf>0)?v/(+r.posInf):((+r.prop>0)?(+r.prop)/100:null);
+    let baixa=(prop===null)?Math.min(cap,v):cap*Math.min(1,Math.max(0,prop));
+    baixa=R2(Math.min(baixa,v));
+    cap=R2(Math.max(0,cap-baixa));
+    return Object.assign({},r,{custoBaixaReg:+r.custoBaixa||0,custoBaixa:baixa,
+      ganho:R2(Math.max(0,v-baixa)),capitalAntes:R2(cap+baixa)});
+  });
 }
 /* Assinatura para as chaves de cache: mudou um resgate, muda a posição */
 function astResgAssin(a,p){
@@ -21496,6 +21565,12 @@ function astRealizResg(a,r){
   const ymR=String(r.data).slice(0,7);
   let antes=0;
   const meses=[];
+  /* v11.52 — na conta vinculada o valor sacado não estava todo lá desde a
+     abertura: boa parte entrou depois, em depósitos. Cada mês anterior
+     reconheceu o rendimento da fatia sacada do capital que EXISTIA nele. */
+  let fgProp=null;
+  try{ if(astEhFgtsAuto(a)){ const pi=+r.posInf>0?+r.posInf:0;
+    fgProp=pi>0?Math.min(1,(+r.valor||0)/pi):((+r.prop>0)?(+r.prop)/100:null); } }catch(e){ fgProp=null; }
   if(/^\d{4}-\d{2}-\d{2}$/.test(ini)&&ini.slice(0,7)<ymR){
     let m=ini.slice(0,7), g=0;
     while(m<ymR&&g++<600){
@@ -21505,7 +21580,9 @@ function astRealizResg(a,r){
       let tx=0;
       try{ tx=astLiquidoAM(a,m)/100; }catch(e){ tx=0; }
       if(!isFinite(tx)) tx=0;
-      const v=(+r.valor||0)/f*tx;
+      let v=(+r.valor||0)/f*tx;
+      if(fgProp!==null){ let cap=0; try{ cap=fgtsCapitalEm(a,fim); }catch(e){ cap=0; }
+        v=fgProp*cap*tx; }
       antes+=v; meses.push({ym:m,v:R2(v)});
       m=ymAdd(m,1);
     }
@@ -21669,7 +21746,10 @@ function astResgateEm(a,valor,data,encargo,opt){
   const tx=astTaxasFundo(a,p,dt,posInf,custoT,o.modoTx);
   const v=R2(saldo*prop);
   const custoBaixa=R2(custoT*prop);
-  const ganho=Math.max(0,R2(v-custoBaixa));
+  let ganho=Math.max(0,R2(v-custoBaixa));
+  /* v11.52 — conta vinculada: o saque sai de montante + depósitos */
+  try{ if(astEhFgtsAuto(a)){ const cap=fgtsCapitalEm(a,dt);
+    ganho=Math.max(0,R2(v-Math.min(v,cap*prop))); } }catch(e){}
   const adm=R2(tx.adm*prop), perf=R2(tx.perf*prop);
   const d=astPrazoIR(a,p,dt);
   const aliq=astAliqIR(a,d);
@@ -21796,7 +21876,11 @@ function astEvolucao(a,mesesFuturos){
      histórica volta a ser o montante originalmente aplicado. */
   const RG=astResgates(a,p).filter(r=>r.data>inicio);
   const baixaTot=R2(RG.reduce((s,r)=>s+(+r.custoBaixa||0),0));
-  const custo0=R2(custo+baixaTot);                 /* montante aplicado original */
+  /* o custo gravado foi reduzido pela baixa REGISTRADA no resgate; é ela
+     que reconstitui o montante original (na conta de FGTS a baixa exibida
+     é recalculada sobre montante + depósitos — v11.52) */
+  const baixaReg=R2(RG.reduce((s,r)=>s+(+(r.custoBaixaReg!==undefined?r.custoBaixaReg:r.custoBaixa)||0),0));
+  const custo0=R2(custo+baixaReg);                 /* montante aplicado original */
   const resgTot=R2(RG.reduce((s,r)=>s+(+r.valor||0),0));
   const resgAte=d=>R2(RG.reduce((s,r)=>s+(r.data<=d?(+r.valor||0):0),0));
   const baixaAte=d=>R2(RG.reduce((s,r)=>s+(r.data<=d?(+r.custoBaixa||0):0),0));
@@ -21838,7 +21922,7 @@ function astEvolucao(a,mesesFuturos){
     return sal;
   };
   const modeloHoje=modelaAte(S.length);
-  const aportHoje=R2(custo0+(S.length>1?depAc[S.length-1]:0));
+  let aportHoje=R2(custo0+(S.length>1?depAc[S.length-1]:0));
   const infor=parseFloat(a.balance)||0;
   const posData=(a.lastUpdate&&a.lastUpdate>inicio)?a.lastUpdate:inicio;
   const ancorado=posData>inicio;
@@ -21911,10 +21995,10 @@ function astEvolucao(a,mesesFuturos){
     }
     if(!encostou&&temAnc) saldoAte[S.length]=infor;   // posição é de hoje
   }
-  const valorHoje=R2(saldoAte[S.length]);
+  let valorHoje=R2(saldoAte[S.length]);
   const mesesPos=mesesEntre(inicio,posData);
   /* taxa realizada: só o trecho de fato observado, do aporte à posição */
-  const efet=(custo0>0&&mesesPos>0.03&&temAnc)
+  let efet=(custo0>0&&mesesPos>0.03&&temAnc)
     ?taxaImplicita(custo0,R2(infor+resgAte(posData)),mesesPos,aporte):iAM;
 
   const pts=[];
@@ -21958,6 +22042,73 @@ function astEvolucao(a,mesesFuturos){
       if(iso>inicio) gradeH.push(iso);
       gm++; if(gm>12){ gm=1; gy++; }
     } }
+  if(fgAuto){
+    /* ── v11.52 — CONTA VINCULADA DE FGTS NA RÉGUA DAS DATAS ──
+       A curva por baldes mensais lançava o depósito pela posição na
+       série, não pela data: o depósito do mês da abertura nunca entrava,
+       os meses antes da posição informada mostravam "—" na coluna de
+       depósito e o dinheiro depositado aparecia como rendimento — um mês
+       de salário inteiro virava "ganho". Aqui cada ponto sai do MESMO
+       motor do Patrimônio (astEvoluirAte): depósito no dia dos Parâmetros,
+       saque na data do saque, taxa do mês pela curva. Antes da posição
+       informada, a diferença entre o modelo e o extrato (JAM, TR, atraso
+       do empregador) é distribuída pelo tempo, como nas demais aplicações. */
+    const evolF=(d0,v0,d1,comResg)=>{
+      let v=v0, cur=d0;
+      if(!(d1>d0)) return R2(v);
+      const passo=x1=>{ if(x1>cur){ v=astEvoluirAte(a,p,cur,x1,v).valor; cur=x1; } };
+      if(comResg) RG.forEach(r=>{ if(r.data>d0&&r.data<=d1){
+        passo(r.data); v=R2(Math.max(0,v-(+r.valor||0))); } });
+      passo(d1);
+      return R2(v);
+    };
+    const aportAte=d=>R2(custo0+fgtsDepEntre(p,inicio,d));
+    const modeloEm=d=>evolF(inicio,custo0,d,true);
+    const ancF=temAnc&&posData>inicio;
+    const mmPos=ancF?mesesEntre(inicio,posData):0;
+    const Dpos=(ancF&&mmPos>0.03)?R2(infor-modeloEm(posData)):0;
+    const saldoEm=d=>{
+      if(temAnc&&d>=posData) return evolF(posData,infor,d,true);
+      const m=modeloEm(d);
+      if(!ancF||!(mmPos>0.03)) return m;
+      return R2(Math.max(0,m+Dpos*Math.min(1,mesesEntre(inicio,d)/mmPos)));
+    };
+    for(let m=0;m<gradeH.length;m++){
+      const data=gradeH[m];
+      const sal=saldoEm(data);
+      const ant=pts.length?pts[pts.length-1].saldo:custo0;
+      push(data,Math.max(0,dias(inicio,data)),aportAte(data),sal,modeloEm(data),
+        m?sal-ant:0,0,false,data);
+    }
+    const vH=saldoEm(hoje), apH=aportAte(hoje);
+    const ultF=pts[pts.length-1];
+    if(!ultF||ultF.data!==hoje)
+      push(hoje,diasHoje,apH,vH,modeloEm(hoje),vH-(ultF?ultF.saldo:custo0),0,false);
+    valorHoje=vH; aportHoje=apH;
+    /* taxa realizada: a que leva montante + depósitos − saques à posição */
+    if(ancF&&mmPos>0.03&&custo0>0){
+      const evs=fgtsDepLista(p,inicio,posData).map(x=>({d:x.data,v:x.valor}))
+        .concat(RG.filter(r=>r.data<=posData).map(r=>({d:r.data,v:-(+r.valor||0)})))
+        .sort((x,y)=>x.d<y.d?-1:(x.d>y.d?1:0));
+      const sim=i=>{ let v=custo0,cur=inicio;
+        const g=x=>{ v*=Math.pow(1+i,dias(cur,x)/30.4375); cur=x; };
+        evs.forEach(ev=>{ g(ev.d); v+=ev.v; }); g(posData); return v; };
+      let lo=-0.5,hi=0.5;
+      for(let k=0;k<80;k++){ const mid=(lo+hi)/2; if(sim(mid)<infor) lo=mid; else hi=mid; }
+      efet=(lo+hi)/2;
+    }else efet=iAM;
+    /* projeção: mesmo motor, depósitos pelo calendário dos Parâmetros */
+    let sF=vH, mF=pts[pts.length-1].modelo, aF=apH, dPrev=hoje;
+    for(let m=1;m<=futuros;m++){
+      const data=addMonths(hoje,m);
+      const dep=fgtsDepEntre(p,dPrev,data);
+      const s1=evolF(dPrev,sF,data,false);
+      const rend=s1-sF-dep;
+      mF=evolF(dPrev,mF,data,false);
+      sF=s1; aF=R2(aF+dep); dPrev=data;
+      push(data,Math.max(0,dias(inicio,data)),aF,sF,mF,rend,0,true);
+    }
+  }else{
   for(let m=0;m<gradeH.length;m++){
     const data=gradeH[m];
     const d=Math.max(0,dias(inicio,data));
@@ -22032,6 +22183,7 @@ function astEvolucao(a,mesesFuturos){
     }
     push(data,d,aportado,saldo,modelo,rend,cc,true);
   }
+  }
   pts.forEach(x=>x.ccAcum=ccPago);
   /* Fluxo externo de cada passo: aporte menos resgate. É o que a medida de
      rentabilidade ponderada no tempo precisa tirar do saldo antes de
@@ -22039,13 +22191,17 @@ function astEvolucao(a,mesesFuturos){
   for(let i=0;i<pts.length;i++){
     const ant=i?pts[i-1]:null;
     pts[i].fluxo=ant?R2((pts[i].aportado-ant.aportado)-(pts[i].resgAcum-ant.resgAcum)):0;
+    /* v11.52 — o aporte (ou o depósito do FGTS) do mês entra no saldo,
+       mas não é rendimento: sai da diferença, como o resgate volta a ela */
     if(ant&&!pts[i].futuro)
-      pts[i].rendMes=R2((pts[i].saldo+pts[i].resgAcum)-(ant.saldo+ant.resgAcum));
+      pts[i].rendMes=R2((pts[i].saldo+pts[i].resgAcum)-(ant.saldo+ant.resgAcum)
+        -(pts[i].aportado-ant.aportado));
   }
 
   const atual=pts.filter(x=>!x.futuro).pop()||pts[0];
   return {
-    asset:a, inicio, hoje, custo:custo0, custoFiscal:R2(custo), aporte,
+    asset:a, inicio, hoje, custo:custo0,
+    custoFiscal:fgAuto?R2(Math.max(0,aportHoje-baixaTot)):R2(custo), aporte,
     fgAuto, depHoje:R2(temAporte?depMes(ymOf(hoje)):0),
     real:R2(valorHoje), saldoInformado:R2(infor), posData, atualizacao:atz, ancorado,
     resgatado:resgTot, custoBaixado:baixaTot, temResgate:RG.length>0,
@@ -23033,7 +23189,21 @@ function sincronizarFgtsPatrimonio(inc){
     const fat=dissidioFator(inc,ymNow());
     if(fat>0) mensal=fgtsDe(p,(+inc.amount||0)*fat,inc.type);
   }catch(e){}
-  let a=ASSETS.find(x=>x.class==="fgts"&&x.pro&&x.pro.fonteRenda===inc.id);
+  let a=ASSETS.find(x=>x.class==="fgts"&&x.pro&&String(x.pro.fonteRenda)===String(inc.id));
+  /* v11.52 — UMA CONTA VINCULADA, NÃO DUAS. Quem já tinha o FGTS
+     cadastrado à mão no Patrimônio (ou ligado a uma renda que não existe
+     mais) ganhava uma segunda conta ao salvar o salário, e as duas somavam
+     no patrimônio. A conta existente é adotada pela renda. */
+  if(!a){
+    a=ASSETS.find(x=>x.class==="fgts"&&!x.virtual&&!(x.pro&&x.pro.fonteRenda))
+     ||ASSETS.find(x=>x.class==="fgts"&&!x.virtual&&x.pro&&x.pro.fonteRenda
+        &&!INCOME.some(i=>String(i.id)===String(x.pro.fonteRenda)))||null;
+    if(a) a.pro=Object.assign({},a.pro||{},{fonteRenda:inc.id});
+  }
+  /* conta excluída pelo titular não volta sozinha a cada edição da renda;
+     volta se ele informar o saldo no campo da renda */
+  if(!a&&inc.fgtsSemConta&&!(p.fgtsSaldoEdit&&(+p.fgtsSaldo||0)>0)) return null;
+  if(inc.fgtsSemConta) delete inc.fgtsSemConta;
   /* deixou de haver FGTS nesta renda: o patrimônio para de receber aportes */
   if(!(cap.fgts&&p.regime==="clt"&&p.fgts&&mensal>0)){
     if(a){ a.pro=Object.assign({},a.pro,{aporte:0}); persist(); }
@@ -23053,9 +23223,16 @@ function sincronizarFgtsPatrimonio(inc){
   }else{
     a.name="FGTS · "+(inc.desc||catLabel(gIncomeType(inc.type)));
     a.yieldPct=R2(aaToMm(taxa));
-    if(+p.fgtsSaldo>=0&&R2(+p.fgtsSaldo)!==R2(parseFloat(a.balance)||0)){
+    /* v11.52 — o saldo do formulário só vira posição quando o titular o
+       MUDA. Antes, qualquer edição do salário regravava o número digitado
+       no cadastro da renda por cima da posição atualizada no Patrimônio,
+       e ainda reiniciava a data de aplicação e o montante — apagando a
+       história da conta. Agora é só uma nova posição, com a data de hoje. */
+    if(p.fgtsSaldoEdit&&+p.fgtsSaldo>=0
+       &&Math.abs(R2(+p.fgtsSaldo)-R2(astValorAtual(a)))>0.005){
       a.balance=R2(saldo); a.lastUpdate=today();
-      a.pro=Object.assign({},a.pro,{custo:R2(saldo),aplic:today()});
+      if(!((+(a.pro&&a.pro.custo)||0)>0))
+        a.pro=Object.assign({},a.pro,{custo:R2(saldo),aplic:today()});
     }
     a.pro=Object.assign({},a.pro,{idx:"pre",idxVal:taxa,trib:"isento",liq:"venc",
       aporte:R2(mensal),fgtsDia:dia,fonteRenda:inc.id,custoAuto:false});
@@ -23432,6 +23609,9 @@ function ensureStyles(){
 
 let INC_REGIME="clt", INC_13=false, INC_FER=false, INC_REG_OPEN=false;
 let INC_FGTS=true, INC_SPLIT=false, INC_SCALE="mes", INC_OK=false;
+/* saldo de FGTS mostrado ao abrir a renda: só o que o titular MUDAR no
+   campo vira nova posição da conta vinculada (v11.52) */
+let INC_FGTS_S0=null;
 /* escalas de leitura do fluxo de caixa: dia · mês · ano */
 const CF_K={dia:1/30.4375,mes:1,ano:12};
 const CF_SUF={dia:"/dia",mes:"/mês",ano:"/ano"};
@@ -23670,6 +23850,8 @@ function collectIncPro(){
     fgts:INC_FGTS&&incCaps(INC_TYPE_CUR()).fgts,
     fgtsPct:(+FISCAL.fgtsPct||8),
     fgtsSaldo:unmaskCurrency($("inc-fgts-saldo"))||0,
+    fgtsSaldoEdit:INC_FGTS_S0===null
+      ||Math.abs((unmaskCurrency($("inc-fgts-saldo"))||0)-INC_FGTS_S0)>0.005,
     fgtsTaxa:(+FISCAL.fgtsTaxa||3),
     split:INC_SPLIT&&incCaps(INC_TYPE_CUR()).split, splitPct:valDec("inc-split-pct")||40,
     splitDia1:+($("inc-split-d1")?.value||20), splitDia2:+($("inc-split-d2")?.value||5),
@@ -23693,7 +23875,13 @@ function fillIncPro(inc){
   set("inc-iptu",p.alugIptu);set("inc-cond",p.alugCond);set("inc-adm",p.alugAdm);
   set("inc-diss",p.dissPct);set("inc-diss-mes",p.dissMes);set("inc-fer-mes",p.feriasMes);
     if($("inc-diss-idx")) $("inc-diss-idx").value=p.dissIdx||"";
-  setCurrencyInput($("inc-fgts-saldo"),p.fgtsSaldo||0);
+  /* o campo espelha a conta vinculada de hoje, não o número digitado no
+     dia em que a renda foi cadastrada */
+  let fgS0=R2(+p.fgtsSaldo||0);
+  try{ const fa=inc&&ASSETS.find(x=>x.class==="fgts"&&x.pro&&String(x.pro.fonteRenda)===String(inc.id));
+    if(fa) fgS0=R2(astValorAtual(fa)); }catch(e){}
+  INC_FGTS_S0=fgS0;
+  setCurrencyInput($("inc-fgts-saldo"),fgS0);
   if($("inc-fgts-dia")) $("inc-fgts-dia").value=String(fgtsDiaParam());
   set("inc-split-pct",p.splitPct||40);set("inc-split-d1",p.splitDia1||20);set("inc-split-d2",p.splitDia2||5);
   const refIni=String(p.refMes||(inc&&inc.date)||$("inc-date")?.value||today()).slice(0,7);
@@ -26394,7 +26582,7 @@ function renderRendimento(){
       Em <strong>${e.proxFaixa.dias} dias</strong> (${brDate(e.proxFaixa.data)}) a alíquota de IR cai de ${String(e.proxFaixa.de).replace(".",",")}% para <strong>${String(e.proxFaixa.aliq).replace(".",",")}%</strong>.</div>`:""}
     ${e.comeCotas?`<div class="info-card" style="background:rgba(184,90,106,.08);color:#8A4353;margin-bottom:12px">
       Fundo com come-cotas: em maio e novembro o IR é antecipado sobre o ganho, reduzindo o saldo.</div>`:""}
-    ${(e.ancorado&&Math.abs(e.desvio)>0.5)?`<div class="info-card" style="background:rgba(212,160,90,.12);color:#7A5A22;margin-bottom:12px">
+    ${(e.ancorado&&Math.abs(e.desvio)>0.5&&Math.abs(e.desvioPct)>=0.1)?`<div class="info-card" style="background:rgba(212,160,90,.12);color:#7A5A22;margin-bottom:12px">
       Pela taxa cadastrada o saldo seria ${fmt(e.calculado)}. O saldo informado está
       <strong>${e.desvio>=0?"acima":"abaixo"} em ${fmt(Math.abs(e.desvio))}</strong>
       (${e.desvioPct>=0?"+":""}${String(e.desvioPct).replace(".",",")}%): a rentabilidade realizada foi de
@@ -26415,7 +26603,10 @@ function renderRendimento(){
           <td style="padding:5px 3px;text-align:left;color:var(--body);white-space:nowrap">${x.data===e.hoje?"<b>Hoje</b>":MS[mesOf(x.data)-1]+"/"+x.ym.slice(2,4)}${x.comeCotas>0?" <span style='color:#B85A6A'>•</span>":""}</td>
           <td style="padding:5px 3px;text-align:right;color:var(--body);white-space:nowrap">${nr(x.saldo)}</td>
           ${e.aporte>0?`<td style="padding:5px 3px;text-align:right;color:var(--ink-2)">${(()=>{
-            const ap=i>0?x.aportado-linhas[i-1].aportado:0; return ap>0.005?nr(ap):"—";})()}</td>`:""}
+            /* a primeira linha também tem antecessor: o ponto anterior da
+               série (a própria aplicação), que a tabela não exibe */
+            const j=jan.indexOf(x), pv=i>0?linhas[i-1]:(j>0?jan[j-1]:null);
+            const ap=pv?x.aportado-pv.aportado:0; return ap>0.005?nr(ap):"—";})()}</td>`:""}
           <td style="padding:5px 3px;text-align:right;color:${GRN};white-space:nowrap">${nr(x.rendMes)}</td>
           <td style="padding:5px 3px;text-align:right;color:${NAV};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:clip">${nr(x.liquido)}</td>
         </tr>`).join("")}</tbody>
