@@ -2751,6 +2751,7 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
           <option value="az" data-i18n="sort_az_short">🔤 A→Z</option>
         </select>
       </div>
+      <div id="ac-upd-box"></div>
       <div id="assets-list"></div>
     </div>
 
@@ -11138,6 +11139,7 @@ function populateAstClassFilter(){
 }
 
 function renderAssetList(){
+  try{ if(window.PRO&&PRO.acUpdRender) PRO.acUpdRender(); }catch(e){}
   let items=[...assetsFiltrados()];
   const q=(document.getElementById("ast-list-search")?.value||"").toLowerCase().trim();
   const sortV=document.getElementById("ast-sort")?.value||"bal-desc";
@@ -18172,7 +18174,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.52";
+const APP_VERSION="11.53";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -19451,6 +19453,17 @@ const PDIC={
   ac_live_fallback:["Os números abaixo usam a cotação da posição ({d}).","Figures below use the price at position ({d}).","Die Werte unten nutzen den Kurs zur Position ({d})."],
   ac_live_noqtd:["Informe a quantidade e o preço médio no cadastro para comparar com o alvo.","Enter the quantity and average price in the holding to compare with the target.","Geben Sie Anzahl und Ø-Kaufpreis in der Anlage an, um mit dem Ziel zu vergleichen."],
   ac_live_refresh:["Atualizar cotação","Refresh price","Kurs aktualisieren"],
+  ac_up_t:["Cotações das ações","Stock prices","Aktienkurse"],
+  ac_up_n1:["1 ação","1 stock","1 Aktie"],
+  ac_up_n:["{n} ações","{n} stocks","{n} Aktien"],
+  ac_up_em:["atualizado {d}","updated {d}","aktualisiert {d}"],
+  ac_up_nunca:["ainda não atualizado","not updated yet","noch nicht aktualisiert"],
+  ac_up_btn:["Atualizar","Update","Aktualisieren"],
+  ac_up_wait:["Aguardando atualização…","Waiting for update…","Warte auf Aktualisierung…"],
+  ac_up_prog:["{i} de {n}","{i} of {n}","{i} von {n}"],
+  ac_up_ok:["Posição atualizada","Position updated","Position aktualisiert"],
+  ac_up_falha:["Sem cotação: {t}","No price: {t}","Kein Kurs: {t}"],
+  ac_up_zero:["Nenhuma cotação obtida agora.","No price could be fetched now.","Gerade konnte kein Kurs abgerufen werden."],
   ap_qtd:["Quantidade","Quantity","Anzahl"],
   ap_pm:["Preço médio","Average price","Durchschnittspreis"],
   ap_cot:["Cotação na posição","Price at position","Kurs zur Position"],
@@ -23397,6 +23410,19 @@ function ensureStyles(){
   input.ac-lock{background:transparent!important;color:var(--ink-2)!important;border-style:dashed!important}
   .ac-spin{animation:acSpin .9s linear infinite}
   @keyframes acSpin{to{transform:rotate(360deg)}}
+  .ac-upd{display:flex;align-items:center;gap:11px;background:var(--surface);border-radius:14px;
+    padding:10px 12px;margin:2px 0 10px;min-height:56px;box-sizing:border-box}
+  .ac-upd-ic{width:36px;height:36px;border-radius:10px;background:rgba(15,36,64,.07);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center}
+  .ac-upd-tx{flex:1;min-width:0}
+  .ac-upd-h{font-size:13px;font-weight:600;color:var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ac-upd-s{font-size:11px;color:var(--ink-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ac-upd-btn{flex-shrink:0;width:104px;height:34px;border-radius:10px;border:1.5px solid #0F2440;
+    background:#0F2440;color:#fff;font-size:12px;font-weight:600;cursor:pointer;padding:0;
+    box-shadow:0 0 0 0 rgba(15,36,64,0);transition:box-shadow .15s}
+  .ac-upd-btn:active{box-shadow:0 0 0 3px rgba(15,36,64,.22)}
+  .ac-upd-btn:disabled{background:transparent;color:var(--ink-3);border-color:var(--line);cursor:default}
+  .ac-upd-nota{font-size:11px;color:#B85A6A;margin:-4px 2px 10px}
   /* DICA — orientação, não legenda. Toda vez que o app opina sobre o que
      fazer, o glifo da lâmpada entra à esquerda e o bloco ganha fundo
      próprio, para não se confundir com texto explicativo neutro. */
@@ -26157,6 +26183,107 @@ function acLiveRender(){
   const ta=el.querySelector("textarea"); if(ta) ta.value=AC_PONTE_GS;
 }
 function acRefresh(){ const a=ASSETS.find(x=>x.id===REND_ID); if(a) acBuscarCotacao(acTk(a),true); }
+
+/* ═══ v11.53 — ATUALIZAR A POSIÇÃO DE TODAS AS AÇÕES ═══════════════════
+   Na aba Aplicações, só quando a ponte (Apps Script → Yahoo, reserva
+   Google Finance) está configurada e há ação com ticker e quantidade. Um
+   toque busca a cotação de cada ticker pela mesma rotina da ficha
+   (acBuscarCotacao) e grava a posição como a ficha grava: quantidade ×
+   cotação, data de hoje, cotação na posição — o montante aplicado não
+   muda. Enquanto roda, a caixa mostra "Aguardando atualização…" com o
+   ícone girando e o avanço; no fim, o que foi atualizado e o que falhou. */
+let AC_UPD=null;   /* {i,n,tk} rodando · null parado */
+let AC_UPD_RES=null;  /* {ok,falhas[],em} último resultado */
+function acUpdAcoes(){
+  return ASSETS.filter(a=>{
+    if(!a||a.class!=="stocks"||a.virtual) return false;
+    try{ if(astEncerradaEm(a)) return false; }catch(e){}
+    const p=astPro(a);
+    return AC_RE.test(acTk(a))&&(+p.qtd||0)>0;
+  });
+}
+function acUpdQuando(ms){
+  if(!(ms>0)) return "";
+  const d=new Date(ms), hh=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+  const iso=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  return iso===today()?hh:brDate(iso).slice(0,5);
+}
+function acUpdSpin(sz){
+  return `<svg class="ac-spin" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+    style="display:block;flex-shrink:0"><circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-opacity=".18" stroke-width="2.4"/>
+    <path d="M12 2.5a9.5 9.5 0 0 1 9.5 9.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+}
+function acUpdRender(){
+  const el=document.getElementById("ac-upd-box"); if(!el) return;
+  const L=acUpdAcoes();
+  if(!acPonte()||!L.length){ el.innerHTML=""; return; }
+  const tks=[...new Set(L.map(acTk))];
+  const nTxt=L.length===1?PX("ac_up_n1"):PXV("ac_up_n",{n:L.length});
+  const ult=Math.max(0,...tks.map(t=>(AC_Q[t]&&AC_Q[t].em)||0));
+  const NAV="#0F2440";
+  const caixa=(esq,dir)=>`<div class="ac-upd">${esq}${dir}</div>`;
+  if(AC_UPD){
+    el.innerHTML=caixa(`<div class="ac-upd-ic" style="color:${NAV}">${acUpdSpin(22)}</div>
+      <div class="ac-upd-tx"><div class="ac-upd-h">${PX("ac_up_wait")}</div>
+        <div class="ac-upd-s">${PXV("ac_up_prog",{i:Math.min(AC_UPD.i+1,AC_UPD.n),n:AC_UPD.n})}${AC_UPD.tk?" · "+String(AC_UPD.tk).replace(/[^A-Z0-9]/g,""):""}</div></div>`,
+      `<button class="ac-upd-btn" disabled aria-busy="true">${PX("ac_up_btn")}</button>`);
+    return;
+  }
+  let sub=nTxt+" · "+(ult?PXV("ac_up_em",{d:acUpdQuando(ult)}):PX("ac_up_nunca"));
+  let nota="";
+  if(AC_UPD_RES&&Date.now()-AC_UPD_RES.em<10*60000){
+    if(AC_UPD_RES.falhas.length)
+      nota=`<div class="ac-upd-nota">${AC_UPD_RES.ok>0?PXV("ac_up_falha",{t:AC_UPD_RES.falhas.join(", ")}):PX("ac_up_zero")}</div>`;
+  }
+  el.innerHTML=`<div class="ac-upd">
+      <div class="ac-upd-ic" style="color:${NAV}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="display:block">
+        <path d="M3 17l5-5 4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M15 8h5v5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="ac-upd-tx"><div class="ac-upd-h">${PX("ac_up_t")}</div><div class="ac-upd-s">${sub}</div></div>
+      <button class="ac-upd-btn" onclick="PRO.acAtualizarTodas()">${PX("ac_up_btn")}</button>
+    </div>${nota}`;
+}
+async function acAtualizarTodas(){
+  if(AC_UPD) return;
+  const L=acUpdAcoes(); if(!acPonte()||!L.length) return;
+  const tks=[...new Set(L.map(acTk))];
+  const t0=Date.now();
+  AC_UPD={i:0,n:tks.length,tk:""}; AC_UPD_RES=null; acUpdRender();
+  const ok=new Set(), falhas=[];
+  /* três por vez: rápido sem estourar a cota do Apps Script */
+  let prox=0, feitos=0;
+  const um=async()=>{
+    while(prox<tks.length){
+      const tk=tks[prox++];
+      AC_UPD.tk=tk; acUpdRender();
+      try{ delete AC_ST[tk]; await acBuscarCotacao(tk,true); }catch(e){}
+      const q=AC_Q[tk];
+      if(AC_ST[tk]==="ok"&&q&&q.em>=t0&&q.px>0) ok.add(tk); else falhas.push(tk);
+      feitos++; AC_UPD.i=feitos; acUpdRender();
+    }
+  };
+  await Promise.all([um(),um(),um()]);
+  let n=0;
+  L.forEach(a=>{
+    const tk=acTk(a); if(!ok.has(tk)) return;
+    const p=astPro(a), q=AC_Q[tk], qtd=+p.qtd||0;
+    a.balance=R2(qtd*q.px); a.lastUpdate=today();
+    a.pro=Object.assign({},a.pro||{},{cot:q.px,custo:R2(+p.custo||0),custoAuto:false});
+    n++;
+  });
+  if(n){
+    persist();
+    try{ Object.keys(AST_CACHE).forEach(k=>delete AST_CACHE[k]); }catch(e){}
+    try{ Object.keys(AST_VAL_CACHE).forEach(k=>delete AST_VAL_CACHE[k]); }catch(e){}
+    try{ refreshPro(); }catch(e){}
+  }
+  AC_UPD=null;
+  AC_UPD_RES={ok:n,falhas:falhas.sort(),em:Date.now()};
+  try{ if(typeof renderAssets==="function") renderAssets(); }catch(e){}
+  acUpdRender();
+  if(n) toast("✓ "+PX("ac_up_ok")+" · "+(n===1?PX("ac_up_n1"):PXV("ac_up_n",{n})));
+  else toast(PX("ac_up_zero"));
+}
 function acPtAbrir(){ AC_PT_OPEN=!AC_PT_OPEN; AC_PT_ERRURL=false; acLiveRender(); }
 function acPtSalvar(){
   const v=String(document.getElementById("ac-pt-in")?.value||"").trim().replace(/\?.*$/,"");
@@ -30789,6 +30916,7 @@ window.PRO={
   aplicarProduto,sincronizarFgtsPatrimonio,PRODUTOS,TR,
   acTicker,acQtd,acSaldoDeCot,acCustoDePm,setAcIdx,astQtdTxt,
   acBuscarCotacao,acRefresh,acPtAbrir,acPtSalvar,acPtCopiar,acUsarCotacao,acLiveHTML,acQuoteParse,
+  acUpdRender,acAtualizarTodas,
   acCompraAdd,acCompraDel,acCompraSet,acComprasResumo,acComprasValidas,
   diasUteis,duPeriodo,ehDiaUtil,astPro,serieFatores,
   /* leitura da regra de FGTS: dia do depósito e reconhecimento da conta
