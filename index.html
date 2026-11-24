@@ -18174,7 +18174,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.54";
+const APP_VERSION="11.55";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -19425,6 +19425,15 @@ const PDIC={
   ac_live_real:["Realizado desde a compra","Realized since purchase","Seit Kauf realisiert"],
   ac_live_espp:["Esperado no período","Expected over the period","Erwartet im Zeitraum"],
   ac_live_mkt:["Posição a mercado","Market value","Marktwert"],
+  ac_pos_t:["Posição · {n}","Position · {n}","Position · {n}"],
+  ac_pos_n1:["1 ação","1 share","1 Aktie"],
+  ac_pos_n:["{n} ações","{n} shares","{n} Aktien"],
+  ac_pos_cur:["Valor atual","Current value","Aktueller Wert"],
+  ac_pos_inv:["Valor aplicado","Invested","Investiert"],
+  ac_pos_tgt:["Valor alvo","Target value","Zielwert"],
+  ac_pos_var:["Variação","Change","Veränderung"],
+  ac_pos_base:["base","base","Basis"],
+  ac_pos_gap:["Atual × alvo","Current × target","Aktuell × Ziel"],
   ac_live_reg:["Saldo registrado em {d}","Balance recorded on {d}","Saldo erfasst am {d}"],
   ac_live_use:["Atualizar posição com esta cotação","Update position with this price","Position mit diesem Kurs aktualisieren"],
   ac_live_used:["Posição atualizada pela cotação","Position updated from price","Position anhand des Kurses aktualisiert"],
@@ -26441,6 +26450,39 @@ function acLiveHTML(a){
     veredito=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:11px">
       <span style="background:${bg};color:${cor};border-radius:8px;padding:4px 10px;font-size:11.5px;font-weight:700">${txt}</span>${falta}</div>`;
   }
+  /* v11.55 — POSIÇÃO EM R$: o que a carteira vale, quanto entrou e quanto
+     deveria valer pela rentabilidade esperada — a mesma régua do preço por
+     ação, multiplicada pela quantidade. Aplicado = soma das compras (ou
+     quantidade × preço médio). Variações contra o aplicado; a última linha
+     mede a distância do valor atual ao alvo. */
+  let posR="";
+  if(qtd>0&&atual>0){
+    const inv=cpsV.length?R2(cpsV.reduce((s,c)=>s+(+c.q)*(+c.p),0)):(pm>0?R2(qtd*pm):0);
+    const vAt=R2(qtd*atual), vAl=alvo>0?R2(qtd*alvo):0;
+    const sR=d=>(d>=0?"+":"−")+fmt(Math.abs(d));
+    const nQ=qtd===1?PX("ac_pos_n1"):PXV("ac_pos_n",{n:qtd.toLocaleString(loc,{maximumFractionDigits:8})});
+    const linha=(lbl,v,cor,dif,base,forte,soPct)=>{
+      let dv=`<span style="font-size:11px;color:var(--ink-3)">${base?PX("ac_pos_base"):"—"}</span>`;
+      if(dif!==null&&base>0){
+        const d=R2(dif), pp=d/base*100, c=Math.abs(pp)<0.05?"var(--ink-2)":(d>=0?GRN:RED);
+        dv=`<span style="display:block;font-size:12px;font-weight:700;color:${c};font-variant-numeric:tabular-nums;white-space:nowrap">${pc(pp,1)}%</span>
+            ${soPct?"":`<span style="display:block;font-size:10.5px;color:${c};opacity:.85;margin-top:1px;font-variant-numeric:tabular-nums;white-space:nowrap">${sR(d)}</span>`}`;
+      }
+      return `<div style="display:grid;grid-template-columns:minmax(0,1fr) auto 86px;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--line)">
+        <span style="font-size:12px;color:var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lbl}</span>
+        <span style="font-size:${forte?"14px":"13px"};font-weight:${forte?700:600};color:${cor};text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap">${soPct?sR(R2(dif)):(v>0?fmt(v):"—")}</span>
+        <span style="text-align:right;min-width:0">${dv}</span></div>`;
+    };
+    posR=`<div style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px">
+        <span style="font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink-3);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${PXV("ac_pos_t",{n:nQ})}</span>
+        <span style="font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-3);font-weight:700;white-space:nowrap">${PX("ac_pos_var")}</span></div>
+      ${linha(PX("ac_pos_cur"),vAt,NAV,inv>0?vAt-inv:null,inv,true)}
+      ${linha(PX("ac_pos_inv"),inv,"var(--body)",null,inv,false)}
+      ${linha(PX("ac_pos_tgt"),vAl,IDX,(vAl>0&&inv>0)?vAl-inv:null,inv,false)}
+      ${vAl>0?linha(PX("ac_pos_gap"),Math.abs(vAt-vAl),Math.abs(vAt/vAl-1)<0.0005?"var(--ink-2)":(vAt>=vAl?GRN:RED),vAt-vAl,vAl,false,true):""}
+    </div>`;
+  }
   /* linhas de apoio */
   const L=(k,v,cor)=>v?`<div class="pro-cf"><span>${k}</span><span style="color:${cor||"var(--body)"}">${v}</span></div>`:"";
   const exp12=(f12-1)*100;
@@ -26449,7 +26491,7 @@ function acLiveHTML(a){
       <div class="pro-cf sub"><span>${PX("ac_live_next12")}</span><span>${pc(exp12,1)}%</span></div>
       ${real!==null?L(PX("ac_live_real"),pc(real,1)+"%",real>=0?GRN:RED):""}
       ${alvo>0&&baseData<hoje?L(PX("ac_live_espp"),pc((fB-1)*100,1)+"%",IDX):""}
-      ${mkt>0?L(PX("ac_live_mkt"),fmt(mkt),NAV):""}
+      ${mkt>0&&!posR?L(PX("ac_live_mkt"),fmt(mkt),NAV):""}
       ${bal>0?`<div class="pro-cf sub"><span>${PXV("ac_live_reg",{d:brDate(a.lastUpdate||hoje)})}</span><span>${fmt(bal)}</span></div>`:""}
     </div>`;
   const podeUsar=q&&qtd>0&&(Math.abs(mkt-bal)>0.005||a.lastUpdate!==hoje);
@@ -26463,7 +26505,7 @@ function acLiveHTML(a){
       <button type="button" onclick="PRO.acPtAbrir()" style="background:none;border:none;padding:4px 0;font-size:10.5px;color:var(--ink-3);text-decoration:underline;cursor:pointer;flex-shrink:0">${PX("ac_pt_edit")}</button>
     </div>`;
   return `<div style="background:var(--surface);border-radius:14px;padding:13px 15px 10px;margin-bottom:12px">
-    ${head}${aviso}${grid}${barras}${veredito}${linhas}${usar}${semBase}${nota}${rod}</div>`;
+    ${head}${aviso}${grid}${barras}${veredito}${posR}${linhas}${usar}${semBase}${nota}${rod}</div>`;
 }
 
 /* ── Ficha individual: evolução mês a mês ── */
