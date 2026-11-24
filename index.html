@@ -4740,8 +4740,11 @@ const I18N={
     wealth_composition:"Composição do patrimônio",
     proj_debt_interest:"Juros até quitar dívidas",
     amount_neg_hint:"Dica: digite um valor negativo (ex: -50) para registrar um estorno ou reembolso.",
-    est_badge:"Estimado", real_badge:"Real", est_value:"Estimativa", real_value:"Valor real do mês",
-    use_estimate:"Usar estimativa", real_saved:"Valor real lançado",
+    est_badge:"Estimado", real_badge:"Validado",
+    confirm_estimate:"Confirmar estimativa", validated_value:"Valor validado", undo_validation:"Desfazer",
+    or_other_value:"ou informe outro valor", change_value:"alterar valor",
+    est_value:"Estimativa", real_value:"Valor real do mês",
+    use_estimate:"Usar estimativa", real_saved:"Mês validado",
     balance_sheet:"Balanço patrimonial",
     bs_assets:"Ativo",
     bs_liabilities:"Passivo",
@@ -5868,8 +5871,11 @@ const I18N={
     wealth_composition:"Wealth composition",
     proj_debt_interest:"Interest until debt-free",
     amount_neg_hint:"Tip: enter a negative value (e.g. -50) to record a refund or chargeback.",
-    est_badge:"Estimated", real_badge:"Actual", est_value:"Estimate", real_value:"Actual amount this month",
-    use_estimate:"Use estimate", real_saved:"Actual amount saved",
+    est_badge:"Estimated", real_badge:"Confirmed",
+    confirm_estimate:"Confirm estimate", validated_value:"Confirmed amount", undo_validation:"Undo",
+    or_other_value:"or enter another amount", change_value:"change amount",
+    est_value:"Estimate", real_value:"Actual amount this month",
+    use_estimate:"Use estimate", real_saved:"Month confirmed",
     balance_sheet:"Balance sheet",
     bs_assets:"Assets",
     bs_liabilities:"Liabilities",
@@ -6996,8 +7002,11 @@ const I18N={
     wealth_composition:"Vermögenszusammensetzung",
     proj_debt_interest:"Zinsen bis schuldenfrei",
     amount_neg_hint:"Tipp: einen negativen Wert (z.B. -50) eingeben, um eine Erstattung zu erfassen.",
-    est_badge:"Geschätzt", real_badge:"Ist", est_value:"Schätzung", real_value:"Ist-Betrag des Monats",
-    use_estimate:"Schätzung verwenden", real_saved:"Ist-Betrag gespeichert",
+    est_badge:"Geschätzt", real_badge:"Bestätigt",
+    confirm_estimate:"Schätzung bestätigen", validated_value:"Bestätigter Betrag", undo_validation:"Rückgängig",
+    or_other_value:"oder anderen Betrag eingeben", change_value:"Betrag ändern",
+    est_value:"Schätzung", real_value:"Ist-Betrag des Monats",
+    use_estimate:"Schätzung verwenden", real_saved:"Monat bestätigt",
     balance_sheet:"Bilanz",
     bs_assets:"Aktiva",
     bs_liabilities:"Passiva",
@@ -9093,13 +9102,13 @@ function renderList(){
         </div>
       </div>
       <div class="exp-right">
-        <div class="exp-amount" style="${amountColor?`color:${amountColor}`:""}${isEstorno?";font-weight:600":""}">${neutral?"—":fmtCur(e.amount,cur)}</div>
+        <div class="exp-amount" style="${amountColor?`color:${amountColor}`:(e._real?"color:#5A8A4A":"")}${isEstorno?";font-weight:600":""}">${neutral?"—":fmtCur(e.amount,cur)}</div>
         <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">
           ${estornoBadge}
           ${!isEstorno?`<span class="type-pill ${e.type==="fixed"?"pill-fixed":"pill-var"}">${e.type==="fixed"?t("fixed_one"):t("variable_one")}</span>`:""}
           ${cur!=="BRL"?`<span class="cur-badge">${cur}</span>`:""}
           ${rLabel?`<span class="recur-badge">${rLabel}</span>`:""}
-          ${(e.recurrence&&e.recurrence!=="none"&&!isEstorno)?`<button type="button" class="real-pill${e._real?" on":""}" onclick="openRealExp(${editId},'${e.date}')">${e._real?t("real_badge"):t("est_badge")}</button>`:""}
+          ${(e.recurrence&&e.recurrence!=="none"&&!isEstorno)?`<button type="button" class="real-pill${e._real?" on":""}" onclick="openRealExp(${editId},'${e.date}')">${e._real?"✓ "+t("real_badge"):t("est_badge")}</button>`:""}
           ${sLabel?`<span class="split-badge">${sLabel}</span>`:""}
         </div>
         <div class="exp-actions">
@@ -13496,39 +13505,99 @@ function handleSave(){
 function openRealExp(id,d){
   const e=EX.find(x=>x.id===id); if(!e) return;
   const old=document.getElementById("modal-real"); if(old) old.remove();
-  const cur=e.currency||"BRL", tem=expTemReal(e,d), ymD=String(d).slice(0,7);
-  const temNovo=Array.isArray(e.novos)&&e.novos.some(n=>n.ym===ymD);
-  window.__realModo="mes";
-  const mes=(()=>{ try{ return new Date(d+"T12:00:00").toLocaleDateString(LANG==="en"?"en-US":(LANG==="de"?"de-DE":"pt-BR"),{month:"long",year:"numeric"}); }catch(x){ return d.slice(0,7); } })();
+  window.__realModo="mes"; window.__realCtx={id,d};
   const ov=document.createElement("div");
   ov.className="overlay"; ov.id="modal-real";
-  ov.innerHTML=`<div class="sheet" style="max-height:none">
-    <div class="sheet-handle"></div>
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px">
-      <div style="min-width:0"><div style="font-size:20px;font-weight:600;color:var(--body);line-height:1.25">${escapeHtml(e.desc||"")}</div>
-        <div style="font-size:12px;color:var(--ink-3);margin-top:3px">${mes.charAt(0).toUpperCase()+mes.slice(1)}</div></div>
-      <button type="button" class="act-btn" onclick="closeOverlay('modal-real')" style="font-size:18px" aria-label="${t("close")||"×"}">✕</button>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:12px;background:var(--surface);margin-bottom:12px">
-      <span style="font-size:13px;color:var(--ink-2)">${t("est_value")}</span>
-      <span style="font-size:14px;font-weight:600;color:var(--body)">${fmtCur(expEstimEm(e,d),cur)}</span>
-    </div>
-    <div class="recur-row" id="real-modo" style="margin-bottom:12px">
-      <button type="button" class="recur-btn active" data-m="mes" onclick="realModo('mes')">${t("only_month")}</button>
-      <button type="button" class="recur-btn" data-m="diante" onclick="realModo('diante')">${t("from_on")}</button>
-    </div>
-    <label class="f-label" id="real-lbl" style="display:block;margin-bottom:6px">${t("real_value")}</label>
-    <input id="real-in" class="f-input" type="text" inputmode="decimal" placeholder="0,00"
-      oninput="maskCurrencyInput(this)" style="margin-bottom:58px"/>
-    <div style="display:flex;gap:8px">
-      ${tem?`<button type="button" class="real-sec" onclick="setRealExp(${id},'${d}',null)">${t("use_estimate")}</button>`:""}
-      ${!tem&&temNovo?`<button type="button" class="real-sec" onclick="setNovoExp(${id},'${ymD}',null)">${t("remove_new")}</button>`:""}
-      <button type="button" class="btn-primary" style="flex:1.4;margin:0" onclick="(window.__realModo==='diante'?setNovoExp(${id},'${ymD}',unmaskCurrency(document.getElementById('real-in')),'${d}'):setRealExp(${id},'${d}',unmaskCurrency(document.getElementById('real-in'))))">${t("save")}</button>
-    </div></div>`;
+  ov.innerHTML=`<div class="sheet" style="max-height:none"><div class="sheet-handle"></div><div id="real-body"></div></div>`;
   document.body.appendChild(ov);
   ov.onclick=x=>{ if(x.target===ov) closeOverlay(ov); };
-  if(tem) setCurrencyInput(document.getElementById("real-in"),+e.reais[d]);
-  requestAnimationFrame(()=>{ ov.classList.add("open"); setTimeout(()=>{ try{ document.getElementById("real-in").focus(); }catch(x){} },250); });
+  renderRealSheet();
+  requestAnimationFrame(()=>ov.classList.add("open"));
+}
+/* v11.51 — folha da ocorrência: validar a estimativa, lançar outro valor
+   (só no mês ou dali em diante) e ajustar o reajuste (índice, taxa, mês) */
+function renderRealSheet(){
+  const c=window.__realCtx||{}, e=EX.find(x=>x.id===c.id), box=document.getElementById("real-body");
+  if(!e||!box) return;
+  const d=c.d, cur=e.currency||"BRL", tem=expTemReal(e,d), ymD=String(d).slice(0,7);
+  const est=expEstimEm(e,d);
+  const temNovo=Array.isArray(e.novos)&&e.novos.some(n=>n.ym===ymD);
+  const loc=LANG==="en"?"en-US":(LANG==="de"?"de-DE":"pt-BR");
+  let mes=d.slice(0,7); try{ mes=new Date(d+"T12:00:00").toLocaleDateString(loc,{month:"long",year:"numeric"}); }catch(x){}
+  const r=e.reaj||{tipo:"nenhum"}, tipo=r.tipo||"nenhum", M=mesesCurtos();
+  const mesR=+r.mes||+String(e.date||d).slice(5,7);
+  const status=tem
+    ?`<span class="real-pill on" style="cursor:default">✓ ${t("real_badge")}</span>`
+    :`<span class="real-pill" style="cursor:default">${t("est_badge")}</span>`;
+  box.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px">
+      <div style="min-width:0"><div style="font-size:20px;font-weight:600;color:var(--body);line-height:1.25">${escapeHtml(e.desc||"")}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px"><span style="font-size:12px;color:var(--ink-3)">${mes.charAt(0).toUpperCase()+mes.slice(1)}</span>${status}</div></div>
+      <button type="button" class="act-btn" onclick="closeOverlay('modal-real')" style="font-size:18px" aria-label="×">✕</button>
+    </div>
+    ${tem?`
+    <div class="real-ok">
+      <div><div class="real-k">${t("validated_value")}</div><div class="real-v">${fmtCur(+e.reais[d],cur)}</div></div>
+      <button type="button" class="real-sec" style="flex:0 0 auto;padding:10px 14px" onclick="setRealExp(${e.id},'${d}',null)">${t("undo_validation")}</button>
+    </div>`:`
+    <button type="button" class="real-conf" onclick="setRealExp(${e.id},'${d}',${est})">
+      <span>✓ ${t("confirm_estimate")}</span><b>${fmtCur(est,cur)}</b></button>`}
+    <div class="real-sep"><span>${tem?t("change_value"):t("or_other_value")}</span></div>
+    <div class="recur-row" id="real-modo" style="margin-bottom:10px">
+      <button type="button" class="recur-btn${window.__realModo!=="diante"?" active":""}" data-m="mes" onclick="realModo('mes')">${t("only_month")}</button>
+      <button type="button" class="recur-btn${window.__realModo==="diante"?" active":""}" data-m="diante" onclick="realModo('diante')">${t("from_on")}</button>
+    </div>
+    <div class="real-in-row">
+      <input id="real-in" class="f-input" type="text" inputmode="decimal" placeholder="0,00" oninput="maskCurrencyInput(this)"/>
+      <button type="button" class="btn-primary" style="margin:0" onclick="realSalvarValor()">${t("save")}</button>
+    </div>
+    ${temNovo?`<button type="button" class="real-link" onclick="setNovoExp(${e.id},'${ymD}',null)">${t("remove_new")}</button>`:""}
+    <div class="real-sep"><span>${t("adj")}</span></div>
+    <div class="recur-row" style="margin-bottom:10px">
+      ${[["nenhum",t("adj_none")],["pct",t("adj_pct")],["ipca","IPCA"],["igpm","IGP-M"]].map(([k,l])=>
+        `<button type="button" class="recur-btn${tipo===k?" active":""}" onclick="realReajTipo('${k}')">${l}</button>`).join("")}
+    </div>
+    ${tipo!=="nenhum"?`<div class="reaj-det" style="display:grid;grid-template-columns:${tipo==="pct"?"minmax(0,1fr) minmax(0,1fr)":"minmax(0,1fr)"};margin-top:0">
+      ${tipo==="pct"?`<div><label class="f-label">${t("adj_rate")}</label>
+        <input id="real-reaj-pct" class="f-input" type="text" inputmode="decimal" placeholder="0" value="${r.pct?String(r.pct).replace(".",","):""}"
+          oninput="realReajSalvar(true)" onblur="realReajSalvar()"/></div>`:""}
+      <div><label class="f-label">${t("adj_month")}</label>
+        <select id="real-reaj-mes" class="f-input" onchange="realReajSalvar()" oninput="realReajSalvar()">
+          ${M.map((m,i)=>`<option value="${i+1}"${i+1===mesR?" selected":""}>${m}</option>`).join("")}</select></div>
+    </div>`:""}
+    <div style="height:8px"></div>`;
+}
+function realSalvarValor(){
+  const c=window.__realCtx||{}, v=unmaskCurrency(document.getElementById("real-in"));
+  if(!(v>0)){ toast(t("err_fill_desc_val")); return; }
+  if(window.__realModo==="diante") setNovoExp(c.id,String(c.d).slice(0,7),v,c.d);
+  else setRealExp(c.id,c.d,v);
+}
+function realReajTipo(tp){
+  const c=window.__realCtx||{}, e=EX.find(x=>x.id===c.id); if(!e) return;
+  if(tp==="nenhum") delete e.reaj;
+  else e.reaj={tipo:tp,pct:tp==="pct"?(+(e.reaj&&e.reaj.pct)||0):0,mes:+(e.reaj&&e.reaj.mes)||+String(e.date||c.d).slice(5,7)};
+  if(tp==="pct"&&!(e.reaj.pct>0)){ renderRealSheet(); setTimeout(()=>{ try{ document.getElementById("real-reaj-pct").focus(); }catch(x){} },60); return; }
+  realReajPersist();
+}
+let REAL_REAJ_T=0;
+function realReajSalvar(digitando){
+  const c=window.__realCtx||{}, e=EX.find(x=>x.id===c.id); if(!e||!e.reaj) return;
+  const pi=document.getElementById("real-reaj-pct"), ms=document.getElementById("real-reaj-mes");
+  if(pi) e.reaj.pct=parseFloat(String(pi.value||"").replace(/\./g,"").replace(",","."))||0;
+  if(ms) e.reaj.mes=+ms.value||e.reaj.mes;
+  clearTimeout(REAL_REAJ_T);
+  if(digitando){ REAL_REAJ_T=setTimeout(()=>realReajPersist(true),500); return; }
+  realReajPersist();
+}
+function realReajPersist(semRedesenho){
+  persist(); updateHero(); renderDash(); if(V==="list") renderList();
+  if(!semRedesenho) renderRealSheet();
+  else{
+    /* digitando a taxa: só atualiza a estimativa, sem tirar o foco */
+    const c=window.__realCtx||{}, e=EX.find(x=>x.id===c.id), b=document.querySelector("#modal-real .real-conf b");
+    if(e&&b) b.textContent=fmtCur(expEstimEm(e,c.d),e.currency||"BRL");
+  }
 }
 function realModo(m){
   window.__realModo=m;
@@ -18098,7 +18167,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.50";
+const APP_VERSION="11.51";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -37150,6 +37219,19 @@ html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-ar
 .real-sec{flex:1;margin:0;padding:clamp(10px,1.8dvh,14px);border-radius:14px;border:1.5px solid var(--line);background:none;
   color:var(--ink-2);font-size:clamp(12px,1.8dvh,14px);font-weight:500;cursor:pointer}
 .real-sec:active{border-color:var(--accent)}
+.real-conf{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;border-radius:14px;
+  border:1.5px solid rgba(90,138,74,.45);background:rgba(90,138,74,.1);color:#3F6B33;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:4px}
+.real-conf b{font-size:15px}
+.real-conf:active{border-color:#3F6B33}
+.real-ok{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:rgba(90,138,74,.1);border:1.5px solid rgba(90,138,74,.35);margin-bottom:4px}
+.real-k{font-size:11px;color:#3F6B33;font-weight:600;letter-spacing:.3px}
+.real-v{font-size:18px;font-weight:600;color:#3F6B33;margin-top:2px}
+.real-sep{display:flex;align-items:center;gap:10px;margin:16px 0 10px;font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-3)}
+.real-sep::after{content:"";flex:1;height:1px;background:var(--line)}
+.real-in-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.real-in-row .f-input{margin:0!important;height:46px;min-height:0;box-sizing:border-box}
+.real-in-row .btn-primary{height:46px;padding:0 20px;flex:none}
+.real-link{background:none;border:none;padding:8px 0 0;font-size:12px;color:var(--ink-3);text-decoration:underline;cursor:pointer}
 #calc-bar{position:fixed;z-index:100000;display:none;gap:4px;padding:4px;border-radius:14px;
   background:var(--paper,#fff);border:1px solid var(--line,rgba(0,0,0,.12));box-shadow:0 6px 18px rgba(15,36,64,.14)}
 #calc-bar.on{display:flex}
