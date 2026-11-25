@@ -18204,7 +18204,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.58";
+const APP_VERSION="11.59";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -37757,36 +37757,39 @@ html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-ar
 })();
 </script>
 <script id="avisos">
-/* ══ AVISOS DO DIA (v11.58) ════════════════════════════════════════════
-   Uma central de avisos no topo da tela inicial (sino, com o número de não
-   lidos). A cada dia o app gera avisos curtos e objetivos do que acontece
-   HOJE — "Aluguel de 1,8k entrando hoje" — e guarda tudo num histórico.
-   Tocar no aviso marca como lido e abre o item: a renda, a conta do mês
-   (para lançar o valor real), a parcela da dívida, a aplicação.
+/* ══ AVISOS (v11.58 · lista com check v11.59) ══════════════════════════
+   Central de avisos no estilo das redes sociais: sino na barra do mês da
+   tela inicial (deixa a linha do título livre), com uma bolinha vermelha
+   no canto do círculo enquanto houver aviso não lido.
 
-   · Fontes: entradas do dia (já no dia útil de recebimento), despesas
-     recorrentes que vencem hoje, parcela de dívida no dia de vencimento,
-     aplicação que vence hoje, depósito de FGTS no dia dos Parâmetros.
-   · O texto não é gravado: guarda-se o tipo, o nome e o valor, e a frase
-     é montada na hora — troca de idioma e "ocultar valores" valem também
-     para o histórico.
-   · Dias em que o app não foi aberto são gerados ao abrir (até 7 dias),
-     para o histórico não ficar com buraco. Guarda 90 dias. */
+   · A cada dia o app gera avisos curtos do que acontece HOJE — "Aluguel
+     de 1,8k entrando hoje": entradas (no dia útil de recebimento), contas
+     recorrentes vencendo, parcela de dívida, aplicação vencendo, depósito
+     de FGTS. Dias em que o app não foi aberto são gerados ao abrir (até 7).
+   · Cada aviso é um item de lista com check. Os atuais ficam lidos ou não
+     lidos (não lido: fundo destacado e ponto vermelho). Ticar conclui o
+     aviso e ele desce para "Concluídos"; ticar lá de novo o devolve.
+   · Tocar no aviso marca como lido e abre o item: a renda, a conta do mês
+     (para lançar o valor real), a parcela da dívida, a aplicação.
+   · O texto é montado na hora (idioma e "ocultar valores" valem para o
+     histórico). Guarda 90 dias. */
 (function(){
   const KEY="gastos_v2_avisos";
   const TX={
-    titulo:["Avisos","Notices","Hinweise"],
+    titulo:["Avisos","Notifications","Benachrichtigungen"],
     hoje:["Hoje","Today","Heute"],
     ontem:["Ontem","Yesterday","Gestern"],
     todos_lidos:["Marcar todos como lidos","Mark all as read","Alle als gelesen markieren"],
-    vazio:["Nenhum aviso por enquanto.","No notices yet.","Noch keine Hinweise."],
+    em_dia:["Tudo em dia por aqui.","You're all caught up.","Alles erledigt."],
+    concluidos:["Concluídos","Done","Erledigt"],
+    concluir:["Concluir","Mark as done","Erledigen"],
+    reabrir:["Reabrir","Reopen","Wieder öffnen"],
     nao_achou:["Item não encontrado.","Item not found.","Eintrag nicht gefunden."],
     inc:["{n} de {v} entrando hoje","{n} of {v} coming in today","{n} über {v} geht heute ein"],
     exp:["{n} de {v} vence hoje","{n} of {v} due today","{n} über {v} heute fällig"],
     debt:["Parcela {n} de {v} vence hoje","{n} installment of {v} due today","Rate {n} über {v} heute fällig"],
     venc:["{n} de {v} vence hoje","{n} of {v} matures today","{n} über {v} heute fällig"],
     fgts:["Depósito de FGTS de {v} hoje","FGTS deposit of {v} today","FGTS-Einzahlung über {v} heute"],
-    /* no histórico, dias anteriores: a mesma frase, sem o "hoje" */
     inc_p:["{n} de {v} entrou","{n} of {v} came in","{n} über {v} ist eingegangen"],
     exp_p:["{n} de {v} venceu","{n} of {v} was due","{n} über {v} war fällig"],
     debt_p:["Parcela {n} de {v} venceu","{n} installment of {v} was due","Rate {n} über {v} war fällig"],
@@ -37803,6 +37806,7 @@ html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-ar
 
   let ST=(()=>{ try{ return Object.assign({ult:"",itens:[]},JSON.parse(localStorage.getItem(KEY)||"{}")); }catch(e){ return {ult:"",itens:[]}; } })();
   if(!Array.isArray(ST.itens)) ST.itens=[];
+  let VER_OK=false;   /* "Concluídos" aberto ou recolhido */
   const salvar=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(ST)); }catch(e){} };
 
   /* ── o que acontece num dia ── */
@@ -37855,7 +37859,7 @@ html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-ar
     const h=hojeISO();
     let ini=ST.ult?addDia(ST.ult,1):h;
     if(ini<addDia(h,-6)) ini=addDia(h,-6);
-    if(ST.ult&&ST.ult<h===false) ini=h;   /* hoje de novo: só completa o dia */
+    if(ini>h) ini=h;                     /* mesmo dia: só completa o que surgiu */
     const ja=new Set(ST.itens.map(x=>x.k));
     for(let d=ini,g=0;d<=h&&g<8;d=addDia(d,1),g++)
       gerarDia(d).forEach(x=>{ if(!ja.has(x.k)){ ja.add(x.k); ST.itens.push(x); } });
@@ -37865,16 +37869,16 @@ html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-ar
     salvar(); badge();
   }
 
-  /* ── sino e contador ── */
+  /* ── bolinha no sino ── */
   function badge(){
-    const n=ST.itens.filter(x=>!x.lido).length;
+    const n=ST.itens.filter(x=>!x.lido&&!x.ok).length;
     const b=document.getElementById("btn-avisos"); if(!b) return;
-    const s=b.querySelector(".av-badge");
-    if(s){ s.textContent=n>99?"99+":String(n); s.style.display=n?"flex":"none"; }
+    b.classList.toggle("av-tem",n>0);
     b.setAttribute("aria-label",T("titulo")+(n?" · "+n:""));
+    b.title=T("titulo");
   }
 
-  const SV=d=>`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const SV=d=>`<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
   const ICON={
     inc:SV('<path d="M12 4v12"/><path d="M6 11l6 6 6-6"/><path d="M5 20h14"/>'),
     exp:SV('<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6"/><path d="M9 12h6"/>'),
@@ -37882,9 +37886,9 @@ html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-ar
     venc:SV('<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16"/><path d="M9 3v4"/><path d="M15 3v4"/>'),
     fgts:SV('<path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/>')};
   const COR={inc:"#3D5A3E",exp:"#8A4A3A",debt:"#6E2B3A",venc:"#0F2440",fgts:"#5070A0"};
+  const CHK='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   function frase(x){
-    const v=fmtK(x.v);
-    return T(x.d===hojeISO()?x.tipo:x.tipo+"_p",{n:esc(x.n),v:esc(v)});
+    return T(x.d===hojeISO()?x.tipo:x.tipo+"_p",{n:esc(x.n),v:esc(fmtK(x.v))});
   }
   function rotDia(d){
     const h=hojeISO();
@@ -37894,24 +37898,34 @@ html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-ar
       return new Date(p[0],p[1]-1,p[2],12).toLocaleDateString(LANG==="en"?"en-US":(LANG==="de"?"de-DE":"pt-BR"),
         {weekday:"short",day:"2-digit",month:"2-digit"}).replace(/\.,/g,",").replace(/\.$/,""); }catch(e){ return d; }
   }
-  function lista(){
-    const it=[...ST.itens].sort((a,b)=>a.d<b.d?1:(a.d>b.d?-1:((ORDEM[a.tipo]||0)-(ORDEM[b.tipo]||0))));
-    if(!it.length) return `<div class="av-vazio">${T("vazio")}</div>`;
-    let html="", dia="";
-    it.forEach(x=>{
-      if(x.d!==dia){ dia=x.d; html+=`<div class="av-dia">${rotDia(dia)}</div>`; }
-      html+=`<button type="button" class="av-item${x.lido?"":" av-novo"}" onclick="AVISOS.abrir('${esc(x.k).replace(/'/g,"&#39;")}')">
-        <span class="av-ic" style="color:${COR[x.tipo]||"#0F2440"}">${ICON[x.tipo]||"•"}</span>
-        <span class="av-tx">${frase(x)}</span>
-        ${x.lido?"":`<span class="av-dot" aria-hidden="true"></span>`}
-      </button>`;
-    });
-    return html;
+  const ordenar=L=>[...L].sort((a,b)=>a.d<b.d?1:(a.d>b.d?-1:((ORDEM[a.tipo]||0)-(ORDEM[b.tipo]||0))));
+  const kq=k=>esc(k).replace(/'/g,"&#39;");
+  function linha(x){
+    const novo=!x.lido&&!x.ok;
+    return `<div class="av-row${novo?" av-novo":""}${x.ok?" av-ok":""}" data-k="${esc(x.k)}">
+      <button type="button" class="av-main" onclick="AVISOS.abrir('${kq(x.k)}')">
+        <span class="av-ic" style="color:${COR[x.tipo]||"#0F2440"}">${ICON[x.tipo]||""}</span>
+        <span class="av-tx"><span class="av-fr">${frase(x)}</span><span class="av-qd">${rotDia(x.d)}</span></span>
+        <span class="av-dot" aria-hidden="true"></span>
+      </button>
+      <button type="button" class="av-chk" onclick="AVISOS.tick('${kq(x.k)}')"
+        aria-label="${x.ok?T("reabrir"):T("concluir")}" title="${x.ok?T("reabrir"):T("concluir")}">${CHK}</button>
+    </div>`;
   }
   function render(){
-    const box=document.getElementById("av-lista"); if(box) box.innerHTML=lista();
+    const box=document.getElementById("av-lista"); if(!box) return;
+    const at=ordenar(ST.itens.filter(x=>!x.ok)), ok=ordenar(ST.itens.filter(x=>x.ok));
+    let html=at.length?at.map(linha).join(""):`<div class="av-vazio">${T("em_dia")}</div>`;
+    if(ok.length){
+      html+=`<button type="button" class="av-sec" onclick="AVISOS.verOk()" aria-expanded="${VER_OK}">
+        <span>${T("concluidos")} · ${ok.length}</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+          style="transform:rotate(${VER_OK?180:0}deg);transition:transform .2s" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>`;
+      if(VER_OK) html+=`<div class="av-oklist">${ok.map(linha).join("")}</div>`;
+    }
+    box.innerHTML=html;
     const bt=document.getElementById("av-todos");
-    if(bt) bt.style.visibility=ST.itens.some(x=>!x.lido)?"visible":"hidden";
+    if(bt) bt.style.visibility=ST.itens.some(x=>!x.lido&&!x.ok)?"visible":"hidden";
   }
   function abrirPainel(){
     atualizar();
@@ -37920,28 +37934,36 @@ html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-ar
     ov.innerHTML=`<div class="sheet av-sheet">
       <div class="sheet-handle"></div>
       <div class="av-top">
-        <div style="font-family:var(--serif);font-size:20px;color:var(--body);flex:1;min-width:0">${T("titulo")}</div>
-        <button type="button" id="av-todos" class="av-todos" onclick="AVISOS.todosLidos()">${T("todos_lidos")}</button>
-        <button class="sheet-close av-x" onclick="closeOverlay(this)" aria-label="✕">✕</button>
+        <div class="av-h">${T("titulo")}</div>
+        <button type="button" class="sheet-close av-x" onclick="closeOverlay(this)" aria-label="✕">✕</button>
       </div>
+      <div class="av-sub"><button type="button" id="av-todos" class="av-todos" onclick="AVISOS.todosLidos()">${T("todos_lidos")}</button></div>
       <div id="av-lista" class="av-lista"></div>
     </div>`;
-    ov.addEventListener("click",e=>{ if(e.target===ov) closeOverlay(ov); });
     document.body.appendChild(ov);
     render();
   }
   function fechar(){ const ov=document.getElementById("av-ov"); if(ov){ try{ closeOverlay(ov); }catch(e){ ov.remove(); } } }
-  function todosLidos(){ ST.itens.forEach(x=>x.lido=true); salvar(); badge(); render(); }
+  function todosLidos(){ ST.itens.forEach(x=>{ if(!x.ok) x.lido=true; }); salvar(); badge(); render(); }
+  function verOk(){ VER_OK=!VER_OK; render(); }
+  /* ticar: conclui (desce para Concluídos) · ticar de novo: reabre */
+  function tick(k){
+    const x=ST.itens.find(y=>y.k===k); if(!x) return;
+    const row=document.querySelector(`#av-lista .av-row[data-k="${CSS.escape(k)}"]`);
+    const aplicar=()=>{ x.ok=!x.ok; x.lido=true; x.okEm=x.ok?Date.now():null; salvar(); badge(); render(); };
+    if(row&&!x.ok){ row.classList.add("av-saindo"); setTimeout(aplicar,230); }
+    else aplicar();
+  }
 
   /* ── tocar no aviso: vai para o item ── */
   function irPara(al){
     const depois=fn=>setTimeout(()=>{ try{ fn(); }catch(e){ toast(T("nao_achou")); } },380);
     const naoAchou=()=>{ toast(T("nao_achou")); };
     if(al.k==="inc"){
-      if(!INCOME.some(i=>String(i.id)===String(al.id))) return naoAchou();
-      enterSection("entradas"); depois(()=>openIncomeEdit(INCOME.find(i=>String(i.id)===String(al.id)).id));
+      const i=INCOME.find(y=>String(y.id)===String(al.id)); if(!i) return naoAchou();
+      enterSection("entradas"); depois(()=>openIncomeEdit(i.id));
     }else if(al.k==="exp"){
-      const e=EX.find(x=>String(x.id)===String(al.id)); if(!e) return naoAchou();
+      const e=EX.find(y=>String(y.id)===String(al.id)); if(!e) return naoAchou();
       try{ const p=String(al.d).split("-").map(Number); activeYear=p[0]; activeMonth=p[1]-1; }catch(err){}
       enterSection("despesas"); depois(()=>{ show("list"); openRealExp(e.id,al.d); });
     }else if(al.k==="debt"){
@@ -37962,51 +37984,190 @@ html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-ar
   /* ── estilos e botão ── */
   const css=document.createElement("style");
   css.textContent=`
-  .btn-avisos{position:relative}
-  .btn-avisos .av-badge{position:absolute;top:-4px;right:-5px;min-width:16px;height:16px;border-radius:8px;
-    background:#B85A6A;color:#fff;font-size:9.5px;font-weight:700;line-height:1;padding:0 4px;box-sizing:border-box;
-    display:none;align-items:center;justify-content:center;border:1.5px solid var(--bg);pointer-events:none}
+  .home-navbar .btn-avisos{right:auto;left:16px}
+  .home-navbar:has(.btn-adv-home.on) .btn-avisos{left:56px}
+  .home-navbar{padding-left:56px!important;padding-right:96px!important}
+  .home-navbar:has(.btn-adv-home.on){padding-left:96px!important}
+  .home-navbar .month-nav{min-width:0;max-width:100%!important;flex:0 1 auto;overflow:hidden}
+  #screen-home .home-navbar .month-label{min-width:58px!important;flex:0 1 auto!important}
+  #screen-home .home-navbar .month-delta{flex:0 1 auto!important;min-width:0!important;overflow:hidden;text-overflow:ellipsis}
+  #screen-home .home-navbar .month-today-btn.hidden{display:none!important}
+  .btn-avisos{position:absolute}
+  .btn-avisos::before{content:"";position:absolute;top:-1px;right:-1px;width:9px;height:9px;border-radius:50%;
+    background:#D0303F;border:2px solid var(--bg);box-sizing:content-box;transform:scale(0);transition:transform .2s;pointer-events:none;z-index:1}
+  .btn-avisos.av-tem::before{transform:scale(1)}
   .av-sheet{height:86vh;max-height:86vh;display:flex;flex-direction:column}
-  .av-top{display:flex;align-items:center;gap:10px;margin:2px 0 10px;min-height:30px}
+  .av-top{display:flex;align-items:center;gap:10px;margin:2px 0 2px;min-height:32px}
+  .av-h{flex:1;min-width:0;font-family:var(--serif);font-size:21px;color:var(--body)}
   .av-x{float:none;margin:0;width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0}
-  .av-todos{background:none;border:1px solid var(--line);border-radius:10px;height:30px;padding:0 10px;
-    font-size:11.5px;font-weight:600;color:var(--ink-2);cursor:pointer;white-space:nowrap;flex-shrink:0}
-  .av-todos:active{box-shadow:0 0 0 3px rgba(15,36,64,.15)}
-  .av-lista{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px 18px}
-  .av-dia{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin:14px 2px 6px}
-  .av-dia:first-child{margin-top:4px}
-  .av-item{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:var(--surface);
-    border:1px solid transparent;border-radius:12px;padding:11px 12px;margin-bottom:6px;cursor:pointer;
-    font:inherit;color:var(--body);min-height:48px;box-sizing:border-box}
-  .av-item:active{border-color:var(--line)}
-  .av-ic{width:30px;height:30px;border-radius:9px;background:var(--bg);display:flex;align-items:center;justify-content:center;
-    flex-shrink:0}
-  .av-tx{flex:1;min-width:0;font-size:13.5px;line-height:1.35;color:var(--ink-2)}
-  .av-novo .av-tx{color:var(--body);font-weight:600}
-  .av-dot{width:8px;height:8px;border-radius:50%;background:#B85A6A;flex-shrink:0}
-  .av-vazio{color:var(--ink-3);font-size:13px;text-align:center;padding:40px 0}`;
+  .av-sub{display:flex;justify-content:flex-end;min-height:28px;margin-bottom:6px}
+  .av-todos{background:none;border:none;padding:4px 0;font-size:12.5px;font-weight:600;color:#3A6FB0;cursor:pointer;white-space:nowrap}
+  .av-lista{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:0 -10px;padding:0 0 22px}
+  .av-row{display:flex;align-items:center;gap:4px;padding:0 10px 0 0;border-radius:12px;margin:0 6px 2px;
+    transition:opacity .22s,transform .22s,background .2s}
+  .av-row.av-novo{background:rgba(58,111,176,.08)}
+  .av-row.av-saindo{opacity:0;transform:translateX(24px)}
+  .av-main{flex:1;min-width:0;display:flex;align-items:center;gap:12px;background:none;border:none;text-align:left;
+    padding:10px 4px 10px 10px;cursor:pointer;font:inherit;color:inherit;min-height:60px}
+  .av-ic{width:40px;height:40px;border-radius:50%;background:var(--surface);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .av-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .av-fr{font-size:14px;line-height:1.32;color:var(--body)}
+  .av-novo .av-fr{font-weight:600}
+  .av-qd{font-size:11.5px;color:var(--ink-3)}
+  .av-novo .av-qd{color:#3A6FB0;font-weight:600}
+  .av-dot{width:9px;height:9px;border-radius:50%;background:#D0303F;flex-shrink:0;visibility:hidden}
+  .av-novo .av-dot{visibility:visible}
+  .av-chk{width:30px;height:30px;border-radius:50%;border:1.6px solid var(--ink-4,#B9B4AA);background:none;color:transparent;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;padding:0;transition:background .15s,color .15s,border-color .15s}
+  .av-chk:active{box-shadow:0 0 0 3px rgba(15,36,64,.14)}
+  .av-ok .av-chk{background:#3D5A3E;border-color:#3D5A3E;color:#fff}
+  .av-ok .av-fr{color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--line)}
+  .av-ok .av-ic{opacity:.55}
+  .av-sec{display:flex;align-items:center;justify-content:space-between;width:calc(100% - 12px);margin:16px 6px 4px;
+    padding:10px 10px;background:none;border:none;border-top:1px solid var(--line);font:inherit;font-size:11px;
+    letter-spacing:1.3px;text-transform:uppercase;font-weight:700;color:var(--ink-3);cursor:pointer}
+  .av-vazio{color:var(--ink-3);font-size:13.5px;text-align:center;padding:36px 0 24px}`;
   document.head.appendChild(css);
   function botao(){
     if(document.getElementById("btn-avisos")) return;
-    const ref=document.querySelector("#screen-home .header-actions .btn-olho");
+    const ref=document.getElementById("btn-params");
     if(!ref) return;
     const b=document.createElement("button");
-    b.id="btn-avisos"; b.type="button"; b.className="btn-manual btn-avisos";
+    b.id="btn-avisos"; b.type="button"; b.className="btn-params btn-avisos";
     b.title=T("titulo");
-    b.innerHTML=`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+    b.innerHTML=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
-      <path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="av-badge"></span>`;
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
     b.onclick=abrirPainel;
-    ref.parentNode.insertBefore(b,ref);
+    ref.parentNode.insertBefore(b,ref.nextSibling);
   }
   function iniciar(){ botao(); try{ atualizar(); }catch(e){ try{ logErro("avisos",e); }catch(_){} } }
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",()=>setTimeout(iniciar,600));
   else setTimeout(iniciar,600);
-  /* virou o dia com o app aberto, ou voltou do segundo plano */
   document.addEventListener("visibilitychange",()=>{ if(!document.hidden) try{ atualizar(); }catch(e){} });
   setInterval(()=>{ if(ST.ult!==hojeISO()) try{ atualizar(); }catch(e){} },60000);
-  window.AVISOS={abrir,abrirPainel,todosLidos,atualizar,
-    _estado:()=>ST, titulo:()=>{ const b=document.getElementById("btn-avisos"); if(b) b.title=T("titulo"); badge(); }};
+  window.AVISOS={abrir,abrirPainel,todosLidos,tick,verOk,atualizar,_estado:()=>ST};
+})();
+</script>
+<script id="folhas-gestos">
+/* ══ FOLHAS: FUNDO PARADO, ARRASTAR PARA FECHAR, TOCAR FORA (v11.59) ═══
+   Vale para TODAS as folhas do app (.overlay.open > .sheet):
+   1. O fundo não rola. A trava anterior liberava qualquer arrasto que
+      nascesse dentro da folha; quando a lista chegava ao topo/fim, ou
+      quando o dedo estava no cabeçalho, o iPhone repassava o movimento
+      para a tela de trás. Agora só passa o arrasto que alguma área da
+      própria folha consegue rolar naquela direção.
+   2. Arrastar para baixo pela borda superior da folha (alça e cabeçalho)
+      leva a folha junto com o dedo; soltando depois de ~1/5 da altura,
+      ou com um peteleco, ela fecha. Antes disso, volta ao lugar.
+   3. Tocar fora da folha fecha. Quem já tinha o próprio "tocar fora"
+      segue com ele.
+   Fechar usa o ✕ da própria folha (cada uma faz a sua limpeza); sem ✕,
+   o fechamento padrão (closeOverlay). Fica de fora a planilha girada do
+   simulador, que tem os próprios gestos. */
+(function(){
+  const html=document.documentElement;
+  const girado=()=>html.classList.contains("sim-rot");
+  const aberta=()=>{ const L=document.querySelectorAll(".overlay.open"); return L.length?L[L.length-1]:null; };
+  function fecharOv(ov){
+    if(!ov) return;
+    const x=ov.querySelector(".sheet .sheet-close, .sheet [data-fechar], .sheet .wz-x");
+    if(x&&x.offsetParent!==null){ x.click(); return; }
+    if(typeof ov.onclick==="function"){ try{ ov.onclick({target:ov,currentTarget:ov}); return; }catch(e){} }
+    try{ closeOverlay(ov); }catch(e){ ov.classList.remove("open"); }
+  }
+  function rolaY(el,raiz,dy){
+    for(let n=el;n&&n!==raiz.parentElement;n=n.parentElement){
+      if(n.nodeType!==1) continue;
+      const cs=getComputedStyle(n);
+      if(/(auto|scroll)/.test(cs.overflowY)&&n.scrollHeight>n.clientHeight+1){
+        if(dy>0&&n.scrollTop>0.5) return true;
+        if(dy<0&&n.scrollTop+n.clientHeight<n.scrollHeight-0.5) return true;
+      }
+      if(n===raiz) break;
+    }
+    return false;
+  }
+  function rolaX(el,raiz,dx){
+    for(let n=el;n&&n!==raiz.parentElement;n=n.parentElement){
+      if(n.nodeType!==1) continue;
+      const cs=getComputedStyle(n);
+      if(/(auto|scroll)/.test(cs.overflowX)&&n.scrollWidth>n.clientWidth+1){
+        if(dx>0&&n.scrollLeft>0.5) return true;
+        if(dx<0&&n.scrollLeft+n.clientWidth<n.scrollWidth-0.5) return true;
+      }
+      if(n===raiz) break;
+    }
+    return false;
+  }
+  const ZONA=72;   /* px a partir do topo da folha que valem como "borda" */
+  let T=null;      /* toque em curso */
+  document.addEventListener("touchstart",e=>{
+    T=null;
+    if(girado()||e.touches.length!==1) return;
+    const ov=aberta(); if(!ov) return;
+    const t=e.touches[0];
+    const folha=e.target.closest&&e.target.closest(".overlay.open .sheet");
+    let arr=false;
+    if(folha&&folha.closest(".overlay")===ov){
+      const r=folha.getBoundingClientRect();
+      const campo=e.target.closest("input,select,textarea,[contenteditable],.wz-trail,canvas");
+      arr=!campo&&(t.clientY-r.top)<=ZONA;
+    }
+    T={ov,folha:folha&&folha.closest(".overlay")===ov?folha:null,x0:t.clientX,y0:t.clientY,x:t.clientX,y:t.clientY,
+       t0:performance.now(),arr,arrastando:false,decidido:false,dy:0};
+  },{passive:true,capture:true});
+  document.addEventListener("touchmove",e=>{
+    if(!T||girado()) return;
+    const t=e.touches[0];
+    const dx=t.clientX-T.x, dy=t.clientY-T.y;
+    T.x=t.clientX; T.y=t.clientY;
+    const tx=t.clientX-T.x0, ty=t.clientY-T.y0;
+    if(T.arr&&!T.decidido&&Math.abs(tx)+Math.abs(ty)>7){
+      T.decidido=true;
+      T.arrastando=ty>0&&Math.abs(ty)>Math.abs(tx)*1.2;
+      if(T.arrastando&&T.folha){ T.folha.style.transition="none"; T.folha.style.willChange="transform"; }
+    }
+    if(T.arrastando&&T.folha){
+      T.dy=Math.max(0,ty);
+      T.folha.style.transform="translateY("+T.dy+"px)";
+      if(e.cancelable) e.preventDefault();
+      return;
+    }
+    /* trava do fundo: só passa o que a folha rola */
+    if(!T.folha){ if(e.cancelable) e.preventDefault(); return; }
+    const hor=Math.abs(dx)>Math.abs(dy);
+    const ok=hor?rolaX(e.target,T.folha,dx):rolaY(e.target,T.folha,dy);
+    if(!ok&&e.target.matches&&e.target.matches('input[type="range"]')) return;
+    if(!ok&&e.cancelable) e.preventDefault();
+  },{passive:false,capture:true});
+  function soltar(){
+    if(!T) return; const s=T; T=null;
+    if(!s.arrastando||!s.folha) return;
+    const f=s.folha, h=f.getBoundingClientRect().height||600;
+    const vel=s.dy/Math.max(1,performance.now()-s.t0);
+    f.style.willChange="";
+    if(s.dy>Math.min(140,h*0.2)||(s.dy>40&&vel>0.6)){
+      f.style.transition="transform .22s ease-in";
+      f.style.transform="translateY("+Math.max(h,s.dy)+"px)";
+      setTimeout(()=>{ fecharOv(s.ov); setTimeout(()=>{ f.style.transition=""; f.style.transform=""; },450); },200);
+    }else{
+      f.style.transition="transform .22s cubic-bezier(.22,.9,.32,1)";
+      f.style.transform="";
+      setTimeout(()=>{ f.style.transition=""; },240);
+    }
+  }
+  document.addEventListener("touchend",soltar,{capture:true});
+  document.addEventListener("touchcancel",soltar,{capture:true});
+  /* tocar fora fecha (quem tem o próprio "tocar fora" segue com o dele) */
+  document.addEventListener("click",e=>{
+    const ov=e.target;
+    if(!ov||!ov.classList||!ov.classList.contains("overlay")||!ov.classList.contains("open")) return;
+    if(girado()||typeof ov.onclick==="function") return;
+    if(ov.dataset.semFora==="1") return;
+    fecharOv(ov);
+  });
 })();
 </script>
 </body>
