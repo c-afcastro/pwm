@@ -2412,6 +2412,12 @@ try{ var _t=localStorage.getItem("gastos_v2_theme");
           <option value="fixed" data-i18n="type_fixed_opt">Fixos</option>
           <option value="variable" data-i18n="type_variable_opt">Variáveis</option>
         </select>
+        <!-- v11.57 — estimadas (recorrentes sem valor real) × validadas -->
+        <select id="real-filter-sel" class="sel-sm" onchange="setRealFilter(this.value)" style="flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);color:var(--body);border-radius:8px;padding:3px 5px;font-size:9.5px;cursor:pointer">
+          <option value="all" data-i18n="opt_status">◐ Situação</option>
+          <option value="est" data-i18n="st_est_opt">Estimadas</option>
+          <option value="real" data-i18n="st_real_opt">Validadas</option>
+        </select>
         <select id="list-sort" class="sel-sm" onchange="renderList()" style="flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);color:var(--body);border-radius:8px;padding:3px 5px;font-size:9.5px;cursor:pointer">
           <option value="date-desc" data-i18n="sort_recent">📅 Rec.</option>
           <option value="date-asc" data-i18n="sort_old">📅 Ant.</option>
@@ -4173,6 +4179,7 @@ const I18N={
     type_variable:"Variável",
     type_fixed:"Fixo",
     type_variable_opt:"Variáveis",
+    opt_status:"◐ Situação", st_est_opt:"Estimadas", st_real_opt:"Validadas",
     type_fixed_opt:"Fixos",
     type_label_opt:"Tipo...",
     repeat_until:"Repetir até",
@@ -5304,6 +5311,7 @@ const I18N={
     type_variable:"Variable",
     type_fixed:"Fixed",
     type_variable_opt:"Variable",
+    opt_status:"◐ Status", st_est_opt:"Estimated", st_real_opt:"Confirmed",
     type_fixed_opt:"Fixed",
     type_label_opt:"Type...",
     repeat_until:"Repeat until",
@@ -6435,6 +6443,7 @@ const I18N={
     type_variable:"Variabel",
     type_fixed:"Fest",
     type_variable_opt:"Variabel",
+    opt_status:"◐ Status", st_est_opt:"Geschätzt", st_real_opt:"Bestätigt",
     type_fixed_opt:"Fest",
     type_label_opt:"Typ...",
     repeat_until:"Wiederholen bis",
@@ -9016,6 +9025,12 @@ function renderDash(){
   }
 }
 
+/* v11.57 — situação da despesa recorrente: ESTIMADA (vale a estimativa do
+   cadastro) ou VALIDADA (o titular lançou o valor real do mês). Lançamento
+   avulso não é estimativa e não entra em nenhum dos dois. */
+let listRealFilter="all";
+function expEhRecorrente(e){ return !!(e&&e.recurrence&&e.recurrence!=="none"&&!(+e.amount<0)&&e.category!=="refund"); }
+function setRealFilter(v){ listRealFilter=v||"all"; renderList(); }
 function setTypeFilter(v){
   listCurrentType=v;
   try{ listTypeFilter=v; }catch(e){}
@@ -9030,6 +9045,8 @@ function renderFilters(){
   sel.value=F;
   const typeSel=document.getElementById("type-filter-sel");
   if(typeSel) typeSel.value=listCurrentType||"all";
+  const realSel=document.getElementById("real-filter-sel");
+  if(realSel) realSel.value=listRealFilter||"all";
 }
 function setF(f){F=f;renderList();}
 
@@ -9046,6 +9063,8 @@ function renderList(){
   if(listCurrentType==="fixed")    allForMonth=allForMonth.filter(e=>e.type==="fixed"&&!isNeutral(e));
   else if(listCurrentType==="variable") allForMonth=allForMonth.filter(e=>e.type==="variable"&&!isNeutral(e));
   if(searchQ) allForMonth=allForMonth.filter(e=>(e.desc||"").toLowerCase().includes(searchQ));
+  if(listRealFilter==="est")  allForMonth=allForMonth.filter(e=>expEhRecorrente(e)&&!e._real);
+  else if(listRealFilter==="real") allForMonth=allForMonth.filter(e=>expEhRecorrente(e)&&!!e._real);
 
   // sort
   const sortVal=(document.getElementById("list-sort")||{}).value||"date-desc";
@@ -18185,7 +18204,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.56";
+const APP_VERSION="11.58";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -31030,7 +31049,7 @@ window.PRO={
   astFaixaIR,astTabelaIR,astProxFaixaIR,
   astEvoluirEventos,limparCachesAplic,vencDoMes,renderVencAviso,
   astRefYM,astNaoAplicadaYM,astVencForaYM,astForaYM,
-  openVencimentos,astVencEfetivo,vcAbrir,vcResgatar,vcNova,vcFechar,
+  openVencimentos,astVencEfetivo,fgtsDataDeposito,vcAbrir,vcResgatar,vcNova,vcFechar,
   vcIgnorar,vcRestaurar,vcRestaurarMes,vcIgnorado,vcRedesenhar,
   exportProj,refreshRates:()=>fetchMarket(false),
   refreshHistorico:()=>fetchHistorico(false),
@@ -34851,9 +34870,11 @@ window.SIM={
    filtro: ela muda a sequência, não o que aparece. */
 (function(){
   const GRUPOS=[
-    {id:"desp", ancora:"type-filter-sel", busca:["list-search"], sels:["cat-filter-sel","type-filter-sel"],
-     extra:()=>(typeof F!=="undefined"&&F!=="all")||(typeof listCurrentType!=="undefined"&&listCurrentType!=="all"),
+    {id:"desp", ancora:"type-filter-sel", busca:["list-search"], sels:["cat-filter-sel","type-filter-sel","real-filter-sel"],
+     extra:()=>(typeof F!=="undefined"&&F!=="all")||(typeof listCurrentType!=="undefined"&&listCurrentType!=="all")
+       ||(typeof listRealFilter!=="undefined"&&listRealFilter!=="all"),
      limpar:()=>{ try{F="all";}catch(e){} try{listCurrentType="all";}catch(e){} try{listTypeFilter="all";}catch(e){}
+                  try{listRealFilter="all";}catch(e){}
                   try{renderStats();}catch(e){} },
      render:"renderList"},
     {id:"inc", ancora:"inc-type-filter", busca:["inc-list-search"], sels:["inc-type-filter","inc-recur-filter"], render:"renderIncomeList"},
@@ -37733,6 +37754,259 @@ html.ios-app.sim-on:not(.sim-rot) #sim-grid{ padding-top:calc(44px + env(safe-ar
   });
   var mt=0;
   new MutationObserver(function(){ clearTimeout(mt); mt=setTimeout(function(){ marcar(); if(alvo&&(!document.contains(alvo)||document.activeElement!==alvo||!alvo.offsetParent||!ehNum(alvo))) esconder(); },120); }).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});
+})();
+</script>
+<script id="avisos">
+/* ══ AVISOS DO DIA (v11.58) ════════════════════════════════════════════
+   Uma central de avisos no topo da tela inicial (sino, com o número de não
+   lidos). A cada dia o app gera avisos curtos e objetivos do que acontece
+   HOJE — "Aluguel de 1,8k entrando hoje" — e guarda tudo num histórico.
+   Tocar no aviso marca como lido e abre o item: a renda, a conta do mês
+   (para lançar o valor real), a parcela da dívida, a aplicação.
+
+   · Fontes: entradas do dia (já no dia útil de recebimento), despesas
+     recorrentes que vencem hoje, parcela de dívida no dia de vencimento,
+     aplicação que vence hoje, depósito de FGTS no dia dos Parâmetros.
+   · O texto não é gravado: guarda-se o tipo, o nome e o valor, e a frase
+     é montada na hora — troca de idioma e "ocultar valores" valem também
+     para o histórico.
+   · Dias em que o app não foi aberto são gerados ao abrir (até 7 dias),
+     para o histórico não ficar com buraco. Guarda 90 dias. */
+(function(){
+  const KEY="gastos_v2_avisos";
+  const TX={
+    titulo:["Avisos","Notices","Hinweise"],
+    hoje:["Hoje","Today","Heute"],
+    ontem:["Ontem","Yesterday","Gestern"],
+    todos_lidos:["Marcar todos como lidos","Mark all as read","Alle als gelesen markieren"],
+    vazio:["Nenhum aviso por enquanto.","No notices yet.","Noch keine Hinweise."],
+    nao_achou:["Item não encontrado.","Item not found.","Eintrag nicht gefunden."],
+    inc:["{n} de {v} entrando hoje","{n} of {v} coming in today","{n} über {v} geht heute ein"],
+    exp:["{n} de {v} vence hoje","{n} of {v} due today","{n} über {v} heute fällig"],
+    debt:["Parcela {n} de {v} vence hoje","{n} installment of {v} due today","Rate {n} über {v} heute fällig"],
+    venc:["{n} de {v} vence hoje","{n} of {v} matures today","{n} über {v} heute fällig"],
+    fgts:["Depósito de FGTS de {v} hoje","FGTS deposit of {v} today","FGTS-Einzahlung über {v} heute"],
+    /* no histórico, dias anteriores: a mesma frase, sem o "hoje" */
+    inc_p:["{n} de {v} entrou","{n} of {v} came in","{n} über {v} ist eingegangen"],
+    exp_p:["{n} de {v} venceu","{n} of {v} was due","{n} über {v} war fällig"],
+    debt_p:["Parcela {n} de {v} venceu","{n} installment of {v} was due","Rate {n} über {v} war fällig"],
+    venc_p:["{n} de {v} venceu","{n} of {v} matured","{n} über {v} ist fällig geworden"],
+    fgts_p:["Depósito de FGTS de {v}","FGTS deposit of {v}","FGTS-Einzahlung über {v}"]
+  };
+  const ORDEM={inc:0,fgts:1,exp:2,debt:3,venc:4};
+  const li=()=>LANG==="en"?1:(LANG==="de"?2:0);
+  const T=(k,v)=>{ let s=(TX[k]||[k])[li()]||TX[k][0]; if(v) Object.keys(v).forEach(x=>{ s=s.split("{"+x+"}").join(v[x]); }); return s; };
+  const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const hojeISO=()=>{ try{ return today(); }catch(e){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); } };
+  const addDia=(iso,n)=>{ const p=iso.split("-").map(Number); const d=new Date(p[0],p[1]-1,p[2]+n,12);
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+
+  let ST=(()=>{ try{ return Object.assign({ult:"",itens:[]},JSON.parse(localStorage.getItem(KEY)||"{}")); }catch(e){ return {ult:"",itens:[]}; } })();
+  if(!Array.isArray(ST.itens)) ST.itens=[];
+  const salvar=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(ST)); }catch(e){} };
+
+  /* ── o que acontece num dia ── */
+  function gerarDia(d){
+    const ym=d.slice(0,7), out=[];
+    const add=(tipo,id,nome,v,alvo)=>{ if(!(Math.abs(+v)>0.005)) return;
+      out.push({k:tipo+"|"+id+"|"+d,d,tipo,n:String(nome||"").trim(),v:Math.round(+v*100)/100,alvo,lido:false,em:Date.now()}); };
+    /* entradas que caem hoje (aluguel já no dia útil) */
+    try{
+      (incomeItensYM(ym)||[]).forEach(i=>{
+        if(String(i.date).slice(0,10)!==d) return;
+        const reg=(i.pro&&i.pro.regime)||"";
+        const v=(reg==="clt"&&i._liq!=null)?i._liq:i.amount;
+        add("inc",(i._parentId||i.id)+(i._ev&&i._ev!=="normal"?":"+i._ev:""),i.desc,v,{k:"inc",id:i._parentId||i.id});
+      });
+    }catch(e){}
+    /* contas recorrentes que vencem hoje */
+    try{
+      (getExpensesForYM(ym)||[]).forEach(e=>{
+        if(String(e.date).slice(0,10)!==d) return;
+        if(!(e.recurrence&&e.recurrence!=="none")||+e.amount<0||e.category==="refund") return;
+        const id=e._parentId||e.id;
+        add("exp",id,e.desc,e.amount,{k:"exp",id,d});
+      });
+    }catch(e){}
+    /* parcela de dívida no dia de vencimento */
+    try{
+      const pt=d.split("-").map(Number), ult=new Date(pt[0],pt[1],0).getDate();
+      (typeof DEBTS!=="undefined"?DEBTS:[]).forEach(x=>{
+        const dd=+x.dueDay; if(!(dd>0)) return;
+        if(Math.min(dd,ult)!==pt[2]) return;
+        const r=debtProxima(x); if(!r||String(r.ym)!==ym) return;
+        add("debt",x.id,x.name,r.desembolso!=null?r.desembolso:r.parcela,{k:"debt",id:x.id});
+      });
+    }catch(e){}
+    /* aplicação que vence hoje · depósito de FGTS */
+    try{
+      (typeof ASSETS!=="undefined"?ASSETS:[]).forEach(a=>{
+        if(!a||a.virtual) return;
+        let p=null; try{ p=PRO.astPro(a); }catch(e){ return; }
+        try{ const vd=PRO.astVencData(a,p);
+          if(vd&&String(vd).slice(0,10)===d) add("venc",a.id,a.name,astValorAtual(a),{k:"ast",id:a.id}); }catch(e){}
+        try{ if(a.class==="fgts"&&PRO.astEhFgtsAuto(a)&&PRO.fgtsDataDeposito&&PRO.fgtsDataDeposito(ym)===d)
+          add("fgts",a.id,a.name,PRO.fgtsDepositoConta(p,ym,null),{k:"ast",id:a.id}); }catch(e){}
+      });
+    }catch(e){}
+    return out;
+  }
+  function atualizar(){
+    const h=hojeISO();
+    let ini=ST.ult?addDia(ST.ult,1):h;
+    if(ini<addDia(h,-6)) ini=addDia(h,-6);
+    if(ST.ult&&ST.ult<h===false) ini=h;   /* hoje de novo: só completa o dia */
+    const ja=new Set(ST.itens.map(x=>x.k));
+    for(let d=ini,g=0;d<=h&&g<8;d=addDia(d,1),g++)
+      gerarDia(d).forEach(x=>{ if(!ja.has(x.k)){ ja.add(x.k); ST.itens.push(x); } });
+    ST.ult=h;
+    const lim=addDia(h,-90);
+    ST.itens=ST.itens.filter(x=>x.d>=lim).slice(-400);
+    salvar(); badge();
+  }
+
+  /* ── sino e contador ── */
+  function badge(){
+    const n=ST.itens.filter(x=>!x.lido).length;
+    const b=document.getElementById("btn-avisos"); if(!b) return;
+    const s=b.querySelector(".av-badge");
+    if(s){ s.textContent=n>99?"99+":String(n); s.style.display=n?"flex":"none"; }
+    b.setAttribute("aria-label",T("titulo")+(n?" · "+n:""));
+  }
+
+  const SV=d=>`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const ICON={
+    inc:SV('<path d="M12 4v12"/><path d="M6 11l6 6 6-6"/><path d="M5 20h14"/>'),
+    exp:SV('<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6"/><path d="M9 12h6"/>'),
+    debt:SV('<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h3"/>'),
+    venc:SV('<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16"/><path d="M9 3v4"/><path d="M15 3v4"/>'),
+    fgts:SV('<path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/>')};
+  const COR={inc:"#3D5A3E",exp:"#8A4A3A",debt:"#6E2B3A",venc:"#0F2440",fgts:"#5070A0"};
+  function frase(x){
+    const v=fmtK(x.v);
+    return T(x.d===hojeISO()?x.tipo:x.tipo+"_p",{n:esc(x.n),v:esc(v)});
+  }
+  function rotDia(d){
+    const h=hojeISO();
+    if(d===h) return T("hoje");
+    if(d===addDia(h,-1)) return T("ontem");
+    try{ const p=d.split("-").map(Number);
+      return new Date(p[0],p[1]-1,p[2],12).toLocaleDateString(LANG==="en"?"en-US":(LANG==="de"?"de-DE":"pt-BR"),
+        {weekday:"short",day:"2-digit",month:"2-digit"}).replace(/\.,/g,",").replace(/\.$/,""); }catch(e){ return d; }
+  }
+  function lista(){
+    const it=[...ST.itens].sort((a,b)=>a.d<b.d?1:(a.d>b.d?-1:((ORDEM[a.tipo]||0)-(ORDEM[b.tipo]||0))));
+    if(!it.length) return `<div class="av-vazio">${T("vazio")}</div>`;
+    let html="", dia="";
+    it.forEach(x=>{
+      if(x.d!==dia){ dia=x.d; html+=`<div class="av-dia">${rotDia(dia)}</div>`; }
+      html+=`<button type="button" class="av-item${x.lido?"":" av-novo"}" onclick="AVISOS.abrir('${esc(x.k).replace(/'/g,"&#39;")}')">
+        <span class="av-ic" style="color:${COR[x.tipo]||"#0F2440"}">${ICON[x.tipo]||"•"}</span>
+        <span class="av-tx">${frase(x)}</span>
+        ${x.lido?"":`<span class="av-dot" aria-hidden="true"></span>`}
+      </button>`;
+    });
+    return html;
+  }
+  function render(){
+    const box=document.getElementById("av-lista"); if(box) box.innerHTML=lista();
+    const bt=document.getElementById("av-todos");
+    if(bt) bt.style.visibility=ST.itens.some(x=>!x.lido)?"visible":"hidden";
+  }
+  function abrirPainel(){
+    atualizar();
+    const ov=document.createElement("div");
+    ov.className="overlay open"; ov.style.zIndex="200"; ov.id="av-ov";
+    ov.innerHTML=`<div class="sheet av-sheet">
+      <div class="sheet-handle"></div>
+      <div class="av-top">
+        <div style="font-family:var(--serif);font-size:20px;color:var(--body);flex:1;min-width:0">${T("titulo")}</div>
+        <button type="button" id="av-todos" class="av-todos" onclick="AVISOS.todosLidos()">${T("todos_lidos")}</button>
+        <button class="sheet-close av-x" onclick="closeOverlay(this)" aria-label="✕">✕</button>
+      </div>
+      <div id="av-lista" class="av-lista"></div>
+    </div>`;
+    ov.addEventListener("click",e=>{ if(e.target===ov) closeOverlay(ov); });
+    document.body.appendChild(ov);
+    render();
+  }
+  function fechar(){ const ov=document.getElementById("av-ov"); if(ov){ try{ closeOverlay(ov); }catch(e){ ov.remove(); } } }
+  function todosLidos(){ ST.itens.forEach(x=>x.lido=true); salvar(); badge(); render(); }
+
+  /* ── tocar no aviso: vai para o item ── */
+  function irPara(al){
+    const depois=fn=>setTimeout(()=>{ try{ fn(); }catch(e){ toast(T("nao_achou")); } },380);
+    const naoAchou=()=>{ toast(T("nao_achou")); };
+    if(al.k==="inc"){
+      if(!INCOME.some(i=>String(i.id)===String(al.id))) return naoAchou();
+      enterSection("entradas"); depois(()=>openIncomeEdit(INCOME.find(i=>String(i.id)===String(al.id)).id));
+    }else if(al.k==="exp"){
+      const e=EX.find(x=>String(x.id)===String(al.id)); if(!e) return naoAchou();
+      try{ const p=String(al.d).split("-").map(Number); activeYear=p[0]; activeMonth=p[1]-1; }catch(err){}
+      enterSection("despesas"); depois(()=>{ show("list"); openRealExp(e.id,al.d); });
+    }else if(al.k==="debt"){
+      const x=DEBTS.find(y=>String(y.id)===String(al.id)); if(!x) return naoAchou();
+      enterSection("dividas"); depois(()=>openDebtPayment(x.id));
+    }else if(al.k==="ast"){
+      const a=ASSETS.find(y=>String(y.id)===String(al.id)); if(!a) return naoAchou();
+      enterSection("patrimonio"); depois(()=>PRO.openRendimento(a.id));
+    }
+  }
+  function abrir(k){
+    const x=ST.itens.find(y=>y.k===k); if(!x) return;
+    x.lido=true; salvar(); badge();
+    fechar();
+    irPara(x.alvo||{});
+  }
+
+  /* ── estilos e botão ── */
+  const css=document.createElement("style");
+  css.textContent=`
+  .btn-avisos{position:relative}
+  .btn-avisos .av-badge{position:absolute;top:-4px;right:-5px;min-width:16px;height:16px;border-radius:8px;
+    background:#B85A6A;color:#fff;font-size:9.5px;font-weight:700;line-height:1;padding:0 4px;box-sizing:border-box;
+    display:none;align-items:center;justify-content:center;border:1.5px solid var(--bg);pointer-events:none}
+  .av-sheet{height:86vh;max-height:86vh;display:flex;flex-direction:column}
+  .av-top{display:flex;align-items:center;gap:10px;margin:2px 0 10px;min-height:30px}
+  .av-x{float:none;margin:0;width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0}
+  .av-todos{background:none;border:1px solid var(--line);border-radius:10px;height:30px;padding:0 10px;
+    font-size:11.5px;font-weight:600;color:var(--ink-2);cursor:pointer;white-space:nowrap;flex-shrink:0}
+  .av-todos:active{box-shadow:0 0 0 3px rgba(15,36,64,.15)}
+  .av-lista{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px 18px}
+  .av-dia{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin:14px 2px 6px}
+  .av-dia:first-child{margin-top:4px}
+  .av-item{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:var(--surface);
+    border:1px solid transparent;border-radius:12px;padding:11px 12px;margin-bottom:6px;cursor:pointer;
+    font:inherit;color:var(--body);min-height:48px;box-sizing:border-box}
+  .av-item:active{border-color:var(--line)}
+  .av-ic{width:30px;height:30px;border-radius:9px;background:var(--bg);display:flex;align-items:center;justify-content:center;
+    flex-shrink:0}
+  .av-tx{flex:1;min-width:0;font-size:13.5px;line-height:1.35;color:var(--ink-2)}
+  .av-novo .av-tx{color:var(--body);font-weight:600}
+  .av-dot{width:8px;height:8px;border-radius:50%;background:#B85A6A;flex-shrink:0}
+  .av-vazio{color:var(--ink-3);font-size:13px;text-align:center;padding:40px 0}`;
+  document.head.appendChild(css);
+  function botao(){
+    if(document.getElementById("btn-avisos")) return;
+    const ref=document.querySelector("#screen-home .header-actions .btn-olho");
+    if(!ref) return;
+    const b=document.createElement("button");
+    b.id="btn-avisos"; b.type="button"; b.className="btn-manual btn-avisos";
+    b.title=T("titulo");
+    b.innerHTML=`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="av-badge"></span>`;
+    b.onclick=abrirPainel;
+    ref.parentNode.insertBefore(b,ref);
+  }
+  function iniciar(){ botao(); try{ atualizar(); }catch(e){ try{ logErro("avisos",e); }catch(_){} } }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",()=>setTimeout(iniciar,600));
+  else setTimeout(iniciar,600);
+  /* virou o dia com o app aberto, ou voltou do segundo plano */
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden) try{ atualizar(); }catch(e){} });
+  setInterval(()=>{ if(ST.ult!==hojeISO()) try{ atualizar(); }catch(e){} },60000);
+  window.AVISOS={abrir,abrirPainel,todosLidos,atualizar,
+    _estado:()=>ST, titulo:()=>{ const b=document.getElementById("btn-avisos"); if(b) b.title=T("titulo"); badge(); }};
 })();
 </script>
 </body>
