@@ -18207,7 +18207,7 @@ document.getElementById("btn-open-export-ast")?.addEventListener("click",()=>{
 /* ═══ 0. HELPERS ═══ */
 /* Versão do aplicativo. Sobe a cada entrega, para que o titular saiba
    exatamente qual build está no telefone. */
-const APP_VERSION="11.61";
+const APP_VERSION="11.62";
 try{ window.APP_VERSION=APP_VERSION; }catch(e){}
 try{
   const _v=document.getElementById("auth-version");
@@ -19506,6 +19506,55 @@ const PDIC={
   ac_up_ok:["Posição atualizada","Position updated","Position aktualisiert"],
   ac_up_falha:["Sem cotação: {t}","No price: {t}","Kein Kurs: {t}"],
   ac_up_zero:["Nenhuma cotação obtida agora.","No price could be fetched now.","Gerade konnte kein Kurs abgerufen werden."],
+  /* v11.62 — venda de ações, total ou parcial */
+  vd_btn:["Registrar venda","Record sale","Verkauf buchen"],
+  vd_when:["Data da venda","Sale date","Verkaufsdatum"],
+  vd_qtd:["Ações vendidas","Shares sold","Verkaufte Aktien"],
+  vd_px:["Preço de venda (R$)","Sale price (R$)","Verkaufskurs (R$)"],
+  vd_disp:["Em carteira: {n}","Held: {n}","Im Depot: {n}"],
+  vd_use_cot:["Usar cotação {v}","Use price {v}","Kurs {v} verwenden"],
+  vd_custos:["Custos da venda (R$)","Selling costs (R$)","Verkaufskosten (R$)"],
+  vd_custos_s:["Custos da venda","Selling costs","Verkaufskosten"],
+  vd_custos_n:["Corretagem e taxas da B3, se houver.","Brokerage and B3 fees, if any.","Makler- und B3-Gebühren, falls vorhanden."],
+  vd_isen:["Isenção até {v}/mês","Exemption up to {v}/month","Freibetrag bis {v}/Monat"],
+  vd_sim:["Sim","Yes","Ja"],
+  vd_nao:["Não","No","Nein"],
+  vd_val:["Valor da venda","Sale value","Verkaufswert"],
+  vd_cost:["Custo · {n} × PM {m}","Cost · {n} × avg. {m}","Kosten · {n} × Ø {m}"],
+  vd_lucro:["Lucro","Profit","Gewinn"],
+  vd_prej:["Prejuízo","Loss","Verlust"],
+  vd_ir:["IR {a}% · DARF","Tax {a}% · DARF","Steuer {a}% · DARF"],
+  vd_ir_isen:["IR · isento","Tax · exempt","Steuer · frei"],
+  vd_ir_prej:["IR · sem lucro","Tax · no profit","Steuer · kein Gewinn"],
+  vd_rest:["Fica na carteira","Remaining","Verbleibt"],
+  vd_zerada:["Posição zerada","Position closed","Position geschlossen"],
+  vd_mes:["Vendas de ações no mês: {v} de {l}","Stock sales this month: {v} of {l}","Aktienverkäufe im Monat: {v} von {l}"],
+  vd_mes_over:["Passa de {l} no mês: as outras vendas do mês também são tributadas.","Over {l} this month: the month's other sales are taxed too.","Über {l} im Monat: die übrigen Verkäufe des Monats werden ebenfalls besteuert."],
+  vd_darf:["DARF até o último dia útil do mês seguinte.","DARF due by the last business day of the following month.","DARF fällig bis zum letzten Werktag des Folgemonats."],
+  vd_reg:["Registrar venda","Record sale","Verkauf buchen"],
+  vd_saved:["Venda registrada","Sale recorded","Verkauf gebucht"],
+  vd_err_q:["Informe quantas ações foram vendidas","Enter how many shares were sold","Anzahl verkaufter Aktien angeben"],
+  vd_err_max:["Só há {n} em carteira nessa data","Only {n} held on that date","An diesem Tag nur {n} im Depot"],
+  vd_err_px:["Informe o preço de venda","Enter the sale price","Verkaufskurs angeben"],
+  vd_noqtd:["Informe a quantidade de ações no cadastro para registrar a venda.","Enter the number of shares in the holding to record a sale.","Anzahl der Aktien in der Anlage erfassen, um einen Verkauf zu buchen."],
+  vd_list:["Vendas","Sales","Verkäufe"],
+  vd_del_q:["Excluir esta venda? As ações voltam para a posição.","Delete this sale? The shares return to the position.","Diesen Verkauf löschen? Die Aktien kehren in den Bestand zurück."],
+  vd_removed:["Venda excluída","Sale deleted","Verkauf gelöscht"],
+  vd_tot:["Total vendido","Total sold","Insgesamt verkauft"],
+  vd_e_full_on:["Vendida por inteiro em","Fully sold on","Vollständig verkauft am"],
+  vd_e_on:["Vendida em","Sold on","Verkauft am"],
+  vd_e_full:["100% vendida","100% sold","100% verkauft"],
+  vd_e_n:["vendas","sales","Verkäufe"],
+  vd_e_open:["Ver venda","View sale","Verkauf ansehen"],
+  vd_e_resg:["Vendida em","Sold on","Verkauft am"],
+  vd_e_h_pos:["Posição na venda","Position at sale","Bestand beim Verkauf"],
+  vd_e_prop:["Parcela vendida","Share sold","Verkaufter Anteil"],
+  vd_e_h_apur:["Apuração da venda","Sale breakdown","Abrechnung des Verkaufs"],
+  vd_e_m:["no mês da venda","in the sale month","im Verkaufsmonat"],
+  vd_e_undo:["Desfazer venda","Undo sale","Verkauf zurücknehmen"],
+  vd_e_undo_n:["Desfazer apaga a última venda e devolve as ações à carteira.","Undo deletes the last sale and returns the shares to the portfolio.","Zurücknehmen löscht den letzten Verkauf und bucht die Aktien zurück ins Depot."],
+  vd_e_cost:["(−) Custo das ações vendidas","(−) Cost of shares sold","(−) Kosten der verkauften Aktien"],
+  vd_e_list:["Vendas registradas","Recorded sales","Gebuchte Verkäufe"],
   ap_qtd:["Quantidade","Quantity","Anzahl"],
   ap_pm:["Preço médio","Average price","Durchschnittspreis"],
   ap_cot:["Cotação na posição","Price at position","Kurs zur Position"],
@@ -21684,6 +21733,7 @@ function astRealizResg(a,r){
   let aliqH=0;
   try{ aliqH=astAliqIR(a,dias(p.aplic)); }catch(e){ aliqH=0; }
   if(p.trib==="isento"||p.trib==="fii") aliqH=0;
+  if(r.venda) aliqH=+r.aliq||0;           /* venda isenta ou com prejuízo: sem IR */
   const irTot=R2((+r.ir||0)+(+r.iof||0));
   const out={r,ym:ymR,ganho,cc,realizado,antes:R2(antes),mes,meses,
     irTot,ir:R2(mes*aliqH/100),aliqEf:R2(aliqH)};
@@ -23108,8 +23158,11 @@ function astValorEm(a,dataAlvo){
       });
       /* v11.45 — ação com várias compras: só conta o que já tinha sido comprado */
       if(a.class==="stocks"&&Array.isArray(p.compras)&&p.compras.length>1){
-        const qD=acQtdNaData(p.compras,de), qA=acQtdNaData(p.compras,dataAlvo);
-        if(qD>0&&qA<qD) v=R2(v*qA/qD);
+        /* v11.62 — as vendas até a data pedida já saíram nas duas pontas;
+           as vendas depois dela voltaram acima, junto com os resgates */
+        const vA=astResgates(a,p).filter(r=>r.venda&&r.data<=dataAlvo).reduce((s,r)=>s+(+r.q||0),0);
+        const qD=acQtdNaData(p.compras,de)-vA, qA=acQtdNaData(p.compras,dataAlvo)-vA;
+        if(qD>0&&qA<qD) v=R2(v*Math.max(0,qA)/qD);
       }
     }
   }catch(e){ v=R2(bal); }
@@ -24282,7 +24335,15 @@ function renderAcao(){
 }
 /* ── v11.45 — compras: cada lote com data, quantidade e preço.
    PM = Σ(qtd × preço) / Σ qtd; total investido = Σ(qtd × preço). ── */
-let AC_COMPRAS=[];
+let AC_COMPRAS=[], AC_VEND={q:0,c:0};
+/* v11.62 — vendas já registradas: saem da quantidade e do custo; o PM
+   passa a ser o custo do que sobrou sobre o que sobrou */
+function acComprasLiq(L){
+  const r=acComprasResumo(L);
+  const q=Math.max(0,r.q-(AC_VEND.q||0));
+  const tot=R2(Math.max(0,r.tot-(AC_VEND.c||0)));
+  return Object.assign({},r,{q,tot,pm:(AC_VEND.q>0)?(q>0?tot/q:r.pm):r.pm});
+}
 function acComprasValidas(L){ return (Array.isArray(L)?L:[]).filter(c=>c&&/^\d{4}-\d{2}-\d{2}$/.test(c.d||"")&&+c.q>0&&+c.p>0); }
 function acComprasResumo(L){
   const V=acComprasValidas(L);
@@ -24307,7 +24368,7 @@ function acCompraAdd(){
   /* a posição que já existia vira a primeira compra */
   if(!AC_COMPRAS.length){
     const q=acQtdVal(), pm=unmaskCurrency($("ast-pm"))||0;
-    if(q>0&&pm>0) AC_COMPRAS.push({d:$("ast-aplic")?.value||today(),q,p:pm});
+    if(q>0&&pm>0) AC_COMPRAS.push({d:$("ast-aplic")?.value||today(),q:q+(AC_VEND.q||0),p:pm});
   }
   AC_COMPRAS.push({d:today(),q:0,p:0});
   acComprasRender();
@@ -24328,7 +24389,7 @@ function acCompraSet(i,campo,el){
   acComprasAplicar();
 }
 function acComprasAplicar(semSaldo){
-  const r=acComprasResumo(AC_COMPRAS), on=r.n>0;
+  const r=acComprasLiq(AC_COMPRAS), on=r.n>0;
   const qEl=$("ast-qtd"), pEl=$("ast-pm"), sum=$("ast-compras-sum");
   [qEl,pEl].forEach(e=>{ if(e){ e.readOnly=on; e.classList.toggle("ac-lock",on); } });
   if(sum) sum.textContent=on?(r.n===1?PX("ac_cp_n1"):PXV("ac_cp_n",{n:r.n}))+" · "+PX("ac_cp_pm")+" "+fmt(r.pm)+" · "+fmt(r.tot):"";
@@ -24352,7 +24413,10 @@ function acComprasFichaHTML(a){
     <div style="background:var(--surface);border-radius:14px;padding:8px 15px 10px;margin-bottom:12px">
       ${linhas}
       <div class="pro-cf" style="border-top:1px solid var(--line);margin-top:4px;padding-top:9px;font-weight:600"><span>${PX("ac_cp_tot")}</span><span>${fmt(r.tot)}</span></div>
-      <div class="pro-cf sub"><span>${PX("ac_live_pm")}</span><span>${fmt(r.pm)}</span></div>
+      ${(()=>{ const VV=astResgates(a,p).filter(x=>x.venda); if(!VV.length) return "";
+        const vq=VV.reduce((s,x)=>s+(+x.q||0),0), vc=R2(VV.reduce((s,x)=>s+(+x.custoBaixa||0),0));
+        return `<div class="pro-cf"><span>${PX("vd_list")} · ${vq.toLocaleString(loc)}</span><span>${SGP("−")}${fmt(vc)}</span></div>`; })()}
+      <div class="pro-cf sub"><span>${PX("ac_live_pm")}</span><span>${fmt(+p.pm>0?+p.pm:r.pm)}</span></div>
     </div>`;
 }
 /* "300 ações" para a lista e a ficha */
@@ -24460,7 +24524,7 @@ function collectAstPro(){
     /* ações: ticker e quantidade; fora da classe, os campos são limpos */
     ticker:ehAcaoForm()?($("ast-ticker")?.value||""):"",
     qtd:ehAcaoForm()?acQtdVal():0,
-    pm:ehAcaoForm()?(acComprasResumo(AC_COMPRAS).n?acComprasResumo(AC_COMPRAS).pm:(unmaskCurrency($("ast-pm"))||0)):0,
+    pm:ehAcaoForm()?(acComprasResumo(AC_COMPRAS).n?acComprasLiq(AC_COMPRAS).pm:(unmaskCurrency($("ast-pm"))||0)):0,
     cot:ehAcaoForm()?(unmaskCurrency($("ast-cot"))||0):0,
     compras:ehAcaoForm()?acComprasValidas(AC_COMPRAS).map(c=>({d:c.d,q:+c.q,p:+c.p})).sort((x,y)=>x.d<y.d?-1:1):[]};
 }
@@ -24482,6 +24546,8 @@ function fillAstPro(a){
   setCurrencyInput($("ast-pm"),(a&&+p.pm>0)?+p.pm:"");
   setCurrencyInput($("ast-cot"),(a&&+p.cot>0)?+p.cot:"");
   AC_COMPRAS=(a&&Array.isArray(p.compras))?p.compras.map(c=>({d:c.d,q:+c.q,p:+c.p})):[];
+  { const V=(a&&a.class==="stocks"&&Array.isArray(p.resgates))?p.resgates.filter(r=>r&&r.venda):[];
+    AC_VEND={q:V.reduce((s,r)=>s+(+r.q||0),0),c:R2(V.reduce((s,r)=>s+(+r.custoBaixa||0),0))}; }
   acComprasRender(true);
   renderAstPro();
   astRecalc();
@@ -24981,6 +25047,8 @@ function resgDataMin(a){
 let RESG_ID=null;
 function openResgate(id){
   const a=resgAtivo(id); if(!a) return;
+  /* ação não se resgata: vende-se uma quantidade a um preço (v11.62) */
+  if(a.class==="stocks") return openVenda(a.id);
   RESG_ID=id;
   /* Vencida não tem o que resgatar: a liquidação já aconteceu na data de
      vencimento e o dinheiro voltou para a conta. O caminho é cadastrar a
@@ -25294,6 +25362,14 @@ function P2(v){ return String(R2(+v||0)).replace(".",","); }
 /* posição informada e taxas do fundo de um resgate gravado (v11.31) */
 function resgHistExtra(r){
   const par=[];
+  if(r&&r.venda){
+    const loc=LANG==="en"?"en-US":(LANG==="de"?"de-DE":"pt-BR");
+    par.push((+r.q||0).toLocaleString(loc)+" × "+fmt(+r.preco||0)+(+r.pm>0?" · PM "+fmt(+r.pm):""));
+    if(+r.encargo>0) par.push(PX("vd_custos_s")+" "+fmt(r.encargo));
+    if(r.isento) par.push(PX("vd_ir_isen"));
+    return `<div style="font-size:10.5px;color:var(--ink-3);margin-top:1px;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap">${par.join(" · ")}</div>`;
+  }
   if(+r.posInf>0) par.push(PX("rg_pos_s")+" "+fmt(r.posInf)+(+r.prop>0&&+r.prop<100?" · "+P2(r.prop)+"%":""));
   if(+r.adm>0) par.push("Adm "+fmt(r.adm));
   if(+r.perf>0) par.push("Perf "+fmt(r.perf));
@@ -25383,6 +25459,9 @@ function salvarResgate(id,btn){
 }
 function excluirResgate(id,rid){
   const a=resgAtivo(id); if(!a) return;
+  /* venda de ação: devolve também as ações (v11.62) */
+  { const r0=(a.pro&&Array.isArray(a.pro.resgates))?a.pro.resgates.find(x=>x&&x.id===rid):null;
+    if(r0&&r0.venda){ VD_ID=a.id; return vdExcluir(rid); } }
   if(!confirm(PX("rg_del_q"))) return;
   const p=a.pro||{};
   const L=Array.isArray(p.resgates)?p.resgates:[];
@@ -25401,6 +25480,350 @@ function excluirResgate(id,rid){
   calcResgate(id);
   try{ if(typeof renderAssets==="function") renderAssets(); }catch(e){}
   refreshPro();
+}
+
+/* ═══ 11.05 VENDA DE AÇÕES (v11.62) ═══════════════════════════════════
+   Ação não tem "valor a resgatar": tem quantidade e preço. A venda é
+   gravada como um resgate (mesmo registro, com venda:true), e por isso
+   tudo o que já lê resgates — patrimônio no tempo, rendimento realizado
+   do mês, ficha de encerramento — passa a enxergá-la sem caminho novo.
+   · custo baixado = ações vendidas × preço médio; o PM não muda;
+   · lucro = venda − custo − custos da venda (pode ser prejuízo);
+   · IR pela alíquota de ações dos Parâmetros; isenção quando o total
+     vendido no mês em ações elegíveis fica até o limite dos Parâmetros —
+     passou do limite, o mês inteiro é tributado e as outras vendas do mês
+     são refeitas;
+   · a posição que sobra é quantidade restante × preço de venda. */
+let VD_ID=null, VD_ISEN=null;
+/* na ficha e no cartão de encerramento, ação fala em venda */
+const VD_ENC={enc_full_on:"vd_e_full_on",enc_on:"vd_e_on",enc_full:"vd_e_full",enc_n_resg:"vd_e_n",
+  enc_open:"vd_e_open",enc_resg:"vd_e_resg",enc_h_pos:"vd_e_h_pos",enc_prop:"vd_e_prop",
+  enc_h_apur:"vd_e_h_apur",enc_m_resg:"vd_e_m",enc_undo:"vd_e_undo",enc_undo_note:"vd_e_undo_n",
+  rg_cost:"vd_e_cost",rg_list:"vd_e_list",rg_val:"vd_val",rg_enc:"vd_custos_s"};
+function PXa(a,k){ return PX(a&&a.class==="stocks"&&VD_ENC[k]?VD_ENC[k]:k); }
+function vdEleg(a){
+  const t=String(astPro(a).ticker||a.name||"").toUpperCase().replace(/F$/,"");
+  return /^[A-Z]{4}[3-8]$/.test(t);
+}
+function vdLimite(){ return +((typeof FISCAL!=="undefined"&&FISCAL.isencaoAcoes)||20000); }
+function vdAliq(){ return +((typeof FISCAL!=="undefined"&&FISCAL.irAcoes)||15); }
+function vdVendas(a){ return astResgates(a).filter(r=>r&&r.venda); }
+/* ações em carteira numa data: a de hoje, sem as compras depois dela e
+   com as vendas depois dela de volta */
+function vdQtdNaData(a,dt){
+  const p=astPro(a);
+  let q=Math.max(0,parseInt(p.qtd,10)||0);
+  acComprasValidas(p.compras).forEach(c=>{ if(c.d>dt) q-=(+c.q); });
+  vdVendas(a).forEach(r=>{ if(String(r.data)>dt) q+=(+r.q||0); });
+  return Math.max(0,q);
+}
+function vdPM(a){
+  const p=astPro(a), q=parseInt(p.qtd,10)||0;
+  if(+p.pm>0) return +p.pm;
+  return q>0&&+p.custo>0?(+p.custo)/q:0;
+}
+function vdLoc(){ return LANG==="en"?"en-US":(LANG==="de"?"de-DE":"pt-BR"); }
+function vdNAcoes(n){ return n===1?PX("ac_share1"):PX("ac_shares").replace("{n}",(+n).toLocaleString(vdLoc())); }
+/* soma das vendas elegíveis do mês, em todas as ações */
+function vdVendidoMes(ym,exceto){
+  let s=0;
+  (typeof ASSETS!=="undefined"?ASSETS:[]).forEach(x=>{
+    if(x.class!=="stocks") return;
+    vdVendas(x).forEach(r=>{
+      if(r.isenElig&&String(r.data).slice(0,7)===ym&&r.id!==exceto) s+=(+r.valor||0);
+    });
+  });
+  return R2(s);
+}
+/* IR de uma venda, dado o total elegível do mês */
+function vdIR(ganho,elig,totMes){
+  const isento=!!elig&&totMes<=vdLimite()+0.005;
+  const aliq=(ganho>0&&!isento)?vdAliq():0;
+  return {isento:isento&&ganho>0,aliq,ir:ganho>0?R2(ganho*aliq/100):0};
+}
+/* refaz o IR das vendas elegíveis de um mês: o limite vale para o mês todo */
+function vdRecalcMes(ym){
+  const tot=vdVendidoMes(ym,null);
+  (typeof ASSETS!=="undefined"?ASSETS:[]).forEach(x=>{
+    if(x.class!=="stocks"||!x.pro||!Array.isArray(x.pro.resgates)) return;
+    let mudou=false;
+    const L=x.pro.resgates.map(r=>{
+      if(!r||!r.venda||!r.isenElig||String(r.data).slice(0,7)!==ym) return r;
+      const t=vdIR(+r.ganho||0,true,tot);
+      if(t.ir===+r.ir&&t.aliq===+r.aliq&&t.isento===!!r.isento) return r;
+      mudou=true;
+      return Object.assign({},r,{ir:t.ir,aliq:t.aliq,isento:t.isento,
+        irDevido:t.ir,liquido:R2((+r.valor||0)-(+r.encargo||0)-t.ir)});
+    });
+    if(mudou) x.pro=Object.assign({},x.pro,{resgates:L});
+  });
+}
+function vdData(a){
+  const el=$("vd-data");
+  let d=(el&&el.value)?String(el.value).slice(0,10):today();
+  const mn=resgDataMin(a);
+  if(d<mn) d=mn;
+  return d;
+}
+function vdQ(){ return Math.max(0,parseInt(String($("vd-q")?.value||"").replace(/\D/g,""),10)||0); }
+function vdPxSug(a,dt){
+  const p=astPro(a);
+  let q=null; try{ q=AC_Q[acTk(a)]; }catch(e){}
+  if(dt===today()&&q&&+q.px>0) return +q.px;
+  if(+p.cot>0) return +p.cot;
+  const qt=parseInt(p.qtd,10)||0, b=parseFloat(a.balance)||0;
+  return qt>0&&b>0?R2(b/qt):0;
+}
+function vdCalc(a){
+  const p=astPro(a), dt=vdData(a);
+  const qMax=vdQtdNaData(a,dt), q=vdQ();
+  const px=$("vd-px")?unmaskCurrency($("vd-px"))||0:0;
+  const cst=$("vd-cst")?unmaskCurrency($("vd-cst"))||0:0;
+  const pm=vdPM(a);
+  const valor=R2(q*px);
+  let custoBaixa=R2(q*pm);
+  if(+p.custo>0) custoBaixa=Math.min(custoBaixa,R2(+p.custo));
+  const ganho=R2(valor-custoBaixa-cst);
+  const elig=VD_ISEN==null?vdEleg(a):!!VD_ISEN;
+  const ym=dt.slice(0,7);
+  const outras=vdVendidoMes(ym,null);
+  const totMes=R2(outras+(elig?valor:0));
+  const t=vdIR(ganho,elig,totMes);
+  const qRest=Math.max(0,qMax-q);
+  const outrasAfetadas=elig&&totMes>vdLimite()&&outras>0&&outras<=vdLimite();
+  return {dt,qMax,q,px,cst,pm,valor,custoBaixa,ganho,elig,outras,totMes,
+    isento:t.isento,aliq:t.aliq,ir:t.ir,liquido:R2(valor-cst-t.ir),
+    qRest,restante:R2(qRest*px),outrasAfetadas,
+    dias:dias(String(p.aplic||dt).slice(0,10),dt)};
+}
+function openVenda(id){
+  const a=resgAtivo(id); if(!a) return;
+  const p=astPro(a);
+  if(!((parseInt(p.qtd,10)||0)>0)&&!vdVendas(a).length){ toast(PX("vd_noqtd")); return; }
+  VD_ID=a.id; VD_ISEN=null;
+  document.querySelectorAll("#modal-venda").forEach(x=>x.remove());
+  ensureStyles();
+  const c=gAssetClass(a.class), pm=vdPM(a);
+  const ov=document.createElement("div");
+  ov.className="overlay open"; ov.style.zIndex="210"; ov.style.alignItems="flex-end";
+  ov.id="modal-venda";
+  const F=(id,lbl,ph,mode,cb)=>`<div style="min-width:0"><label class="f-label" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lbl}</label>
+    <input id="${id}" class="f-input" type="text" inputmode="${mode}" placeholder="${ph}" oninput="${cb}" style="margin-bottom:6px"/></div>`;
+  ov.innerHTML=`<div class="sheet" style="max-height:92dvh;overflow-y:auto">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="closeOverlay(this)">✕</button>
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px">
+      <div style="width:42px;height:42px;border-radius:12px;background:${c.color}18;display:flex;
+        align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${c.emoji}</div>
+      <div style="min-width:0">
+        <div style="font-family:var(--serif);font-size:19px;color:var(--body);line-height:1.15;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${encEsc(p.ticker||a.name||"—")}</div>
+        <div id="vd-sub" style="font-size:11px;color:var(--ink-2);margin-top:2px;overflow:hidden;
+          text-overflow:ellipsis;white-space:nowrap"></div>
+      </div>
+    </div>
+    <label class="f-label">${PX("vd_when")}</label>
+    <input id="vd-data" class="f-input" type="date" value="${today()}"
+      min="${resgDataMin(a)}" max="${today()}" onchange="PRO.vdDataMudou()"/>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 10px">
+      ${F("vd-q",PX("vd_qtd"),"0","numeric","PRO.vdQInput(this)")}
+      ${F("vd-px",PX("vd_px"),"0,00","decimal","maskCurrencyInput(this);PRO.vdRender()")}
+    </div>
+    <div style="display:flex;gap:5px;margin-bottom:6px">
+      ${[25,50,100].map(k=>`<button type="button" onclick="PRO.vdPct(${k})" class="pro-btn"
+        style="flex:1;border:1.5px solid var(--line);background:none;color:var(--ink-2);
+        font-weight:600;cursor:pointer">${k===100?PX("rg_all"):k+"%"}</button>`).join("")}
+    </div>
+    <div id="vd-aux" style="display:flex;justify-content:space-between;align-items:center;gap:8px;
+      min-height:26px;margin-bottom:10px;font-size:11px;color:var(--ink-3)"></div>
+    <label class="f-label">${PX("vd_custos")}</label>
+    <input id="vd-cst" class="f-amount" type="text" inputmode="decimal" placeholder="0,00"
+      oninput="maskCurrencyInput(this);PRO.vdRender()"/>
+    <div class="pro-note" style="margin:-4px 0 12px">${PX("vd_custos_n")}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px">
+      <span class="f-label" style="margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${PXV("vd_isen",{v:fmt(vdLimite())})}</span>
+      <div id="vd-isen" style="display:flex;gap:5px;flex-shrink:0"></div>
+    </div>
+    <div id="vd-out"></div>
+    <button class="pro-btn-lg" onclick="PRO.vdSalvar()"
+      style="width:100%;background:#0F2440;color:#fff;border:none;font-weight:600;cursor:pointer">
+      ${PX("vd_reg")}</button>
+    <div id="vd-hist"></div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.onclick=e=>{ if(e.target===ov) closeOverlay(ov); };
+  vdReiniciar(a);
+}
+function vdReiniciar(a){
+  const dt=vdData(a);
+  if($("vd-q")) $("vd-q").value="";
+  setCurrencyInput($("vd-px"),vdPxSug(a,dt)||"");
+  setCurrencyInput($("vd-cst"),0);
+  vdRender();
+}
+function vdDataMudou(){
+  const a=resgAtivo(VD_ID); if(!a) return;
+  const dt=vdData(a), q=vdQ(), mx=vdQtdNaData(a,dt);
+  if(q>mx&&$("vd-q")) $("vd-q").value=mx>0?String(mx):"";
+  vdRender();
+}
+function vdQInput(el){
+  const v=String(el.value||"").replace(/\D/g,"").slice(0,9);
+  if(el.value!==v) el.value=v;
+  vdRender();
+}
+function vdPct(k){
+  const a=resgAtivo(VD_ID); if(!a||!$("vd-q")) return;
+  const mx=vdQtdNaData(a,vdData(a));
+  const q=k>=100?mx:Math.floor(mx*k/100);
+  $("vd-q").value=q>0?String(q):"";
+  vdRender();
+}
+function vdSetIsen(v){ VD_ISEN=!!v; vdRender(); }
+function vdUsarCot(){
+  const a=resgAtivo(VD_ID); if(!a) return;
+  let q=null; try{ q=AC_Q[acTk(a)]; }catch(e){}
+  if(q&&+q.px>0){ setCurrencyInput($("vd-px"),+q.px); vdRender(); }
+}
+function vdRender(){
+  const a=resgAtivo(VD_ID); if(!a||!$("vd-out")) return;
+  const r=vdCalc(a);
+  const GRN="#5A8A4A", RED="#B85A6A", NAV="#0F2440";
+  const sub=$("vd-sub");
+  if(sub) sub.textContent=vdNAcoes(r.qMax)+(r.pm>0?" · "+PX("ac_live_pm")+" "+fmt(r.pm):"");
+  /* em carteira + atalho para a cotação do dia */
+  const aux=$("vd-aux");
+  if(aux){
+    let q=null; try{ q=AC_Q[acTk(a)]; }catch(e){}
+    const pxAt=$("vd-px")?unmaskCurrency($("vd-px"))||0:0;
+    const btn=(q&&+q.px>0&&Math.abs(+q.px-pxAt)>=0.005)
+      ?`<button type="button" onclick="PRO.vdUsarCot()" style="background:none;border:none;padding:4px 0;font-size:11px;color:${NAV};font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">${PXV("vd_use_cot",{v:fmt(+q.px)})}</button>`:"";
+    aux.innerHTML=`<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${PXV("vd_disp",{n:vdNAcoes(r.qMax)})}</span>${btn}`;
+  }
+  const is=$("vd-isen");
+  if(is) is.innerHTML=chip(r.elig,PX("vd_sim"),"PRO.vdSetIsen(1)",NAV)+chip(!r.elig,PX("vd_nao"),"PRO.vdSetIsen(0)",NAV);
+  const L=(lbl,val,cor,forte)=>`<div class="pro-cf${forte?" tot":""}"><span>${lbl}</span><span style="color:${cor||"var(--body)"}">${val}</span></div>`;
+  const loc=vdLoc();
+  const irLbl=r.ganho<=0?PX("vd_ir_prej"):(r.isento?PX("vd_ir_isen"):PXV("vd_ir",{a:P2(r.aliq)}));
+  if(!(r.q>0)){ $("vd-out").innerHTML=""; vdHist(a); return; }
+  const notas=[];
+  if(r.elig) notas.push(PXV("vd_mes",{v:fmt(r.totMes),l:fmt(vdLimite())}));
+  if(r.outrasAfetadas) notas.push(PXV("vd_mes_over",{l:fmt(vdLimite())}));
+  if(r.ir>0) notas.push(PX("vd_darf"));
+  $("vd-out").innerHTML=`
+    <div style="background:var(--surface);border-radius:14px;padding:14px 16px;margin-bottom:10px">
+      ${L(PX("vd_val")+(r.q>0?" · "+r.q.toLocaleString(loc)+" × "+fmt(r.px):""),fmt(r.valor))}
+      ${L(PXV("vd_cost",{n:r.q.toLocaleString(loc),m:fmt(r.pm)}),SGP("−")+fmt(r.custoBaixa),"var(--ink-2)")}
+      ${r.cst>0?L(PX("vd_custos_s"),SGP("−")+fmt(r.cst),"var(--ink-2)"):""}
+      ${L(PX(r.ganho<0?"vd_prej":"vd_lucro"),(r.ganho<0?SGP("−"):"")+fmt(Math.abs(r.ganho)),r.ganho<0?RED:GRN)}
+      ${L(irLbl,r.ir>0?SGP("−")+fmt(r.ir):fmt(0),r.ir>0?RED:"var(--ink-3)")}
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;
+        margin-top:6px;border-top:2px solid var(--line)">
+        <span style="font-size:13px;font-weight:700;color:var(--body)">${PX("rg_net")}</span>
+        <span style="font-family:var(--serif);font-style:italic;font-size:22px;color:${NAV}">${fmt(r.liquido)}</span>
+      </div>
+      ${L(PX("vd_rest"),r.q>0&&r.qRest===0?PX("vd_zerada"):vdNAcoes(r.qRest)+" · "+fmt(r.restante),"var(--ink-2)",true)}
+    </div>
+    ${notas.length?`<div class="pro-note" style="margin:0 0 12px">${notas.join("<br>")}</div>`:""}
+    ${r.q>r.qMax?`<div class="info-card" style="background:rgba(184,90,106,.1);color:${RED};margin:0 0 10px">${PXV("vd_err_max",{n:vdNAcoes(r.qMax)})}</div>`:""}`;
+  vdHist(a);
+}
+function vdHist(a){
+  const el=$("vd-hist"); if(!el) return;
+  const V=vdVendas(a);
+  if(!V.length){ el.innerHTML=""; return; }
+  const loc=vdLoc();
+  el.innerHTML=`<div class="pro-h" style="margin-top:16px"><b>${PX("vd_list")}</b><i></i></div>
+    <div style="background:var(--surface);border-radius:14px;padding:4px 14px 6px">
+      ${V.slice().reverse().map(r=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12.5px;color:var(--body);font-weight:600">${brDate(r.data)} · ${(+r.q||0).toLocaleString(loc)} × ${fmt(+r.preco||0)}</div>
+          <div style="font-size:10.5px;color:var(--ink-3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${
+            PX((+r.ganho||0)<0?"vd_prej":"vd_lucro")} ${fmt(Math.abs(+r.ganho||0))} · ${
+            (+r.ganho||0)<=0?PX("vd_ir_prej"):(r.isento?PX("vd_ir_isen"):"IR "+fmt(+r.ir||0))}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:13px;font-weight:600;color:var(--body);font-variant-numeric:tabular-nums">${fmt(r.valor)}</div>
+          <div style="font-size:10.5px;color:#5A8A4A">${fmt(r.liquido)}</div>
+        </div>
+        <button onclick="PRO.vdExcluir('${r.id}')" aria-label="${PX("vd_del_q")}" style="background:none;border:none;
+          color:#C47A5C;font-size:13px;cursor:pointer;flex-shrink:0;padding:4px">🗑️</button>
+      </div>`).join("")}
+      <div style="font-size:10px;color:var(--ink-3);padding:8px 0 2px">${PX("vd_tot")} ${fmt(R2(V.reduce((s,r)=>s+(+r.valor||0),0)))}</div>
+    </div>`;
+}
+function vdSalvar(){
+  const a=resgAtivo(VD_ID); if(!a) return;
+  const p=astPro(a), r=vdCalc(a);
+  if(!(r.q>0)){ toast(PX("vd_err_q")); return; }
+  if(r.q>r.qMax){ toast(PXV("vd_err_max",{n:vdNAcoes(r.qMax)})); return; }
+  if(!(r.px>0)){ toast(PX("vd_err_px")); return; }
+  if(r.dt>today()){ toast(PX("rg_future")); return; }
+  if(r.dt<resgDataMin(a)){ toast(PX("rg_early")); return; }
+  const de=String(a.lastUpdate||p.aplic||today()).slice(0,10);
+  const ancora=r.dt>=de;
+  const qHoje=Math.max(0,parseInt(p.qtd,10)||0);
+  const qNova=Math.max(0,qHoje-r.q);
+  const bal=parseFloat(a.balance)||0;
+  let proj=0; try{ proj=R2(astValorEm(a,r.dt)); }catch(e){}
+  const reg={id:"vd"+Date.now()+Math.floor(Math.random()*1000),venda:true,
+    data:r.dt,q:r.q,preco:r.px,pm:r.pm,qAntes:r.qMax,
+    valor:r.valor,valorInf:r.valor,ganho:r.ganho,ir:r.ir,irDevido:r.ir,iof:0,iofPct:0,
+    aliq:r.aliq,dias:r.dias,encargo:r.cst,liquido:r.liquido,custoBaixa:r.custoBaixa,
+    baixado:true,posInf:R2(r.qMax*r.px),proj,prop:r.qMax>0?R2(r.q/r.qMax*100):100,
+    restante:r.restante,isenElig:r.elig,isento:r.isento,ccAbat:0,adm:0,perf:0,
+    ancora,prevBal:bal,prevData:a.lastUpdate||null,prevCot:+p.cot||0};
+  const lista=(Array.isArray(p.resgates)?p.resgates.slice():[]).concat([reg]);
+  const novo={resgates:lista,custo:R2(Math.max(0,R2(+p.custo||0)-r.custoBaixa)),custoAuto:false,
+    aplic:String(p.aplic||de).slice(0,10),qtd:qNova};
+  if(ancora){
+    /* a venda é a foto mais nova: o que sobrou, ao preço da venda */
+    a.balance=R2(r.qRest*r.px); a.lastUpdate=r.dt; novo.cot=r.px;
+  }else{
+    /* a posição informada depois da venda ainda contava as ações vendidas */
+    a.balance=qHoje>0?R2(bal*qNova/qHoje):0;
+  }
+  a.pro=Object.assign({},a.pro||{},novo);
+  vdRecalcMes(r.dt.slice(0,7));
+  persist(); limparCachesAplic();
+  const tot=qNova===0;
+  toast("✓ "+PX("vd_saved")+" · "+fmt(r.liquido));
+  try{ if(typeof renderAssets==="function") renderAssets(); }catch(e){}
+  refreshPro();
+  if(tot){
+    document.querySelectorAll("#modal-venda").forEach(x=>{ try{ closeOverlay(x); }catch(e){ x.remove(); } });
+    setTimeout(()=>{ try{ openEncerrada(a.id); }catch(e){} },230);
+    return;
+  }
+  VD_ISEN=null;
+  vdReiniciar(a);
+}
+function vdExcluir(rid){
+  const a=resgAtivo(VD_ID); if(!a) return;
+  if(!confirm(PX("vd_del_q"))) return;
+  const p=a.pro||{};
+  const L=Array.isArray(p.resgates)?p.resgates:[];
+  const r=L.find(x=>x&&x.id===rid); if(!r) return;
+  const qHoje=Math.max(0,parseInt(p.qtd,10)||0), qVolta=qHoje+(+r.q||0);
+  const bal=parseFloat(a.balance)||0;
+  const novo={resgates:L.filter(x=>x!==r),custo:R2(Math.max(0,R2(+p.custo||0)+(+r.custoBaixa||0))),qtd:qVolta};
+  if(r.ancora&&a.lastUpdate===r.data&&Math.abs(bal-(+r.restante||0))<0.01){
+    a.balance=+r.prevBal||0;
+    if(r.prevData) a.lastUpdate=r.prevData; else delete a.lastUpdate;
+    if(+r.prevCot>0) novo.cot=+r.prevCot;
+  }else if(qHoje>0){
+    a.balance=R2(bal*qVolta/qHoje);
+  }else{
+    a.balance=+r.prevBal||R2(qVolta*(+r.preco||0));
+    if(r.prevData) a.lastUpdate=r.prevData;
+  }
+  a.pro=Object.assign({},p,novo);
+  vdRecalcMes(String(r.data).slice(0,7));
+  persist(); limparCachesAplic();
+  toast("✓ "+PX("vd_removed"));
+  try{ if(typeof renderAssets==="function") renderAssets(); }catch(e){}
+  refreshPro();
+  if($("vd-out")) vdReiniciar(a);
 }
 
 /* ═══ 11.1 FICHA DE ENCERRAMENTO (v11.32) ═════════════════════════════
@@ -25444,6 +25867,7 @@ function astEncResumo(a){
 /* Cartão da seção "Resgatadas" na lista de Aplicações */
 function encCard(a){
   const S=astEncResumo(a); if(!S) return "";
+  const PX=k=>PXa(a,k);
   const c=gAssetClass(a.class);
   const pos=S.ganho>=0;
   const tag=(txt,bg,cor)=>`<span style="font-size:10px;background:${bg};border-radius:7px;padding:2px 7px;color:${cor};white-space:nowrap">${txt}</span>`;
@@ -25491,6 +25915,7 @@ function openEncerrada(id){
 }
 function renderEncerrada(){
   const a=resgAtivo(ENC_ID), el=$("enc-body"); if(!a||!el) return;
+  const PX=k=>PXa(a,k);
   const S=astEncResumo(a);
   if(!S){ el.innerHTML=""; return; }
   const c=gAssetClass(a.class), p=S.p, u=S.ult;
@@ -25507,7 +25932,7 @@ function renderEncerrada(){
   const dif=temPos?R2((+u.posInf)-(+u.proj||0)):0;
   const posBox=BOX(
     L(PX("enc_pos"),fmt(temPos?u.posInf:u.valor),"var(--body)")
-    +(temPos&&(+u.proj>0)?L(PX("enc_proj"),fmt(u.proj),"var(--ink-2)")
+    +(temPos&&!u.venda&&(+u.proj>0)?L(PX("enc_proj"),fmt(u.proj),"var(--ink-2)")
       +(Math.abs(dif)>=0.005?L(PX("enc_dif"),sinal(dif)+" ("+(dif<0?"−":"+")+P2(Math.abs(u.proj>0?dif/u.proj*100:0))+"%)",dif<0?RED:GRN):""):"")
     +(temPos&&+u.prop>0&&+u.prop<100?L(PX("enc_prop"),P2(u.prop)+"%","var(--ink-2)"):"")
     +(u.modoTx&&(+u.adm>0||+u.perf>0)?L(PX("enc_txmode"),PX(u.modoTx==="bru"?"rg_tx_bru":"rg_tx_liq"),"var(--ink-2)"):"")
@@ -26518,7 +26943,9 @@ function acLiveHTML(a){
      mede a distância do valor atual ao alvo. */
   let posR="";
   if(qtd>0&&atual>0){
-    const inv=cpsV.length?R2(cpsV.reduce((s,c)=>s+(+c.q)*(+c.p),0)):(pm>0?R2(qtd*pm):0);
+    /* v11.62 — vendas registradas tiram das compras o custo das ações vendidas */
+    const vdC=R2(astResgates(a,p).filter(r=>r.venda).reduce((s,r)=>s+(+r.custoBaixa||0),0));
+    const inv=cpsV.length?R2(Math.max(0,cpsV.reduce((s,c)=>s+(+c.q)*(+c.p),0)-vdC)):(pm>0?R2(qtd*pm):0);
     const vAt=R2(qtd*atual), vAl=alvo>0?R2(qtd*alvo):0;
     const sR=d=>(d>=0?"+":"−")+fmt(Math.abs(d));
     const nQ=qtd===1?PX("ac_pos_n1"):PXV("ac_pos_n",{n:qtd.toLocaleString(loc,{maximumFractionDigits:8})});
@@ -26666,7 +27093,7 @@ function renderRendimento(){
         <div style="font-size:10px;color:var(--ink-3);padding:8px 0 2px;line-height:1.5">
           ${PX("ap_res_tot")} ${fmt(astResgatadoTotal(a))}</div>
       </div>`
-    :`<div class="info-card" style="background:rgba(15,36,64,.06);color:#0F2440;margin-bottom:12px">${PX("ap_no_res")}</div>`;
+    :(a.class==="stocks"?"":`<div class="info-card" style="background:rgba(15,36,64,.06);color:#0F2440;margin-bottom:12px">${PX("ap_no_res")}</div>`);
   const provHoje=astProvisao(a,Math.max(0,(e.ganhoFiscal!==undefined?e.ganhoFiscal:e.ganho)),e.diasCorridos);
   /* LIQUIDEZ E IOF (v11.01). Duas coisas que a ficha tratava como se não
      existissem quando o rendimento ainda era zero: o dinheiro aplicado hoje
@@ -26843,14 +27270,14 @@ function renderRendimento(){
       </table>
       <div style="font-size:9.5px;color:var(--ink-3);margin-top:6px;line-height:1.5">${e.fgAuto?"Saldo do mês = saldo anterior + depósito + rendimento. No mês do 13º e no mês de férias o depósito inclui o FGTS dessas verbas. ":(e.aporte>0?"Saldo do mês = saldo anterior + aporte + rendimento. ":"")}Líquido = saldo menos a provisão de IR e IOF daquele prazo. Linhas claras são projeção.${e.comeCotas?" O ponto vermelho marca o come-cotas.":""}</div>
     </div>
-    <div class="sec-label">${PL("ap_hist_res")}</div>
+    <div class="sec-label">${PL(a.class==="stocks"?"vd_list":"ap_hist_res")}</div>
     ${raw(blocoResg)}
 
     <div style="display:flex;gap:6px;margin-bottom:8px">
       <button class="pro-btn-lg" onclick="PRO.exportRendimento(${a.id})" style="flex:1;background:none;border:1.5px solid var(--line);color:var(--ink-2);font-weight:600;cursor:pointer">⬇️ CSV</button>
       <button class="pro-btn-lg" onclick="PRO.aplEditar(${a.id})" style="flex:1;background:none;border:1.5px solid var(--line);color:var(--ink-2);font-weight:600;cursor:pointer">✏️ ${PL("ap_edit")}</button>
     </div>
-    <button class="pro-btn-lg" onclick="PRO.aplResgatar(${a.id})" style="width:100%;background:${NAV};color:#fff;border:none;font-weight:600;cursor:pointer">💰 ${PL("ap_redeem")}</button>`;
+    <button class="pro-btn-lg" onclick="PRO.aplResgatar(${a.id})" style="width:100%;background:${NAV};color:#fff;border:none;font-weight:600;cursor:pointer">💰 ${PL(a.class==="stocks"?"vd_btn":"ap_redeem")}</button>`;
   drawRendChart(Object.assign({},e,{pontos:jan}));
   drawAplBench(jan,cmp);
   const pzb=$("apl-pz");
@@ -30960,6 +31387,7 @@ window.PRO={
   openAplicacao,aplEditar,aplResgatar,aplFechar,setAplPast,setAplBench,aplJanela,aplComparativo,
   openFiscal,saveFiscalForm,resetFiscal,toggleIsen,openResgate,calcResgate,setResgatePct,
   salvarResgate,excluirResgate,renderResgHist,resgDataMin,resgAtivo,resgEncargo,
+  openVenda,vdDataMudou,vdQInput,vdPct,vdSetIsen,vdUsarCot,vdRender,vdSalvar,vdExcluir,
   setResgModo,renderResgModo,resgBruto,resgModo:()=>RESG_MODO,
   setResgTx,renderResgTx,resgPosInput,resgValInput,resgDataMudou,resgUsarProj,resgPos,
   astTaxasFundo,astFatorBench,resgTx:()=>RESG_TX,
